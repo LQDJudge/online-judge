@@ -16,6 +16,7 @@ from judge.models import (
     QuizAnswerFile,
     Profile,
 )
+from judge.utils.identity import SemanticIdentityInlineFormSet
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminHeavySelect2Widget,
@@ -184,9 +185,14 @@ class QuizQuestionAssignmentInlineForm(ModelForm):
         }
 
 
+class QuizQuestionAssignmentInlineFormSet(SemanticIdentityInlineFormSet):
+    semantic_identity_fields = ("question",)
+
+
 class QuizQuestionAssignmentInline(admin.TabularInline):
     model = QuizQuestionAssignment
     form = QuizQuestionAssignmentInlineForm
+    formset = QuizQuestionAssignmentInlineFormSet
     extra = 1
     fields = ("question", "points", "order")
     ordering = ("order", "id")
@@ -352,6 +358,12 @@ class QuizAdmin(CompareVersionAdmin):
 
 
 class CourseLessonQuizForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(CourseLessonQuizForm, self).__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields["lesson"].disabled = True
+            self.fields["quiz"].disabled = True
+
     class Meta:
         widgets = {
             "lesson": AdminHeavySelect2Widget(

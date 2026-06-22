@@ -152,12 +152,64 @@
         setTimeout(enhanceContestRows, 0);
       });
 
-      $('.contest-edit-page form').on('submit', function() {
+      $('.contest-edit-page form').on('submit', function(e) {
+        var form = this;
         $('.contest-edit-page .sortable-formset[data-prefix="rows"] .sortable-row:not(.sortable-template)').each(function() {
           var $row = $(this);
           var type = $row.attr('data-contest-item-type') || 'problem';
           setContestRowType($row, type, true);
         });
+
+        if (form.dataset.contestSubmissionDeleteConfirmed === '1') {
+          return;
+        }
+
+        e.preventDefault();
+        var formData = new FormData(form);
+        formData.append('preview_contest_problem_submission_delete', '1');
+        fetch(form.action || window.location.href, {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin',
+          headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+          .then(function(response) {
+            return response.json().then(function(data) {
+              return {ok: response.ok, data: data};
+            });
+          })
+          .then(function(result) {
+            if (!result.ok || !result.data.success) {
+              if (result.data.validation_error) {
+                form.dataset.contestSubmissionDeleteConfirmed = '1';
+                form.submit();
+                return;
+              }
+              alert(result.data.error || "{{ _('Could not check deleted contest submissions. Save cancelled.') }}");
+              return;
+            }
+            if (!result.data.requires_confirmation) {
+              form.dataset.contestSubmissionDeleteConfirmed = '1';
+              form.submit();
+              return;
+            }
+            if (!confirm(result.data.message)) {
+              return;
+            }
+            var confirmInput = form.querySelector('input[name="confirm_contest_problem_submission_delete"]');
+            if (!confirmInput) {
+              confirmInput = document.createElement('input');
+              confirmInput.type = 'hidden';
+              confirmInput.name = 'confirm_contest_problem_submission_delete';
+              form.appendChild(confirmInput);
+            }
+            confirmInput.value = result.data.delete_count;
+            form.dataset.contestSubmissionDeleteConfirmed = '1';
+            form.submit();
+          })
+          .catch(function() {
+            alert("{{ _('Could not check deleted contest submissions. Save cancelled.') }}");
+          });
       });
 
       var rowsBody = document.querySelector('.contest-edit-page .sortable-formset[data-prefix="rows"] .sortable-body');

@@ -9,6 +9,7 @@ from django.utils import timezone
 from judge.models.profile import Profile
 from judge.models.contest import ContestParticipation
 from judge.models.course import CourseLesson, Course
+from judge.utils.identity import ImmutableIdentityMixin
 
 MAX_QUESTION_POINTS = 1000
 MAX_QUIZ_TIME_LIMIT_MINUTES = 7 * 24 * 60
@@ -513,7 +514,9 @@ class Quiz(models.Model):
         return False
 
 
-class QuizQuestionAssignment(models.Model):
+class QuizQuestionAssignment(ImmutableIdentityMixin, models.Model):
+    immutable_identity_fields = ("quiz_id", "question_id")
+
     """
     M2M relationship between Quiz and QuizQuestion.
     Allows same question to have different points in different quizzes.
@@ -550,9 +553,15 @@ class QuizQuestionAssignment(models.Model):
     def __str__(self):
         return f"{self.quiz.title} - {self.question.title} ({self.points} pts)"
 
+    def save(self, *args, **kwargs):
+        self.validate_immutable_identity()
+        super().save(*args, **kwargs)
 
-class CourseLessonQuiz(models.Model):
+
+class CourseLessonQuiz(ImmutableIdentityMixin, models.Model):
     """Links quizzes to course lessons"""
+
+    immutable_identity_fields = ("lesson_id", "quiz_id")
 
     lesson = models.ForeignKey(
         CourseLesson, on_delete=models.CASCADE, related_name="lesson_quizzes"
@@ -603,6 +612,7 @@ class CourseLessonQuiz(models.Model):
         return f"{self.lesson.title} - {self.quiz.title}"
 
     def save(self, *args, **kwargs):
+        self.validate_immutable_identity()
         super().save(*args, **kwargs)
         # Mark all users for recalculation when lesson content changes
         from judge.utils.course_prerequisites import mark_course_for_recalculation

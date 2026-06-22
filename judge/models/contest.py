@@ -30,6 +30,7 @@ from judge.models.pagevote import PageVotable
 from judge.models.bookmark import Bookmarkable
 from judge.fulltext import SearchManager
 from judge.caching import cache_wrapper
+from judge.utils.identity import ImmutableIdentityMixin
 
 __all__ = [
     "Contest",
@@ -938,7 +939,9 @@ class ContestParticipation(models.Model):
         unique_together = ("contest", "user", "virtual")
 
 
-class ContestProblem(models.Model):
+class ContestProblem(ImmutableIdentityMixin, models.Model):
+    immutable_identity_fields = ("problem_id", "quiz_id", "contest_id")
+
     # Made nullable to support quiz integration
     problem = models.ForeignKey(
         Problem,
@@ -1005,6 +1008,7 @@ class ContestProblem(models.Model):
             raise ValidationError(_("Cannot set both problem and quiz"))
 
     def save(self, *args, **kwargs):
+        self.validate_immutable_identity()
         self.full_clean()  # Validate before saving
         # Check if is_result_hidden changed
         is_result_hidden_changed = False

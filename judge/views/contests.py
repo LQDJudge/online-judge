@@ -17,7 +17,6 @@ from django.core.cache import cache
 from django.core.exceptions import (
     ImproperlyConfigured,
     ObjectDoesNotExist,
-    ValidationError,
 )
 from django.db import IntegrityError, transaction
 from django.db.models import (
@@ -47,7 +46,7 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html, escape, json_script
 from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
-from django.utils.translation import gettext as _, gettext_lazy
+from django.utils.translation import gettext as _, gettext_lazy, ngettext
 from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import (
     BaseDetailView,
@@ -73,6 +72,7 @@ from judge.models import (
     ContestParticipation,
     ContestProblem,
     ContestTag,
+    ContestSubmission,
     Organization,
     Problem,
     Profile,
@@ -88,6 +88,10 @@ from judge.models.course import EDITABLE_ROLES
 from judge.models.contest import get_contest_problem_ids
 from judge.models.contest_review import ContestPublicRequest
 from judge.tasks import run_moss
+from judge.utils.identity import (
+    count_semantic_formset_deletions,
+    save_semantic_formset,
+)
 from judge.utils.celery import redirect_to_task_status
 from judge.utils.hidden_results import (
     format_data_key,
@@ -2420,6 +2424,8 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
 
     template_name = "contest/edit.html"
     form_class = ContestEditForm
+    row_delete_confirm_field = "confirm_contest_problem_submission_delete"
+    row_delete_preview_field = "preview_contest_problem_submission_delete"
 
     def _user_can_edit(self, user, contest):
         if not user.is_authenticated:
@@ -2508,56 +2514,74 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         rows_formset = self.get_rows_formset(True)
         form = self.get_form()
 
+        rows_valid = rows_formset.is_valid()
+        if request.POST.get(self.row_delete_preview_field) == "1":
+            if not rows_valid:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "validation_error": True,
+                        "error": str(_("Please fix below errors")),
+                    },
+                    status=400,
+                )
+            delete_count = self._deleted_contest_submission_count(rows_formset)
+            return JsonResponse(
+                {
+                    "success": True,
+                    "requires_confirmation": delete_count > 0,
+                    "delete_count": delete_count,
+                    "message": str(self._delete_confirmation_message(delete_count)),
+                }
+            )
+
         # Validate BOTH formset and main form before touching the DB.
         # Otherwise a malformed `format_config` would leave already-deleted
         # or already-saved rows persisted while the user sees a form error.
-        rows_valid = rows_formset.is_valid()
         form_valid = form.is_valid()
         if not rows_valid or not form_valid:
             return self.render_to_response(
                 self.get_context_data(form=form, rows_form=rows_formset)
             )
 
+        delete_count = self._deleted_contest_submission_count(rows_formset)
+        if delete_count > 0 and request.POST.get(self.row_delete_confirm_field) != str(
+            delete_count
+        ):
+            messages.error(
+                self.request, self._delete_confirmation_message(delete_count)
+            )
+            return self.render_to_response(
+                self.get_context_data(form=form, rows_form=rows_formset)
+            )
+
         with transaction.atomic():
-            # First pass: handle deletions.
-            for row_form in rows_formset:
-                if row_form.cleaned_data.get("DELETE") and row_form.instance.pk:
-                    row_form.instance.delete()
-            # Second pass: save valid non-empty rows. The form's clean() flags
-            # empty rows with `_empty_row` so we silently skip them.
-            for row_form in rows_formset.forms:
-                if row_form.cleaned_data.get("DELETE"):
-                    continue
-                if row_form.cleaned_data.get("_empty_row"):
-                    continue
-                instance = row_form.save(commit=False)
-                instance.contest = self.object
-                try:
-                    # Inner savepoint: IntegrityError invalidates the outer
-                    # transaction on PG, so wrap the per-row save so we can
-                    # recover without aborting the whole edit.
-                    with transaction.atomic():
-                        instance.save()
-                except (IntegrityError, ValidationError):
-                    # Resolve unique-constraint conflict by purging the
-                    # existing row for this contest+problem (or contest+quiz)
-                    # pair, then re-saving. Same idiom used by the old
-                    # org-edit view. The retry is also wrapped in its own
-                    # savepoint — if the row violates ANOTHER constraint
-                    # (e.g. unique_together on `order`), the second save
-                    # would otherwise poison the outer transaction.
-                    if instance.problem_id:
-                        ContestProblem.objects.filter(
-                            contest=self.object, problem=instance.problem
-                        ).delete()
-                    elif instance.quiz_id:
-                        ContestProblem.objects.filter(
-                            contest=self.object, quiz=instance.quiz
-                        ).delete()
-                    with transaction.atomic():
-                        instance.save()
+            save_semantic_formset(
+                rows_formset,
+                parent_field="contest",
+                parent=self.object,
+                identity_fields=("problem", "quiz"),
+            )
 
             return self.form_valid(form)
+
+    def _deleted_contest_submission_count(self, rows_formset):
+        return count_semantic_formset_deletions(
+            rows_formset,
+            parent_field="contest",
+            parent=self.object,
+            identity_fields=("problem", "quiz"),
+            count_queryset=lambda deleted_rows: ContestSubmission.objects.filter(
+                problem__in=deleted_rows
+            ),
+        )
+
+    def _delete_confirmation_message(self, delete_count):
+        return ngettext(
+            "Saving this edit will delete %(count)d contest submission. Continue?",
+            "Saving this edit will delete %(count)d contest submissions. Continue?",
+            delete_count,
+        ) % {"count": delete_count}
 
     def form_valid(self, form):
         # SingleObjectFormView inherits FormView (not ModelFormMixin), so
