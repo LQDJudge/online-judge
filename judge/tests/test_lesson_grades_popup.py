@@ -70,7 +70,7 @@ class LessonGradesPopupTest(TestCase):
             points=100.0,
             is_public=True,
         )
-        Submission.objects.create(
+        self.submission = Submission.objects.create(
             user=self.student,
             problem=self.problem,
             language=self.lang,
@@ -130,3 +130,28 @@ class LessonGradesPopupTest(TestCase):
         resp = self.client.get(self._url(student=self.viewer))
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, "lightbox-submissions")
+
+    # --- source-link gating (shown only to viewers who can open the submission) ---
+    def test_source_link_shown_to_owner(self):
+        self.client.force_login(self.student.user)  # owner of the submission
+        resp = self.client.get(self._url())
+        self.assertContains(
+            resp, reverse("submission_status", args=[self.submission.id])
+        )
+
+    def test_source_link_hidden_from_non_privileged_member(self):
+        # viewer is enrolled but not owner, hasn't solved the problem, no perms
+        self.client.force_login(self.viewer.user)
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "lightbox-submissions")  # list still shows
+        self.assertNotContains(
+            resp, reverse("submission_status", args=[self.submission.id])
+        )
+
+    # --- hidden lesson is 404 for a non-editor ---
+    def test_hidden_lesson_404_for_non_editor(self):
+        self.lesson.is_visible = False
+        self.lesson.save()
+        self.client.force_login(self.viewer.user)
+        self.assertEqual(self.client.get(self._url()).status_code, 404)
