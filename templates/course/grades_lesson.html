@@ -99,11 +99,14 @@
               {% for lesson_quiz in lesson_quizzes %}
                 {% set quiz_grade = grade.get('quiz_' ~ lesson_quiz.id) %}
                 <td class="partial-score quiz-score">
-                  {% if quiz_grade and quiz_grade['achieved'] %}
-                    {{ quiz_grade['achieved'] | floatformat(1) }}
-                  {% else %}
-                    0
-                  {% endif %}
+                  <a data-featherlight="{{ url('course_lesson_user_quiz_attempts_ajax', course.slug, lesson.id, student.username, lesson_quiz.id) }}"
+                     data-featherlight-variant="contest-tag-lightbox" href="#">
+                    {% if quiz_grade and quiz_grade['achieved'] %}
+                      {{ quiz_grade['achieved'] | floatformat(1) }}
+                    {% else %}
+                      0
+                    {% endif %}
+                  </a>
                 </td>
               {% endfor %}
               {% for lesson_problem in problems %}

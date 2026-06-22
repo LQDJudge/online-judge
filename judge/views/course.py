@@ -2017,6 +2017,57 @@ class CourseLessonUserSubmissionsAjax(CourseAccessibleMixin, View):
         )
 
 
+class CourseLessonUserQuizAttemptsAjax(CourseAccessibleMixin, View):
+    """AJAX fragment: a student's quiz attempts for a lesson quiz.
+
+    Rendered into the featherlight popup opened from a quiz score cell on the lesson
+    grades page (mirrors the contest quiz-attempts popup). Permission is course-level
+    (CourseAccessibleMixin): anonymous -> login, non-member -> 403. The link to a
+    quiz result only shows if the viewer is the attempt owner or a quiz editor (the
+    same gate as LessonQuizResult), so it never points at a page that would 403.
+    """
+
+    def get(self, request, *args, **kwargs):
+        lesson = get_object_or_404(
+            CourseLesson, course=self.course, id=self.kwargs["id"]
+        )
+        if not lesson.is_visible and not self.is_editable:
+            raise Http404()
+
+        student = get_object_or_404(Profile, user__username=self.kwargs["user"])
+        lesson_quiz = get_object_or_404(
+            CourseLessonQuiz, id=self.kwargs["lesson_quiz_id"], lesson=lesson
+        )
+
+        # target student must be enrolled (get_students() returns a LIST, use CourseRole)
+        if not CourseRole.objects.filter(course=self.course, user=student).exists():
+            raise Http404()
+
+        attempts = QuizAttempt.objects.filter(
+            user=student, lesson_quiz=lesson_quiz, is_submitted=True
+        ).order_by("-end_time")
+        best_attempt = attempts.order_by("-score").first()
+
+        # Result link gating mirrors LessonQuizResult: owner or quiz editor only.
+        can_view_results = (
+            student == request.profile or lesson_quiz.quiz.is_editable_by(request.user)
+        )
+
+        return render(
+            request,
+            "course/lesson_user_quiz_attempts_ajax.html",
+            {
+                "course": self.course,
+                "lesson": lesson,
+                "lesson_quiz": lesson_quiz,
+                "profile": student,
+                "attempts": attempts,
+                "best_attempt": best_attempt,
+                "can_view_results": can_view_results,
+            },
+        )
+
+
 class AddCourseContestForm(forms.ModelForm):
     points = forms.IntegerField(label=_("Points"))
 
