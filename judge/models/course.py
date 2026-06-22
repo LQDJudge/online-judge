@@ -11,6 +11,7 @@ from judge.models.profile import Organization, Profile
 from judge.caching import cache_wrapper
 
 from judge.utils.files import generate_secure_filename
+from judge.utils.identity import ImmutableIdentityMixin
 
 
 def course_image_path(course, filename):
@@ -355,7 +356,9 @@ class CourseLesson(models.Model):
         mark_course_for_recalculation(course)
 
 
-class CourseLessonProblem(models.Model):
+class CourseLessonProblem(ImmutableIdentityMixin, models.Model):
+    immutable_identity_fields = ("lesson_id", "problem_id")
+
     lesson = models.ForeignKey(
         CourseLesson, on_delete=models.CASCADE, related_name="lesson_problems"
     )
@@ -370,6 +373,7 @@ class CourseLessonProblem(models.Model):
     )
 
     def save(self, *args, **kwargs):
+        self.validate_immutable_identity()
         super().save(*args, **kwargs)
         # Mark all users for recalculation when lesson content changes
         from judge.utils.course_prerequisites import mark_course_for_recalculation

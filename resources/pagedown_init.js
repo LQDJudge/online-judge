@@ -282,6 +282,7 @@ window.onload = DjangoPagedown.init;
  *   editor.focus();
  *   editor.destroy();
  */
+if (typeof window.MarkdownEditor === 'undefined') {
 class MarkdownEditor {
   static instanceCount = 0;
   static instances = new Map();
@@ -1000,5 +1001,6 @@ class MarkdownEditor {
   }
 }
 
-// Make available globally
-window.MarkdownEditor = MarkdownEditor;
+  // Make available globally
+  window.MarkdownEditor = MarkdownEditor;
+}

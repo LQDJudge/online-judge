@@ -26,6 +26,7 @@ from judge.models import (
     OfficialContest,
 )
 from judge.ratings import rate_contest
+from judge.utils.identity import SemanticIdentityInlineFormSet
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminHeavySelect2Widget,
@@ -88,6 +89,10 @@ class ContestProblemInlineForm(ModelForm):
         }
 
 
+class ContestProblemInlineFormSet(SemanticIdentityInlineFormSet):
+    semantic_identity_fields = ("problem", "quiz")
+
+
 class ContestProblemInline(admin.TabularInline):
     model = ContestProblem
     verbose_name = _("Problem")
@@ -107,6 +112,7 @@ class ContestProblemInline(admin.TabularInline):
     )
     readonly_fields = ("rejudge_column",)
     form = ContestProblemInlineForm
+    formset = ContestProblemInlineFormSet
 
     def rejudge_column(self, obj):
         if obj.id is None:

@@ -37,6 +37,7 @@ from judge.models import (
     Ticket,
 )
 from judge.tasks.semantic_search import index_problem_semantic_embedding
+from judge.utils.identity import allow_identity_update
 
 logger = logging.getLogger(__name__)
 
@@ -387,8 +388,9 @@ class ProblemMerge:
             self.touched_contest_ids.add(source_cp.contest_id)
             target_cp = target_by_contest_id.get(source_cp.contest_id)
             if target_cp is None:
-                source_cp.problem = self.target
-                source_cp.save()
+                with allow_identity_update(source_cp):
+                    source_cp.problem = self.target
+                    source_cp.save()
                 continue
 
             self._batched_update(
@@ -441,8 +443,9 @@ class ProblemMerge:
             self.touched_course_ids.add(source_lp.lesson.course_id)
             target_lp = target_by_lesson_id.get(source_lp.lesson_id)
             if target_lp is None:
-                source_lp.problem = self.target
-                source_lp.save()
+                with allow_identity_update(source_lp):
+                    source_lp.problem = self.target
+                    source_lp.save()
                 continue
 
             update_fields = []

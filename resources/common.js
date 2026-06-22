@@ -653,9 +653,8 @@ function navigateTo(url, reload_container, force_new_page=false) {
 
     replaceLoadingPage(reload_container);
 
-    const toUpdateElements = [
+    const toUpdateElementsBeforeContent = [
         "#nav-container",
-        "#js_media",
         "#media",
         ".left-sidebar",
         "#bodyend",
@@ -679,12 +678,13 @@ function navigateTo(url, reload_container, force_new_page=false) {
                 $("#loading-bar").stop(true, true);
                 $("#loading-bar").hide().css({ width: 0});
                 
-                for (let elem of toUpdateElements) {
+                for (let elem of toUpdateElementsBeforeContent) {
                     $(elem).replaceWith($(data).find(elem).first());
                 }
 
                 $(reload_container).replaceWith(reload_content);
-                
+                $("#js_media").replaceWith($(data).find("#js_media").first());
+
                 $(document).prop('title', $(data).filter('title').text());
                 renderKatex($(reload_container)[0]);
                 initPagedown();
