@@ -35,6 +35,22 @@ class NotificationCategory(models.TextChoices):
         "Auto-review completed"
     )
     PUBLIC_REQUEST_REVIEW_ERROR = "public_request_review_error", _("Auto-review error")
+    CONTEST_PUBLIC_REQUEST_NEW = "contest_public_request_new", _(
+        "New contest public request"
+    )
+    CONTEST_PUBLIC_REQUEST_APPROVED = "contest_public_request_approved", _(
+        "Contest public request approved"
+    )
+    CONTEST_PUBLIC_REQUEST_REJECTED = "contest_public_request_rejected", _(
+        "Contest public request rejected"
+    )
+    CONTEST_PUBLIC_REQUEST_REVIEW_DONE = "contest_public_request_review_done", _(
+        "Contest auto-review completed"
+    )
+    CONTEST_PUBLIC_REQUEST_REVIEW_ERROR = "contest_public_request_review_error", _(
+        "Contest auto-review error"
+    )
+    REVIEW_COMMENT = "review_comment", _("New review comment")
 
 
 class NotificationManager(models.Manager):

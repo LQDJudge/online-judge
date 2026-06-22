@@ -85,3 +85,34 @@ def post_system_comment_on_review(problem, body):
         hidden=False,
     )
     return comment
+
+
+def post_system_comment_on_contest_review(contest, body):
+    """Post a system-authored comment in `contest`'s review thread.
+
+    Mirrors `post_system_comment_on_review` for problems. Anchored to the
+    FIRST ContestReviewRun for the contest so admin decisions land alongside
+    prior auto-review feedback (same UX rationale as problem reviews).
+    """
+    # Local import keeps the bot module decoupled from contest_review at
+    # module-import time — problem-only setups don't need the import to load.
+    from judge.models.contest_review import ContestReviewRun
+
+    anchor = (
+        ContestReviewRun.objects.filter(contest=contest).order_by("started_at").first()
+    )
+    if anchor is None:
+        return None
+
+    bot_profile = get_or_create_system_bot_profile()
+    ct = ContentType.objects.get_for_model(ContestReviewRun)
+
+    comment = Comment.objects.create(
+        author=bot_profile,
+        content_type=ct,
+        object_id=anchor.id,
+        body=body,
+        score=0,
+        hidden=False,
+    )
+    return comment

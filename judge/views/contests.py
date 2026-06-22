@@ -17,7 +17,6 @@ from django.core.cache import cache
 from django.core.exceptions import (
     ImproperlyConfigured,
     ObjectDoesNotExist,
-    ValidationError,
 )
 from django.db import IntegrityError, transaction
 from django.db.models import (
@@ -47,7 +46,7 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html, escape, json_script
 from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
-from django.utils.translation import gettext as _, gettext_lazy
+from django.utils.translation import gettext as _, gettext_lazy, ngettext
 from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import (
     BaseDetailView,
@@ -73,6 +72,7 @@ from judge.models import (
     ContestParticipation,
     ContestProblem,
     ContestTag,
+    ContestSubmission,
     Organization,
     Problem,
     Profile,
@@ -86,8 +86,18 @@ from judge.models import (
 )
 from judge.models.course import EDITABLE_ROLES
 from judge.models.contest import get_contest_problem_ids
+from judge.models.contest_review import ContestPublicRequest
 from judge.tasks import run_moss
+from judge.utils.identity import (
+    count_semantic_formset_deletions,
+    save_semantic_formset,
+)
 from judge.utils.celery import redirect_to_task_status
+from judge.utils.hidden_results import (
+    format_data_key,
+    hidden_result_contest_problem_ids,
+    hidden_result_problem_ids,
+)
 from judge.utils.opengraph import generate_opengraph
 from judge.utils.problems import _get_result_data
 from judge.views.problem import SolvedProblemMixin
@@ -694,15 +704,9 @@ class ContestDetail(
             self.object.SCOREBOARD_AFTER_PARTICIPATION,
         )
 
-        # Per-problem result hiding
-        if not self.object.is_editable_by(self.request.user):
-            context["result_hidden_problem_ids"] = set(
-                self.object.contest_problems.filter(
-                    is_result_hidden=True, problem__isnull=False
-                ).values_list("problem_id", flat=True)
-            )
-        else:
-            context["result_hidden_problem_ids"] = set()
+        context["result_hidden_problem_ids"] = hidden_result_problem_ids(
+            self.object, self.request.user
+        )
 
         if self.profile:
             if is_in_viewed_contest:
@@ -717,8 +721,11 @@ class ContestDetail(
         # Clarifications
         if self.object.use_clarifications:
             context["clarifications"] = (
-                ContestProblemClarification.objects.filter(problem__contest=self.object)
-                .select_related("problem__problem")
+                ContestProblemClarification.objects.filter(
+                    Q(problem__contest=self.object)
+                    | Q(contest=self.object, problem__isnull=True)
+                )
+                .select_related("contest", "problem__problem")
                 .order_by("-date")
             )
 
@@ -805,15 +812,9 @@ class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
             contest.SCOREBOARD_AFTER_PARTICIPATION,
         )
 
-        # Per-problem result hiding
-        if not contest.is_editable_by(self.request.user):
-            context["result_hidden_problem_ids"] = set(
-                contest.contest_problems.filter(
-                    is_result_hidden=True, problem__isnull=False
-                ).values_list("problem_id", flat=True)
-            )
-        else:
-            context["result_hidden_problem_ids"] = set()
+        context["result_hidden_problem_ids"] = hidden_result_problem_ids(
+            contest, self.request.user
+        )
 
         if self.profile:
             if is_in_contest:
@@ -828,8 +829,11 @@ class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
         # Clarifications
         if contest.use_clarifications:
             context["clarifications"] = (
-                ContestProblemClarification.objects.filter(problem__contest=contest)
-                .select_related("problem__problem")
+                ContestProblemClarification.objects.filter(
+                    Q(problem__contest=contest)
+                    | Q(contest=contest, problem__isnull=True)
+                )
+                .select_related("contest", "problem__problem")
                 .order_by("-date")
             )
 
@@ -1244,7 +1248,10 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
         if not (self.object.ended or self.can_edit):
             raise Http404()
 
+        hidden_problem_ids = hidden_result_problem_ids(self.object, self.request.user)
         queryset = Submission.objects.filter(contest_object=self.object)
+        if hidden_problem_ids:
+            queryset = queryset.exclude(problem_id__in=hidden_problem_ids)
 
         ac_count = Count(
             Case(When(result="AC", then=Value(1)), output_field=IntegerField())
@@ -1259,7 +1266,12 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
             .values_list("problem__code", "result", "count"),
         )
         labels, codes = [], []
-        contest_problems = self.object.contest_problems.order_by("order").values_list(
+        contest_problems = self.object.contest_problems.order_by("order")
+        if hidden_problem_ids:
+            contest_problems = contest_problems.exclude(
+                problem_id__in=hidden_problem_ids
+            )
+        contest_problems = contest_problems.values_list(
             "problem__name", "problem__code"
         )
         if contest_problems:
@@ -1405,7 +1417,7 @@ def build_ranking_profiles(contest, problems, participations, show_final=False):
         problem_cells = []
         for cp in problems:
             if result_hidden_ids and cp.id in result_hidden_ids:
-                key = f"quiz_{cp.id}" if cp.quiz_id else str(cp.id)
+                key = format_data_key(cp)
                 if key in format_data:
                     cell = format_html(
                         '<td class="problem-score-col"><span>?</span></td>'
@@ -1535,6 +1547,9 @@ class ContestRanking(ContestRankingBase):
             raise Http404()
 
         problems = get_contest_problems(contest)
+        hidden_contest_problem_ids = hidden_result_contest_problem_ids(
+            contest, self.request.user
+        )
         self.all_rows = self._get_lightweight_rows(self._get_base_queryset())
         filtered_rows = self._filter_rows(self.all_rows)
         filtered_ids = [r[0] for r in filtered_rows]
@@ -1577,9 +1592,12 @@ class ContestRanking(ContestRankingBase):
                 getattr(p, s),
             ]
             for cp in problems:
-                k = f"quiz_{cp.id}" if cp.quiz_id else str(cp.id)
+                k = format_data_key(cp)
                 pdata = fd.get(k)
-                row.append(pdata["points"] if pdata else "")
+                if cp.id in hidden_contest_problem_ids:
+                    row.append("?" if pdata else "")
+                else:
+                    row.append(pdata["points"] if pdata else "")
             writer.writerow(row)
 
         response = HttpResponse(output.getvalue(), content_type="text/csv")
@@ -2017,49 +2035,52 @@ class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView
     def is_accessible(self):
         if not self.request.user.is_authenticated:
             return False
-        if not self.request.in_contest:
-            return False
-        if not self.request.participation.contest == self.get_object():
-            return False
         return self.get_object().is_editable_by(self.request.user)
 
     def get(self, request, *args, **kwargs):
         if not self.is_accessible():
             raise Http404()
-        return super().get(self, request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        problem_code = self.request.POST["problem"]
+        contest = self.get_object()
+        problem_code = self.request.POST.get("problem")
         description = form.cleaned_data["body"]
 
-        clarification = ContestProblemClarification(description=description)
-        clarification.problem = get_object_or_404(
-            ContestProblem, contest=self.get_object(), problem__code=problem_code
+        clarification = ContestProblemClarification(
+            contest=contest,
+            description=description,
         )
+        if problem_code != "__contest__":
+            clarification.problem = get_object_or_404(
+                ContestProblem, contest=contest, problem__code=problem_code
+            )
         clarification.save()
 
-        return HttpResponseRedirect(
-            reverse("contest_view", args=(self.get_object().key,))
-        )
+        return HttpResponseRedirect(reverse("contest_view", args=(contest.key,)))
 
     def get_title(self):
-        return "New clarification for %s" % self.object.name
+        return _("New clarification for %(contest)s") % {"contest": self.object.name}
 
     def get_content_title(self):
         return mark_safe(
-            escape(_("New clarification for %s"))
-            % format_html(
-                '<a href="{0}">{1}</a>',
-                reverse("problem_detail", args=[self.object.key]),
-                self.object.name,
-            )
+            escape(_("New clarification for %(contest)s"))
+            % {
+                "contest": format_html(
+                    '<a href="{0}">{1}</a>',
+                    reverse("contest_view", args=[self.object.key]),
+                    self.object.name,
+                )
+            }
         )
 
     def get_context_data(self, **kwargs):
         context = super(NewContestClarificationView, self).get_context_data(**kwargs)
-        context["problems"] = ContestProblem.objects.filter(
-            contest=self.object
-        ).order_by("order")
+        context["problems"] = (
+            ContestProblem.objects.filter(contest=self.object, problem__isnull=False)
+            .select_related("problem")
+            .order_by("order")
+        )
         return context
 
 
@@ -2073,23 +2094,43 @@ class ContestClarificationAjax(ContestMixin, DetailView):
         last_one_minute = timezone.now() - timezone.timedelta(minutes=polling_time)
 
         queryset = ContestProblemClarification.objects.filter(
-            problem__in=self.object.contest_problems.all(), date__gte=last_one_minute
-        )
+            Q(problem__contest=self.object)
+            | Q(contest=self.object, problem__isnull=True),
+            date__gte=last_one_minute,
+        ).select_related("problem__problem")
 
         problems = list(
-            ContestProblem.objects.filter(contest=self.object)
+            ContestProblem.objects.filter(contest=self.object, problem__isnull=False)
             .order_by("order")
             .values_list("problem__code", flat=True)
         )
         res = []
         for clarification in queryset:
-            value = {
-                "order": self.object.get_label_for_problem(
+            if clarification.problem_id:
+                order = self.object.get_label_for_problem(
                     problems.index(clarification.problem.problem.code)
-                ),
-                "problem__name": clarification.problem.problem.name,
-                "description": clarification.description,
-            }
+                )
+                problem_name = clarification.problem.problem.name
+                value = {
+                    "target_label": _("Problem %(order)s (%(name)s)")
+                    % {
+                        "order": order,
+                        "name": problem_name,
+                    },
+                    "contest_wide": False,
+                    "order": order,
+                    "problem__name": problem_name,
+                    "description": clarification.description,
+                }
+            else:
+                problem_name = _("Entire contest")
+                value = {
+                    "target_label": problem_name,
+                    "contest_wide": True,
+                    "order": "",
+                    "problem__name": problem_name,
+                    "description": clarification.description,
+                }
             res.append(value)
 
         return JsonResponse(res, safe=False, json_dumps_params={"ensure_ascii": False})
@@ -2383,6 +2424,8 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
 
     template_name = "contest/edit.html"
     form_class = ContestEditForm
+    row_delete_confirm_field = "confirm_contest_problem_submission_delete"
+    row_delete_preview_field = "preview_contest_problem_submission_delete"
 
     def _user_can_edit(self, user, contest):
         if not user.is_authenticated:
@@ -2454,6 +2497,12 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         # `page_type` is read by `make_tab_item` (templates/three-column-content.html)
         # to highlight the active sidebar tab.
         context["page_type"] = "edit"
+        # Expose a PENDING publish request so the edit page can show a
+        # "Cancel request" button next to "Awaiting admin approval", mirroring
+        # the problem edit page. None when there's nothing to cancel.
+        context["contest_public_request"] = ContestPublicRequest.objects.filter(
+            contest=self.object, status=ContestPublicRequest.PENDING
+        ).first()
         return context
 
     def get_title(self):
@@ -2465,56 +2514,74 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         rows_formset = self.get_rows_formset(True)
         form = self.get_form()
 
+        rows_valid = rows_formset.is_valid()
+        if request.POST.get(self.row_delete_preview_field) == "1":
+            if not rows_valid:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "validation_error": True,
+                        "error": str(_("Please fix below errors")),
+                    },
+                    status=400,
+                )
+            delete_count = self._deleted_contest_submission_count(rows_formset)
+            return JsonResponse(
+                {
+                    "success": True,
+                    "requires_confirmation": delete_count > 0,
+                    "delete_count": delete_count,
+                    "message": str(self._delete_confirmation_message(delete_count)),
+                }
+            )
+
         # Validate BOTH formset and main form before touching the DB.
         # Otherwise a malformed `format_config` would leave already-deleted
         # or already-saved rows persisted while the user sees a form error.
-        rows_valid = rows_formset.is_valid()
         form_valid = form.is_valid()
         if not rows_valid or not form_valid:
             return self.render_to_response(
                 self.get_context_data(form=form, rows_form=rows_formset)
             )
 
+        delete_count = self._deleted_contest_submission_count(rows_formset)
+        if delete_count > 0 and request.POST.get(self.row_delete_confirm_field) != str(
+            delete_count
+        ):
+            messages.error(
+                self.request, self._delete_confirmation_message(delete_count)
+            )
+            return self.render_to_response(
+                self.get_context_data(form=form, rows_form=rows_formset)
+            )
+
         with transaction.atomic():
-            # First pass: handle deletions.
-            for row_form in rows_formset:
-                if row_form.cleaned_data.get("DELETE") and row_form.instance.pk:
-                    row_form.instance.delete()
-            # Second pass: save valid non-empty rows. The form's clean() flags
-            # empty rows with `_empty_row` so we silently skip them.
-            for row_form in rows_formset.forms:
-                if row_form.cleaned_data.get("DELETE"):
-                    continue
-                if row_form.cleaned_data.get("_empty_row"):
-                    continue
-                instance = row_form.save(commit=False)
-                instance.contest = self.object
-                try:
-                    # Inner savepoint: IntegrityError invalidates the outer
-                    # transaction on PG, so wrap the per-row save so we can
-                    # recover without aborting the whole edit.
-                    with transaction.atomic():
-                        instance.save()
-                except (IntegrityError, ValidationError):
-                    # Resolve unique-constraint conflict by purging the
-                    # existing row for this contest+problem (or contest+quiz)
-                    # pair, then re-saving. Same idiom used by the old
-                    # org-edit view. The retry is also wrapped in its own
-                    # savepoint — if the row violates ANOTHER constraint
-                    # (e.g. unique_together on `order`), the second save
-                    # would otherwise poison the outer transaction.
-                    if instance.problem_id:
-                        ContestProblem.objects.filter(
-                            contest=self.object, problem=instance.problem
-                        ).delete()
-                    elif instance.quiz_id:
-                        ContestProblem.objects.filter(
-                            contest=self.object, quiz=instance.quiz
-                        ).delete()
-                    with transaction.atomic():
-                        instance.save()
+            save_semantic_formset(
+                rows_formset,
+                parent_field="contest",
+                parent=self.object,
+                identity_fields=("problem", "quiz"),
+            )
 
             return self.form_valid(form)
+
+    def _deleted_contest_submission_count(self, rows_formset):
+        return count_semantic_formset_deletions(
+            rows_formset,
+            parent_field="contest",
+            parent=self.object,
+            identity_fields=("problem", "quiz"),
+            count_queryset=lambda deleted_rows: ContestSubmission.objects.filter(
+                problem__in=deleted_rows
+            ),
+        )
+
+    def _delete_confirmation_message(self, delete_count):
+        return ngettext(
+            "Saving this edit will delete %(count)d contest submission. Continue?",
+            "Saving this edit will delete %(count)d contest submissions. Continue?",
+            delete_count,
+        ) % {"count": delete_count}
 
     def form_valid(self, form):
         # SingleObjectFormView inherits FormView (not ModelFormMixin), so

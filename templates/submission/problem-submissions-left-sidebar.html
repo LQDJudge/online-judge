@@ -4,5 +4,7 @@
   {% if request.user.is_authenticated %}
     {{ make_tab_item('my_submissions_tab', 'fa fa-user', url('user_submissions', problem.code, request.user.username), _('Mine')) }}
   {% endif %}
-  {{ make_tab_item('best_submissions_list', 'fa fa-bar-chart', url('ranked_submissions', problem.code), _('Best')) }}
+  {% if not problem_result_hidden %}
+    {{ make_tab_item('best_submissions_list', 'fa fa-bar-chart', url('ranked_submissions', problem.code), _('Best')) }}
+  {% endif %}
 </div>

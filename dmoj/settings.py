@@ -87,6 +87,7 @@ DMOJ_STATS_SUBMISSION_RESULT_COLORS = {
     "WA": "#ed4420",
     "CE": "#42586d",
     "ERR": "#ffa71c",
+    "HIDDEN": "#8a8f98",
 }
 DMOJ_PROFILE_IMAGE_ROOT = "profile_images"
 DMOJ_ORGANIZATION_IMAGE_ROOT = "organization_images"
@@ -564,7 +565,9 @@ ANON_MAX_PAGE = 3
 # Auto-review pipeline (problem public requests)
 # ============================================================
 AUTO_REVIEW_ENABLED = True
-AUTO_REVIEW_REQUEST_COOLDOWN_SECONDS = 600  # 10 min between Request public presses
+AUTO_REVIEW_REQUEST_COOLDOWN_SECONDS = (
+    300  # 5 min between Request public presses (admins bypass)
+)
 AUTO_REVIEW_RUN_TIMEOUT_SECONDS = 1800  # 30 min before a stuck run is reaped
 AUTO_REVIEW_DUPLICATE_THRESHOLD = 0.93  # cosine sim threshold for duplicate_detection
 AUTO_REVIEW_TL_HEADROOM_RATIO = 0.8  # main AC must use < this fraction of TL
@@ -575,14 +578,30 @@ AUTO_REVIEW_JUDGE_WAIT_TIMEOUT_SECONDS = (
     600  # max time to wait for an internal submission
 )
 
-# Celery Beat schedule. Currently only used by the auto-review reaper; if you
+# ============================================================
+# Contest auto-review (mirrors problem auto-review, contest-scoped)
+# ============================================================
+AUTO_REVIEW_CONTEST_ENABLED = True
+AUTO_REVIEW_CONTEST_REQUEST_COOLDOWN_SECONDS = (
+    300  # 5 min between Request public presses (admins bypass)
+)
+AUTO_REVIEW_CONTEST_RUN_TIMEOUT_SECONDS = (
+    1800  # 30 min before a stuck contest run is reaped
+)
+AUTO_REVIEW_CONTEST_LEAK_DETAILS_CAP = 50  # max leaker rows stored in details_json
+
+# Celery Beat schedule. Currently used by the auto-review reapers; if you
 # add a new periodic task, append it here. Note: the schedule is only active
 # when celery-beat is running (`celery -A dmoj_celery beat`), separate from
-# the worker process. If beat is not deployed in your environment, the reaper
+# the worker process. If beat is not deployed in your environment, the reapers
 # will not fire — stuck runs would have to be cleared manually.
 CELERY_BEAT_SCHEDULE = {
     "reap-stale-review-runs": {
         "task": "judge.tasks.review.reap_stale_review_runs",
+        "schedule": 300.0,  # every 5 minutes
+    },
+    "reap-stale-contest-review-runs": {
+        "task": "judge.tasks.contest_review.reap_stale_contest_review_runs",
         "schedule": 300.0,  # every 5 minutes
     },
 }

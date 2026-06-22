@@ -197,7 +197,11 @@ window.register_notify = function (type, options) {
 };
 
 window.notify_clarification = function(msg) {
-    var message = `Problem ${msg.order} (${msg.problem__name}):\n` + msg.description;
+    var targetLabel = msg.target_label;
+    if (!targetLabel) {
+        targetLabel = msg.contest_wide ? msg.problem__name : `Problem ${msg.order} (${msg.problem__name})`;
+    }
+    var message = targetLabel + ':\n' + msg.description;
     alert(message);
 }
 
@@ -649,9 +653,8 @@ function navigateTo(url, reload_container, force_new_page=false) {
 
     replaceLoadingPage(reload_container);
 
-    const toUpdateElements = [
+    const toUpdateElementsBeforeContent = [
         "#nav-container",
-        "#js_media",
         "#media",
         ".left-sidebar",
         "#bodyend",
@@ -675,12 +678,13 @@ function navigateTo(url, reload_container, force_new_page=false) {
                 $("#loading-bar").stop(true, true);
                 $("#loading-bar").hide().css({ width: 0});
                 
-                for (let elem of toUpdateElements) {
+                for (let elem of toUpdateElementsBeforeContent) {
                     $(elem).replaceWith($(data).find(elem).first());
                 }
 
                 $(reload_container).replaceWith(reload_content);
-                
+                $("#js_media").replaceWith($(data).find("#js_media").first());
+
                 $(document).prop('title', $(data).filter('title').text());
                 renderKatex($(reload_container)[0]);
                 initPagedown();

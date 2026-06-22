@@ -9,8 +9,12 @@ from django.utils import timezone
 from judge.models.profile import Profile
 from judge.models.contest import ContestParticipation
 from judge.models.course import CourseLesson, Course
+from judge.utils.identity import ImmutableIdentityMixin
 
 MAX_QUESTION_POINTS = 1000
+MAX_QUIZ_TIME_LIMIT_MINUTES = 7 * 24 * 60
+MAX_QUIZ_ATTEMPTS = 100
+MAX_LESSON_QUIZ_POINTS = 1000
 
 
 def quiz_answer_file_path(instance, filename):
@@ -241,9 +245,13 @@ class Quiz(models.Model):
     # Time limit in minutes, 0 means no limit
     time_limit = models.IntegerField(
         default=0,
-        validators=[MinValueValidator(0)],
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_QUIZ_TIME_LIMIT_MINUTES),
+        ],
         verbose_name=_("Time Limit (minutes)"),
-        help_text=_("0 for no time limit"),
+        help_text=_("0 for no time limit; maximum %(max)s minutes")
+        % {"max": MAX_QUIZ_TIME_LIMIT_MINUTES},
     )
 
     # Quiz configuration
@@ -506,7 +514,9 @@ class Quiz(models.Model):
         return False
 
 
-class QuizQuestionAssignment(models.Model):
+class QuizQuestionAssignment(ImmutableIdentityMixin, models.Model):
+    immutable_identity_fields = ("quiz_id", "question_id")
+
     """
     M2M relationship between Quiz and QuizQuestion.
     Allows same question to have different points in different quizzes.
@@ -543,9 +553,15 @@ class QuizQuestionAssignment(models.Model):
     def __str__(self):
         return f"{self.quiz.title} - {self.question.title} ({self.points} pts)"
 
+    def save(self, *args, **kwargs):
+        self.validate_immutable_identity()
+        super().save(*args, **kwargs)
 
-class CourseLessonQuiz(models.Model):
+
+class CourseLessonQuiz(ImmutableIdentityMixin, models.Model):
     """Links quizzes to course lessons"""
+
+    immutable_identity_fields = ("lesson_id", "quiz_id")
 
     lesson = models.ForeignKey(
         CourseLesson, on_delete=models.CASCADE, related_name="lesson_quizzes"
@@ -560,17 +576,19 @@ class CourseLessonQuiz(models.Model):
 
     max_attempts = models.IntegerField(
         default=0,
-        validators=[MinValueValidator(0)],
+        validators=[MinValueValidator(0), MaxValueValidator(MAX_QUIZ_ATTEMPTS)],
         verbose_name=_("Max Attempts"),
-        help_text=_("0 for unlimited attempts"),
+        help_text=_("0 for unlimited attempts; maximum %(max)s")
+        % {"max": MAX_QUIZ_ATTEMPTS},
     )
 
     # Points for completing this quiz in the lesson context
     points = models.IntegerField(
         default=0,
-        validators=[MinValueValidator(0)],
+        validators=[MinValueValidator(0), MaxValueValidator(MAX_LESSON_QUIZ_POINTS)],
         verbose_name=_("Lesson Points"),
-        help_text=_("Points awarded in lesson for completing quiz"),
+        help_text=_("Points awarded in lesson for completing quiz (max %(max)s)")
+        % {"max": MAX_LESSON_QUIZ_POINTS},
     )
 
     order = models.IntegerField(
@@ -594,6 +612,7 @@ class CourseLessonQuiz(models.Model):
         return f"{self.lesson.title} - {self.quiz.title}"
 
     def save(self, *args, **kwargs):
+        self.validate_immutable_identity()
         super().save(*args, **kwargs)
         # Mark all users for recalculation when lesson content changes
         from judge.utils.course_prerequisites import mark_course_for_recalculation
@@ -698,7 +717,12 @@ class QuizAttempt(models.Model):
 
     # Store the actual time limit for this attempt (in case quiz settings change)
     time_limit_minutes = models.IntegerField(
-        default=0, verbose_name=_("Time Limit (minutes)")
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_QUIZ_TIME_LIMIT_MINUTES),
+        ],
+        verbose_name=_("Time Limit (minutes)"),
     )
 
     is_submitted = models.BooleanField(default=False, verbose_name=_("Is Submitted"))

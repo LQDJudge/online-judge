@@ -840,13 +840,156 @@ form.contest-join-pseudotab {
     padding-left: 5px;
 }
 
-#add-clarification {
-    float: left;
-    color: chartreuse;
+.contest-clarifications {
+    margin-top: 1.25em;
 }
 
-#add-clarification:hover {
-    color: cyan;
+.contest-form-title {
+    margin: 0 0 0.85em;
+}
+
+.contest-clarifications-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.7em;
+
+    h2 {
+        margin: 0;
+    }
+}
+
+.contest-clarifications-add {
+    color: $theme_color;
+    font-size: 1.25rem;
+    line-height: 1;
+    text-decoration: none;
+
+    &:hover {
+        color: $widget_black;
+        text-decoration: none;
+    }
+}
+
+.contest-clarification-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.contest-clarification {
+    background: $surface-primary;
+    border: 1px solid $border_gray;
+    border-left: 4px solid $theme_color;
+    border-radius: $radius-xl;
+    box-shadow: $shadow-xs;
+    padding: 0.85rem 1rem;
+}
+
+.contest-clarification-meta {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.55rem;
+}
+
+.contest-clarification-problem {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    color: $widget_black;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+a.contest-clarification-problem:hover {
+    color: $theme_color;
+    text-decoration: none;
+}
+
+.contest-clarification-problem-code {
+    flex: 0 0 auto;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid $border_gray;
+    border-radius: $radius-sm;
+    background: $background_light_gray;
+    color: $theme_color;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.contest-clarification-problem-name {
+    overflow-wrap: anywhere;
+}
+
+.contest-clarification-time {
+    flex: 0 0 auto;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.contest-clarification-body {
+    color: $text-primary;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+
+    p {
+        margin: 0 0 0.6em;
+    }
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.contest-clarification-more {
+    display: inline;
+    margin: 0 0 0 0.25rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: $theme_color;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+
+    &:hover {
+        color: $widget_black;
+        text-decoration: underline;
+    }
+}
+
+.contest-clarification-empty {
+    margin: 0;
+    padding: 1rem;
+    border: 1px dashed $border_gray;
+    border-radius: $radius-md;
+    background: $background_light_gray;
+    color: $text-muted;
+    font-style: italic;
+    text-align: center;
+}
+
+.contest-clone-errors {
+    color: $announcement_red;
+}
+
+@media (max-width: 600px) {
+    .contest-clarification {
+        padding: 0.75rem;
+    }
+
+    .contest-clarification-meta {
+        flex-direction: column;
+        gap: 0.35rem;
+    }
 }
 
 // Contest ranking modal - featherlight styles (scoped to contest-tag modals)

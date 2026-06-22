@@ -23,6 +23,7 @@ __all__ = [
     "Submission",
     "SubmissionSource",
     "SubmissionTestCase",
+    "BestSubmission",
     "get_user_submission_dates",
     "get_user_min_submission_year",
 ]
@@ -405,3 +406,146 @@ def get_user_min_submission_year(user_id):
     # Extract years from ISO-formatted dates (YYYY-MM-DD) and find the minimum
     years = [int(date.split("-")[0]) for date in date_counts.keys()]
     return min(years) if years else None
+
+
+class BestSubmission(models.Model):
+    """
+    Caches the best submission for each user/problem pair.
+    Updated when a new submission is judged and has a better score.
+    """
+
+    user = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="best_submissions",
+        verbose_name=_("user"),
+    )
+    problem = models.ForeignKey(
+        Problem,
+        on_delete=models.CASCADE,
+        related_name="best_submissions",
+        verbose_name=_("problem"),
+    )
+    submission = models.ForeignKey(
+        "Submission",
+        on_delete=models.CASCADE,
+        related_name="+",
+        verbose_name=_("best submission"),
+    )
+    points = models.FloatField(
+        default=0,
+        verbose_name=_("points"),
+        help_text=_("Best score achieved (case_points)"),
+    )
+    case_total = models.FloatField(
+        default=0,
+        verbose_name=_("case total"),
+        help_text=_("Total possible points for this problem"),
+    )
+
+    class Meta:
+        unique_together = ("user", "problem")
+        verbose_name = _("Best Submission")
+        verbose_name_plural = _("Best Submissions")
+        indexes = [
+            models.Index(fields=["user", "problem"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.user.username} - {self.problem.code}: {self.points}/{self.case_total}"
+
+    def save(self, *args, **kwargs):
+        # Track if points changed for triggering lesson grade updates
+        old_points = 0
+        if self.pk:
+            try:
+                old_instance = BestSubmission.objects.get(pk=self.pk)
+                old_points = old_instance.points
+            except BestSubmission.DoesNotExist:
+                pass
+
+        super().save(*args, **kwargs)
+
+        # If points changed, trigger lesson grade update for related lessons
+        if abs(self.points - old_points) > 0.001:
+            self._update_related_lesson_grades()
+
+    def _update_related_lesson_grades(self):
+        """Update lesson grades for lessons containing this problem."""
+        from judge.models.course import CourseLessonProblem, CourseRole
+        from judge.utils.course_prerequisites import update_lesson_grade
+
+        # Find all lessons containing this problem
+        lesson_problems = CourseLessonProblem.objects.filter(
+            problem=self.problem
+        ).select_related("lesson__course")
+
+        for lesson_problem in lesson_problems:
+            lesson = lesson_problem.lesson
+            course = lesson.course
+
+            # Check if user is enrolled in this course
+            if CourseRole.objects.filter(course=course, user=self.user).exists():
+                update_lesson_grade(self.user, lesson)
+
+    @classmethod
+    def update_from_submission(cls, submission):
+        """
+        Recalculate best submission for a user/problem after a submission is judged.
+
+        Args:
+            submission: Submission object that was just judged
+
+        Returns:
+            BestSubmission object if updated/created, None if no valid submissions
+        """
+        if submission.status != "D":  # Only consider completed submissions
+            return None
+
+        return cls.recalculate_for_user_problem(
+            submission.user_id, submission.problem_id
+        )
+
+    @classmethod
+    def recalculate_for_user_problem(cls, user_id, problem_id):
+        """
+        Recalculate best submission for a user/problem pair.
+        Called after a submission is deleted to find the new best submission.
+
+        Args:
+            user_id: Profile ID of the user
+            problem_id: Problem ID
+        """
+        # Find the best remaining submission for this user/problem.
+        # Order by `points` (the normalized problem score), NOT raw case_points:
+        # when a problem's test data is rescaled (e.g. case_total changes from
+        # 1000 to 12 after a rejudge) old un-rejudged submissions keep case_points
+        # on the old scale, so a stale WA (case_points=750) would outrank a fresh
+        # AC (case_points=12) under "-case_points". `points` is normalized to the
+        # problem's points, so the AC correctly outranks the WA.
+        best_submission = (
+            Submission.objects.filter(
+                user_id=user_id,
+                problem_id=problem_id,
+                status="D",
+            )
+            .order_by("-points", "-date")
+            .first()
+        )
+
+        if best_submission:
+            # Update or create best submission record
+            best_sub, created = cls.objects.update_or_create(
+                user_id=user_id,
+                problem_id=problem_id,
+                defaults={
+                    "submission": best_submission,
+                    "points": best_submission.case_points or 0,
+                    "case_total": best_submission.case_total or 0,
+                },
+            )
+            return best_sub
+        else:
+            # No submissions left, delete the best submission record if it exists
+            cls.objects.filter(user_id=user_id, problem_id=problem_id).delete()
+            return None

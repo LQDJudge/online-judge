@@ -13,7 +13,7 @@ from django.utils.translation import gettext as _, gettext_noop
 from django.http import Http404
 
 from judge.models import Problem, Submission
-from judge.models.course import BestSubmission
+from judge.models.submission import BestSubmission
 from judge.ml.vector_store import VectorStore
 from judge.caching import cache_wrapper
 
@@ -255,6 +255,20 @@ def get_related_problems(profile, problem, limit=8):
 
 
 def finished_submission(sub, is_delete=False):
+    # Update the BestSubmission source-of-truth BEFORE invalidating caches.
+    # user_completed_ids/user_attempted_ids are computed from BestSubmission, so
+    # if we delete those cache keys first, a concurrent read could recompute and
+    # re-populate them from the stale (pre-update) BestSubmission row, leaving the
+    # problem stuck on the "attempted" (yellow) icon until the cache times out.
+    # Writing the DB first guarantees any subsequent recompute reads fresh data.
+    if is_delete:
+        # When deleting, recalculate best submission for this user/problem
+        # The CASCADE delete will remove BestSubmission if it pointed to this submission,
+        # so we need to find and set the new best submission from remaining ones
+        BestSubmission.recalculate_for_user_problem(sub.user_id, sub.problem_id)
+    else:
+        BestSubmission.update_from_submission(sub)
+
     keys = ["user_complete:%d" % sub.user_id, "user_attempted:%s" % sub.user_id]
     if hasattr(sub, "contest"):
         participation = sub.contest.participation
@@ -271,15 +285,6 @@ def finished_submission(sub, is_delete=False):
 
         get_recommended_contests.dirty(sub.user)  # sub.user is the Profile object
         _get_user_skill.dirty(sub.user)
-
-    # Update best submission cache for course lesson grade tracking
-    if is_delete:
-        # When deleting, recalculate best submission for this user/problem
-        # The CASCADE delete will remove BestSubmission if it pointed to this submission,
-        # so we need to find and set the new best submission from remaining ones
-        BestSubmission.recalculate_for_user_problem(sub.user_id, sub.problem_id)
-    else:
-        BestSubmission.update_from_submission(sub)
 
 
 class RecommendationType(Enum):

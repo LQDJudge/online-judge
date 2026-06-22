@@ -7,7 +7,7 @@ and extract structured quiz questions in JSON format.
 import json
 import logging
 import re
-from typing import Dict, Any
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +93,81 @@ QUIZ_IMPORT_USER_PROMPT = (
 )
 
 
+def normalize_quiz_question_payload(qtype: str, choices, correct_answers):
+    """Normalize AI-imported question payloads before preview or persistence."""
+    qtype = (qtype or "").upper()
+
+    if isinstance(choices, list):
+        normalized_choices = []
+        for choice in choices:
+            if isinstance(choice, dict) and "id" in choice:
+                choice = {**choice, "id": str(choice["id"]).strip().upper()}
+            normalized_choices.append(choice)
+        choices = normalized_choices
+    else:
+        choices = None
+
+    if qtype in {"SA", "ES"}:
+        choices = []
+
+    if qtype == "ES":
+        return choices, None
+
+    if not isinstance(correct_answers, dict) or "answers" not in correct_answers:
+        return choices, None
+
+    correct_answers = dict(correct_answers)
+    answers = correct_answers.get("answers")
+    if answers is None:
+        return choices, None
+
+    if qtype in {"MC", "TF"}:
+        if not isinstance(answers, str):
+            return choices, None
+        answer = answers.strip().upper()
+        if not answer:
+            return choices, None
+        correct_answers["answers"] = answer
+    elif qtype == "MA":
+        if isinstance(answers, str):
+            answers = [answers]
+        if not isinstance(answers, list):
+            return choices, None
+        normalized_answers = [
+            answer.strip().upper()
+            for answer in answers
+            if isinstance(answer, str) and answer.strip()
+        ]
+        if not normalized_answers:
+            return choices, None
+        correct_answers["answers"] = normalized_answers
+    elif qtype == "SA":
+        if isinstance(answers, str):
+            answers = [answers]
+        if not isinstance(answers, list):
+            return choices, None
+        normalized_answers = [
+            str(answer).strip()
+            for answer in answers
+            if answer is not None and str(answer).strip()
+        ]
+        if not normalized_answers:
+            return choices, None
+        answer_type = correct_answers.get("type", "exact")
+        if answer_type not in {"exact", "regex"}:
+            answer_type = "exact"
+        case_sensitive = correct_answers.get("case_sensitive", False)
+        correct_answers["type"] = answer_type
+        correct_answers["case_sensitive"] = (
+            case_sensitive if isinstance(case_sensitive, bool) else False
+        )
+        correct_answers["answers"] = normalized_answers
+    else:
+        return choices, None
+
+    return choices, correct_answers
+
+
 def parse_quiz_import_response(text: str) -> Dict[str, Any]:
     """Parse the LLM response text into structured question data.
 
@@ -157,27 +232,9 @@ def parse_quiz_import_response(text: str) -> Dict[str, Any]:
         if not title:
             title = content[:80] + ("..." if len(content) > 80 else "")
 
-        # Normalize choices
-        choices = q.get("choices")
-        if isinstance(choices, list):
-            for choice in choices:
-                if isinstance(choice, dict) and "id" in choice:
-                    choice["id"] = str(choice["id"]).upper()
-        else:
-            choices = None
-
-        # Normalize correct_answers
-        correct_answers = q.get("correct_answers")
-        if isinstance(correct_answers, dict) and "answers" in correct_answers:
-            ans = correct_answers["answers"]
-            if isinstance(ans, str):
-                correct_answers["answers"] = ans.upper()
-            elif isinstance(ans, list):
-                correct_answers["answers"] = [
-                    a.upper() if isinstance(a, str) and len(a) <= 2 else a for a in ans
-                ]
-        elif correct_answers is not None:
-            correct_answers = None
+        choices, correct_answers = normalize_quiz_question_payload(
+            qtype, q.get("choices"), q.get("correct_answers")
+        )
 
         valid_questions.append(
             {

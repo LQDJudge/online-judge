@@ -1,3 +1,5 @@
+import threading
+
 from django.urls import re_path
 from django.contrib import admin
 from django.core.exceptions import PermissionDenied
@@ -10,18 +12,21 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _, ngettext
+import reversion
 from reversion_compare.admin import CompareVersionAdmin
 
 from django_ace import AceWidget
 from judge.models import (
     Contest,
     ContestProblem,
+    ContestPublicRequest,
     ContestSubmission,
     Profile,
     Rating,
     OfficialContest,
 )
 from judge.ratings import rate_contest
+from judge.utils.identity import SemanticIdentityInlineFormSet
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminHeavySelect2Widget,
@@ -30,6 +35,7 @@ from judge.widgets import (
     AdminSelect2Widget,
     HeavyPreviewAdminPageDownWidget,
 )
+from judge.review.decisions import post_contest_decision_side_effects
 from judge.views.contests import recalculate_contest_summary_result
 from judge.utils.contest import maybe_trigger_contest_rescore
 
@@ -83,6 +89,10 @@ class ContestProblemInlineForm(ModelForm):
         }
 
 
+class ContestProblemInlineFormSet(SemanticIdentityInlineFormSet):
+    semantic_identity_fields = ("problem", "quiz")
+
+
 class ContestProblemInline(admin.TabularInline):
     model = ContestProblem
     verbose_name = _("Problem")
@@ -102,6 +112,7 @@ class ContestProblemInline(admin.TabularInline):
     )
     readonly_fields = ("rejudge_column",)
     form = ContestProblemInlineForm
+    formset = ContestProblemInlineFormSet
 
     def rejudge_column(self, obj):
         if obj.id is None:
@@ -394,6 +405,21 @@ class ContestAdmin(CompareVersionAdmin):
             reverse("admin:judge_contest_change", args=(contest_id,))
         )
 
+    def log_contests_rated(self, request, contests, comment):
+        # Record who rated which contest (and when) on the contest's /history/
+        # page. That page is rendered by reversion-compare from reversion
+        # revisions (not Django's LogEntry table), so we snapshot each rated
+        # contest into a single revision tagged with the acting user and a
+        # comment. The rate views call contest.rate()/rate_contest() directly,
+        # which never touches the Contest row, so without this nothing is logged.
+        if not contests:
+            return
+        with reversion.create_revision():
+            reversion.set_user(request.user)
+            reversion.set_comment(comment)
+            for contest in contests:
+                reversion.add_to_revision(contest)
+
     def rate_all_view(self, request):
         if not request.user.has_perm("judge.contest_rating"):
             raise PermissionDenied()
@@ -401,10 +427,16 @@ class ContestAdmin(CompareVersionAdmin):
             with connection.cursor() as cursor:
                 cursor.execute("TRUNCATE TABLE `%s`" % Rating._meta.db_table)
             Profile.objects.update(rating=None)
-            for contest in Contest.objects.filter(
-                is_rated=True, end_time__lte=timezone.now()
-            ).order_by("end_time"):
+            rated = list(
+                Contest.objects.filter(
+                    is_rated=True, end_time__lte=timezone.now()
+                ).order_by("end_time")
+            )
+            for contest in rated:
                 rate_contest(contest)
+            self.log_contests_rated(
+                request, rated, _("Rated via “Rate all ratable contests”.")
+            )
         return HttpResponseRedirect(reverse("admin:judge_contest_changelist"))
 
     def rate_view(self, request, id):
@@ -414,7 +446,8 @@ class ContestAdmin(CompareVersionAdmin):
         if not contest.is_rated or not contest.ended:
             raise Http404()
         with transaction.atomic():
-            contest.rate()
+            rated = contest.rate()
+            self.log_contests_rated(request, rated, _("Rated this contest."))
         return HttpResponseRedirect(
             request.META.get("HTTP_REFERER", reverse("admin:judge_contest_changelist"))
         )
@@ -534,3 +567,173 @@ class ContestsSummaryAdmin(admin.ModelAdmin):
         obj.refresh_from_db()
         obj.results = recalculate_contest_summary_result(request, obj)
         obj.save()
+
+
+# Per-request scratch space for the verdict pre-fetch cache. ModelAdmin
+# instances are singletons within a process (Django instantiates them once
+# at startup); storing per-request data on `self` would race across
+# concurrent admin requests. threading.local() gives each request thread
+# its own storage. Cleared in `changelist_view`'s finally block.
+_admin_threadlocal = threading.local()
+
+
+class ContestPublicRequestAdmin(admin.ModelAdmin):
+    """Admin queue for incoming contest public requests.
+
+    Shows the latest auto-review verdict per row so admins can triage without
+    opening each row. The verdict is bulk-fetched per page (N+1-safe) using
+    the same pattern as ProblemPublicRequest's _verdict_for in internal.py.
+    """
+
+    list_display = (
+        "contest",
+        "requested_by",
+        "status",
+        "review_verdict",
+        "created_at",
+        "updated_at",
+    )
+    list_filter = ("status", "created_at")
+    search_fields = ("contest__key", "contest__name", "requested_by__user__username")
+    readonly_fields = ("created_at", "updated_at")
+    raw_id_fields = ("contest", "requested_by", "reviewed_by")
+    actions = None  # no bulk approve/reject — go through admin change_view
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("contest", "requested_by__user", "reviewed_by__user")
+        )
+
+    def changelist_view(self, request, extra_context=None):
+        """Pre-compute per-row latest review verdict so the list page is N+1-safe.
+
+        Stored on the request object (not a class attr) so concurrent requests
+        don't share state. `review_verdict` then reads from this dict.
+        """
+        from judge.models.contest_review import (
+            ContestReviewCheckResult,
+            ContestReviewRun,
+        )
+
+        # The base changelist queryset will be paginated; recompute the slice
+        # here would require parsing pagination params, so we materialize the
+        # full filtered queryset's contest ids in one go. For realistic
+        # request volumes (<100s pending) that's fine.
+        qs = self.get_queryset(request)
+        contest_ids = list(qs.values_list("contest_id", flat=True))
+
+        latest_runs = {}
+        for r in ContestReviewRun.objects.filter(
+            contest_id__in=contest_ids, superseded_by__isnull=True
+        ).order_by("-started_at"):
+            latest_runs.setdefault(r.contest_id, r)
+
+        done_run_ids = [
+            r.id for r in latest_runs.values() if r.status == ContestReviewRun.DONE
+        ]
+        # Pull fail + error + warning counts so the verdict label is informative.
+        fail_run_ids = set(
+            ContestReviewCheckResult.objects.filter(
+                run_id__in=done_run_ids,
+                status__in=(
+                    ContestReviewCheckResult.FAIL,
+                    ContestReviewCheckResult.ERROR,
+                ),
+            )
+            .values_list("run_id", flat=True)
+            .distinct()
+        )
+        warn_run_ids = set(
+            ContestReviewCheckResult.objects.filter(
+                run_id__in=done_run_ids,
+                status=ContestReviewCheckResult.WARNING,
+            )
+            .values_list("run_id", flat=True)
+            .distinct()
+        )
+
+        # Stash on a thread-local — NOT on self. Each Django request runs in
+        # its own thread (under WSGI/runserver), so concurrent admin requests
+        # get independent storage. Storing on `self` would race: admin user A
+        # and admin user B hitting the changelist simultaneously could see
+        # each other's verdict caches because Django instantiates ModelAdmin
+        # once per process.
+        _admin_threadlocal.latest = latest_runs
+        _admin_threadlocal.fail_ids = fail_run_ids
+        _admin_threadlocal.warn_ids = warn_run_ids
+
+        try:
+            return super().changelist_view(request, extra_context)
+        finally:
+            # Clean up so the next request on the same thread starts fresh
+            # (defensive — values would be overwritten anyway, but explicit
+            # cleanup avoids leaking refs to large querysets to the next
+            # request's tracebacks).
+            for attr in ("latest", "fail_ids", "warn_ids"):
+                if hasattr(_admin_threadlocal, attr):
+                    delattr(_admin_threadlocal, attr)
+
+    def review_verdict(self, obj):
+        """Render the latest review verdict for this contest.
+
+        Reads from the thread-local cache set in changelist_view (above).
+        Falls back to "—" if no run exists or the cache isn't populated
+        (e.g. when called from change_view, where bulk pre-fetch didn't run).
+        """
+        latest_runs = getattr(_admin_threadlocal, "latest", None) or {}
+        latest = latest_runs.get(obj.contest_id)
+        if latest is None:
+            return "—"
+        if latest.status == "R":
+            return "Running"
+        if latest.status == "E":
+            return "Error"
+        fail_ids = getattr(_admin_threadlocal, "fail_ids", set())
+        warn_ids = getattr(_admin_threadlocal, "warn_ids", set())
+        if latest.id in fail_ids:
+            return "Fail"
+        if latest.id in warn_ids:
+            return "Warn"
+        return "Pass"
+
+    review_verdict.short_description = "Auto-review"
+
+    def save_model(self, request, obj, form, change):
+        """Persist the admin form normally, then — on a real status transition
+        to Approved/Rejected — stamp the reviewer and emit the shared decision
+        side effects (system comment + author notification).
+
+        Status-only: publishing the contest (is_visible / is_rated) is a
+        separate manual admin step, intentionally NOT done here.
+        """
+        old_status = None
+        if change and obj.pk:
+            old_status = (
+                ContestPublicRequest.objects.filter(pk=obj.pk)
+                .values_list("status", flat=True)
+                .first()
+            )
+
+        target = obj.status
+        is_decision = (
+            change
+            and target in (ContestPublicRequest.APPROVED, ContestPublicRequest.REJECTED)
+            and target != old_status
+        )
+        if is_decision:
+            # The admin form does not set reviewed_by; stamp it before the
+            # normal save so super() persists it along with status/feedback
+            # and any other field edits (no silent data loss).
+            obj.reviewed_by = request.user.profile
+
+        super().save_model(request, obj, form, change)
+
+        if is_decision:
+            post_contest_decision_side_effects(
+                obj.contest, target, request.user.profile, obj.feedback or ""
+            )
+
+
+admin.site.register(ContestPublicRequest, ContestPublicRequestAdmin)

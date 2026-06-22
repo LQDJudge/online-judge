@@ -26,6 +26,12 @@
       padding-left: 3em;
     }
 
+    .problem-clarification .clarification-target {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.25em;
+    }
+
     #content-right {
       max-width: 12.5em;
       min-width: 12.5em;
@@ -51,6 +57,7 @@
   {% include "comments/media-js.html" %}
   {% include "actionbar/media-js.html" %}
   {% if request.in_contest %}
+    {% include "contest/clarification-notification-js.html" %}
     <script type="text/javascript">
       window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
     </script>
@@ -96,7 +103,7 @@
 
 {% block title_row %}
   <div class="problem-title">
-    {% if request.user.is_authenticated and not has_hidden_subtasks %}
+    {% if request.user.is_authenticated and not has_hidden_subtasks and not problem_result_hidden %}
       {% if request.in_contest and contest_problem %}
         {% set my_subs_link = url('contest_user_submissions', request.profile.current_contest.contest.key, request.user.username, problem.code) %}
       {% else %}
@@ -471,6 +478,9 @@
           <div class="problem-clarification">
             <div class="time">{{ relative_time(clarification.date) }}</div>
             <span class="body">
+              {% if not clarification.problem %}
+                <span class="clarification-target">{{ _('Entire contest') }}</span>
+              {% endif %}
               {{ clarification.description|markdown|reference }}
             </span>
           </div>

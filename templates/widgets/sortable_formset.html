@@ -46,6 +46,13 @@
       <tbody class="sortable-body">
         {# Render existing forms #}
         {% for form in formset %}
+          {% if form.non_field_errors() %}
+            <tr class="sortable-row-error">
+              <td class="sortable-row-errors" colspan="100">
+                <div class="field-error red">{{ form.non_field_errors() }}</div>
+              </td>
+            </tr>
+          {% endif %}
           <tr class="sortable-row" data-row-index="{{ loop.index0 }}">
             {% if show_order_column %}
               <td class="sortable-drag-cell">

@@ -67,6 +67,7 @@ from judge.views import (
 from judge.views import package_import
 from judge.views import quiz_import
 from judge.views import review as problem_review
+from judge.views import contest_review
 from judge.views.problem_attachment import (
     attachment_delete,
     attachment_download,
@@ -269,6 +270,10 @@ urlpatterns = [
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
     re_path(r"^accounts/", include(register_patterns)),
     re_path(r"^", include("social_django.urls")),
+    re_path(
+        r"^problems/review/",
+        paged_list_view(problem_review.ProblemReviewListView, "problem_review_list"),
+    ),
     re_path(r"^problems/", paged_list_view(problem.ProblemList, "problem_list")),
     re_path(r"^problems/add/$", problem.ProblemAdd.as_view(), name="problem_add"),
     re_path(
@@ -324,14 +329,9 @@ urlpatterns = [
                     name="problem_review_status",
                 ),
                 re_path(
-                    r"^/review/tag$",
-                    problem_review.problem_review_tag,
-                    name="problem_review_tag",
-                ),
-                re_path(
-                    r"^/review/untag$",
-                    problem_review.problem_review_untag,
-                    name="problem_review_untag",
+                    r"^/review/rerun$",
+                    problem_review.problem_review_rerun,
+                    name="problem_review_rerun",
                 ),
                 re_path(
                     r"^/edit/language_limits$",
@@ -757,6 +757,10 @@ urlpatterns = [
             ]
         ),
     ),
+    re_path(
+        r"^contests/review/",
+        paged_list_view(contest_review.ContestReviewListView, "contest_review_list"),
+    ),
     re_path(r"^contests/", paged_list_view(contests.ContestList, "contest_list")),
     re_path(
         r"^contests/summary/(?P<key>\w+)/",
@@ -1151,6 +1155,41 @@ urlpatterns = [
                 ),
                 re_path(
                     r"^/clone$", contests.ContestClone.as_view(), name="contest_clone"
+                ),
+                re_path(
+                    r"^/review$",
+                    contest_review.contest_review_dashboard,
+                    name="contest_review_dashboard",
+                ),
+                re_path(
+                    r"^/review/status$",
+                    contest_review.contest_review_status,
+                    name="contest_review_status",
+                ),
+                re_path(
+                    r"^/review/trigger$",
+                    contest_review.contest_review_trigger,
+                    name="contest_review_trigger",
+                ),
+                re_path(
+                    r"^/review/request_public$",
+                    contest_review.contest_request_public,
+                    name="contest_request_public",
+                ),
+                re_path(
+                    r"^/review/request_cancel$",
+                    contest_review.contest_request_cancel,
+                    name="contest_request_cancel",
+                ),
+                re_path(
+                    r"^/review/accept$",
+                    contest_review.contest_review_accept,
+                    name="contest_review_accept",
+                ),
+                re_path(
+                    r"^/review/reject$",
+                    contest_review.contest_review_reject,
+                    name="contest_review_reject",
                 ),
                 re_path(
                     r"^/ranking/$",
@@ -1868,6 +1907,11 @@ urlpatterns = [
                     r"^request_public$",
                     internal.request_public,
                     name="internal_request_public",
+                ),
+                re_path(
+                    r"^cancel_request_public$",
+                    internal.cancel_request_public,
+                    name="internal_cancel_request_public",
                 ),
                 re_path(
                     r"^chat_moderation$",

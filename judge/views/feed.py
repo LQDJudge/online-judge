@@ -1,9 +1,10 @@
 import secrets
 
-from django.views.generic import ListView
+from django.db.models import Q
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.generic import ListView
 
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.models.profile import (
@@ -75,8 +76,9 @@ class HomeFeedView(FeedView):
             if participation:
 
                 clarifications = ContestProblemClarification.objects.filter(
-                    problem__in=participation.contest.contest_problems.all()
-                )
+                    Q(problem__contest=participation.contest)
+                    | Q(contest=participation.contest, problem__isnull=True)
+                ).select_related("contest", "problem__problem")
                 context["has_clarifications"] = clarifications.count() > 0
                 context["clarifications"] = clarifications.order_by("-date")
                 if participation.contest.is_editable_by(self.request.user):

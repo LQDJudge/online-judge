@@ -177,7 +177,9 @@
           $.get(newUrl, function(data) {
             window.results_json = data.results_json;
             window.results_colors_json = data.results_colors_json;
-            stats_graph(window.results_json);
+            if (window.results_json !== null) {
+              stats_graph(window.results_json);
+            }
           });
         });
       {% endif %}
@@ -252,7 +254,10 @@
               url: '?results'
             }).done(function (data) {
               last_stat_update = Date.now();
-              stats_graph(data);
+              window.results_colors_json = data.results_colors_json;
+              if (data.results_json !== null) {
+                stats_graph(data.results_json);
+              }
             }).fail(function () {
               console.log('Failed to update statistics table!' + id);
             }).always(function () {

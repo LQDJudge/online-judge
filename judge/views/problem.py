@@ -63,16 +63,21 @@ from judge.models import (
     SubmissionSource,
     Profile,
     Contest,
+    BestSubmission,
 )
 from judge.models.problem_data import ProblemSolutionCode
 from judge.models.problem_review import (
     ProblemReviewCheckResult,
     ProblemReviewRun,
-    ProblemReviewSubmissionTag,
 )
 from judge.models.public_request import PublicRequest
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
+from judge.utils.hidden_results import (
+    hidden_result_best_submission_problem_ids,
+    is_problem_result_hidden,
+    mark_hidden_result_submissions,
+)
 from judge.utils.opengraph import generate_opengraph
 from judge.utils.problems import (
     contest_attempted_ids,
@@ -167,22 +172,48 @@ class ProblemMixin(object):
 
 
 class SolvedProblemMixin(object):
+    @cached_property
+    def hidden_result_best_submission_problem_ids(self):
+        if self.in_contest or self.profile is None:
+            return set()
+        return hidden_result_best_submission_problem_ids(
+            self.profile, self.request.user
+        )
+
     def get_completed_problems(self):
         if self.in_contest:
             return contest_completed_ids(self.profile.current_contest)
         else:
-            return user_completed_ids(self.profile) if self.profile is not None else ()
+            if self.profile is None:
+                return ()
+            return (
+                user_completed_ids(self.profile)
+                - self.hidden_result_best_submission_problem_ids
+            )
 
     def get_attempted_problems(self):
         if self.in_contest:
             return contest_attempted_ids(self.profile.current_contest)
         else:
-            return user_attempted_ids(self.profile) if self.profile is not None else ()
+            if self.profile is None:
+                return ()
+            return {
+                problem_id: data
+                for problem_id, data in user_attempted_ids(self.profile).items()
+                if problem_id not in self.hidden_result_best_submission_problem_ids
+            }
 
     def get_latest_attempted_problems(self, limit=None, queryset_ids=None):
         if self.in_contest or not self.profile:
             return ()
         result = user_attempted_ids(self.profile)
+        hidden_problem_ids = self.hidden_result_best_submission_problem_ids
+        if hidden_problem_ids:
+            result = {
+                problem_id: data
+                for problem_id, data in result.items()
+                if problem_id not in hidden_problem_ids
+            }
         if queryset_ids:
             result = {i: v for i, v in result.items() if i in queryset_ids}
         result = list(result.values())
@@ -342,6 +373,25 @@ class ProblemDetail(
             else get_contest_problem(self.object, user.profile)
         )
         context["contest_problem"] = contest_problem
+        context["problem_result_hidden"] = (
+            contest_problem is not None
+            and is_problem_result_hidden(
+                contest_problem.contest, self.object.id, self.request.user
+            )
+        )
+        if authed and not context["problem_result_hidden"]:
+            best_submission = (
+                BestSubmission.objects.filter(user=user.profile, problem=self.object)
+                .select_related("submission")
+                .first()
+            )
+            if best_submission and best_submission.submission:
+                mark_hidden_result_submissions(
+                    [best_submission.submission], self.request.user
+                )
+                context["problem_result_hidden"] = getattr(
+                    best_submission.submission, "_is_result_hidden", False
+                )
 
         if contest_problem:
             clarifications = contest_problem.clarifications
@@ -539,9 +589,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             queryset = queryset.order_by(self.order + "__name")
         elif sort_key == "solved":
             if self.request.user.is_authenticated:
-                profile = self.request.profile
-                solved = user_completed_ids(profile)
-                attempted = user_attempted_ids(profile)
+                solved = self.get_completed_problems()
+                attempted = self.get_attempted_problems()
 
                 def _solved_sort_order(problem_id):
                     if problem_id in solved:
@@ -694,8 +743,9 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
             participation = self.request.profile.current_contest
             clarifications = ContestProblemClarification.objects.filter(
-                problem__in=participation.contest.contest_problems.all()
-            )
+                Q(problem__contest=participation.contest)
+                | Q(contest=participation.contest, problem__isnull=True)
+            ).select_related("contest", "problem__problem")
             context["has_clarifications"] = clarifications.count() > 0
             context["clarifications"] = clarifications.order_by("-date")
             context["current_contest"] = participation.contest
@@ -1359,7 +1409,7 @@ class ProblemEdit(
 
             # Dispatch async Celery task
             description = request.POST.get("description", "").strip()
-            task = tag_problem_task.delay(problem_code, description=description)
+            task = tag_problem_task.delay(problem.id, description=description)
 
             return JsonResponse(
                 {
@@ -1400,7 +1450,7 @@ class ProblemEdit(
             description = request.POST.get("description", "").strip()
 
             # Dispatch async Celery task
-            task = improve_markdown_task.delay(problem_code, description=description)
+            task = improve_markdown_task.delay(problem.id, description=description)
 
             return JsonResponse(
                 {
@@ -1434,20 +1484,6 @@ class ProblemEdit(
             and not self.object.is_organization_private
             and not self.request.user.is_superuser
         )
-
-        # Author submissions + existing review tags for the
-        # "Reference solutions for review" panel.
-        context["review_author_submissions"] = list(
-            Submission.objects.filter(problem=self.object, user=self.request.profile)
-            .select_related("language")
-            .order_by("-id")[:30]
-        )
-        context["review_existing_tags"] = {
-            t.submission_id: t
-            for t in ProblemReviewSubmissionTag.objects.filter(
-                submission__problem=self.object
-            )
-        }
 
         # Latest non-superseded review run + an aggregated verdict so the
         # edit page can show what the bot decided (separate from the admin
@@ -2149,7 +2185,7 @@ class ProblemEditSolutions(
             rough_ideas = request.POST.get("rough_ideas", "").strip()
 
             # Dispatch async Celery task
-            task = generate_solution_task.delay(problem.code, rough_ideas)
+            task = generate_solution_task.delay(problem.id, rough_ideas)
 
             return JsonResponse(
                 {

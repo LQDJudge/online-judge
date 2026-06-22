@@ -30,6 +30,7 @@ from judge.models.pagevote import PageVotable
 from judge.models.bookmark import Bookmarkable
 from judge.fulltext import SearchManager
 from judge.caching import cache_wrapper
+from judge.utils.identity import ImmutableIdentityMixin
 
 __all__ = [
     "Contest",
@@ -46,6 +47,9 @@ __all__ = [
     "get_contest_problem_ids",
     "get_global_rating_range",
 ]
+
+
+MAX_CONTEST_WINDOW = timedelta(days=7)
 
 
 class ContestTag(models.Model):
@@ -362,6 +366,35 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         # Django will complain if you didn't fill in start_time or end_time, so we don't have to.
         if self.start_time and self.end_time and self.start_time >= self.end_time:
             raise ValidationError(_("End time must be after start time"))
+        if self.start_time and self.end_time:
+            contest_duration = self.end_time - self.start_time
+            max_duration = min(contest_duration, MAX_CONTEST_WINDOW)
+
+            if self.time_limit is not None:
+                if self.time_limit <= timedelta(0):
+                    raise ValidationError(
+                        {"time_limit": _("Time limit must be positive.")}
+                    )
+                if self.time_limit > max_duration:
+                    raise ValidationError(
+                        {
+                            "time_limit": _("Time limit cannot exceed %(max)s.")
+                            % {"max": max_duration}
+                        }
+                    )
+
+            if self.freeze_after is not None:
+                if self.freeze_after < timedelta(0):
+                    raise ValidationError(
+                        {"freeze_after": _("Freeze time cannot be negative.")}
+                    )
+                if self.freeze_after > max_duration:
+                    raise ValidationError(
+                        {
+                            "freeze_after": _("Freeze time cannot exceed %(max)s.")
+                            % {"max": max_duration}
+                        }
+                    )
         self.format_class.validate(self.format_config)
 
         try:
@@ -394,12 +427,11 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         if self.end_time > one_year_later:
             self.end_time = one_year_later
 
-        max_duration = timedelta(days=7)
-        if self.time_limit and self.time_limit > max_duration:
-            self.time_limit = max_duration
+        if self.time_limit and self.time_limit > MAX_CONTEST_WINDOW:
+            self.time_limit = MAX_CONTEST_WINDOW
 
-        if self.freeze_after and self.freeze_after > max_duration:
-            self.freeze_after = max_duration
+        if self.freeze_after and self.freeze_after > MAX_CONTEST_WINDOW:
+            self.freeze_after = MAX_CONTEST_WINDOW
 
         super().save(*args, **kwargs)
 
@@ -660,6 +692,24 @@ class Contest(models.Model, PageVotable, Bookmarkable):
 
         return False
 
+    def can_request_public_by(self, user):
+        """Who may request this contest be made public site-wide.
+
+        Mirrors the problem flow's qualification model: requesting site-wide
+        public is a vetted-setter action, so the requester must hold the same
+        qualification needed to author/publish problems (``judge.add_problem``)
+        AND be able to edit this contest. Superusers always qualify.
+
+        Used by the Request public / Re-run / Cancel controls on the contest
+        edit page and their endpoints, so the button is shown to exactly the
+        users who can actually use it.
+        """
+        if not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        return self.is_editable_by(user) and user.has_perm("judge.add_problem")
+
     @classmethod
     def get_visible_contests(cls, user, show_own_contests_only=False):
         if not user.is_authenticated:
@@ -722,11 +772,15 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         Rating.objects.filter(
             contest__end_time__range=(self.end_time, self._now)
         ).delete()
-        for contest in Contest.objects.filter(
-            is_rated=True,
-            end_time__range=(self.end_time, self._now),
-        ).order_by("end_time"):
+        rated = list(
+            Contest.objects.filter(
+                is_rated=True,
+                end_time__range=(self.end_time, self._now),
+            ).order_by("end_time")
+        )
+        for contest in rated:
             rate_contest(contest)
+        return rated
 
     class Meta:
         permissions = (
@@ -885,7 +939,9 @@ class ContestParticipation(models.Model):
         unique_together = ("contest", "user", "virtual")
 
 
-class ContestProblem(models.Model):
+class ContestProblem(ImmutableIdentityMixin, models.Model):
+    immutable_identity_fields = ("problem_id", "quiz_id", "contest_id")
+
     # Made nullable to support quiz integration
     problem = models.ForeignKey(
         Problem,
@@ -952,10 +1008,15 @@ class ContestProblem(models.Model):
             raise ValidationError(_("Cannot set both problem and quiz"))
 
     def save(self, *args, **kwargs):
+        self.validate_immutable_identity()
         self.full_clean()  # Validate before saving
         # Check if is_result_hidden changed
         is_result_hidden_changed = False
-        if self.pk:
+        update_fields = kwargs.get("update_fields")
+        saves_result_hidden = (
+            update_fields is None or "is_result_hidden" in update_fields
+        )
+        if self.pk and saves_result_hidden:
             try:
                 old = ContestProblem.objects.get(pk=self.pk)
                 if old.is_result_hidden != self.is_result_hidden:
@@ -968,6 +1029,9 @@ class ContestProblem(models.Model):
         get_contest_problem_ids.dirty(self.contest_id)
         # Recompute all participations when is_result_hidden changes
         if is_result_hidden_changed:
+            ContestSubmission.objects.filter(problem=self).exclude(
+                is_result_hidden=self.is_result_hidden
+            ).update(is_result_hidden=self.is_result_hidden)
             for participation in self.contest.users.filter(virtual__gte=0):
                 participation.recompute_results()
 
@@ -984,7 +1048,9 @@ class ContestProblem(models.Model):
 
     @property
     def clarifications(self):
-        return ContestProblemClarification.objects.filter(problem=self)
+        return ContestProblemClarification.objects.filter(
+            Q(problem=self) | Q(contest=self.contest, problem__isnull=True)
+        ).select_related("contest", "problem__problem")
 
     @property
     def display_name(self):
@@ -1044,8 +1110,19 @@ class ContestSubmission(models.Model):
         help_text=_("Whether this submission was ran only on pretests."),
         default=False,
     )
+    is_result_hidden = models.BooleanField(
+        default=False,
+        verbose_name=_("hide result"),
+        help_text=_("Whether the contest problem hides this submission's result."),
+    )
 
     def save(self, *args, **kwargs):
+        if self.problem_id:
+            self.is_result_hidden = self.problem.is_result_hidden
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = set(kwargs["update_fields"]) | {
+                    "is_result_hidden"
+                }
         super().save(*args, **kwargs)
         # Invalidate the user count cache when a submission is added or updated
         get_contest_problem_user_count.dirty(self.problem.contest_id)
@@ -1063,6 +1140,12 @@ class ContestSubmission(models.Model):
     class Meta:
         verbose_name = _("contest submission")
         verbose_name_plural = _("contest submissions")
+        indexes = [
+            models.Index(
+                fields=["is_result_hidden", "-submission"],
+                name="judge_csub_hidden_sub_idx",
+            ),
+        ]
 
 
 class Rating(models.Model):
@@ -1116,8 +1199,19 @@ class ContestMoss(models.Model):
 
 
 class ContestProblemClarification(models.Model):
+    contest = models.ForeignKey(
+        Contest,
+        verbose_name=_("clarified contest"),
+        on_delete=CASCADE,
+        null=True,
+        blank=True,
+    )
     problem = models.ForeignKey(
-        ContestProblem, verbose_name=_("clarified problem"), on_delete=CASCADE
+        ContestProblem,
+        verbose_name=_("clarified problem"),
+        on_delete=CASCADE,
+        null=True,
+        blank=True,
     )
     description = models.TextField(verbose_name=_("clarification body"))
     date = models.DateTimeField(

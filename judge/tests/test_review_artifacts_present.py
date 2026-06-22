@@ -1,12 +1,9 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from judge.models import Language, Problem, ProblemGroup, Profile, Submission
-from judge.models.problem_review import (
-    ProblemReviewCheckResult,
-    ProblemReviewRun,
-    ProblemReviewSubmissionTag,
-)
+from judge.models import Language, Problem, ProblemGroup, Profile
+from judge.models.problem_data import ProblemSolutionCode
+from judge.models.problem_review import ProblemReviewCheckResult, ProblemReviewRun
 from judge.review.checks.artifacts_present import ArtifactsPresentCheck
 
 
@@ -63,22 +60,16 @@ class ArtifactsPresentTest(TestCase):
         result = ArtifactsPresentCheck().run(self.problem, self.review_run)
         self.assertIn("statement", result.details["missing"])
 
-    def test_tagged_submission_satisfies_main_ac_source(self):
-        # When the author has tagged at least one Submission as a reference
-        # (even without a ProblemSolutionCode blob), main_ac_source should
-        # count as present.
-        sub = Submission.objects.create(
-            user=self.profile,
+    def test_solution_code_satisfies_main_ac_source(self):
+        # Any saved ProblemSolutionCode (even unrun) is enough to mark
+        # main_ac_source present — the rubric check separately enforces
+        # that it must have been Run before grading.
+        ProblemSolutionCode.objects.create(
             problem=self.problem,
+            order=0,
+            source_code="print('hi')",
             language=self.language,
-            status="D",
-            result="AC",
-            case_points=10,
-            case_total=10,
-        )
-        ProblemReviewSubmissionTag.objects.create(
-            submission=sub,
-            tagged_by=self.profile,
+            expected_result="AC",
         )
         result = ArtifactsPresentCheck().run(self.problem, self.review_run)
         self.assertIn("main_ac_source", result.details["present"])

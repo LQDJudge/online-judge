@@ -1,18 +1,31 @@
 """Dashboard for the auto-review pipeline."""
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import F
-from django.http import HttpResponseForbidden, JsonResponse
+from django.db import models, transaction
+from django.db.models import F, Q
+from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
+from django.views.generic import ListView
 
-from judge.models import Comment, Problem, Submission
+from judge.models import Comment, Problem, Profile
 from judge.models.comment import (
     get_visible_comment_count,
     get_visible_top_level_comment_count,
 )
-from judge.models.problem_review import ProblemReviewRun, ProblemReviewSubmissionTag
+from judge.models.problem_review import (
+    ProblemReviewCheckResult,
+    ProblemReviewRun,
+)
+from judge.models.public_request import PublicRequest
 from judge.review.registry import CHECKS
+from judge.review.triggers import trigger_problem_review_for
+from judge.review.verdict import batched_verdicts
+from judge.utils.diggpaginator import DiggPaginator
+from judge.utils.views import QueryStringSortMixin, TitleMixin
 from judge.views.comment.forms import CommentForm
 from judge.views.comment.mixins import is_comment_locked
 from judge.views.comment.utils import parse_sort_params
@@ -78,6 +91,11 @@ def problem_review_dashboard(request, problem):
     # for users; the machine id stays in the DB row for stable lookups.
     check_display_names = {c.id: c.display_name for c in CHECKS}
 
+    try:
+        problem_public_request = problem_obj.public_request
+    except PublicRequest.DoesNotExist:
+        problem_public_request = None
+
     context = {
         "problem": problem_obj,
         "title": problem_obj.name + " — Review",
@@ -89,6 +107,7 @@ def problem_review_dashboard(request, problem):
         "check_results": list(selected.check_results.all()) if selected else [],
         "check_display_names": check_display_names,
         "history_entries": history_entries,
+        "problem_public_request": problem_public_request,
     }
 
     # Comments are anchored to the FIRST run for this problem so the
@@ -195,62 +214,241 @@ def problem_review_status(request, problem):
 
 
 @require_POST
-def problem_review_tag(request, problem):
-    if not request.user.is_authenticated:
+def problem_review_rerun(request, problem):
+    """Admin Rerun — force a fresh problem review, no guards.
+
+    Restricted to superusers because it bypasses ALL guards (dirty-check,
+    cooldown, in-flight). For authors, the "Request public" button is the
+    supported way to trigger a review and it enforces guards via
+    `judge.views.internal.request_public`.
+
+    Does NOT touch PublicRequest — admin can dry-run a review on a problem
+    that's never had a public-request. The trigger_problem_review_for helper
+    handles the supersede-prior-runs step inside an atomic block.
+    """
+    if not request.user.is_authenticated or not request.user.is_superuser:
         return HttpResponseForbidden()
     problem_obj = get_object_or_404(Problem, code=problem)
-    if not problem_obj.is_editable_by(request.user):
-        return HttpResponseForbidden()
 
-    try:
-        submission_id = int(request.POST["submission_id"])
-    except (KeyError, ValueError):
-        return JsonResponse({"success": False, "error": "Missing submission_id"})
+    with transaction.atomic():
+        trigger_problem_review_for(problem_obj, request.profile, dispatch="celery")
 
-    try:
-        submission = Submission.objects.get(id=submission_id, problem=problem_obj)
-    except Submission.DoesNotExist:
-        return JsonResponse({"success": False, "error": "Submission not found"})
-
-    # kind is now optional — author may provide it as a hint, otherwise the LLM classifies.
-    kind = request.POST.get("kind") or None
-    if kind is not None and kind not in dict(ProblemReviewSubmissionTag.KIND_CHOICES):
-        return JsonResponse({"success": False, "error": "Invalid kind"})
-
-    target_subtask_raw = request.POST.get("target_subtask")
-    target_subtask = None
-    if target_subtask_raw:
-        try:
-            target_subtask = int(target_subtask_raw)
-        except ValueError:
-            target_subtask = None
-
-    tag, created = ProblemReviewSubmissionTag.objects.update_or_create(
-        submission=submission,
-        defaults={
-            "tagged_by": request.profile,
-            "kind": kind,
-            "target_subtask": target_subtask,
-            "claimed_complexity": request.POST.get("claimed_complexity", "").strip(),
-            "note": request.POST.get("note", "").strip(),
-        },
+    return HttpResponseRedirect(
+        reverse("problem_review_dashboard", args=[problem_obj.code])
     )
-    return JsonResponse({"success": True, "tag_id": tag.id, "created": created})
 
 
-@require_POST
-def problem_review_untag(request, problem):
-    if not request.user.is_authenticated:
-        return HttpResponseForbidden()
-    problem_obj = get_object_or_404(Problem, code=problem)
-    if not problem_obj.is_editable_by(request.user):
-        return HttpResponseForbidden()
-    try:
-        submission_id = int(request.POST["submission_id"])
-    except (KeyError, ValueError):
-        return JsonResponse({"success": False, "error": "Missing submission_id"})
-    deleted_count, _ = ProblemReviewSubmissionTag.objects.filter(
-        submission_id=submission_id,
-        submission__problem=problem_obj,
-    ).delete()
-    return JsonResponse({"success": True, "deleted": deleted_count})
+# ----------------------------------------------------------------------------
+# Review list page — /problems/review/
+# ----------------------------------------------------------------------------
+
+VERDICT_FILTER_CHOICES = ("pass", "fail", "running", "error")
+# Note: `in_contest` is only relevant for the problem dashboard (a contest
+# can't be "in" another contest). Contest view defines its own subset.
+PUBLIC_REQUEST_FILTER_CHOICES = (
+    "pending",
+    "approved",
+    "rejected",
+    "in_contest",
+    "none",
+)
+
+
+class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
+    """List of problems with at least one auto-review run.
+
+    Two surfaces depending on permissions:
+      - Admin / `edit_all_problem` perm: every problem with a review.
+      - Anyone else: items they author or curate (testers can't edit, so
+        they're excluded — same scope as `Problem.is_editable_by`).
+
+    Each row links to `/problem/<code>/review` (the per-item dashboard).
+    Used to track outstanding review work without having to remember each
+    problem code individually.
+    """
+
+    paginate_by = 50
+    template_name = "problem/review_list.html"
+    context_object_name = "items"
+    paginator_class = DiggPaginator
+
+    # Sortable columns. `last_reviewed` is computed via a subquery annotation
+    # below — the rest are direct DB fields. Default: newest review first.
+    all_sorts = frozenset(("name", "last_reviewed", "public_status"))
+    default_sort = "-last_reviewed"
+    default_desc = frozenset(("last_reviewed",))
+
+    def get_title(self):
+        return _("Problem reviews")
+
+    def get_queryset(self):
+        if not self.request.user.is_authenticated:
+            return Problem.objects.none()
+
+        # `.prefetch_related("authors")` avoids one query per row when the
+        # template renders `{% for author in p.authors.all() %}`. With a
+        # 50-row page that's 50 → 1 query.
+        qs = Problem.objects.filter(review_runs__isnull=False).prefetch_related(
+            "authors__user"
+        )
+
+        # Permission scope mirrors `Problem.is_editable_by`: superuser OR the
+        # global `edit_all_problem` perm, otherwise author/curator only.
+        if not (
+            self.request.user.is_superuser
+            or self.request.user.has_perm("judge.edit_all_problem")
+        ):
+            pid = self.request.profile.id
+            qs = qs.filter(Q(authors__id=pid) | Q(curators__id=pid))
+
+        # Search — mirrors the /problems search logic in
+        # `judge.views.problem.ProblemList.get_normal_queryset`. Substring
+        # match on code, name, and the current language's translated name.
+        # If FTS is enabled, union the FTS-ranked results so word-boundary
+        # matches surface even when not a literal substring.
+        search = " ".join(self.request.GET.getlist("search")).strip()
+        if search:
+            substr_qs = qs.filter(
+                Q(code__icontains=search)
+                | Q(name__icontains=search)
+                | Q(
+                    translations__name__icontains=search,
+                    translations__language=self.request.LANGUAGE_CODE,
+                )
+            )
+            if settings.ENABLE_FTS:
+                qs = (
+                    qs.search(search, qs.BOOLEAN).extra(order_by=["-relevance"])
+                    | substr_qs
+                )
+            else:
+                qs = substr_qs
+
+        # Author filter (multi-select). Authors selected in the sidebar
+        # narrow to problems where ANY of those authors is on the author list.
+        author_ids = self._selected_author_ids()
+        if author_ids:
+            qs = qs.filter(authors__id__in=author_ids)
+
+        public = self.request.GET.get("public")
+        if public == "pending":
+            qs = qs.filter(public_request__status=PublicRequest.PENDING)
+        elif public == "approved":
+            qs = qs.filter(public_request__status=PublicRequest.APPROVED)
+        elif public == "rejected":
+            qs = qs.filter(public_request__status=PublicRequest.REJECTED)
+        elif public == "in_contest":
+            # Belongs to ANY contest AND has no per-problem PublicRequest
+            # (otherwise the per-problem request status takes priority in
+            # the pill rendering, so we'd want the user to filter by that).
+            # `.distinct()` immediately because the M2M join through
+            # `contests` would otherwise multiply rows for problems used
+            # in multiple contests, inflating the paginator's count().
+            qs = qs.filter(
+                contests__isnull=False, public_request__isnull=True
+            ).distinct()
+        elif public == "none":
+            # Truly orphan: no contest membership AND no PublicRequest.
+            qs = qs.filter(contests__isnull=True, public_request__isnull=True)
+
+        verdict = self.request.GET.get("verdict")
+        if verdict in VERDICT_FILTER_CHOICES:
+            candidate_ids = list(qs.values_list("id", flat=True).distinct())
+            _latest, verdicts = batched_verdicts(
+                candidate_ids,
+                ProblemReviewRun,
+                ProblemReviewCheckResult,
+                "problem_id",
+            )
+            matching = [iid for iid, v in verdicts.items() if v == verdict]
+            qs = qs.filter(id__in=matching)
+
+        # Annotate `last_reviewed` so DB-side sort works. Use Max on the
+        # related run's started_at (covers RUNNING + DONE + ERROR runs).
+        qs = qs.annotate(
+            last_reviewed=models.Max("review_runs__started_at"),
+        )
+
+        order_field = self.order  # e.g. '-last_reviewed' / 'name'
+        if order_field.lstrip("-") == "public_status":
+            # Order by the OneToOne status string. NULL (no request) sorts
+            # last regardless of direction by treating NULL as a sentinel.
+            qs = qs.order_by(
+                (
+                    F("public_request__status").asc(nulls_last=True)
+                    if not order_field.startswith("-")
+                    else F("public_request__status").desc(nulls_last=True)
+                ),
+                "-id",
+            )
+        else:
+            qs = qs.order_by(order_field, "-id")
+
+        return qs.distinct()
+
+    def _selected_author_ids(self):
+        """Parse `?authors=ID&authors=ID` from the query string."""
+        raw = self.request.GET.getlist("authors")
+        out = []
+        for r in raw:
+            try:
+                out.append(int(r))
+            except (TypeError, ValueError):
+                continue
+        return out
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        items = list(context["items"])
+        item_ids = [p.id for p in items]
+
+        latest_runs, verdicts = batched_verdicts(
+            item_ids, ProblemReviewRun, ProblemReviewCheckResult, "problem_id"
+        )
+        public_requests = {
+            pr.problem_id: pr
+            for pr in PublicRequest.objects.filter(problem_id__in=item_ids)
+        }
+
+        # Which of these problems belong to ANY contest (private or public)?
+        # The "publish path" for those is the contest's Request Public flow,
+        # not a per-problem one — so the template shows a "Trong kỳ thi"
+        # pill instead of the default "Chưa yêu cầu". Broader than just
+        # private contests: even if the contest is public, the per-problem
+        # request would be a duplicate of the contest's publish state.
+        in_any_contest = set(
+            Problem.objects.filter(
+                id__in=item_ids,
+                contests__isnull=False,
+            )
+            .values_list("id", flat=True)
+            .distinct()
+        )
+
+        # Preload the selected author profiles so select2 can render their
+        # chips on initial page load (it can't reach back into the AJAX
+        # endpoint without an extra round-trip per chip).
+        author_ids = self._selected_author_ids()
+        selected_authors = list(
+            Profile.objects.filter(id__in=author_ids).select_related("user")
+        )
+
+        context.update(
+            {
+                "latest_runs": latest_runs,
+                "verdicts": verdicts,
+                "public_requests": public_requests,
+                "in_any_contest": in_any_contest,
+                "search_query": self.request.GET.get("search", ""),
+                "active_verdict": self.request.GET.get("verdict", ""),
+                "active_public": self.request.GET.get("public", ""),
+                "selected_authors": selected_authors,
+                "verdict_choices": VERDICT_FILTER_CHOICES,
+                "public_choices": PUBLIC_REQUEST_FILTER_CHOICES,
+                "page_type": "review",
+                "first_page_href": self.request.path,
+            }
+        )
+        context.update(self.get_sort_context())
+        context.update(self.get_sort_paginate_context())
+        return context

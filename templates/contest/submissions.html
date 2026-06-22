@@ -5,6 +5,7 @@
 
 {% block submission_extra_js %}
   {% if contest.use_clarifications %}
+    {% include "contest/clarification-notification-js.html" %}
     <script type="text/javascript">
       $(function () {
         window.register_contest_notification("{{url('contest_clarification_ajax', contest.key)}}");

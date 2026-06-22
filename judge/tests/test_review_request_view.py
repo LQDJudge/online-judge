@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
 from django.test import TestCase, override_settings
 
 from judge.models import Language, Problem, ProblemGroup, Profile
@@ -27,6 +27,9 @@ class RequestPublicGuardsTest(TestCase):
             name="TG", defaults={"full_name": "Test Group"}
         )
         user = User.objects.create_user("a", "a@a.com", "pw")
+        # Request Public now requires the setter qualification (judge.add_problem),
+        # the same gate used to create/publish problems.
+        user.user_permissions.add(Permission.objects.get(codename="add_problem"))
         cls.profile, _ = Profile.objects.get_or_create(
             user=user, defaults={"language": cls.language}
         )
@@ -45,14 +48,32 @@ class RequestPublicGuardsTest(TestCase):
     def setUp(self):
         self.client.force_login(self.profile.user)
 
+    def test_denied_without_add_problem_permission(self):
+        # A problem editor who lacks the judge.add_problem qualification cannot
+        # request public (closes the "get a qualified friend to add me as
+        # author" bypass).
+        editor = User.objects.create_user("noperm", "np@np.com", "pw")
+        editor_profile, _ = Profile.objects.get_or_create(
+            user=editor, defaults={"language": self.language}
+        )
+        self.problem.authors.add(editor_profile)
+        self.client.force_login(editor)
+        resp = self.client.post("/internal/request_public", {"id": self.problem.id})
+        data = resp.json()
+        self.assertFalse(data["success"])
+        self.assertIn("permission", data["error"].lower())
+
     def _patch_dashboard_reverse(self):
         # The dashboard URL doesn't exist until Task 21; stub reverse so
         # this test runs independently. Patch on the view module.
         return patch("judge.views.internal.reverse", return_value="/stub/")
 
     def test_first_request_enqueues_run(self):
+        # review_problem.delay() is now invoked inside
+        # `judge.review.triggers.trigger_problem_review_for` (lazy-imported),
+        # so the mock must target the actual task module.
         with self._patch_dashboard_reverse(), patch(
-            "judge.views.internal.review_problem"
+            "judge.tasks.review.review_problem"
         ) as mock_task, self.captureOnCommitCallbacks(execute=True):
             resp = self.client.post(
                 "/internal/request_public",
@@ -135,7 +156,7 @@ class RequestPublicGuardsTest(TestCase):
             status=ProblemReviewRun.DONE,
         )
         with self._patch_dashboard_reverse(), patch(
-            "judge.views.internal.review_problem"
+            "judge.tasks.review.review_problem"
         ), self.captureOnCommitCallbacks(execute=True):
             resp = self.client.post(
                 "/internal/request_public",
@@ -154,7 +175,7 @@ class RequestPublicGuardsTest(TestCase):
             status=ProblemReviewRun.DONE,
         )
         with self._patch_dashboard_reverse(), patch(
-            "judge.views.internal.review_problem"
+            "judge.tasks.review.review_problem"
         ), self.captureOnCommitCallbacks(execute=True):
             resp = self.client.post(
                 "/internal/request_public",
@@ -181,7 +202,7 @@ class RequestPublicGuardsTest(TestCase):
             started_at=timezone.now() - timedelta(hours=2)
         )
         with self._patch_dashboard_reverse(), patch(
-            "judge.views.internal.review_problem"
+            "judge.tasks.review.review_problem"
         ), self.captureOnCommitCallbacks(execute=True):
             resp = self.client.post(
                 "/internal/request_public",

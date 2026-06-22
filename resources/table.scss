@@ -22,6 +22,67 @@
         }
     }
 
+    // Modern card-style chrome — opt-in via `.table.modern`. Adds rounded
+    // outer corners + subtle drop shadow, and drops the last-row border so
+    // it doesn't poke through the curve. Designed for user-facing list
+    // pages (problem list, contest list, user list). NOT recommended for
+    // dense data/admin tables where the shadow and rounding read as noise.
+    //
+    // Because the base `.table` uses `border-spacing: 0` (not collapse),
+    // border-radius works directly on the table element — no wrapper needed.
+    // We also need to round the corner cells individually since cells have
+    // their own backgrounds that would otherwise extend past the curve.
+    &.modern {
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+
+        thead tr:first-child th:first-child {
+            border-top-left-radius: $radius-lg;
+        }
+        thead tr:first-child th:last-child {
+            border-top-right-radius: $radius-lg;
+        }
+        tr:last-child td:first-child {
+            border-bottom-left-radius: $radius-lg;
+        }
+        tr:last-child td:last-child {
+            border-bottom-right-radius: $radius-lg;
+        }
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        // Header text styling — kept lighter than the base `.table` to match
+        // the more modern, less heavy chrome. Sortable-header anchors inherit
+        // these properties so a "Problem ▴" (link) and "Authors" (plain text)
+        // look identical in color, weight, and underline state.
+        th {
+            font-weight: normal;
+
+            a {
+                color: inherit;
+                font-weight: inherit;
+                text-decoration: none;
+            }
+
+            a:hover {
+                opacity: 0.85;
+            }
+        }
+
+        // Row hover — small visual feedback so users can track which row
+        // they're targeting in a long table. The previous per-id rules in
+        // problem.scss / users.scss used `rgb(241, 242, 242)` which is
+        // essentially `$background_light_gray`; using the token here keeps
+        // dark-mode generation happy.
+        tbody tr {
+            transition: background-color 0.12s ease;
+        }
+        tbody tr:hover {
+            background: $background_gray;
+        }
+    }
+
     th:first-child, td:first-child {
         border-width: 1px 1px 0 1px;
     }

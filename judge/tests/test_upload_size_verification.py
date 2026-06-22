@@ -5,6 +5,7 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.urls import reverse
+from django.utils.translation import gettext as _
 
 from judge.models import Profile, Language
 from judge.widgets.direct_upload import generate_upload_token
@@ -62,7 +63,10 @@ class UserFileUploadConfirmSizeTest(TestCase):
 
         self.assertEqual(response.status_code, 400)
         data = response.json()
-        self.assertIn("File size exceeds", data["error"])
+        self.assertEqual(
+            data["error"],
+            _("File size exceeds maximum allowed. File has been removed."),
+        )
 
         # Verify the oversized file was deleted
         mock_delete.assert_called_once()
@@ -113,7 +117,9 @@ class UserFileUploadConfirmSizeTest(TestCase):
 
         self.assertEqual(response.status_code, 400)
         data = response.json()
-        self.assertIn("Storage quota exceeded", data["error"])
+        self.assertEqual(
+            data["error"], _("Storage quota exceeded. File has been removed.")
+        )
         mock_delete.assert_called_once()
 
     def test_confirm_rejects_path_traversal(self):
@@ -126,7 +132,7 @@ class UserFileUploadConfirmSizeTest(TestCase):
 
         self.assertEqual(response.status_code, 400)
         data = response.json()
-        self.assertIn("Invalid file path", data["error"])
+        self.assertEqual(data["error"], _("Invalid file path"))
 
 
 class SaveToModelSizeTest(TestCase):
@@ -193,7 +199,10 @@ class SaveToModelSizeTest(TestCase):
 
         self.assertEqual(response.status_code, 400)
         data = response.json()
-        self.assertIn("File size exceeds", data["error"])
+        self.assertEqual(
+            data["error"],
+            _("File size exceeds maximum allowed. File has been removed."),
+        )
 
         # Verify the file was deleted from storage
         mock_storage.delete.assert_called_once_with("profile_images/test_image.png")

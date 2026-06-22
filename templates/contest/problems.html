@@ -9,6 +9,7 @@
 {% block js_media %}
   {% include "contest/media-js.html" %}
   {% include "contest/pdf-problemset-js.html" %}
+  {% include "contest/clarification-notification-js.html" %}
   <script type="text/javascript">
     $(function () {
       initContestProblemsetPdf('{{ url("contest_problemset", contest.key) }}');
@@ -53,9 +54,17 @@
                 </td>
                 <td>{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
                 {% if contest.ended %}
-                  <td>{{ problem.ac_rate|floatformat(1) }}%</td>
                   <td>
-                    {% if problem.is_public or is_editor or request.user.is_superuser %}
+                    {% if problem.id in result_hidden_problem_ids %}
+                      ?
+                    {% else %}
+                      {{ problem.ac_rate|floatformat(1) }}%
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if problem.id in result_hidden_problem_ids %}
+                      ?
+                    {% elif problem.is_public or is_editor or request.user.is_superuser %}
                       <a href="{{ url('ranked_submissions', problem.code) }}">{{ problem.user_count }}</a>
                     {% else %}
                       {{ problem.user_count }}
@@ -94,35 +103,72 @@
   {% endif %}
 
   {% if contest.use_clarifications %}
-    <div style="margin-top: 1em;">
-      <h2 style="margin-bottom: 0.2em">
-        <i class="fa fa-fw fa-question-circle"></i>{{ _('Clarifications') }}
+    <section class="contest-clarifications">
+      <div class="contest-clarifications-header">
+        <h2>
+          <i class="fa fa-fw fa-question-circle"></i>{{ _('Clarifications') }}
+        </h2>
         {% if can_edit %}
           <a href="{{url('new_contest_clarification', contest.key)}}"
-             class="fa fa-plus-circle"
-             title="{{_('Add')}}"
-             style="margin-left: 0.5em; font-size: 0.8em;">
+             class="contest-clarifications-add"
+             title="{{ _('Add') }}"
+             aria-label="{{ _('Add') }}">
+            <i class="fa fa-plus-circle"></i>
           </a>
         {% endif %}
-      </h2>
+      </div>
       {% if clarifications %}
-        <ul>
+        <ol class="contest-clarification-list">
           {% for clarification in clarifications %}
-            <li>
-              <a href="{{ url('problem_detail', clarification.problem.problem.code) }}">
-                {{ clarification.problem.problem.name }}
-              </a>
-              — {{ clarification.description|truncatewords(20) }}
-              <span class="time">{{ relative_time(clarification.date) }}</span>
+            <li class="contest-clarification">
+              <div class="contest-clarification-meta">
+                {% if clarification.problem %}
+                  {% set problem = clarification.problem.problem %}
+                  <a href="{{ url('problem_detail', problem.code) }}" class="contest-clarification-problem">
+                    <span class="contest-clarification-problem-code">{{ problem.code }}</span>
+                    <span class="contest-clarification-problem-name">{{ problem.translated_name(LANGUAGE_CODE) }}</span>
+                  </a>
+                {% else %}
+                  <span class="contest-clarification-problem">
+                    <span class="contest-clarification-problem-code">{{ _('Contest') }}</span>
+                    <span class="contest-clarification-problem-name">{{ _('Entire contest') }}</span>
+                  </span>
+                {% endif %}
+                <span class="time contest-clarification-time">{{ relative_time(clarification.date) }}</span>
+              </div>
+              <div class="contest-clarification-body content-description">
+                {% set lines = clarification.description.split('\n') %}
+                {% set needs_truncation = clarification.description|length > 300 or lines|length > 3 %}
+                {% if needs_truncation %}
+                  {% set truncated_body = lines[:3]|join('\n') %}
+                  {% if truncated_body|length > 300 %}
+                    {% set truncated_body = truncated_body[:300] + '...' %}
+                  {% else %}
+                    {% set truncated_body = truncated_body + '...' %}
+                  {% endif %}
+                  <div class="contest-clarification-truncated">
+                    {{ truncated_body|markdown|reference|str|safe }}
+                    <button type="button" class="contest-clarification-more"
+                            onclick="var p=this.closest('.contest-clarification-body'),t=p.querySelector('.contest-clarification-truncated'),f=p.querySelector('.contest-clarification-full');t.style.display='none';f.style.display='';">
+                      {{ _('Show more') }}
+                    </button>
+                  </div>
+                  <div class="contest-clarification-full" style="display:none">
+                    {{ clarification.description|markdown|reference|str|safe }}
+                  </div>
+                {% else %}
+                  {{ clarification.description|markdown|reference|str|safe }}
+                {% endif %}
+              </div>
             </li>
           {% endfor %}
-        </ul>
+        </ol>
       {% else %}
-        <p style="font-style: italic; text-align: center;">
+        <p class="contest-clarification-empty">
           {{ _('No clarifications have been made at this time.') }}
         </p>
       {% endif %}
-    </div>
+    </section>
   {% endif %}
   <iframe name="raw_problemset" id="raw_problemset" style="visibility: hidden;width: 0; height: 0;"></iframe>
 {% endblock %}

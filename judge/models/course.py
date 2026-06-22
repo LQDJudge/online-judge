@@ -11,6 +11,7 @@ from judge.models.profile import Organization, Profile
 from judge.caching import cache_wrapper
 
 from judge.utils.files import generate_secure_filename
+from judge.utils.identity import ImmutableIdentityMixin
 
 
 def course_image_path(course, filename):
@@ -25,6 +26,7 @@ class RoleInCourse(models.TextChoices):
 
 
 EDITABLE_ROLES = (RoleInCourse.TEACHER, RoleInCourse.ASSISTANT)
+MAX_COURSE_ITEM_POINTS = 1000
 
 
 class Course(models.Model):
@@ -264,7 +266,10 @@ class CourseLesson(models.Model):
     title = models.TextField(verbose_name=_("lesson title"))
     content = models.TextField(verbose_name=_("lesson content"))
     order = models.IntegerField(verbose_name=_("order"), default=0)
-    points = models.IntegerField(verbose_name=_("points"))
+    points = models.IntegerField(
+        verbose_name=_("points"),
+        validators=[MinValueValidator(0), MaxValueValidator(MAX_COURSE_ITEM_POINTS)],
+    )
     is_visible = models.BooleanField(verbose_name=_("publicly visible"), default=True)
 
     def clean(self):
@@ -351,7 +356,9 @@ class CourseLesson(models.Model):
         mark_course_for_recalculation(course)
 
 
-class CourseLessonProblem(models.Model):
+class CourseLessonProblem(ImmutableIdentityMixin, models.Model):
+    immutable_identity_fields = ("lesson_id", "problem_id")
+
     lesson = models.ForeignKey(
         CourseLesson, on_delete=models.CASCADE, related_name="lesson_problems"
     )
@@ -359,9 +366,14 @@ class CourseLessonProblem(models.Model):
         Problem, verbose_name=_("problem"), on_delete=models.CASCADE
     )
     order = models.IntegerField(verbose_name=_("order"), default=0)
-    score = models.IntegerField(verbose_name=_("score"), default=0)
+    score = models.IntegerField(
+        verbose_name=_("score"),
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(MAX_COURSE_ITEM_POINTS)],
+    )
 
     def save(self, *args, **kwargs):
+        self.validate_immutable_identity()
         super().save(*args, **kwargs)
         # Mark all users for recalculation when lesson content changes
         from judge.utils.course_prerequisites import mark_course_for_recalculation
@@ -385,7 +397,10 @@ class CourseContest(models.Model):
         Contest, unique=True, on_delete=models.CASCADE, related_name="course"
     )
     order = models.IntegerField(verbose_name=_("order"), default=0)
-    points = models.IntegerField(verbose_name=_("points"))
+    points = models.IntegerField(
+        verbose_name=_("points"),
+        validators=[MinValueValidator(0), MaxValueValidator(MAX_COURSE_ITEM_POINTS)],
+    )
 
     def get_course_of_contest(contest):
         course_contest = contest.course.get()
@@ -501,141 +516,3 @@ class CourseLessonProgress(models.Model):
     def __str__(self):
         status = "unlocked" if self.is_unlocked else "locked"
         return f"{self.user.user.username} - {self.lesson.title} ({status}, {self.percentage:.1f}%)"
-
-
-class BestSubmission(models.Model):
-    """
-    Caches the best submission for each user/problem pair.
-    Updated when a new submission is judged and has a better score.
-    """
-
-    user = models.ForeignKey(
-        Profile,
-        on_delete=models.CASCADE,
-        related_name="best_submissions",
-        verbose_name=_("user"),
-    )
-    problem = models.ForeignKey(
-        Problem,
-        on_delete=models.CASCADE,
-        related_name="best_submissions",
-        verbose_name=_("problem"),
-    )
-    submission = models.ForeignKey(
-        "Submission",
-        on_delete=models.CASCADE,
-        related_name="+",
-        verbose_name=_("best submission"),
-    )
-    points = models.FloatField(
-        default=0,
-        verbose_name=_("points"),
-        help_text=_("Best score achieved (case_points)"),
-    )
-    case_total = models.FloatField(
-        default=0,
-        verbose_name=_("case total"),
-        help_text=_("Total possible points for this problem"),
-    )
-
-    class Meta:
-        unique_together = ("user", "problem")
-        verbose_name = _("Best Submission")
-        verbose_name_plural = _("Best Submissions")
-        indexes = [
-            models.Index(fields=["user", "problem"]),
-        ]
-
-    def __str__(self):
-        return f"{self.user.user.username} - {self.problem.code}: {self.points}/{self.case_total}"
-
-    def save(self, *args, **kwargs):
-        # Track if points changed for triggering lesson grade updates
-        old_points = 0
-        if self.pk:
-            try:
-                old_instance = BestSubmission.objects.get(pk=self.pk)
-                old_points = old_instance.points
-            except BestSubmission.DoesNotExist:
-                pass
-
-        super().save(*args, **kwargs)
-
-        # If points changed, trigger lesson grade update for related lessons
-        if abs(self.points - old_points) > 0.001:
-            self._update_related_lesson_grades()
-
-    def _update_related_lesson_grades(self):
-        """Update lesson grades for lessons containing this problem."""
-        from judge.utils.course_prerequisites import update_lesson_grade
-
-        # Find all lessons containing this problem
-        lesson_problems = CourseLessonProblem.objects.filter(
-            problem=self.problem
-        ).select_related("lesson__course")
-
-        for lesson_problem in lesson_problems:
-            lesson = lesson_problem.lesson
-            course = lesson.course
-
-            # Check if user is enrolled in this course
-            if CourseRole.objects.filter(course=course, user=self.user).exists():
-                update_lesson_grade(self.user, lesson)
-
-    @classmethod
-    def update_from_submission(cls, submission):
-        """
-        Recalculate best submission for a user/problem after a submission is judged.
-
-        Args:
-            submission: Submission object that was just judged
-
-        Returns:
-            BestSubmission object if updated/created, None if no valid submissions
-        """
-        if submission.status != "D":  # Only consider completed submissions
-            return None
-
-        return cls.recalculate_for_user_problem(
-            submission.user_id, submission.problem_id
-        )
-
-    @classmethod
-    def recalculate_for_user_problem(cls, user_id, problem_id):
-        """
-        Recalculate best submission for a user/problem pair.
-        Called after a submission is deleted to find the new best submission.
-
-        Args:
-            user_id: Profile ID of the user
-            problem_id: Problem ID
-        """
-        from judge.models import Submission
-
-        # Find the best remaining submission for this user/problem
-        best_submission = (
-            Submission.objects.filter(
-                user_id=user_id,
-                problem_id=problem_id,
-                status="D",
-            )
-            .order_by("-case_points", "-date")
-            .first()
-        )
-
-        if best_submission:
-            # Update or create best submission record
-            best_sub, created = cls.objects.update_or_create(
-                user_id=user_id,
-                problem_id=problem_id,
-                defaults={
-                    "submission": best_submission,
-                    "points": best_submission.case_points or 0,
-                    "case_total": best_submission.case_total or 0,
-                },
-            )
-            return best_sub
-        else:
-            # No submissions left, delete the best submission record if it exists
-            cls.objects.filter(user_id=user_id, problem_id=problem_id).delete()
-            return None

@@ -21,13 +21,16 @@ from django.utils import timezone, translation
 
 from judge.models import (
     Contest,
+    ContestParticipation,
     ContestProblem,
+    ContestSubmission,
     Course,
     Language,
     Organization,
     Problem,
     ProblemGroup,
     Profile,
+    Submission,
 )
 from judge.models.course import CourseContest, CourseRole, RoleInCourse
 
@@ -147,6 +150,71 @@ class ContestEditTestBase(TestCase):
         contest._author_ids.dirty(contest)
         contest._curator_ids.dirty(contest)
         return Contest.objects.get(pk=contest.pk)
+
+    def _make_submission(self, problem, *, user=None, points=100, result="AC"):
+        return Submission.objects.create(
+            user=(user or self.author).profile,
+            problem=problem,
+            language=self.language,
+            status="D",
+            result=result,
+            points=points,
+            case_points=points,
+            case_total=100,
+            time=0.1,
+            memory=1024,
+        )
+
+    def _contest_edit_post_data(self, contest, row_data):
+        post = {
+            "key": contest.key,
+            "name": contest.name,
+            "authors": [str(p.id) for p in contest.authors.all()],
+            "curators": [],
+            "testers": [],
+            "start_time": contest.start_time.isoformat(),
+            "end_time": contest.end_time.isoformat(),
+            "format_name": contest.format_name,
+            "format_config": "{}",
+            "is_visible": "on" if contest.is_visible else "",
+            "scoreboard_visibility": contest.scoreboard_visibility,
+            "points_precision": str(contest.points_precision),
+            "description": contest.description or "",
+            "organizations": [str(o.id) for o in contest.organizations.all()],
+            "private_contestants": [],
+            "view_contest_scoreboard": [],
+            "banned_users": [],
+            "rows-TOTAL_FORMS": str(len(row_data)),
+            "rows-INITIAL_FORMS": str(
+                sum(1 for row in row_data if row.get("id") is not None)
+            ),
+            "rows-MIN_NUM_FORMS": "0",
+            "rows-MAX_NUM_FORMS": "1000",
+        }
+        for index, row in enumerate(row_data):
+            prefix = f"rows-{index}"
+            post.update(
+                {
+                    f"{prefix}-id": str(row.get("id") or ""),
+                    f"{prefix}-order": str(row.get("order", index + 1)),
+                    f"{prefix}-problem": str(row.get("problem_id") or ""),
+                    f"{prefix}-quiz": str(row.get("quiz_id") or ""),
+                    f"{prefix}-points": str(row.get("points", 100)),
+                    f"{prefix}-max_submissions": str(row.get("max_submissions", 0)),
+                    f"{prefix}-hidden_subtasks": row.get("hidden_subtasks", ""),
+                }
+            )
+            for checkbox in (
+                "partial",
+                "is_pretested",
+                "is_result_hidden",
+                "show_testcases",
+            ):
+                if row.get(checkbox):
+                    post[f"{prefix}-{checkbox}"] = "on"
+            if row.get("DELETE"):
+                post[f"{prefix}-DELETE"] = "on"
+        return post
 
 
 class ContestEditPermissionTests(ContestEditTestBase):
@@ -342,6 +410,201 @@ class ContestEditAtomicityTests(ContestEditTestBase):
         contest.organizations.clear()
         contest.refresh_from_db()
         self.assertFalse(contest.is_organization_private)
+
+
+class ContestEditSemanticRowsTests(ContestEditTestBase):
+    def test_preview_counts_submissions_deleted_by_problem_replacement(self):
+        original_problem = self._make_problem("semantic-preview-1")
+        replacement_problem = self._make_problem("semantic-preview-2")
+        contest_problem = ContestProblem.objects.create(
+            contest=self.public_contest,
+            problem=original_problem,
+            order=1,
+            points=100,
+        )
+        participation = ContestParticipation.objects.create(
+            contest=self.public_contest, user=self.author.profile
+        )
+        ContestSubmission.objects.create(
+            submission=self._make_submission(original_problem),
+            problem=contest_problem,
+            participation=participation,
+            points=100,
+        )
+
+        self.client.force_login(self.author)
+        post = self._contest_edit_post_data(
+            self.public_contest,
+            [
+                {
+                    "id": contest_problem.id,
+                    "problem_id": replacement_problem.id,
+                    "partial": True,
+                }
+            ],
+        )
+        post["preview_contest_problem_submission_delete"] = "1"
+
+        response = self.client.post(
+            reverse("contest_edit", args=[self.public_contest.key]),
+            post,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["delete_count"], 1)
+        self.assertTrue(response.json()["requires_confirmation"])
+        contest_problem.refresh_from_db()
+        self.assertEqual(contest_problem.problem, original_problem)
+
+    def test_preview_row_validation_error_is_marked_for_normal_submit(self):
+        problem = self._make_problem("semantic-preview-invalid")
+        contest_problem = ContestProblem.objects.create(
+            contest=self.public_contest,
+            problem=problem,
+            order=1,
+            points=100,
+        )
+
+        self.client.force_login(self.author)
+        post = self._contest_edit_post_data(
+            self.public_contest,
+            [
+                {
+                    "id": contest_problem.id,
+                    "problem_id": problem.id,
+                    "partial": True,
+                },
+                {
+                    "problem_id": problem.id,
+                    "partial": True,
+                },
+            ],
+        )
+        post["preview_contest_problem_submission_delete"] = "1"
+
+        response = self.client.post(
+            reverse("contest_edit", args=[self.public_contest.key]),
+            post,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.json()["success"])
+        self.assertTrue(response.json()["validation_error"])
+        contest_problem.refresh_from_db()
+        self.assertEqual(contest_problem.problem, problem)
+
+    def test_replacing_problem_requires_confirmation_before_deleting_submissions(self):
+        original_problem = self._make_problem("semantic-save-1")
+        replacement_problem = self._make_problem("semantic-save-2")
+        contest_problem = ContestProblem.objects.create(
+            contest=self.public_contest,
+            problem=original_problem,
+            order=1,
+            points=100,
+        )
+        participation = ContestParticipation.objects.create(
+            contest=self.public_contest, user=self.author.profile
+        )
+        contest_submission = ContestSubmission.objects.create(
+            submission=self._make_submission(original_problem),
+            problem=contest_problem,
+            participation=participation,
+            points=100,
+        )
+        post = self._contest_edit_post_data(
+            self.public_contest,
+            [
+                {
+                    "id": contest_problem.id,
+                    "problem_id": replacement_problem.id,
+                    "partial": True,
+                }
+            ],
+        )
+
+        self.client.force_login(self.author)
+        response = self.client.post(
+            reverse("contest_edit", args=[self.public_contest.key]), post
+        )
+
+        self.assertEqual(response.status_code, 200)
+        contest_problem.refresh_from_db()
+        self.assertEqual(contest_problem.problem, original_problem)
+        self.assertTrue(
+            ContestSubmission.objects.filter(id=contest_submission.id).exists()
+        )
+
+        post["confirm_contest_problem_submission_delete"] = "1"
+        response = self.client.post(
+            reverse("contest_edit", args=[self.public_contest.key]), post
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(ContestProblem.objects.filter(id=contest_problem.id).exists())
+        replacement_row = ContestProblem.objects.get(
+            contest=self.public_contest, problem=replacement_problem
+        )
+        self.assertEqual(replacement_row.order, 1)
+        self.assertFalse(
+            ContestSubmission.objects.filter(id=contest_submission.id).exists()
+        )
+
+    def test_reordering_problem_rows_preserves_contest_submission_links(self):
+        first_problem = self._make_problem("semantic-order-1")
+        second_problem = self._make_problem("semantic-order-2")
+        first_row = ContestProblem.objects.create(
+            contest=self.public_contest,
+            problem=first_problem,
+            order=1,
+            points=100,
+        )
+        second_row = ContestProblem.objects.create(
+            contest=self.public_contest,
+            problem=second_problem,
+            order=2,
+            points=100,
+        )
+        participation = ContestParticipation.objects.create(
+            contest=self.public_contest, user=self.author.profile
+        )
+        contest_submission = ContestSubmission.objects.create(
+            submission=self._make_submission(second_problem),
+            problem=second_row,
+            participation=participation,
+            points=100,
+        )
+        post = self._contest_edit_post_data(
+            self.public_contest,
+            [
+                {
+                    "id": second_row.id,
+                    "problem_id": second_problem.id,
+                    "order": 1,
+                    "partial": True,
+                },
+                {
+                    "id": first_row.id,
+                    "problem_id": first_problem.id,
+                    "order": 2,
+                    "partial": True,
+                },
+            ],
+        )
+
+        self.client.force_login(self.author)
+        response = self.client.post(
+            reverse("contest_edit", args=[self.public_contest.key]), post
+        )
+
+        self.assertEqual(response.status_code, 302)
+        contest_submission.refresh_from_db()
+        second_row.refresh_from_db()
+        first_row.refresh_from_db()
+        self.assertEqual(contest_submission.problem, second_row)
+        self.assertEqual(second_row.order, 1)
+        self.assertEqual(first_row.order, 2)
 
 
 class ContestEditRedirectTests(ContestEditTestBase):

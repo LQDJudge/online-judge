@@ -1,7 +1,10 @@
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from judge.models import Language, Problem, ProblemGroup, Profile
+from judge.models import Language, Problem, ProblemGroup, Profile, Submission
+from judge.models.problem_data import ProblemSolutionCode
 from judge.models.problem_review import ProblemReviewCheckResult, ProblemReviewRun
 from judge.review.checks.solutions_rubric import SolutionsRubricCheck
 
@@ -44,21 +47,26 @@ class SolutionsRubricSkipTest(TestCase):
             input_hash="x" * 64,
         )
 
-    def test_fail_when_no_tags(self):
-        # Design decision: no tagged reference submissions = FAIL (not SKIPPED).
-        # Without references the LLM has nothing to grade against, which is a
-        # hard prerequisite gap the author can fix from the edit page — treating
-        # it as SKIPPED would silently hide a configuration problem.
+    def test_fail_when_no_solution_codes(self):
+        # Design decision: zero solution codes = FAIL (not SKIPPED). Without
+        # any reference the LLM has nothing to grade, which is a hard
+        # prerequisite gap the author can fix from the Solution Codes tab.
         result = SolutionsRubricCheck().run(self.problem, self.review_run)
         self.assertEqual(result.status, ProblemReviewCheckResult.FAIL)
-        # Language-agnostic: just verify there is a non-empty reason.
         self.assertTrue(result.reason)
 
-
-from unittest.mock import patch
-
-from judge.models import Submission, SubmissionSource
-from judge.models.problem_review import ProblemReviewSubmissionTag
+    def test_fail_when_solution_codes_not_run(self):
+        # Saved but never Run: no last_submission → nothing for the LLM to
+        # grade against. Should FAIL with a clear "click Run" message.
+        ProblemSolutionCode.objects.create(
+            problem=self.problem,
+            order=0,
+            source_code="print('hi')",
+            language=self.language,
+            expected_result="AC",
+        )
+        result = SolutionsRubricCheck().run(self.problem, self.review_run)
+        self.assertEqual(result.status, ProblemReviewCheckResult.FAIL)
 
 
 class _RubricBase(TestCase):
@@ -101,27 +109,36 @@ class _RubricBase(TestCase):
             input_hash="x" * 64,
         )
 
-    def _make_submission(self, case_points, case_total, result="AC"):
-        return Submission.objects.create(
+    def _make_solution_code(
+        self, order, expected_result, case_points, case_total, actual_result="AC"
+    ):
+        sub = Submission.objects.create(
             user=self.profile,
             problem=self.problem,
             language=self.language,
             status="D",
-            result=result,
+            result=actual_result,
             case_points=case_points,
             case_total=case_total,
+        )
+        return ProblemSolutionCode.objects.create(
+            problem=self.problem,
+            order=order,
+            source_code=f"// solution #{order}",
+            language=self.language,
+            expected_result=expected_result,
+            last_submission=sub,
         )
 
 
 class OIModeTest(_RubricBase):
     @patch("judge.review.checks.solutions_rubric.call_llm_json")
     def test_oi_missing_subtask_solution_fails(self, mock_llm):
-        # LLM returns OI mode with an issue about missing subtask 2.
         mock_llm.return_value = {
             "mode": "OI",
             "submissions": [
                 {
-                    "submission_id": 1,
+                    "solution_code_id": 1,
                     "role": "subtask_1",
                     "complexity_observed": "O(N^2)",
                     "correctness": "correct",
@@ -129,7 +146,7 @@ class OIModeTest(_RubricBase):
                     "note": "",
                 },
                 {
-                    "submission_id": 2,
+                    "solution_code_id": 2,
                     "role": "main_ac",
                     "complexity_observed": "O(N log N)",
                     "correctness": "correct",
@@ -141,16 +158,8 @@ class OIModeTest(_RubricBase):
             "verdict": "fail",
             "summary": "Thiếu bài subtask 2.",
         }
-        sub = self._make_submission(case_points=30, case_total=100)
-        ProblemReviewSubmissionTag.objects.create(
-            submission=sub,
-            tagged_by=self.profile,
-        )
-        main_sub = self._make_submission(case_points=100, case_total=100)
-        ProblemReviewSubmissionTag.objects.create(
-            submission=main_sub,
-            tagged_by=self.profile,
-        )
+        self._make_solution_code(0, "AC", case_points=30, case_total=100)
+        self._make_solution_code(1, "AC", case_points=100, case_total=100)
         result = SolutionsRubricCheck().run(self.problem, self.review_run)
         self.assertEqual(result.status, ProblemReviewCheckResult.FAIL)
         self.assertIn("subtask 2", result.reason.lower())
@@ -163,7 +172,7 @@ class ICPCModeTest(_RubricBase):
             "mode": "ICPC",
             "submissions": [
                 {
-                    "submission_id": 1,
+                    "solution_code_id": 1,
                     "role": "brute_force",
                     "complexity_observed": "O(N^2)",
                     "correctness": "correct",
@@ -175,11 +184,7 @@ class ICPCModeTest(_RubricBase):
             "verdict": "fail",
             "summary": "Thiếu bài Main AC.",
         }
-        sub = self._make_submission(case_points=50, case_total=100)
-        ProblemReviewSubmissionTag.objects.create(
-            submission=sub,
-            tagged_by=self.profile,
-        )
+        self._make_solution_code(0, "TLE", case_points=50, case_total=100)
         result = SolutionsRubricCheck().run(self.problem, self.review_run)
         self.assertEqual(result.status, ProblemReviewCheckResult.FAIL)
         self.assertIn("Main AC", result.reason)
@@ -190,7 +195,7 @@ class ICPCModeTest(_RubricBase):
             "mode": "ICPC",
             "submissions": [
                 {
-                    "submission_id": 1,
+                    "solution_code_id": 1,
                     "role": "main_ac",
                     "complexity_observed": "O(N log N)",
                     "correctness": "correct",
@@ -198,7 +203,7 @@ class ICPCModeTest(_RubricBase):
                     "note": "",
                 },
                 {
-                    "submission_id": 2,
+                    "solution_code_id": 2,
                     "role": "brute_force",
                     "complexity_observed": "O(N^2)",
                     "correctness": "correct",
@@ -210,16 +215,8 @@ class ICPCModeTest(_RubricBase):
             "verdict": "fail",
             "summary": "Brute force vẫn AC, test yếu.",
         }
-        main_sub = self._make_submission(case_points=100, case_total=100)
-        ProblemReviewSubmissionTag.objects.create(
-            submission=main_sub,
-            tagged_by=self.profile,
-        )
-        brute_sub = self._make_submission(case_points=100, case_total=100)
-        ProblemReviewSubmissionTag.objects.create(
-            submission=brute_sub,
-            tagged_by=self.profile,
-        )
+        self._make_solution_code(0, "AC", case_points=100, case_total=100)
+        self._make_solution_code(1, "TLE", case_points=100, case_total=100)
         result = SolutionsRubricCheck().run(self.problem, self.review_run)
         self.assertEqual(result.status, ProblemReviewCheckResult.FAIL)
         self.assertIn("brute force", result.reason.lower())
@@ -232,7 +229,7 @@ class LLMCorrectnessTest(_RubricBase):
             "mode": "ICPC",
             "submissions": [
                 {
-                    "submission_id": 1,
+                    "solution_code_id": 1,
                     "role": "main_ac",
                     "complexity_observed": "O(N^3)",
                     "correctness": "correct",
@@ -246,13 +243,7 @@ class LLMCorrectnessTest(_RubricBase):
             "verdict": "fail",
             "summary": "Complexity không khớp.",
         }
-        sub = self._make_submission(case_points=100, case_total=100)
-        SubmissionSource.objects.create(submission=sub, source="int main(){}")
-        ProblemReviewSubmissionTag.objects.create(
-            submission=sub,
-            tagged_by=self.profile,
-            claimed_complexity="O(N log N)",
-        )
+        self._make_solution_code(0, "AC", case_points=100, case_total=100)
         result = SolutionsRubricCheck().run(self.problem, self.review_run)
         self.assertEqual(result.status, ProblemReviewCheckResult.FAIL)
         self.assertIn("O(N log N)", result.reason)

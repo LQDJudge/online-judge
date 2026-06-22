@@ -12,6 +12,10 @@
     {{ make_tab_item('semantic_search', 'fa fa-search', url('semantic_search'), _('Semantic Search')) }}
   {% endif %}
   {{ make_tab_item('all_submissions_list', 'fa fa-code', url('all_submissions'), _('Submissions')) }}
+  {% if request.user.is_authenticated %}
+    {# Tab is cheap to render; the view permission-gates the actual list. #}
+    {{ make_tab_item('review', 'fa fa-clipboard-check', url('problem_review_list'), _('Review')) }}
+  {% endif %}
   {% if request.user.is_superuser or perms.judge.add_problem %}
     {{ make_tab_item('add', 'fa fa-plus', url('problem_add'), _('Add')) }}
   {% endif %}

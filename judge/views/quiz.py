@@ -124,6 +124,21 @@ class QuestionEditorMixin(UserPassesTestMixin):
         return super().handle_no_permission()  # anonymous -> redirect to login
 
 
+def _get_short_answer_accepted_answers(correct_answers):
+    if not isinstance(correct_answers, dict):
+        return []
+    answers = correct_answers.get("answers") or []
+    if isinstance(answers, str):
+        answers = [answers]
+    if not isinstance(answers, list):
+        return []
+    return [
+        str(answer).strip()
+        for answer in answers
+        if answer is not None and str(answer).strip()
+    ]
+
+
 class QuizObjectEditorMixin(UserPassesTestMixin):
     """Mixin that checks if user can edit a specific quiz."""
 
@@ -553,6 +568,13 @@ class QuestionBankDetail(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["can_edit"] = self.object.is_editable_by(self.request.user)
+        context["accepted_answers"] = []
+        context["show_correct_answers"] = bool(self.object.correct_answers)
+        if self.object.question_type == "SA":
+            context["accepted_answers"] = _get_short_answer_accepted_answers(
+                self.object.correct_answers
+            )
+            context["show_correct_answers"] = bool(context["accepted_answers"])
         # Check which quizzes use this question
         context["used_in_quizzes"] = Quiz.objects.filter(
             quiz_questions__question=self.object
@@ -2327,7 +2349,12 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
 
 
 class GradingDashboard(
-    LoginRequiredMixin, QuizEditorMixin, PendingGradingCountMixin, TitleMixin, ListView
+    LoginRequiredMixin,
+    QuizEditorMixin,
+    PendingGradingCountMixin,
+    DiggPaginatorMixin,
+    TitleMixin,
+    ListView,
 ):
     """List all submitted attempts for grading.
 
@@ -2461,12 +2488,19 @@ class GradingDashboard(
             except Profile.DoesNotExist:
                 pass
 
-        # Add has_ungraded_essays flag to each attempt
-        for attempt in context["attempts"]:
-            attempt.has_ungraded_essays = attempt.answers.filter(
+        # Compute has_ungraded_essays in ONE batched query instead of one
+        # .exists() per attempt (which was an N+1). Collect the ids of attempts
+        # on this page that still have an ungraded essay answer, then flag each.
+        page_attempts = list(context["attempts"])
+        ungraded_attempt_ids = set(
+            QuizAnswer.objects.filter(
+                attempt_id__in=[a.id for a in page_attempts],
                 question__question_type="ES",
                 graded_at__isnull=True,
-            ).exists()
+            ).values_list("attempt_id", flat=True)
+        )
+        for attempt in page_attempts:
+            attempt.has_ungraded_essays = attempt.id in ungraded_attempt_ids
 
         context["page_type"] = "grading"
 
@@ -2959,6 +2993,7 @@ class QuizGradingTab(
     LoginRequiredMixin,
     QuizObjectEditorMixin,
     PendingGradingCountMixin,
+    DiggPaginatorMixin,
     TitleMixin,
     ListView,
 ):
@@ -3049,12 +3084,19 @@ class QuizGradingTab(
             except Profile.DoesNotExist:
                 pass
 
-        # Add has_ungraded_essays flag to each attempt
-        for attempt in context["attempts"]:
-            attempt.has_ungraded_essays = attempt.answers.filter(
+        # Compute has_ungraded_essays in ONE batched query instead of one
+        # .exists() per attempt (which was an N+1). Collect the ids of attempts
+        # on this page that still have an ungraded essay answer, then flag each.
+        page_attempts = list(context["attempts"])
+        ungraded_attempt_ids = set(
+            QuizAnswer.objects.filter(
+                attempt_id__in=[a.id for a in page_attempts],
                 question__question_type="ES",
                 graded_at__isnull=True,
-            ).exists()
+            ).values_list("attempt_id", flat=True)
+        )
+        for attempt in page_attempts:
+            attempt.has_ungraded_essays = attempt.id in ungraded_attempt_ids
 
         context["page_type"] = "grade"
 

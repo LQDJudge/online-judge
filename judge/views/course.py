@@ -45,6 +45,7 @@ from judge.models import (
 )
 from judge.models.course import RoleInCourse, EDITABLE_ROLES
 from judge.utils.course_prerequisites import get_lesson_lock_status
+from judge.utils.identity import SemanticIdentityModelFormSet, save_semantic_formset
 from judge.utils.problems import (
     user_attempted_ids,
     user_completed_ids,
@@ -894,8 +895,16 @@ class CourseLessonProblemForm(ModelForm):
         }
 
 
+class CourseLessonProblemModelFormSet(SemanticIdentityModelFormSet):
+    semantic_identity_fields = ("problem",)
+
+
 CourseLessonProblemFormSet = modelformset_factory(
-    CourseLessonProblem, form=CourseLessonProblemForm, extra=0, can_delete=True
+    CourseLessonProblem,
+    form=CourseLessonProblemForm,
+    formset=CourseLessonProblemModelFormSet,
+    extra=0,
+    can_delete=True,
 )
 
 
@@ -911,8 +920,16 @@ class CourseLessonQuizForm(ModelForm):
         }
 
 
+class CourseLessonQuizModelFormSet(SemanticIdentityModelFormSet):
+    semantic_identity_fields = ("quiz",)
+
+
 CourseLessonQuizFormSet = modelformset_factory(
-    CourseLessonQuiz, form=CourseLessonQuizForm, extra=0, can_delete=True
+    CourseLessonQuiz,
+    form=CourseLessonQuizForm,
+    formset=CourseLessonQuizModelFormSet,
+    extra=0,
+    can_delete=True,
 )
 
 
@@ -955,8 +972,13 @@ class CreateCourseLesson(CourseEditableMixin, FormView):
                         lesson=self.lesson
                     ).order_by("order"),
                 )
-                for problem_formset in formset:
-                    problem_formset.save()
+                if formset.is_valid():
+                    save_semantic_formset(
+                        formset,
+                        parent_field="lesson",
+                        parent=self.lesson,
+                        identity_fields=("problem",),
+                    )
 
                 # Add revision tracking details
                 revisions.set_comment(
@@ -1070,6 +1092,7 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
                 "order"
             ),
         )
+        formset.lesson = target_lesson
         for form in formset:
             form.fields["lesson"].initial = target_lesson
         # Also set the lesson for the empty_form (used as template for new rows)
@@ -1091,6 +1114,7 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
                 "order"
             ),
         )
+        formset.lesson = target_lesson
         for form in formset:
             form.fields["lesson"].initial = target_lesson
         # Also set the lesson for the empty_form (used as template for new rows)
@@ -1190,23 +1214,21 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
                         post=True, lesson=self.lesson
                     )
                     if problem_formsets.is_valid():
-                        instances = problem_formsets.save(commit=False)
-                        for instance in instances:
-                            instance.lesson = self.lesson
-                            instance.save()
-                        for obj in problem_formsets.deleted_objects:
-                            if obj.pk is not None:
-                                obj.delete()
+                        save_semantic_formset(
+                            problem_formsets,
+                            parent_field="lesson",
+                            parent=self.lesson,
+                            identity_fields=("problem",),
+                        )
 
                     quiz_formsets = self.get_quiz_formset(post=True, lesson=self.lesson)
                     if quiz_formsets.is_valid():
-                        instances = quiz_formsets.save(commit=False)
-                        for instance in instances:
-                            instance.lesson = self.lesson
-                            instance.save()
-                        for obj in quiz_formsets.deleted_objects:
-                            if obj.pk is not None:
-                                obj.delete()
+                        save_semantic_formset(
+                            quiz_formsets,
+                            parent_field="lesson",
+                            parent=self.lesson,
+                            identity_fields=("quiz",),
+                        )
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -1243,6 +1265,7 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                 "order"
             ),
         )
+        formset.lesson = lesson
         if lesson:
             for form in formset:
                 form.fields["lesson"].initial = lesson
@@ -1596,10 +1619,12 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
         if formset.is_valid():
             formset.save()
             for problem_formset in problem_formsets:
-                problem_formset.save()
-                for obj in problem_formset.deleted_objects:
-                    if obj.pk is not None:
-                        obj.delete()
+                save_semantic_formset(
+                    problem_formset,
+                    parent_field="lesson",
+                    parent=problem_formset.lesson,
+                    identity_fields=("problem",),
+                )
             return self.form_valid(formset)
         else:
             return self.form_invalid(formset)

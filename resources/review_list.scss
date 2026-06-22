@@ -1,0 +1,181 @@
+@use "vars" as *;
+
+// Styles for /problems/review/ and /contests/review/.
+// Both list templates wrap their root in `.review-list-page` so these rules
+// don't leak into other tables. Colors come from the semantic tokens in
+// vars.scss so dark-mode generation picks up the right variants.
+
+.review-list-page {
+
+    .review-list-table {
+        // `table-layout: fixed` + explicit width: 100% is what stops the
+        // table from growing past its container at high zoom. Cells
+        // truncate or wrap (per body rules below) to fit their column.
+        // No `border-collapse: collapse` override — let `.table`'s default
+        // `border-spacing: 0` take effect, which is what makes the rounded
+        // corners from `.table.modern` actually clip the table cleanly.
+        width: 100%;
+        table-layout: fixed;
+
+        th, td {
+            padding: 0.7em 0.8em;
+            vertical-align: middle;
+        }
+
+        // Header row inherits orange `$theme_color` background + centered
+        // white text from `.table th` in resources/table.scss. We don't
+        // override anything — this rule exists only as a place to layer
+        // future header tweaks if needed.
+
+        // Column widths under table-layout: fixed. These percentages
+        // proportion the available 100% across the columns; browser honors
+        // them strictly (no auto-grow).
+        .col-name { width: 28%; }
+        .col-authors { width: 18%; }
+        .col-verdict { width: 13%; }
+        .col-public { width: 16%; }
+        .col-when { width: 16%; }
+
+        // Wrap long content rather than ellipsis-truncate. `overflow-wrap:
+        // anywhere` makes long unbroken tokens (URLs, monospace strings)
+        // break mid-token so they can't push past their declared column.
+        tbody td {
+            word-wrap: break-word;
+            overflow-wrap: anywhere;
+            white-space: normal;
+            vertical-align: top;
+        }
+
+        .review-author-list {
+            font-size: 0.9em;
+            color: $text-secondary;
+
+            // One author per line — easier to scan than space-separated
+            // when a contest/problem has many curators.
+            .user, > a, > span {
+                display: block;
+                margin-bottom: 0.15em;
+            }
+        }
+
+        .review-when {
+            color: $text-muted;
+            font-size: 0.9em;
+        }
+    }
+
+    // Verdict + publish pills — small, color-coded, screen-reader friendly.
+    .verdict-pill, .publish-pill {
+        display: inline-block;
+        padding: 0.15em 0.6em;
+        border-radius: $radius-pill;
+        font-size: 0.85em;
+        font-weight: 600;
+        white-space: nowrap;
+
+        .fa {
+            margin-right: 0.25em;
+        }
+    }
+
+    .verdict-pill {
+        &.verdict-pass {
+            background: $color-message-success-bg;
+            color: $color-message-success-text;
+        }
+        &.verdict-fail, &.verdict-error {
+            background: $color-message-error-bg;
+            color: $color-message-error-text;
+        }
+        &.verdict-running {
+            background: $color-message-info-bg;
+            color: $color-message-info-text;
+        }
+        &.verdict-none {
+            background: $color-message-debug-bg;
+            color: $color-message-debug-text;
+        }
+    }
+
+    .publish-pill {
+        border-radius: $radius-base;
+        font-weight: 500;
+
+        &.publish-pending {
+            background: $color-message-warning-bg;
+            color: $color-message-warning-text;
+        }
+        &.publish-approved {
+            background: $color-message-success-bg;
+            color: $color-message-success-text;
+        }
+        &.publish-rejected {
+            background: $color-message-error-bg;
+            color: $color-message-error-text;
+        }
+        &.publish-none {
+            opacity: 0.55;
+        }
+        // Problem is in a private contest — info-tone, distinct from the
+        // "no request" gray. Reads as "publishing via the contest flow".
+        &.publish-in-contest {
+            background: $color-message-info-bg;
+            color: $color-message-info-text;
+        }
+    }
+
+    // Pending/approved/rejected pills become anchor links for admins (see
+    // publish_pill macro in problem/review_list.html). Strip default link
+    // chrome so they look identical to the non-admin span versions.
+    a.publish-pill {
+        text-decoration: none;
+
+        &:hover {
+            opacity: 0.85;
+        }
+    }
+
+    // Pagination needs breathing room from the table — matches the visual
+    // rhythm of /problems and /submissions. We use `padding-top` rather than
+    // `margin-top` because the `<ul class="pagination">` inside has its own
+    // top margin, which would otherwise collapse through our margin and
+    // produce no visible gap.
+    .review-list-pagination {
+        padding-top: 1.5em;
+        padding-bottom: 2em;
+    }
+
+    .review-empty {
+        text-align: center;
+        padding: 3em 1em;
+        color: $text-muted;
+
+        .fa {
+            font-size: 3em;
+            margin-bottom: 0.5em;
+            display: block;
+        }
+    }
+}
+
+// Right-sidebar form widgets. Mirrors the inline overrides /problems and
+// /contests have in their list-base templates so the select2 containers fill
+// the sidebox instead of collapsing to ~10px wide.
+//
+// Targeting the raw `<select>` AND the select2 sibling container covers both:
+//   - The native select gets `width: 100%` before select2 boots (also helps
+//     in the no-JS state).
+//   - The injected `.select2-container` inherits from the original, but some
+//     skins set their own min-width — `width: 100%` here ensures the rendered
+//     widget fills the sidebox column.
+.right-sidebar {
+    #search-author,
+    #verdict,
+    #public {
+        width: 100%;
+    }
+
+    .select2-container {
+        width: 100% !important;
+    }
+}

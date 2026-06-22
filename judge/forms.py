@@ -696,12 +696,25 @@ class OrganizationAdminBlogForm(OrganizationBlogForm):
 class BlogPostEditForm(ModelForm):
     class Meta:
         model = BlogPost
-        fields = ("visible", "title", "content", "organizations")
+        fields = (
+            "title",
+            "visible",
+            "sticky",
+            "publish_on",
+            "authors",
+            "organizations",
+            "content",
+        )
         widgets = {
             "organizations": HeavySelect2MultipleWidget(
                 data_view="organization_select2",
                 attrs={"style": "width: 100%"},
             ),
+            "authors": HeavySelect2MultipleWidget(
+                data_view="profile_select2",
+                attrs={"style": "width: 100%"},
+            ),
+            "publish_on": DateTimePickerWidget(),
         }
         if HeavyPreviewPageDownWidget is not None:
             widgets["content"] = HeavyPreviewPageDownWidget(
@@ -711,18 +724,32 @@ class BlogPostEditForm(ModelForm):
     def __init__(self, *args, is_admin=False, **kwargs):
         super().__init__(*args, **kwargs)
         self._is_admin = is_admin
+        # publish_on is required at the model level, but admins editing an
+        # existing post may leave it blank to keep the current value, so it
+        # is optional on the form and defaulted in clean().
+        self.fields["publish_on"].required = False
         if not is_admin and not self.instance.visible:
             self.fields["visible"].disabled = True
             self.fields["visible"].help_text = _(
                 "Only administrators can publish a hidden post."
             )
         if not is_admin:
+            # Sticky, publish date, authors, and organizations are
+            # admin-only controls; remove them entirely for non-admins so
+            # they can neither see nor submit these fields.
             del self.fields["organizations"]
+            del self.fields["sticky"]
+            del self.fields["publish_on"]
+            del self.fields["authors"]
 
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("visible") and not self.instance.visible and not self._is_admin:
             raise ValidationError(_("Only administrators can publish a hidden post."))
+        # Fall back to the post's existing publish date (or now for a new post)
+        # when the admin leaves the field blank, since the model requires it.
+        if not cleaned.get("publish_on"):
+            cleaned["publish_on"] = self.instance.publish_on or timezone.now()
         return cleaned
 
 
