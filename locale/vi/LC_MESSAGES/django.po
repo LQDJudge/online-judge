@@ -14066,3 +14066,11 @@ msgstr "Bạn không có quyền truy cập \"%s\"."
 
 msgid "The page \"%s\" doesn't exist or you don't have permission to view it."
 msgstr "Trang \"%s\" không tồn tại hoặc bạn không có quyền truy cập."
+
+#: judge/admin/contest.py:432
+msgid "Rated via “Rate all ratable contests”."
+msgstr "Đã rate qua “Rate tất cả kỳ thi xếp hạng”."
+
+#: judge/admin/contest.py:444
+msgid "Rated this contest."
+msgstr "Đã rate kỳ thi này."
