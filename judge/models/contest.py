@@ -48,6 +48,9 @@ __all__ = [
 ]
 
 
+MAX_CONTEST_WINDOW = timedelta(days=7)
+
+
 class ContestTag(models.Model):
     color_validator = RegexValidator("^#(?:[A-Fa-f0-9]{3}){1,2}$", _("Invalid colour."))
 
@@ -362,6 +365,35 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         # Django will complain if you didn't fill in start_time or end_time, so we don't have to.
         if self.start_time and self.end_time and self.start_time >= self.end_time:
             raise ValidationError(_("End time must be after start time"))
+        if self.start_time and self.end_time:
+            contest_duration = self.end_time - self.start_time
+            max_duration = min(contest_duration, MAX_CONTEST_WINDOW)
+
+            if self.time_limit is not None:
+                if self.time_limit <= timedelta(0):
+                    raise ValidationError(
+                        {"time_limit": _("Time limit must be positive.")}
+                    )
+                if self.time_limit > max_duration:
+                    raise ValidationError(
+                        {
+                            "time_limit": _("Time limit cannot exceed %(max)s.")
+                            % {"max": max_duration}
+                        }
+                    )
+
+            if self.freeze_after is not None:
+                if self.freeze_after < timedelta(0):
+                    raise ValidationError(
+                        {"freeze_after": _("Freeze time cannot be negative.")}
+                    )
+                if self.freeze_after > max_duration:
+                    raise ValidationError(
+                        {
+                            "freeze_after": _("Freeze time cannot exceed %(max)s.")
+                            % {"max": max_duration}
+                        }
+                    )
         self.format_class.validate(self.format_config)
 
         try:
@@ -394,12 +426,11 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         if self.end_time > one_year_later:
             self.end_time = one_year_later
 
-        max_duration = timedelta(days=7)
-        if self.time_limit and self.time_limit > max_duration:
-            self.time_limit = max_duration
+        if self.time_limit and self.time_limit > MAX_CONTEST_WINDOW:
+            self.time_limit = MAX_CONTEST_WINDOW
 
-        if self.freeze_after and self.freeze_after > max_duration:
-            self.freeze_after = max_duration
+        if self.freeze_after and self.freeze_after > MAX_CONTEST_WINDOW:
+            self.freeze_after = MAX_CONTEST_WINDOW
 
         super().save(*args, **kwargs)
 

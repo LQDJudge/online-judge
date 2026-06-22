@@ -6,6 +6,7 @@ from django.template.defaultfilters import floatformat
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy
 
+from judge.contest_format.base import MAX_PENALTY_MINUTES
 from judge.contest_format.default import DefaultContestFormat
 from judge.contest_format.registry import register_contest_format
 from judge.timezone import from_database_time, to_database_time
@@ -16,7 +17,7 @@ from judge.utils.timedelta import nice_repr
 class ICPCContestFormat(DefaultContestFormat):
     name = gettext_lazy("ICPC")
     config_defaults = {"penalty": 20}
-    config_validators = {"penalty": lambda x: x >= 0}
+    config_validators = {"penalty": lambda x: 0 <= x <= MAX_PENALTY_MINUTES}
     """
         penalty: Number of penalty minutes each incorrect submission adds. Defaults to 20.
     """

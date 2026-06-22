@@ -11,6 +11,9 @@ from judge.models.contest import ContestParticipation
 from judge.models.course import CourseLesson, Course
 
 MAX_QUESTION_POINTS = 1000
+MAX_QUIZ_TIME_LIMIT_MINUTES = 7 * 24 * 60
+MAX_QUIZ_ATTEMPTS = 100
+MAX_LESSON_QUIZ_POINTS = 1000
 
 
 def quiz_answer_file_path(instance, filename):
@@ -241,9 +244,13 @@ class Quiz(models.Model):
     # Time limit in minutes, 0 means no limit
     time_limit = models.IntegerField(
         default=0,
-        validators=[MinValueValidator(0)],
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_QUIZ_TIME_LIMIT_MINUTES),
+        ],
         verbose_name=_("Time Limit (minutes)"),
-        help_text=_("0 for no time limit"),
+        help_text=_("0 for no time limit; maximum %(max)s minutes")
+        % {"max": MAX_QUIZ_TIME_LIMIT_MINUTES},
     )
 
     # Quiz configuration
@@ -560,17 +567,19 @@ class CourseLessonQuiz(models.Model):
 
     max_attempts = models.IntegerField(
         default=0,
-        validators=[MinValueValidator(0)],
+        validators=[MinValueValidator(0), MaxValueValidator(MAX_QUIZ_ATTEMPTS)],
         verbose_name=_("Max Attempts"),
-        help_text=_("0 for unlimited attempts"),
+        help_text=_("0 for unlimited attempts; maximum %(max)s")
+        % {"max": MAX_QUIZ_ATTEMPTS},
     )
 
     # Points for completing this quiz in the lesson context
     points = models.IntegerField(
         default=0,
-        validators=[MinValueValidator(0)],
+        validators=[MinValueValidator(0), MaxValueValidator(MAX_LESSON_QUIZ_POINTS)],
         verbose_name=_("Lesson Points"),
-        help_text=_("Points awarded in lesson for completing quiz"),
+        help_text=_("Points awarded in lesson for completing quiz (max %(max)s)")
+        % {"max": MAX_LESSON_QUIZ_POINTS},
     )
 
     order = models.IntegerField(
@@ -698,7 +707,12 @@ class QuizAttempt(models.Model):
 
     # Store the actual time limit for this attempt (in case quiz settings change)
     time_limit_minutes = models.IntegerField(
-        default=0, verbose_name=_("Time Limit (minutes)")
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_QUIZ_TIME_LIMIT_MINUTES),
+        ],
+        verbose_name=_("Time Limit (minutes)"),
     )
 
     is_submitted = models.BooleanField(default=False, verbose_name=_("Is Submitted"))

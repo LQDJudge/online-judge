@@ -25,6 +25,7 @@ class RoleInCourse(models.TextChoices):
 
 
 EDITABLE_ROLES = (RoleInCourse.TEACHER, RoleInCourse.ASSISTANT)
+MAX_COURSE_ITEM_POINTS = 1000
 
 
 class Course(models.Model):
@@ -264,7 +265,10 @@ class CourseLesson(models.Model):
     title = models.TextField(verbose_name=_("lesson title"))
     content = models.TextField(verbose_name=_("lesson content"))
     order = models.IntegerField(verbose_name=_("order"), default=0)
-    points = models.IntegerField(verbose_name=_("points"))
+    points = models.IntegerField(
+        verbose_name=_("points"),
+        validators=[MinValueValidator(0), MaxValueValidator(MAX_COURSE_ITEM_POINTS)],
+    )
     is_visible = models.BooleanField(verbose_name=_("publicly visible"), default=True)
 
     def clean(self):
@@ -359,7 +363,11 @@ class CourseLessonProblem(models.Model):
         Problem, verbose_name=_("problem"), on_delete=models.CASCADE
     )
     order = models.IntegerField(verbose_name=_("order"), default=0)
-    score = models.IntegerField(verbose_name=_("score"), default=0)
+    score = models.IntegerField(
+        verbose_name=_("score"),
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(MAX_COURSE_ITEM_POINTS)],
+    )
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -385,7 +393,10 @@ class CourseContest(models.Model):
         Contest, unique=True, on_delete=models.CASCADE, related_name="course"
     )
     order = models.IntegerField(verbose_name=_("order"), default=0)
-    points = models.IntegerField(verbose_name=_("points"))
+    points = models.IntegerField(
+        verbose_name=_("points"),
+        validators=[MinValueValidator(0), MaxValueValidator(MAX_COURSE_ITEM_POINTS)],
+    )
 
     def get_course_of_contest(contest):
         course_contest = contest.course.get()

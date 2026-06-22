@@ -154,6 +154,9 @@ class Comment(CacheableModel, MPTTModel):
         verbose_name_plural = _("comments")
         indexes = [
             models.Index(fields=["content_type", "object_id", "hidden"]),
+            models.Index(
+                fields=["tree_id", "lft"], name="judge_comment_tree_id_lft_idx"
+            ),
         ]
 
     class MPTTMeta:

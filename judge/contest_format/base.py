@@ -4,6 +4,9 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from django.db.models import Max
 from django.utils.translation import gettext as _
 
+MAX_PENALTY_MINUTES = 24 * 60
+MAX_FORMAT_BONUS_POINTS = 10000
+
 
 class abstractclassmethod(classmethod):
     __isabstractmethod__ = True
