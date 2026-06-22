@@ -12,6 +12,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _, ngettext
+import reversion
 from reversion_compare.admin import CompareVersionAdmin
 
 from django_ace import AceWidget
@@ -398,6 +399,21 @@ class ContestAdmin(CompareVersionAdmin):
             reverse("admin:judge_contest_change", args=(contest_id,))
         )
 
+    def log_contests_rated(self, request, contests, comment):
+        # Record who rated which contest (and when) on the contest's /history/
+        # page. That page is rendered by reversion-compare from reversion
+        # revisions (not Django's LogEntry table), so we snapshot each rated
+        # contest into a single revision tagged with the acting user and a
+        # comment. The rate views call contest.rate()/rate_contest() directly,
+        # which never touches the Contest row, so without this nothing is logged.
+        if not contests:
+            return
+        with reversion.create_revision():
+            reversion.set_user(request.user)
+            reversion.set_comment(comment)
+            for contest in contests:
+                reversion.add_to_revision(contest)
+
     def rate_all_view(self, request):
         if not request.user.has_perm("judge.contest_rating"):
             raise PermissionDenied()
@@ -405,10 +421,16 @@ class ContestAdmin(CompareVersionAdmin):
             with connection.cursor() as cursor:
                 cursor.execute("TRUNCATE TABLE `%s`" % Rating._meta.db_table)
             Profile.objects.update(rating=None)
-            for contest in Contest.objects.filter(
-                is_rated=True, end_time__lte=timezone.now()
-            ).order_by("end_time"):
+            rated = list(
+                Contest.objects.filter(
+                    is_rated=True, end_time__lte=timezone.now()
+                ).order_by("end_time")
+            )
+            for contest in rated:
                 rate_contest(contest)
+            self.log_contests_rated(
+                request, rated, _("Rated via “Rate all ratable contests”.")
+            )
         return HttpResponseRedirect(reverse("admin:judge_contest_changelist"))
 
     def rate_view(self, request, id):
@@ -418,7 +440,8 @@ class ContestAdmin(CompareVersionAdmin):
         if not contest.is_rated or not contest.ended:
             raise Http404()
         with transaction.atomic():
-            contest.rate()
+            rated = contest.rate()
+            self.log_contests_rated(request, rated, _("Rated this contest."))
         return HttpResponseRedirect(
             request.META.get("HTTP_REFERER", reverse("admin:judge_contest_changelist"))
         )

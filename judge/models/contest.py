@@ -740,11 +740,15 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         Rating.objects.filter(
             contest__end_time__range=(self.end_time, self._now)
         ).delete()
-        for contest in Contest.objects.filter(
-            is_rated=True,
-            end_time__range=(self.end_time, self._now),
-        ).order_by("end_time"):
+        rated = list(
+            Contest.objects.filter(
+                is_rated=True,
+                end_time__range=(self.end_time, self._now),
+            ).order_by("end_time")
+        )
+        for contest in rated:
             rate_contest(contest)
+        return rated
 
     class Meta:
         permissions = (
