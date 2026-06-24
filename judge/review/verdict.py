@@ -53,7 +53,7 @@ def batched_verdicts(item_ids, run_class, check_class, fk_name):
     latest = {}
     for r in (
         run_class.objects.filter(**fk_filter, superseded_by__isnull=True)
-        .only("id", "status", fk_name, "started_at")
+        .only("id", "status", fk_name, "started_at", "finished_at")
         .order_by("-started_at", "-id")
     ):
         # setdefault wins because we ordered by started_at DESC — first run we
