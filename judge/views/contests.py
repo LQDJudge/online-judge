@@ -17,6 +17,7 @@ from django.core.cache import cache
 from django.core.exceptions import (
     ImproperlyConfigured,
     ObjectDoesNotExist,
+    ValidationError,
 )
 from django.db import IntegrityError, transaction
 from django.db.models import (
@@ -2525,7 +2526,10 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
                     },
                     status=400,
                 )
-            delete_count = self._deleted_contest_submission_count(rows_formset)
+            try:
+                delete_count = self._deleted_contest_submission_count(rows_formset)
+            except ValidationError as error:
+                return self._rows_validation_error_json(error)
             return JsonResponse(
                 {
                     "success": True,
@@ -2544,7 +2548,10 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
                 self.get_context_data(form=form, rows_form=rows_formset)
             )
 
-        delete_count = self._deleted_contest_submission_count(rows_formset)
+        try:
+            delete_count = self._deleted_contest_submission_count(rows_formset)
+        except ValidationError as error:
+            return self._rows_validation_error_response(form, rows_formset, error)
         if delete_count > 0 and request.POST.get(self.row_delete_confirm_field) != str(
             delete_count
         ):
@@ -2555,15 +2562,38 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
                 self.get_context_data(form=form, rows_form=rows_formset)
             )
 
-        with transaction.atomic():
-            save_semantic_formset(
-                rows_formset,
-                parent_field="contest",
-                parent=self.object,
-                identity_fields=("problem", "quiz"),
-            )
+        try:
+            with transaction.atomic():
+                save_semantic_formset(
+                    rows_formset,
+                    parent_field="contest",
+                    parent=self.object,
+                    identity_fields=("problem", "quiz"),
+                )
+                return self.form_valid(form)
+        except (IntegrityError, ValidationError) as error:
+            return self._rows_validation_error_response(form, rows_formset, error)
 
-            return self.form_valid(form)
+    def _rows_validation_error_json(self, error):
+        return JsonResponse(
+            {
+                "success": False,
+                "validation_error": True,
+                "error": self._validation_error_message(error),
+            },
+            status=400,
+        )
+
+    def _rows_validation_error_response(self, form, rows_formset, error):
+        messages.error(self.request, self._validation_error_message(error))
+        return self.render_to_response(
+            self.get_context_data(form=form, rows_form=rows_formset)
+        )
+
+    def _validation_error_message(self, error):
+        if hasattr(error, "messages"):
+            return " ".join(str(message) for message in error.messages)
+        return str(error)
 
     def _deleted_contest_submission_count(self, rows_formset):
         return count_semantic_formset_deletions(

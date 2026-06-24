@@ -8,12 +8,15 @@ Covers the things most likely to silently regress:
 """
 
 from django.contrib.auth.models import User
+from django.db import connection
 from django.test import TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from judge.models import Contest, Language, Problem, ProblemGroup, Profile
-from judge.models.contest_review import ContestReviewRun
+from judge.models.contest_review import ContestReviewCheckResult, ContestReviewRun
 from judge.models.problem_review import ProblemReviewRun
+from judge.review.verdict import batched_verdicts
 
 
 @override_settings(LANGUAGE_CODE="en")
@@ -151,6 +154,21 @@ class ReviewListViewTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         ids = {c.id for c in resp.context["items"]}
         self.assertSetEqual(ids, {self.c_author.id})
+        self.assertContains(resp, f'id="contest-row-{self.c_author.id}"')
+
+    def test_contest_review_latest_runs_include_template_fields(self):
+        latest_runs, _verdicts = batched_verdicts(
+            [self.c_author.id],
+            ContestReviewRun,
+            ContestReviewCheckResult,
+            "contest_id",
+        )
+        run = latest_runs[self.c_author.id]
+
+        with CaptureQueriesContext(connection) as ctx:
+            _ = (run.finished_at, run.started_at, run.status, run.contest_id)
+
+        self.assertEqual(len(ctx), 0)
 
     def test_contest_author_sees_own(self):
         self.client.force_login(self.author_profile.user)
@@ -158,6 +176,43 @@ class ReviewListViewTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         ids = {c.id for c in resp.context["items"]}
         self.assertSetEqual(ids, {self.c_author.id})
+
+    def test_contest_list_hides_started_site_public_contests(self):
+        now = timezone.now()
+        started_public = Contest.objects.create(
+            key="startedpublic",
+            name="Started Public Contest",
+            is_visible=True,
+            start_time=now - timezone.timedelta(hours=1),
+            end_time=now + timezone.timedelta(hours=1),
+        )
+        started_public.authors.add(self.author_profile)
+        ContestReviewRun.objects.create(
+            contest=started_public,
+            triggered_by=self.author_profile,
+            input_hash="hc-started-public",
+        )
+        future_public = Contest.objects.create(
+            key="futurepublic",
+            name="Future Public Contest",
+            is_visible=True,
+            start_time=now + timezone.timedelta(hours=1),
+            end_time=now + timezone.timedelta(hours=2),
+        )
+        future_public.authors.add(self.author_profile)
+        ContestReviewRun.objects.create(
+            contest=future_public,
+            triggered_by=self.author_profile,
+            input_hash="hc-future-public",
+        )
+
+        self.client.force_login(self.admin_profile.user)
+        resp = self.client.get("/contests/review/")
+        self.assertEqual(resp.status_code, 200)
+        ids = {c.id for c in resp.context["items"]}
+        self.assertNotIn(started_public.id, ids)
+        self.assertIn(future_public.id, ids)
+        self.assertIn(self.c_author.id, ids)
 
     def test_contest_outsider_sees_nothing(self):
         self.client.force_login(self.outsider_profile.user)

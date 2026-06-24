@@ -495,6 +495,46 @@ class ContestEditSemanticRowsTests(ContestEditTestBase):
         contest_problem.refresh_from_db()
         self.assertEqual(contest_problem.problem, problem)
 
+    def test_stale_duplicate_add_post_reports_form_error(self):
+        problem = self._make_problem("semantic-stale-add")
+        post = self._contest_edit_post_data(
+            self.public_contest,
+            [
+                {
+                    "problem_id": problem.id,
+                    "partial": True,
+                }
+            ],
+        )
+        self.client.force_login(self.author)
+        url = reverse("contest_edit", args=[self.public_contest.key])
+
+        with translation.override("en"):
+            response = self.client.post(url, post)
+            self.assertEqual(response.status_code, 302)
+
+            preview_post = post.copy()
+            preview_post["preview_contest_problem_submission_delete"] = "1"
+            response = self.client.post(
+                url,
+                preview_post,
+                HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            )
+            self.assertEqual(response.status_code, 400)
+            self.assertTrue(response.json()["validation_error"])
+            self.assertIn("Reload the page and try again", response.json()["error"])
+
+            response = self.client.post(url, post)
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "Reload the page and try again")
+
+        self.assertEqual(
+            ContestProblem.objects.filter(
+                contest=self.public_contest, problem=problem
+            ).count(),
+            1,
+        )
+
     def test_replacing_problem_requires_confirmation_before_deleting_submissions(self):
         original_problem = self._make_problem("semantic-save-1")
         replacement_problem = self._make_problem("semantic-save-2")

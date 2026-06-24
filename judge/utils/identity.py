@@ -8,6 +8,9 @@ from django.utils.translation import gettext_lazy as _
 IMMUTABLE_IDENTITY_ERROR = _(
     "%(field)s cannot be changed after this row is created. Delete the row and add a new one instead."
 )
+SEMANTIC_FORMSET_STALE_IDENTITY_ERROR = _(
+    "The problem or quiz list changed while you were editing. Reload the page and try again."
+)
 
 
 class ImmutableIdentityMixin:
@@ -106,6 +109,20 @@ def build_semantic_formset_plan(
 
     if duplicate_keys:
         raise ValidationError(_("Duplicate rows are not allowed."))
+
+    current_objects = model._default_manager.filter(**{parent_field: parent})
+    current_by_key = {
+        _object_identity_key(obj, identity_fields): obj for obj in current_objects
+    }
+    stale_identity_forms = [
+        form
+        for key, form in desired
+        if key not in existing_by_key and key in current_by_key
+    ]
+    if stale_identity_forms:
+        for form in stale_identity_forms:
+            form.add_error(None, SEMANTIC_FORMSET_STALE_IDENTITY_ERROR)
+        raise ValidationError(SEMANTIC_FORMSET_STALE_IDENTITY_ERROR)
 
     deleted_objects = [
         obj for key, obj in existing_by_key.items() if key not in desired_keys
