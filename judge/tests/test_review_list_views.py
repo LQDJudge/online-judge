@@ -151,6 +151,7 @@ class ReviewListViewTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         ids = {c.id for c in resp.context["items"]}
         self.assertSetEqual(ids, {self.c_author.id})
+        self.assertContains(resp, f'id="contest-row-{self.c_author.id}"')
 
     def test_contest_author_sees_own(self):
         self.client.force_login(self.author_profile.user)
@@ -158,6 +159,43 @@ class ReviewListViewTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         ids = {c.id for c in resp.context["items"]}
         self.assertSetEqual(ids, {self.c_author.id})
+
+    def test_contest_list_hides_started_site_public_contests(self):
+        now = timezone.now()
+        started_public = Contest.objects.create(
+            key="startedpublic",
+            name="Started Public Contest",
+            is_visible=True,
+            start_time=now - timezone.timedelta(hours=1),
+            end_time=now + timezone.timedelta(hours=1),
+        )
+        started_public.authors.add(self.author_profile)
+        ContestReviewRun.objects.create(
+            contest=started_public,
+            triggered_by=self.author_profile,
+            input_hash="hc-started-public",
+        )
+        future_public = Contest.objects.create(
+            key="futurepublic",
+            name="Future Public Contest",
+            is_visible=True,
+            start_time=now + timezone.timedelta(hours=1),
+            end_time=now + timezone.timedelta(hours=2),
+        )
+        future_public.authors.add(self.author_profile)
+        ContestReviewRun.objects.create(
+            contest=future_public,
+            triggered_by=self.author_profile,
+            input_hash="hc-future-public",
+        )
+
+        self.client.force_login(self.admin_profile.user)
+        resp = self.client.get("/contests/review/")
+        self.assertEqual(resp.status_code, 200)
+        ids = {c.id for c in resp.context["items"]}
+        self.assertNotIn(started_public.id, ids)
+        self.assertIn(future_public.id, ids)
+        self.assertIn(self.c_author.id, ids)
 
     def test_contest_outsider_sees_nothing(self):
         self.client.force_login(self.outsider_profile.user)

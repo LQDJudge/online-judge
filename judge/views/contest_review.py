@@ -533,6 +533,13 @@ class ContestReviewListView(QueryStringSortMixin, TitleMixin, ListView):
         qs = Contest.objects.filter(review_runs__isnull=False).prefetch_related(
             "authors__user"
         )
+        qs = qs.filter(
+            Q(start_time__gt=timezone.now())
+            | Q(is_visible=False)
+            | Q(is_organization_private=True)
+            | Q(is_private=True)
+            | Q(is_in_course=True)
+        )
 
         if not (
             self.request.user.is_superuser

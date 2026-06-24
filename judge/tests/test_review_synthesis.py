@@ -2,8 +2,11 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.utils import timezone
 
-from judge.models import Language, Problem, ProblemGroup, Profile
+from judge.models import Contest, Language, Problem, ProblemGroup, Profile
+from judge.models.contest_review import ContestReviewRun
+from judge.models.notification import Notification, NotificationCategory
 from judge.models.problem_review import ProblemReviewCheckResult, ProblemReviewRun
 from judge.tasks.review import synthesize_feedback
 
@@ -131,11 +134,39 @@ class NotificationEmissionTest(TestCase):
         )
         with patch("judge.tasks.review.reverse", return_value="/stub/"):
             _emit_review_done_notifications(run)
-        from judge.models.notification import Notification
-
         self.assertGreaterEqual(
             Notification.objects.filter(owner=self.profile).count(), 1
         )
         self.assertGreaterEqual(
             Notification.objects.filter(owner=self.admin).count(), 1
         )
+
+    def test_contest_admin_review_notification_links_to_contest_review_list(self):
+        from judge.tasks.contest_review import _emit_contest_review_done_notifications
+
+        contest = Contest.objects.create(
+            key="contestnotif",
+            name="Contest Notification",
+            start_time=timezone.now(),
+            end_time=timezone.now() + timezone.timedelta(hours=1),
+        )
+        contest.authors.add(self.profile)
+        run = ContestReviewRun.objects.create(
+            contest=contest,
+            triggered_by=self.profile,
+            input_hash="y" * 64,
+            status=ContestReviewRun.DONE,
+        )
+
+        _emit_contest_review_done_notifications(run)
+
+        admin_notification = Notification.objects.get(
+            owner=self.admin,
+            category=NotificationCategory.CONTEST_PUBLIC_REQUEST_NEW,
+        )
+        self.assertIn("/contests/review/?public=pending", admin_notification.html_link)
+        self.assertIn(
+            f"#contest-row-{contest.id}",
+            admin_notification.html_link,
+        )
+        self.assertNotIn("internal/problem_queue", admin_notification.html_link)

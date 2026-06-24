@@ -197,10 +197,10 @@ def _emit_contest_review_done_notifications(run):
         dashboard_url = f"/contest/{contest.key}/review/"
     try:
         queue_url = (
-            reverse("internal_problem_queue") + "?tab=contest_request_public&status=P"
+            reverse("contest_review_list") + f"?public=pending#contest-row-{contest.id}"
         )
     except Exception:
-        queue_url = "/internal/queue/?tab=contest_request_public&status=P"
+        queue_url = f"/contests/review/?public=pending#contest-row-{contest.id}"
 
     author_html_link = '<a href="%(dashboard)s">%(name)s</a>' % {
         "dashboard": dashboard_url,

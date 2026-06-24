@@ -57,7 +57,7 @@
             {% set run = latest_runs.get(c.id) %}
             {% set v = verdicts.get(c.id) %}
             {% set pr = public_requests.get(c.id) %}
-            <tr>
+            <tr id="contest-row-{{ c.id }}">
               <td class="col-name">
                 <a href="{{ url('contest_review_dashboard', c.key) }}">{{ c.name }}</a>
               </td>
