@@ -1174,22 +1174,34 @@
 .inline-submit-btn {
     align-self: flex-end;
     padding: 6px 16px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    border-radius: 16px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: $nb-letter-spacing;
+    border-radius: $nb-radius;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: $nb-transition;
     background-color: $theme_color;
     color: white;
-    border: none;
+    border: $nb-border-width solid $nb-ink;
+    box-shadow: $nb-shadow-sm;
 
     &:hover {
         background-color: color.adjust($theme_color, $lightness: -8%);
+        box-shadow: $nb-shadow;
+        transform: translate(-1px, -1px);
+    }
+
+    &:active {
+        box-shadow: $nb-shadow-press;
+        transform: translate(2px, 2px);
     }
 
     &:disabled {
         opacity: 0.6;
         cursor: not-allowed;
+        box-shadow: $nb-shadow-sm;
+        transform: none;
     }
 }
 
@@ -1207,15 +1219,27 @@
 
 .inline-cancel-btn {
     padding: 6px 12px;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: $nb-letter-spacing;
     background: transparent;
-    border: 1px solid $border_gray;
-    border-radius: 16px;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
+    box-shadow: $nb-shadow-sm;
     cursor: pointer;
-    color: #6b7280;
+    color: $text-muted;
+    transition: $nb-transition;
 
     &:hover {
         background: rgba(0, 0, 0, 0.05);
+        box-shadow: $nb-shadow;
+        transform: translate(-1px, -1px);
+    }
+
+    &:active {
+        box-shadow: $nb-shadow-press;
+        transform: translate(2px, 2px);
     }
 }
 

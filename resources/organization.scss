@@ -479,21 +479,30 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.6rem 1.2rem;
+    padding: 0.55rem 1.1rem;
     background: $theme_color;
     color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: $nb-letter-spacing;
+    text-transform: uppercase;
+    box-shadow: $nb-shadow;
     cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
+    transition: $nb-transition;
     text-decoration: none;
 
     &:hover {
         background: color.adjust($theme_color, $lightness: -10%);
-        transform: translateY(-1px);
+        transform: translate(-1px, -1px);
+        box-shadow: $nb-shadow-lg;
         color: white;
+    }
+
+    &:active {
+        transform: translate(3px, 3px);
+        box-shadow: $nb-shadow-press;
     }
 
     i {
@@ -671,9 +680,13 @@
         padding: 0.4em 0.8em;
         background: $theme_color;
         color: white;
-        border-radius: 6px;
-        font-weight: 500;
-        font-size: 0.9em;
+        border: $nb-border-width solid $nb-ink;
+        border-radius: $nb-radius;
+        box-shadow: $nb-shadow-sm;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: $nb-letter-spacing;
+        font-size: 0.85em;
         flex-shrink: 0;
     }
 }

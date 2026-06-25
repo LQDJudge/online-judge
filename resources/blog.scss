@@ -291,14 +291,15 @@
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
-        padding: 0.4rem 0.75rem;
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: #6b7280;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: $text-muted;
         background: $background_light_gray;
-        border-radius: 6px;
+        border: $nb-border-width solid $nb-ink;
+        border-radius: $nb-radius;
         text-decoration: none;
-        transition: all 0.15s ease;
+        transition: $nb-transition;
 
         i {
             font-size: 0.9rem;
@@ -306,16 +307,24 @@
 
         &:hover {
             background: rgba(0, 0, 0, 0.08);
-            color: #374151;
+            color: $text-primary;
+            box-shadow: $nb-shadow-sm;
+            transform: translate(-1px, -1px);
+        }
+
+        &:active {
+            box-shadow: $nb-shadow-press;
+            transform: translate(2px, 2px);
         }
 
         .badge {
             background: $theme_color;
             color: white;
             font-size: 0.7rem;
-            font-weight: 600;
-            padding: 0.15rem 0.4rem;
-            border-radius: 10px;
+            font-weight: 800;
+            padding: 0.1rem 0.4rem;
+            border: $space-hairline solid $nb-ink;
+            border-radius: $nb-radius;
             min-width: 1.2rem;
             text-align: center;
         }

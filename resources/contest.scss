@@ -1100,15 +1100,27 @@ a.contest-clarification-problem:hover {
         background: $background_light_gray;
 
         .btn-default {
-            padding: 0.5rem 1rem;
-            border: 1px solid $border_gray;
-            border-radius: 4px;
+            padding: 0.45rem 1rem;
+            border: $nb-border-width solid $nb-ink;
+            border-radius: $nb-radius;
             background: white;
+            box-shadow: $nb-shadow-sm;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: $nb-letter-spacing;
+            font-size: 0.85rem;
+            transition: $nb-transition;
 
             &:hover {
                 background: $background_gray;
+                box-shadow: $nb-shadow;
+                transform: translate(-1px, -1px);
+            }
+
+            &:active {
+                box-shadow: $nb-shadow-press;
+                transform: translate(2px, 2px);
             }
         }
     }
@@ -1242,8 +1254,8 @@ a.contest-clarification-problem:hover {
 
         .contest-row-type-toggle {
             display: inline-flex;
-            border: 1px solid $border_gray;
-            border-radius: 999px;
+            border: $nb-border-width solid $nb-ink;
+            border-radius: $nb-radius;
             overflow: hidden;
             background: $background_light_gray;
             white-space: nowrap;
@@ -1259,7 +1271,7 @@ a.contest-clarification-problem:hover {
             line-height: 1.2;
 
             + .contest-row-type-btn {
-                border-left: 1px solid $border_gray;
+                border-left: $nb-border-width solid $nb-ink;
             }
 
             &.active {

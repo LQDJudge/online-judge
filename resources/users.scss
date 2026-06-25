@@ -777,13 +777,26 @@ a.edit-profile {
         justify-content: center;
         gap: 0.5rem;
         width: 100%;
-        padding: 0.6rem 1rem;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 600;
+        padding: 0.55rem 1rem;
+        border: $nb-border-width solid $nb-ink;
+        border-radius: $nb-radius;
+        box-shadow: $nb-shadow-sm;
+        font-size: 0.88rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: $nb-letter-spacing;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: $nb-transition;
+
+        &:hover {
+            box-shadow: $nb-shadow;
+            transform: translate(-1px, -1px);
+        }
+
+        &:active {
+            box-shadow: $nb-shadow-press;
+            transform: translate(2px, 2px);
+        }
 
         &.follow {
             background: #22c55e;

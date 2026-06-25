@@ -53,6 +53,26 @@ $transition-medium: all 250ms;
 $radius-base: 5px;
 $radius-pill: 40px;
 
+// ============================================================
+// Neo-brutalist design language (buttons, inputs, tabs, labels)
+// Thick ink borders + hard offset shadows + tight corners.
+// Colors live here (not inline) so dark-mode generation can invert them.
+// ============================================================
+$nb-ink: #15161e;              // near-black "ink" used for borders/shadows
+$nb-ink-soft: #2b2d3a;         // softer ink for secondary strokes
+$nb-border-width: 2px;
+$nb-border-width-bold: 3px;
+$nb-radius: 4px;               // tight corners
+$nb-radius-lg: 6px;
+$nb-shadow-xs: 1px 1px 0 $nb-ink;
+$nb-shadow-sm: 2px 2px 0 $nb-ink;
+$nb-shadow: 3px 3px 0 $nb-ink;
+$nb-shadow-lg: 5px 5px 0 $nb-ink;
+$nb-shadow-press: 0 0 0 $nb-ink;
+$nb-transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease, border-color 0.15s ease;
+$nb-accent-yellow: #ffd84d;    // brutalist highlight accent
+$nb-letter-spacing: 0.04em;
+
 $base_font_size: 14px;
 $widget_border_radius: 0.5em;
 $table_header_rounding: 6px;

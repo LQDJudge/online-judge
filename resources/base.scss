@@ -44,52 +44,37 @@ img {
     width: 100% !important;
 }
 
-// Shared action button style for use throughout the app
+// Shared action button — neo-brutalist (ink border + hard offset shadow)
 .action-btn {
-    background: linear-gradient(135deg, $theme_color 0%, color.adjust($theme_color, $lightness: 8%) 100%);
+    background: $theme_color;
     color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 0.8em 1.4em;
-    font-size: 1em;
-    font-weight: 600;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
+    padding: 0.6em 1.2em;
+    font-size: 0.95em;
+    font-weight: 700;
+    letter-spacing: $nb-letter-spacing;
+    text-transform: uppercase;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: $nb-transition;
     display: inline-flex;
     align-items: center;
-    gap: 0.6em;
-    box-shadow: 0 3px 10px rgba($theme_color, 0.25);
+    gap: 0.5em;
+    box-shadow: $nb-shadow;
     position: relative;
-    overflow: hidden;
     cursor: pointer;
 
-    // Subtle shine effect
-    &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-        transition: left 0.5s ease;
-    }
-
     &:hover {
-        background: linear-gradient(135deg, color.adjust($theme_color, $lightness: 5%) 0%, color.adjust($theme_color, $lightness: 12%) 100%);
+        background: color.adjust($theme_color, $lightness: 6%);
         color: white;
         text-decoration: none;
-        transform: translateY(-1px);
-        box-shadow: 0 5px 15px rgba($theme_color, 0.35);
-
-        &::before {
-            left: 100%;
-        }
+        transform: translate(-1px, -1px);
+        box-shadow: $nb-shadow-lg;
     }
 
     &:active {
-        transform: translateY(0);
-        box-shadow: 0 3px 8px rgba($theme_color, 0.3);
+        transform: translate(3px, 3px);
+        box-shadow: $nb-shadow-press;
     }
 
     i.fa {
@@ -100,170 +85,125 @@ img {
     // Disabled state
     &:disabled,
     &.disabled {
-        background: linear-gradient(135deg, darkgray 0%, gray 100%) !important;
-        color: #f1efef !important;
+        background: $surface-disabled !important;
+        border-color: $nb-ink-soft !important;
+        color: $background_light_gray !important;
         cursor: not-allowed;
         transform: none !important;
-        box-shadow: 0 2px 6px rgba(128, 128, 128, 0.25) !important;
-
-        &::before {
-            display: none;
-        }
+        box-shadow: $nb-shadow-sm !important;
 
         &:hover {
-            background: linear-gradient(135deg, darkgray 0%, gray 100%) !important;
+            background: $surface-disabled !important;
             transform: none !important;
-            box-shadow: 0 2px 6px rgba(128, 128, 128, 0.25) !important;
+            box-shadow: $nb-shadow-sm !important;
         }
 
         &:active {
             transform: none !important;
-            box-shadow: 0 2px 6px rgba(128, 128, 128, 0.25) !important;
+            box-shadow: $nb-shadow-sm !important;
         }
     }
 }
 
-// Background color variants
+// Background color variants — solid fills, shadow/border inherited from base
 .action-btn.background-green {
-    background: linear-gradient(135deg, $color-success 0%, color.adjust($color-success, $lightness: 8%) 100%);
-    box-shadow: 0 3px 10px rgba($color-success, 0.25);
+    background: $color-success;
 
     &:hover {
-        background: linear-gradient(135deg, color.adjust($color-success, $lightness: 5%) 0%, color.adjust($color-success, $lightness: 12%) 100%);
-        box-shadow: 0 5px 15px rgba($color-success, 0.35);
-    }
-
-    &:active {
-        box-shadow: 0 3px 8px rgba($color-success, 0.3);
+        background: color.adjust($color-success, $lightness: 6%);
     }
 }
 
 .action-btn.background-red {
-    background: linear-gradient(135deg, $announcement_red 0%, color.adjust($announcement_red, $lightness: 8%) 100%);
-    box-shadow: 0 3px 10px rgba(174, 0, 0, 0.25);
+    background: $announcement_red;
 
     &:hover {
-        background: linear-gradient(135deg, color.adjust($announcement_red, $lightness: 5%) 0%, color.adjust($announcement_red, $lightness: 12%) 100%);
-        box-shadow: 0 5px 15px rgba(174, 0, 0, 0.35);
-    }
-
-    &:active {
-        box-shadow: 0 3px 8px rgba(174, 0, 0, 0.3);
+        background: color.adjust($announcement_red, $lightness: 6%);
     }
 }
 
 .action-btn.background-blue {
-    background: linear-gradient(135deg, #007bff 0%, color.adjust(#007bff, $lightness: 8%) 100%);
-    box-shadow: 0 3px 10px rgba(0, 123, 255, 0.25);
+    background: $color-info;
 
     &:hover {
-        background: linear-gradient(135deg, color.adjust(#007bff, $lightness: 5%) 0%, color.adjust(#007bff, $lightness: 12%) 100%);
-        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.35);
-    }
-
-    &:active {
-        box-shadow: 0 3px 8px rgba(0, 123, 255, 0.3);
+        background: color.adjust($color-info, $lightness: 6%);
     }
 }
 
 .action-btn.background-gray {
-    background: linear-gradient(135deg, #6c757d 0%, color.adjust(#6c757d, $lightness: 8%) 100%);
-    box-shadow: 0 3px 10px rgba(108, 117, 125, 0.25);
+    background: $text-muted;
 
     &:hover {
-        background: linear-gradient(135deg, color.adjust(#6c757d, $lightness: 5%) 0%, color.adjust(#6c757d, $lightness: 12%) 100%);
-        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.35);
-    }
-
-    &:active {
-        box-shadow: 0 3px 8px rgba(108, 117, 125, 0.3);
+        background: color.adjust($text-muted, $lightness: 6%);
     }
 }
 
 .action-btn.background-warning {
-    background: linear-gradient(135deg, #ffc107 0%, color.adjust(#ffc107, $lightness: 8%) 100%);
-    box-shadow: 0 3px 10px rgba(255, 193, 7, 0.25);
-    color: #212529;
+    background: $color-warning;
+    color: $text-strong;
 
     &:hover {
-        background: linear-gradient(135deg, color.adjust(#ffc107, $lightness: 5%) 0%, color.adjust(#ffc107, $lightness: 12%) 100%);
-        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.35);
-        color: #212529;
-    }
-
-    &:active {
-        box-shadow: 0 3px 8px rgba(255, 193, 7, 0.3);
+        background: color.adjust($color-warning, $lightness: 6%);
+        color: $text-strong;
     }
 }
 
 .action-btn.background-theme {
     // Explicit theme color option (same as default but can be used for clarity)
-    background: linear-gradient(135deg, $theme_color 0%, color.adjust($theme_color, $lightness: 8%) 100%);
-    box-shadow: 0 3px 10px rgba($theme_color, 0.25);
+    background: $theme_color;
 
     &:hover {
-        background: linear-gradient(135deg, color.adjust($theme_color, $lightness: 5%) 0%, color.adjust($theme_color, $lightness: 12%) 100%);
-        box-shadow: 0 5px 15px rgba($theme_color, 0.35);
-    }
-
-    &:active {
-        box-shadow: 0 3px 8px rgba($theme_color, 0.3);
+        background: color.adjust($theme_color, $lightness: 6%);
     }
 }
 
 // Size variants
 .action-btn.small {
-    padding: 0.5em 1em;
-    font-size: 0.9em;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba($theme_color, 0.25);
+    padding: 0.4em 0.9em;
+    font-size: 0.85em;
+    box-shadow: $nb-shadow-sm;
 
     &:hover {
-        box-shadow: 0 3px 10px rgba($theme_color, 0.35);
+        box-shadow: $nb-shadow;
     }
 
     &:active {
-        box-shadow: 0 2px 5px rgba($theme_color, 0.3);
+        box-shadow: $nb-shadow-press;
     }
 }
 
 .action-btn.large {
-    padding: 1em 1.8em;
-    font-size: 1.1em;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba($theme_color, 0.25);
+    padding: 0.85em 1.6em;
+    font-size: 1.05em;
+    box-shadow: $nb-shadow-lg;
 
     &:hover {
-        box-shadow: 0 6px 20px rgba($theme_color, 0.35);
+        box-shadow: 6px 6px 0 $nb-ink;
     }
 
     &:active {
-        box-shadow: 0 4px 10px rgba($theme_color, 0.3);
+        box-shadow: $nb-shadow-press;
     }
 }
 
 // Outlined variant — secondary actions
 .action-btn.outlined {
     background: transparent;
-    border: 2px solid $theme_color;
+    border: $nb-border-width solid $nb-ink;
     color: $theme_color;
-    box-shadow: none;
-
-    &::before {
-        display: none;
-    }
+    box-shadow: $nb-shadow;
 
     &:hover {
         background: rgba($theme_color, 0.08);
-        box-shadow: none;
-        transform: none;
+        box-shadow: $nb-shadow-lg;
+        transform: translate(-1px, -1px);
         color: $theme_color;
     }
 
     &:active {
         background: rgba($theme_color, 0.15);
-        transform: scale(0.98);
-        box-shadow: none;
+        transform: translate(3px, 3px);
+        box-shadow: $nb-shadow-press;
     }
 }
 
@@ -271,16 +211,12 @@ img {
 @media (max-width: 799px) {
     .action-btn {
         font-size: 0.9em;
-        padding: 0.7em 1.2em;
-        border-radius: 8px;
+        padding: 0.6em 1.1em;
+        border-radius: $nb-radius;
 
         &:hover {
-            transform: none;
-            box-shadow: 0 4px 12px rgba($theme_color, 0.3);
-        }
-
-        &::before {
-            display: none; // Disable shine effect on mobile for performance
+            transform: translate(-1px, -1px);
+            box-shadow: $nb-shadow;
         }
 
         &.small {
@@ -302,16 +238,18 @@ input[type="submit"].submit-btn {
     // This preserves the original rounded submit button with icon design
     // Override action-btn styles when both classes are present
     background: $color-success !important;
-    border: 1px solid $color-success !important;
+    border: $nb-border-width solid $nb-ink !important;
     color: white !important;
-    border-radius: 40px !important;
-    padding: 12px 18px !important;
-    font-size: 16px !important;
-    font-weight: 500 !important;
-    box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12) !important;
+    border-radius: $nb-radius !important;
+    padding: 11px 18px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    letter-spacing: $nb-letter-spacing !important;
+    text-transform: uppercase !important;
+    box-shadow: $nb-shadow !important;
     overflow: hidden !important;
     position: relative !important;
-    transition: all 0.3s ease !important;
+    transition: $nb-transition !important;
     cursor: pointer !important;
 
     // Override action-btn styles
@@ -354,20 +292,25 @@ input[type="submit"].submit-btn {
     &:focus {
         outline: none !important;
         background: $color-success-hover !important;
-        border-color: $color-success-hover !important;
+        border-color: $nb-ink !important;
         color: white !important;
         text-decoration: none !important;
-        transform: none !important;
-        box-shadow: 0px 12px 25px -6px rgba(0, 0, 0, 0.18) !important;
+        transform: translate(-1px, -1px) !important;
+        box-shadow: $nb-shadow-lg !important;
 
         span {
             margin-left: -12px !important;
         }
     }
 
+    &:active {
+        transform: translate(3px, 3px) !important;
+        box-shadow: $nb-shadow-press !important;
+    }
+
     &.btn-disabled {
-        background: gray !important;
-        border-color: gray !important;
+        background: $surface-disabled !important;
+        border-color: $nb-ink-soft !important;
         color: #fff !important;
         cursor: not-allowed !important;
 
@@ -528,8 +471,8 @@ header {
 }
 
 #nav-shadow {
-    height: 2px;
-    background: linear-gradient(lightgray, transparent);
+    height: $nb-border-width-bold;
+    background: $nb-ink;
 }
 
 #nav-container {
@@ -613,7 +556,8 @@ nav {
                 &.active {
                     color: $theme_color;
                     background: transparent;
-                    border-bottom: 3px solid $theme_color;
+                    border-bottom: $nb-border-width-bold solid $theme_color;
+                    box-shadow: inset 0 -8px 0 -5px $nb-accent-yellow;
                     border-bottom-left-radius: 0;
                     border-bottom-right-radius: 0;
                 }
@@ -631,11 +575,14 @@ nav {
                 color: #fff;
                 background: white;
                 margin: 0 !important;
-                box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+                border: $nb-border-width solid $nb-ink;
+                border-radius: $nb-radius;
+                box-shadow: $nb-shadow;
+                overflow: hidden;
 
                 li {
                     &:hover {
-                        background: lightgray;
+                        background: $background_gray;
                     }
 
                     display: block;
@@ -650,7 +597,7 @@ nav {
                         font-size: 0.8em;
                         line-height: 18px;
                         display: block;
-                        border-left: 4px solid black;
+                        border-left: 4px solid $nb-ink;
                         white-space: nowrap;
                     }
                 }
@@ -915,10 +862,12 @@ noscript #noscript {
     display: none;
     background-color: white;
     min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-    padding: 4px 0;
+    border: $nb-border-width solid $nb-ink;
+    box-shadow: $nb-shadow;
+    padding: 0;
     z-index: 1;
-    border-radius: 5px;
+    border-radius: $nb-radius;
+    overflow: hidden;
 
     a {
         display: block;

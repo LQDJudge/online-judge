@@ -27,47 +27,57 @@
     float: right;
 }
 
-// Bootstrap-y buttons
+// Neo-brutalist buttons — thick ink border + hard offset shadow
 .button {
-    -webkit-transition: .3s all ease;
-    -o-transition: .3s all ease;
-    transition: .3s all ease;
+    -webkit-transition: $nb-transition;
+    -o-transition: $nb-transition;
+    transition: $nb-transition;
     align-items: center;
     background-clip: padding-box;
     background-color: $theme_color;
-    border: 1px solid transparent;
-    border-radius: .25rem;
-    box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
+    box-shadow: $nb-shadow;
     box-sizing: border-box;
     color: $text-on-primary !important;
     cursor: pointer;
     display: block;
     font-family: system-ui,-apple-system,system-ui,"Helvetica Neue",Helvetica,Arial,sans-serif;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: $nb-letter-spacing;
+    text-transform: uppercase;
     justify-content: center;
-    line-height: 1.25;
+    line-height: 1.2;
     margin: 0;
-    min-height: 3rem;
-    padding: calc(.875rem - 1px) calc(1.5rem - 1px);
+    min-height: 2.75rem;
+    padding: calc(.75rem - 1px) calc(1.4rem - 1px);
     position: relative;
     text-decoration: none;
-    transition: $transition-medium;
     user-select: none;
     -webkit-user-select: none;
     touch-action: manipulation;
     text-align: center;
     width: auto;
 
+    .fa, i {
+        margin-right: 0.4em;
+    }
+
     &.disabled, &[disabled] {
-        background: linear-gradient(to bottom, $surface-disabled 0, $surface-disabled-alt 100%) repeat-x !important;
-        border-color: $surface-disabled-alt !important;
+        background: $surface-disabled !important;
+        border-color: $nb-ink-soft !important;
+        box-shadow: $nb-shadow-sm !important;
+        color: $background_light_gray !important;
         cursor: not-allowed;
+        transform: none !important;
     }
 
     &.small {
         min-height: auto;
-        padding: calc(.5rem - 1px) calc(1rem - 1px);
+        font-size: 13px;
+        box-shadow: $nb-shadow-sm;
+        padding: calc(.4rem - 1px) calc(.9rem - 1px);
     }
 
     &.btn-gray {
@@ -77,6 +87,7 @@
     &.btn-hovergray {
         &:hover {
             background: $background_gray;
+            color: $nb-ink !important;
         }
     }
 
@@ -115,38 +126,48 @@
     }
 }
 
+// Lift on hover (shadow grows), slam onto the shadow on press
 .button:hover {
-    background-color: $theme_color;
-    box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
-    transform: translateY(-1px);
+    box-shadow: $nb-shadow-lg;
+    transform: translate(-1px, -1px);
 }
 
-.button:focus {
-    background-color: $theme_color;
-    box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
+.button.small:hover {
+    box-shadow: $nb-shadow;
+    transform: translate(-1px, -1px);
+}
+
+.button:focus-visible {
+    outline: $nb-border-width solid $nb-ink;
+    outline-offset: 2px;
 }
 
 .button:active {
-    background-color: $theme_color;
-    box-shadow: rgba(0, 0, 0, .06) 0 2px 4px;
-    transform: translateY(0);
+    box-shadow: $nb-shadow-press;
+    transform: translate(3px, 3px);
+}
+
+.button.small:active {
+    box-shadow: $nb-shadow-press;
+    transform: translate(2px, 2px);
 }
 
 .inline-button {
     display: inline;
     vertical-align: top;
+    min-height: auto;
     padding: $space-micro $space-compact;
 }
 
 input {
     &[type=text], &[type=password], &[type=email], &[type=number], &[type=datetime-local], &[type=date] {
-        padding: $space-xs $space-sm;
-        color: $text-secondary;
+        padding: $space-tight $space-cozy;
+        color: $text-primary;
         background: $surface-primary none;
-        border: 1px solid $border_gray;
-        border-radius: $widget_border_radius;
-        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
-        transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+        border: $nb-border-width solid $nb-ink;
+        border-radius: $nb-radius;
+        box-shadow: none;
+        transition: border-color 0.12s ease, box-shadow 0.12s ease;
         box-sizing: border-box;
 
         // Need this explicitly because UA stylesheet for Chrome on 4k makes
@@ -155,41 +176,65 @@ input {
     }
 
     &[type=number] {
-        padding: $space-nano 0 $space-nano $space-tight;
+        padding: $space-micro $space-tight $space-micro $space-sm;
     }
 }
 
 textarea {
     padding: $space-sm;
+    color: $text-primary;
     background: $surface-primary none;
-    border: 1px solid $border_gray;
-    border-radius: $widget_border_radius;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
-    transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
+    box-shadow: none;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
     box-sizing: border-box;
 }
 
 textarea:hover {
-    border-color: $text-primary;
+    border-color: $nb-ink;
 }
 
 input {
     &[type="text"]:hover, &[type="password"]:hover {
-        border-color: rgba(82, 168, 236, 0.8);
-        box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 4px rgba(82, 168, 236, 0.6);
+        border-color: $nb-ink;
     }
 }
 
 textarea:focus {
-    border-color: $text-primary;
-    border-width: unset;
+    border-color: $theme_color;
+    box-shadow: $nb-shadow;
     outline: 0;
 }
 
 input {
-    &[type="text"]:focus, &[type="password"]:focus {
-        border-color: rgba(82, 168, 236, 0.8);
-        box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
+    &[type="text"]:focus, &[type="password"]:focus,
+    &[type="email"]:focus, &[type="number"]:focus,
+    &[type="datetime-local"]:focus, &[type="date"]:focus {
+        border-color: $theme_color;
+        box-shadow: $nb-shadow;
+        outline: 0;
+    }
+}
+
+// Neo-brutalist native select boxes
+select:not([multiple]) {
+    padding: $space-tight $space-cozy;
+    color: $text-primary;
+    background-color: $surface-primary;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
+    box-shadow: none;
+    font-size: $base_font_size;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+
+    &:hover {
+        border-color: $nb-ink;
+    }
+
+    &:focus {
+        border-color: $theme_color;
+        box-shadow: $nb-shadow;
         outline: 0;
     }
 }
@@ -216,12 +261,15 @@ input {
     position: relative;
 }
 
-// Bootstrap-y tabs
+// Neo-brutalist tabs
 .ul_tab_a_active {
-    color: $theme_color;
+    color: $nb-ink;
     cursor: default;
-    font-weight: bold;
-    border-bottom: 3px solid $theme_color;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: $nb-letter-spacing;
+    border-bottom: $nb-border-width-bold solid $theme_color;
+    box-shadow: inset 0 -7px 0 -4px $nb-accent-yellow;
     background: transparent;
 }
 
@@ -297,14 +345,18 @@ input {
                 line-height: 1.42857;
                 position: relative;
                 display: block;
-                padding: $space-tight;
+                padding: $space-compact $space-sm;
                 color: $text-secondary;
                 text-decoration: none;
                 white-space: nowrap;
-                font-weight: bold;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: $nb-letter-spacing;
+                border-bottom: $nb-border-width-bold solid transparent;
 
                 &:hover {
-                    border-bottom: 3px solid $color-tab-hover;
+                    color: $nb-ink;
+                    border-bottom: $nb-border-width-bold solid $color-tab-hover;
                 }
             }
         }
@@ -315,6 +367,8 @@ input {
 ul.pagination a:hover {
     color: $text-on-primary;
     background: $color-pagination-hover-bg;
+    box-shadow: $nb-shadow-sm;
+    transform: translate(-1px, -1px);
 }
 
 ul.pagination {
@@ -334,14 +388,16 @@ ul.pagination {
                     position: relative;
                     float: left;
                     padding: $space-xs $space-md;
-                    margin-right: 5px;
-                    font-weight: bold;
+                    margin-right: 6px;
+                    font-weight: 700;
                     line-height: 1.42857;
                     text-decoration: none;
-                    color: $theme_color;
+                    color: $nb-ink;
                     background-color: $surface-primary;
-                    border: 2px solid $theme_color;
-                    border-radius: $radius-lg;
+                    border: $nb-border-width solid $nb-ink;
+                    border-radius: $nb-radius;
+                    box-shadow: $nb-shadow-xs;
+                    transition: $nb-transition;
                 }
             }
         }
@@ -365,7 +421,8 @@ ul.pagination {
                 z-index: 2;
                 color: $text-on-primary;
                 background-color: $theme_color;
-                border-color: transparent;
+                border-color: $nb-ink;
+                box-shadow: $nb-shadow-sm;
                 cursor: default;
             }
 
@@ -373,7 +430,8 @@ ul.pagination {
                 z-index: 2;
                 color: $text-on-primary;
                 background-color: $highlight_blue;
-                border-color: transparent;
+                border-color: $nb-ink;
+                box-shadow: $nb-shadow-sm;
                 cursor: default;
             }
         }
@@ -471,16 +529,19 @@ a.close {
 
 .badge {
     min-width: 10px;
-    padding: 0 7px;
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: $nb-letter-spacing;
+    text-transform: uppercase;
+    line-height: 1.2;
     color: $text-on-primary;
     text-align: center;
     white-space: nowrap;
     vertical-align: middle;
     background-color: $color-badge-danger-bg;
-    border-radius: $radius-lg;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
     box-sizing: border-box;
 }
 
@@ -510,7 +571,9 @@ ul.select2-selection__rendered {
         color: $text-on-primary;
         padding: $space-xs;
         margin-right: 8px;
-        border-radius: $radius-base;
+        border: $nb-border-width solid $nb-ink;
+        border-radius: $nb-radius;
+        box-shadow: $nb-shadow-xs;
         font-size: smaller;
     }
 }
@@ -532,10 +595,11 @@ ul.select2-selection__rendered {
 }
 
 .sidebox {
-    border-top-left-radius: $widget_border_radius;
-    border-top-right-radius: $widget_border_radius;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius-lg;
     margin-bottom: 1.5em;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    box-shadow: $nb-shadow;
+    overflow: hidden;
 }
 
 .ws-closed {
@@ -765,6 +829,13 @@ ul.errorlist {
 .btn:hover {
     color: $text-strong;
     text-decoration: none;
+    box-shadow: $nb-shadow;
+    transform: translate(-1px, -1px);
+}
+
+.btn:active {
+    box-shadow: $nb-shadow-press;
+    transform: translate(2px, 2px);
 }
 
 .btn-block {
@@ -851,20 +922,23 @@ button:hover, button:focus {
 .btn {
     padding: $space-sm $space-md;
     cursor: pointer;
-    border-width: 1px;
-    border-radius: $radius-base;
+    border-width: $nb-border-width;
+    border-style: solid;
+    border-color: $nb-ink;
+    border-radius: $nb-radius;
     font-size: 14px;
-    font-weight: 500;
-    -webkit-box-shadow: $shadow-lg-soft;
-    -moz-box-shadow: $shadow-lg-soft;
-    box-shadow: $shadow-lg-soft;
+    font-weight: 700;
+    letter-spacing: $nb-letter-spacing;
+    -webkit-box-shadow: $nb-shadow-sm;
+    -moz-box-shadow: $nb-shadow-sm;
+    box-shadow: $nb-shadow-sm;
     overflow: hidden;
     position: relative;
-    -moz-transition: $transition-normal;
-    -o-transition: $transition-normal;
-    -webkit-transition: $transition-normal;
-    -ms-transition: $transition-normal;
-    transition: $transition-normal;
+    -moz-transition: $nb-transition;
+    -o-transition: $nb-transition;
+    -webkit-transition: $nb-transition;
+    -ms-transition: $nb-transition;
+    transition: $nb-transition;
     span {
         font-size: 15px;
         margin-left: -20px;

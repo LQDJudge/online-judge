@@ -21,14 +21,14 @@
         justify-content: center;
         gap: 0.4rem;
         cursor: pointer;
-        padding: 0.5rem 1rem;
-        border-radius: $radius-md;
-        font-weight: 500;
-        font-size: 0.875rem;
+        padding: 0.45rem 0.9rem;
+        border-radius: $nb-radius;
+        font-weight: 700;
+        font-size: 0.85rem;
         color: $text-primary;
         background: transparent;
-        border: none;
-        transition: $transition-fast;
+        border: $nb-border-width solid $nb-ink;
+        transition: $nb-transition;
 
         i {
             font-size: 1.1rem;
@@ -38,6 +38,8 @@
         &:hover {
             background: rgba(0, 0, 0, 0.05);
             color: $text-secondary;
+            box-shadow: $nb-shadow-sm;
+            transform: translate(-1px, -1px);
 
             i {
                 transform: scale(1.1);
@@ -45,14 +47,15 @@
         }
 
         &:active {
-            transform: scale(0.95);
+            box-shadow: $nb-shadow-press;
+            transform: translate(2px, 2px);
         }
     }
 
     // Like button styles
     .like-button {
         padding-right: 0.6rem;
-        border-radius: $radius-md 0 0 $radius-md;
+        border-radius: $nb-radius 0 0 $nb-radius;
 
         &.voted {
             color: $theme_color;
@@ -72,7 +75,8 @@
     // Dislike button styles
     .dislike-button {
         padding-left: 0.6rem;
-        border-radius: 0 $radius-md $radius-md 0;
+        border-radius: 0 $nb-radius $nb-radius 0;
+        border-left: none;
 
         &.voted {
             color: $color-danger;
