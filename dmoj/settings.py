@@ -30,10 +30,10 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 SITE_ID = 1
-SITE_NAME = "LQDOJ"
-SITE_LONG_NAME = "LQDOJ: Le Quy Don Online Judge"
+SITE_NAME = "Tin Hoc Tre"
+SITE_LONG_NAME = "Tin Hoc Tre Contest"
 SITE_ADMIN_EMAIL = False
-SITE_DOMAIN = "lqdoj.edu.vn"
+SITE_DOMAIN = "contest.tinhoctre.vn"
 
 DMOJ_REQUIRE_STAFF_2FA = True
 

@@ -4,7 +4,7 @@ $border_gray: #ccc;
 $background_gray: #ededed;
 $background_light_gray: #f1f2f2;
 $announcement_red: #ae0000;
-$theme_color:  #9c3706;
+$theme_color:  #1f6feb; // Steel blue — cool primary brand color
 
 // Core design tokens
 $surface-primary: #fff;
@@ -80,10 +80,10 @@ $color-warning-border: #e6c300;
 // UI state tokens
 $color-tab-hover: #008000;
 
-$color-pagination-hover-bg: #cc4e17;
+$color-pagination-hover-bg: #1a5fd0;
 $color-pagination-disabled-text: #f1efef;
-$color-pagination-disabled-bg: #ab6247;
-$color-pagination-disabled-border: #6a240b;
+$color-pagination-disabled-bg: #8294b0;
+$color-pagination-disabled-border: #4a5f7d;
 
 $color-alert-info-text: #31708f;
 $color-alert-info-bg: #d9edf7;
@@ -130,7 +130,7 @@ $color-message-error-bg: #f8d7da;
 $color-message-error-border: #f5c6cb;
 
 $color-interactive-hover-bg: #f8f8f2;
-$color-soft-accent-bg: #fef9f7;
+$color-soft-accent-bg: #f5f8fd;
 $color-soft-danger-bg: #fff5f5;
 $color-spoiler-bg: #def;
 
