@@ -1,3 +1,5 @@
+@use "vars" as *;
+
 // Notification page styling
 .notification-page {
   /* Notification page styling */
@@ -79,39 +81,47 @@
   .notification-table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
-    border-radius: 8px;
+    background: $surface-primary;
+    border: $nb-frame-width solid $nb-ink;
+    border-radius: $nb-radius-lg;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: $nb-shadow;
   }
 
   .notification-table th {
-    background: #f8f9fa;
+    background: $theme_color;
+    color: $text-on-primary;
     padding: 15px 12px;
     text-align: left;
-    font-weight: 600;
-    border-bottom: 2px solid #dee2e6;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: $nb-letter-spacing;
+    border-bottom: $nb-header-rule solid $nb-ink;
   }
 
   .notification-table td {
     padding: 15px 12px;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: $nb-grid-width solid $nb-grid-color;
     vertical-align: top;
   }
 
   /* Notification row states */
+  .notification-row {
+    transition: background-color 0.1s ease;
+  }
+
   .notification-row.unread {
     background-color: #fff3cd;
-    border-left: 4px solid #ffc107;
+    border-left: $nb-border-width-bold solid $color-warning;
   }
 
   .notification-row.read {
-    background-color: #f8f9fa;
+    background-color: $background_light_gray;
     opacity: 0.8;
   }
 
   .notification-row:hover {
-    background-color: #e9ecef;
+    background-color: $nb-accent-yellow;
   }
 
   /* Content styling */

@@ -1670,13 +1670,20 @@ form.quiz-join-pseudotab {
 // =====================================================
 .grading-row {
   display: flex;
-  transition: background-color linear 0.2s;
+  transition: $nb-transition;
   margin-bottom: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: $nb-border-width solid $nb-ink;
+  border-radius: $nb-radius-lg;
+  box-shadow: $nb-shadow;
   align-items: center;
   padding: 10px;
-  background: white;
+  background: $surface-primary;
+
+  &:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: $nb-shadow-lg;
+    background: $background_light_gray;
+  }
 
   .user-img {
     width: 70px;
@@ -3256,8 +3263,10 @@ form.quiz-join-pseudotab {
     gap: 2em;
     margin-bottom: 1em;
     padding: 1em;
-    background: white;
-    border-radius: 4px;
+    background: $surface-primary;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius-lg;
+    box-shadow: $nb-shadow-sm;
 
     .stat-item {
       display: flex;
@@ -3279,13 +3288,18 @@ form.quiz-join-pseudotab {
     display: flex;
     align-items: center;
     padding: 0.8em 1em;
-    background: white;
-    border-radius: 4px;
+    background: $surface-primary;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
+    box-shadow: $nb-shadow-xs;
     margin-bottom: 0.5em;
     gap: 1em;
+    transition: $nb-transition;
 
     &:hover {
-      background: color.adjust(white, $lightness: -3%);
+      transform: translate(-2px, -2px);
+      box-shadow: $nb-shadow;
+      background: $background_light_gray;
     }
   }
 

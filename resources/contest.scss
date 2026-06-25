@@ -1,14 +1,21 @@
 @use "vars" as *;
 
 .list-contest {
-    box-shadow: 0px 1px 2px lightgrey, 0px 1px 5px lightgrey;
-    border-radius: 15px;
+    border: $nb-border-width solid $nb-ink;
+    box-shadow: $nb-shadow;
+    border-radius: $nb-radius-lg;
     padding: 20px;
     margin-bottom: 20px;
     width: 100%;
     box-sizing: border-box;
     display: flex;
-    background: white;
+    background: $surface-primary;
+    transition: $nb-transition;
+
+    &:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: $nb-shadow-lg;
+    }
 
     .info-contest:first-child, .info-contest:nth-child(2) {
         margin-right: 15px;

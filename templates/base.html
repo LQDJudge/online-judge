@@ -148,6 +148,7 @@
                    class="nav-icon-link nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}"
                    data-tooltip="{{ user_trans(node.label) }}">
                   <span class="nav-icon-container">
+                    {% if node.key == "about" %} <i class="fa fa-circle-info"></i> {% endif %}
                     {% if node.key == "problems" %} <i class="fa fa-puzzle-piece"></i> {% endif %}
                     {% if node.key == "submit" %} <i class="fa fa-code"></i> {% endif %}
                     {% if node.key == "user" %} <i class="fa fa-user"></i> {% endif %}
@@ -155,6 +156,7 @@
                     {% if node.key == "group" %} <i class="fa fa-building-columns"></i> {% endif %}
                     {% if node.key == "courses" %} <i class="fa fa-graduation-cap"></i> {% endif %}
                     {% if node.key == "quiz" %} <i class="fa fa-file-alt"></i> {% endif %}
+                    {% if node.key == "chat" %} <i class="fa fa-comments"></i> {% endif %}
                   </span>
                 </a>
                 {% with children=node.get_children() %}

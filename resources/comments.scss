@@ -75,12 +75,19 @@
         }
     }
 
-    // Comment body container - modern bubble style
+    // Comment body container - neo-brutalist card
     .body-header {
-        background: #eeeeee;
-        border-radius: 18px;
-        border: none;
+        background: $background_gray;
+        border-radius: $nb-radius-lg;
+        border: $nb-border-width solid $nb-ink;
+        box-shadow: $nb-shadow-xs;
         padding: 10px 14px;
+        transition: $nb-transition;
+
+        &:hover {
+            box-shadow: $nb-shadow-sm;
+            transform: translate(-1px, -1px);
+        }
     }
 
     .body .comment-body {

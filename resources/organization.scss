@@ -42,13 +42,13 @@
 }
 
 .organization-card {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: $surface-primary;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius-lg;
+    box-shadow: $nb-shadow;
     text-align: center;
     padding: 1em;
-    transition: transform 0.3s;
+    transition: $nb-transition;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -58,7 +58,8 @@
     color: inherit;
 
     &:hover {
-        transform: translateY(-5px);
+        transform: translate(-2px, -2px);
+        box-shadow: $nb-shadow-lg;
         color: $theme_color;
     }
 
@@ -105,16 +106,22 @@
 
 .organization-row {
     display: block;
-    padding: 0.5em;
-    border-bottom: 1px #ccc solid;
-    border-top: none;
+    padding: 0.5em 0.75em;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
+    box-shadow: $nb-shadow-xs;
+    margin-bottom: 0.5em;
     color: black;
-    font-weight: 500;
+    font-weight: 600;
     display: flex;
     align-items: center;
+    transition: $nb-transition;
 
     &:hover {
-        background-color: #f3f3f3;
+        background-color: $nb-accent-yellow;
+        color: $nb-ink;
+        transform: translate(-1px, -1px);
+        box-shadow: $nb-shadow-sm;
     }
 }
 

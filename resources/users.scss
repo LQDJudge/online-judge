@@ -63,19 +63,34 @@ th.header.rank {
     padding-left: 0.5em;
 }
 
-// Leaderboard table - matching contest ranking style
+// Leaderboard table - neo-brutalist scoreboard grid
 #users-table {
     border-collapse: collapse;
     border-spacing: 0;
     background: $surface-primary;
 
-    // Header styling - theme color
+    // Bold ink frame + hard offset shadow so the ranking reads as a sharp
+    // "digital scoreboard" instead of a faint set of bottom dividers.
+    border: $nb-frame-width solid $nb-ink;
+    border-radius: $nb-radius-lg;
+    box-shadow: $nb-shadow;
+    overflow: hidden;
+
+    // Header styling - theme color, uppercase digital labels, bold ink rule under.
     thead th {
         background: $theme_color;
         color: $text-on-primary;
-        font-weight: 600;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: $nb-letter-spacing;
         padding: 0.5rem 0.6rem;
         vertical-align: middle;
+        border-right: $nb-grid-width solid rgba(255, 255, 255, 0.35);
+        border-bottom: $nb-header-rule solid $nb-ink;
+
+        &:last-child {
+            border-right: none;
+        }
 
         a, a:link, a:visited {
             color: $text-on-primary;
@@ -87,11 +102,16 @@ th.header.rank {
         }
     }
 
-    // Cell styling
+    // Cell styling — visible horizontal + vertical gridlines for the grid look.
     td {
         padding: 0.5rem 0.5rem;
-        border-bottom: 1px solid $border_gray;
+        border-bottom: $nb-grid-width solid $nb-grid-color;
+        border-right: $nb-grid-width solid $nb-grid-color;
         vertical-align: middle;
+
+        &:last-child {
+            border-right: none;
+        }
     }
 
     // Rating badge styling

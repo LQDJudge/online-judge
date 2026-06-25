@@ -1,3 +1,5 @@
+@use "vars" as *;
+
 .ticket-container {
     display: flex;
     #content > h2:first-child small {
@@ -177,10 +179,19 @@
 // Ticket feed styles
 .ticket-item {
     padding: 16px 20px;
-    border-bottom: 1px solid #e8e8e8;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
+    box-shadow: $nb-shadow-xs;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
-    transition: background-color 0.2s ease;
+    transition: $nb-transition;
+
+    &:hover {
+        background-color: $nb-accent-yellow;
+        transform: translate(-1px, -1px);
+        box-shadow: $nb-shadow-sm;
+    }
 
     .ticket-status {
         margin-right: 16px;

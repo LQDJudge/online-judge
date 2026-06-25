@@ -19,17 +19,18 @@
     .course-item {
         display: flex;
         align-items: center;
-        border: 1px solid #ddd;
+        border: $nb-border-width solid $nb-ink;
         padding: 20px;
         margin-bottom: 10px;
-        border-radius: 8px;
-        background-color: #fff;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: transform 0.2s ease-in-out;
+        border-radius: $nb-radius-lg;
+        background-color: $surface-primary;
+        box-shadow: $nb-shadow;
+        transition: $nb-transition;
     }
     .course-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        transform: translate(-2px, -2px);
+        box-shadow: $nb-shadow-lg;
+        background-color: $background_light_gray;
     }
     .course-image {
         flex: 0 0 auto;
@@ -59,17 +60,19 @@
     padding: 0;
 
     li:hover {
-        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        background: #ffffe0;
+        transform: translate(-2px, -2px);
+        box-shadow: $nb-shadow-lg;
+        background: $nb-accent-yellow;
     }
 
     li {
-        background: #fff;
-        border: 1px solid #ddd;
+        background: $surface-primary;
+        border: $nb-border-width solid $nb-ink;
         margin-bottom: 20px;
         padding-top: 10px;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px #ccc;
+        border-radius: $nb-radius-lg;
+        box-shadow: $nb-shadow;
+        transition: $nb-transition;
     }
 
     // Locked lesson styles
@@ -80,7 +83,8 @@
         padding-bottom: 10px;
 
         &:hover {
-            box-shadow: 0 2px 4px #ccc;
+            transform: none;
+            box-shadow: $nb-shadow;
             background: $background_light_gray;
         }
 

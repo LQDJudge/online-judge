@@ -8,9 +8,9 @@
     width: 100%;
 
     .post {
-        border: 1px dotted grey;
-        border-radius: 1em;
-        border-top: 0.125rem solid #9b9b9b;
+        border: $nb-border-width solid $nb-ink;
+        border-radius: $nb-radius-lg;
+        box-shadow: $nb-shadow;
         padding: 1.25rem 1.25rem 1.563rem;
         margin-bottom: 2em;
 
@@ -140,14 +140,15 @@
 }
 
 .blog-box {
-    border-bottom: 1.4px solid lightgray;
-    border-top: 1.4px solid lightgray;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius-lg;
     margin-bottom: 1.5em;
     padding: 1em 1.25em 0.5em 1.25em;
-    background-color: white;
+    background-color: $surface-primary;
     margin-left: auto;
     margin-right: auto;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    box-shadow: $nb-shadow;
+    transition: $nb-transition;
 
     .title {
         margin-bottom: 0.2em;
@@ -155,9 +156,9 @@
     }
 }
 
-.blog-box:hover, .blog-box:not(.pre-expand-blog) {
-    border-color: #8a8a8a;
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
+.blog-box:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: $nb-shadow-lg;
 }
 
 .blog-description {

@@ -6,7 +6,14 @@
     margin-left: auto;
     margin-right: auto;
     margin-bottom: 0.5em;
-    background: rgba(0, 0, 0, 0.01);
+    background: $surface-primary;
+
+    // Neo-brutalist frame: bold ink border + tight corners + a hard offset
+    // shadow so every data/stat/rank table reads as a sharp "digital" panel
+    // instead of a faint #ccc grid. Gridlines are drawn per-cell below.
+    border: $nb-frame-width solid $nb-ink;
+    border-radius: $nb-radius;
+    box-shadow: $nb-shadow-xs;
 
     &.striped tr:nth-child(even) {
         background: $background_light_gray;
@@ -22,59 +29,47 @@
         }
     }
 
-    // Modern card-style chrome — opt-in via `.table.modern`. Adds rounded
-    // outer corners + subtle drop shadow, and drops the last-row border so
-    // it doesn't poke through the curve. Designed for user-facing list
-    // pages (problem list, contest list, user list). NOT recommended for
-    // dense data/admin tables where the shadow and rounding read as noise.
+    // Modern card-style chrome — opt-in via `.table.modern`. Keeps the bold
+    // brutalist frame from the base but trades the dense grid for a rounded
+    // card with a hard offset shadow, for the big user-facing list pages
+    // (problem list, contest list, user list).
     //
     // Because the base `.table` uses `border-spacing: 0` (not collapse),
     // border-radius works directly on the table element — no wrapper needed.
-    // We also need to round the corner cells individually since cells have
-    // their own backgrounds that would otherwise extend past the curve.
+    // We round the corner cells individually since cells have their own
+    // backgrounds that would otherwise extend past the curve.
     &.modern {
-        border-radius: $radius-lg;
-        box-shadow: $shadow-sm;
+        border-radius: $nb-radius-lg;
+        box-shadow: $nb-shadow;
 
         thead tr:first-child th:first-child {
-            border-top-left-radius: $radius-lg;
+            border-top-left-radius: $nb-radius-lg;
         }
         thead tr:first-child th:last-child {
-            border-top-right-radius: $radius-lg;
+            border-top-right-radius: $nb-radius-lg;
         }
         tr:last-child td:first-child {
-            border-bottom-left-radius: $radius-lg;
+            border-bottom-left-radius: $nb-radius-lg;
         }
         tr:last-child td:last-child {
-            border-bottom-right-radius: $radius-lg;
+            border-bottom-right-radius: $nb-radius-lg;
         }
         tr:last-child td {
             border-bottom: 0;
         }
 
-        // Header text styling — kept lighter than the base `.table` to match
-        // the more modern, less heavy chrome. Sortable-header anchors inherit
-        // these properties so a "Problem ▴" (link) and "Authors" (plain text)
-        // look identical in color, weight, and underline state.
-        th {
-            font-weight: normal;
+        th a {
+            color: inherit;
+            font-weight: inherit;
+            text-decoration: none;
+        }
 
-            a {
-                color: inherit;
-                font-weight: inherit;
-                text-decoration: none;
-            }
-
-            a:hover {
-                opacity: 0.85;
-            }
+        th a:hover {
+            opacity: 0.85;
         }
 
         // Row hover — small visual feedback so users can track which row
-        // they're targeting in a long table. The previous per-id rules in
-        // problem.scss / users.scss used `rgb(241, 242, 242)` which is
-        // essentially `$background_light_gray`; using the token here keeps
-        // dark-mode generation happy.
+        // they're targeting in a long table.
         tbody tr {
             transition: background-color 0.12s ease;
         }
@@ -83,40 +78,57 @@
         }
     }
 
-    th:first-child, td:first-child {
-        border-width: 1px 1px 0 1px;
-    }
-
-    tr:last-child td {
-        border-bottom: 1px solid $border_gray;
-    }
-
     thead th {
         vertical-align: middle;
     }
 
+    // Header: bold, uppercase, letter-spaced "digital" labels with a heavy ink
+    // rule underneath to slam the header onto the body grid.
     th {
         height: 2em;
         color: $text-on-primary;
         background-color: $theme_color;
-        border-color: $border_gray;
-        border-width: 1px 1px 0 0;
+        border-color: $nb-grid-color;
         border-style: solid;
-        padding: 4px 10px;
+        border-width: 0 $nb-grid-width 0 0;          // vertical rules between header cells
+        border-bottom: $nb-header-rule solid $nb-ink; // bold rule under the header row
+        padding: 5px 10px;
         vertical-align: middle;
         text-align: center;
-        font-weight: 600;
-        font-size: 1.1em;
+        font-weight: 700;
+        font-size: 1.05em;
+        text-transform: uppercase;
+        letter-spacing: $nb-letter-spacing;
     }
 
+    // Body cells: clearly-visible top + right gridlines build the scoreboard grid.
     td {
-        border-color: $border_gray;
-        border-width: 1px 1px 0 0;
+        border-color: $nb-grid-color;
         border-style: solid;
+        border-width: $nb-grid-width $nb-grid-width 0 0;
         padding: 7px 5px;
         vertical-align: middle;
         text-align: center;
         overflow-wrap: break-word;
+    }
+
+    // The outer right edge is handled by the table frame — don't double it.
+    th:last-child, td:last-child {
+        border-right-width: 0;
+    }
+
+    // Round the corner cells so cell backgrounds don't poke past the frame curve.
+    thead tr:first-child th:first-child {
+        border-top-left-radius: $nb-radius;
+    }
+    thead tr:first-child th:last-child {
+        border-top-right-radius: $nb-radius;
+    }
+    tr:last-child td:first-child {
+        border-bottom-left-radius: $nb-radius;
+    }
+    tr:last-child td:last-child {
+        border-bottom-right-radius: $nb-radius;
     }
 }
 

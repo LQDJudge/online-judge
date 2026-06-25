@@ -1135,10 +1135,13 @@ input::placeholder {
     display: flex;
     align-items: center;
     gap: 0.5em;
-    border-radius: $radius-md;
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius;
+    box-shadow: $nb-shadow-xs;
     color: $text-primary;
+    font-weight: 600;
     text-decoration: none;
-    transition: $transition-fast;
+    transition: $nb-transition;
 
     .sidebar-icon {
         display: inline-flex;
@@ -1173,14 +1176,21 @@ input::placeholder {
 }
 
 .left-sidebar-item:hover {
-    background-color: $color-interactive-hover-bg;
+    background-color: $nb-accent-yellow;
     cursor: pointer;
-    color: $text-primary;
+    color: $nb-ink;
+    transform: translate(-1px, -1px);
+    box-shadow: $nb-shadow-sm;
+
+    .sidebar-icon {
+        color: $nb-ink;
+    }
 }
 
 .left-sidebar-item.active {
     background-color: $theme_color;
     color: $text-on-primary;
+    box-shadow: $nb-shadow-sm;
 
     .sidebar-icon {
         color: $text-on-primary;
@@ -1191,6 +1201,12 @@ input::placeholder {
 .left-sidebar-item.active:hover {
     background-color: $theme_color;
     color: $text-on-primary;
+    transform: translate(-1px, -1px);
+    box-shadow: $nb-shadow;
+
+    .sidebar-icon {
+        color: $text-on-primary;
+    }
 }
 
 .sidebar-icon {
@@ -1566,11 +1582,18 @@ input::placeholder {
                 display: none;
             }
 
-            // Apply even spacing only to navigation items (not home)
+            // Apply even spacing only to navigation items (not home).
+            // Bold ink dividers turn the icon menu into a segmented,
+            // arcade-style control instead of free-floating icons.
             &:not(.home-nav-element):not(.home-menu-item) {
                 flex: 1;
                 display: flex;
                 justify-content: center;
+                border-left: $nb-border-width solid $nb-ink;
+
+                &:last-child {
+                    border-right: $nb-border-width solid $nb-ink;
+                }
             }
 
             &:not(:hover)>ul {
@@ -1614,21 +1637,21 @@ input::placeholder {
                 }
             }
 
-            // Icon-only navigation styles for desktop
+            // Icon-only navigation styles for desktop — flat brutalist cells
+            // that fill the segment between the ink dividers (no translucent
+            // blur / soft float). Hover and active states are hard and punchy.
             .nav-icon-link {
                 display: flex;
-                height: 100%;
+                height: $navbar_height;
+                width: 100%;
                 align-items: center;
                 justify-content: center;
                 text-decoration: none;
                 color: #666;
                 font-weight: normal;
-                width: 50px;
-                height: 50px;
-                border-radius: 12px;
-                background: rgba(255, 255, 255, 0.1);
-                backdrop-filter: blur(10px);
-                transition: all 0.3s ease;
+                background: transparent;
+                border-radius: 0;
+                transition: background-color 0.1s ease, box-shadow 0.1s ease;
                 position: relative;
 
                 .nav-icon-container {
@@ -1639,18 +1662,16 @@ input::placeholder {
                     i {
                         font-size: 20px;
                         color: #666;
-                        transition: all 0.3s ease;
+                        transition: color 0.1s ease, transform 0.1s ease;
                     }
                 }
 
                 &:hover {
-                    background: rgba(255, 255, 255, 0.2);
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+                    background: $nb-accent-yellow;
 
                     .nav-icon-container i {
-                        color: $theme_color;
-                        transform: scale(1.1);
+                        color: $nb-ink;
+                        transform: scale(1.12);
                     }
 
                     &::after {
@@ -1687,45 +1708,54 @@ input::placeholder {
                 }
 
                 &.active {
-                    background: transparent;
-                    border-bottom: 3px solid $theme_color;
-                    border-bottom-left-radius: 0;
-                    border-bottom-right-radius: 0;
+                    background: $nb-accent-yellow;
+                    border-bottom: $nb-border-width-bold solid $theme_color;
+                    box-shadow: inset 0 -8px 0 -5px $theme_color;
 
                     .nav-icon-container i {
-                        color: $theme_color;
+                        color: $nb-ink;
+                    }
+
+                    &:hover {
+                        background: $nb-accent-yellow;
                     }
                 }
             }
 
-            // Dropdown styles for child items (desktop only)
+            // Dropdown styles for child items (desktop only) — brutalist panel:
+            // ink border + hard offset shadow + tight corners (no soft blur).
             .nav-dropdown {
                 position: absolute;
                 top: 100%;
                 left: 50%;
                 transform: translateX(-50%);
                 background: white;
-                border-radius: 8px;
-                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-                padding: 8px 0;
-                min-width: 150px;
+                border: $nb-border-width solid $nb-ink;
+                border-radius: $nb-radius;
+                box-shadow: $nb-shadow;
+                padding: 0;
+                min-width: 160px;
                 opacity: 0;
                 visibility: hidden;
-                transition: all 0.3s ease;
+                transition: opacity 0.12s ease, visibility 0.12s ease;
                 z-index: 1000;
                 margin-top: 8px;
+                overflow: hidden;
 
                 .nav-dropdown-item {
                     display: block;
                     padding: 8px 16px;
-                    color: #333;
+                    color: $nb-ink;
                     text-decoration: none;
                     font-size: 14px;
-                    transition: background-color 0.2s ease;
+                    font-weight: 600;
+                    border-left: 4px solid transparent;
+                    transition: background-color 0.1s ease, border-color 0.1s ease;
 
                     &:hover {
-                        background: #f5f5f5;
+                        background: $background_gray;
                         color: $theme_color;
+                        border-left-color: $theme_color;
                     }
                 }
             }

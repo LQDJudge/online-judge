@@ -1,3 +1,5 @@
+@use "vars" as *;
+
 .info-float {
     position: sticky;
     top: 60px;
@@ -6,13 +8,20 @@
 
 .submission-row {
     display: flex;
-    transition: background-color linear 0.2s;
+    transition: $nb-transition;
     margin-bottom: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: $nb-border-width solid $nb-ink;
+    border-radius: $nb-radius-lg;
+    box-shadow: $nb-shadow;
     align-items: center;
     padding: 10px;
-    background: white;
+    background: $surface-primary;
+
+    &:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: $nb-shadow-lg;
+        background: $background_light_gray;
+    }
 
     .sub-result {
         display: flex;
