@@ -84,9 +84,11 @@ def calculate_user_lesson_grades(user_profile, lessons):
     # Get problem points for this user
     bulk_problem_points = bulk_max_case_points_per_problem([user_profile], all_problems)
 
-    # Calculate lesson progress
+    # Prerequisite gating must reflect REAL completion, so include hidden-result
+    # items here. This percentage is internal (used only to unlock lessons) and is
+    # never displayed, so it does not leak hidden scores.
     lesson_progress = bulk_calculate_lessons_progress(
-        [user_profile], lessons, bulk_problem_points
+        [user_profile], lessons, bulk_problem_points, exclude_hidden=False
     )
 
     # Extract grades by lesson order

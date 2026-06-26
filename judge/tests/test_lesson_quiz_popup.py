@@ -7,6 +7,7 @@ the attempt owner or a quiz editor (same gate as LessonQuizResult).
 """
 
 from decimal import Decimal
+from unittest import mock
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -23,6 +24,7 @@ from judge.models import (
 )
 from judge.models.course import RoleInCourse
 from judge.models.quiz import Quiz, QuizAttempt
+from judge.views.course import CourseLessonUserQuizAttemptsAjax
 
 
 class LessonQuizPopupTest(TestCase):
@@ -122,6 +124,7 @@ class LessonQuizPopupTest(TestCase):
         resp = self.client.get(self._url(target=self.viewer))
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, "lightbox-submissions")
+        self.assertContains(resp, "lightbox-empty")  # friendly empty state
 
     def test_result_link_shown_to_owner(self):
         self.client.force_login(self.student.user)  # owner of the attempt
@@ -152,3 +155,134 @@ class LessonQuizPopupTest(TestCase):
         self.lesson.save()
         self.client.force_login(self.viewer.user)
         self.assertEqual(self.client.get(self._url()).status_code, 404)
+
+    def test_invisible_lesson_quiz_404_for_non_editor(self):
+        # CourseLessonQuiz.is_visible=False must hide the quiz from non-editors,
+        # mirroring the lesson-visibility gate.
+        self.lesson_quiz.is_visible = False
+        self.lesson_quiz.save()
+        self.client.force_login(self.viewer.user)
+        self.assertEqual(self.client.get(self._url()).status_code, 404)
+
+    def test_popup_survives_attempt_with_null_score(self):
+        # An older/partial submitted attempt can have score=None while max_score is set.
+        # The "%" cell divides score/max_score; it must not crash the whole popup.
+        QuizAttempt.objects.create(
+            user=self.student,
+            quiz=self.quiz,
+            lesson_quiz=self.lesson_quiz,
+            attempt_number=2,
+            is_submitted=True,
+            score=None,
+            max_score=Decimal("10"),
+            end_time=timezone.now(),
+        )
+        self.client.force_login(self.viewer.user)  # non-editor, quiz not hidden
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+
+    def test_invisible_lesson_quiz_visible_to_editor(self):
+        self.lesson_quiz.is_visible = False
+        self.lesson_quiz.save()
+        teacher = self._profile("vis_teacher")
+        CourseRole.objects.create(
+            course=self.course, user=teacher, role=RoleInCourse.TEACHER
+        )
+        self.client.force_login(teacher.user)
+        self.assertEqual(self.client.get(self._url()).status_code, 200)
+
+    # --- Hidden results (CourseLessonQuiz.is_result_hidden) ---------------------
+    # When a teacher ticks "Hide Results", the score must be masked from students
+    # (mirrors the contest quiz popup: "?" instead of the number, no "Best score").
+    # The masking rule is Quiz.should_hide_result(user, lesson_quiz=...): visible
+    # only to superusers, quiz editors and course editors -- NOT even the owner.
+
+    def _hide_results(self):
+        self.lesson_quiz.is_result_hidden = True
+        self.lesson_quiz.save()
+
+    def test_score_hidden_from_enrolled_student_when_result_hidden(self):
+        self._hide_results()
+        self.client.force_login(self.viewer.user)  # enrolled, not owner, not editor
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, ">?<")  # masked placeholder
+        self.assertNotContains(resp, "case-AC")  # real score cell not rendered
+
+    def test_score_hidden_from_owner_when_result_hidden(self):
+        # The owner is NOT special-cased: hidden means hidden from the student too.
+        self._hide_results()
+        self.client.force_login(self.student.user)  # owner of the attempt
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, ">?<")
+        self.assertNotContains(resp, "case-AC")
+
+    def test_best_score_hidden_when_result_hidden(self):
+        # The "Best score" block (<strong>...) must not render when hidden.
+        self._hide_results()
+        self.client.force_login(self.viewer.user)
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, "<strong>")
+
+    def test_score_shown_to_course_teacher_when_result_hidden(self):
+        # A course editor (Teacher) still sees the real score.
+        teacher = self._profile("teacher")
+        CourseRole.objects.create(
+            course=self.course, user=teacher, role=RoleInCourse.TEACHER
+        )
+        self._hide_results()
+        self.client.force_login(teacher.user)
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "case-AC")
+        self.assertNotContains(resp, ">?<")
+
+    def test_score_shown_to_quiz_editor_when_result_hidden(self):
+        # A quiz author (editor) still sees the real score.
+        editor = self._profile("hidqeditor")
+        CourseRole.objects.create(
+            course=self.course, user=editor, role=RoleInCourse.STUDENT
+        )
+        self.quiz.authors.add(editor)
+        self._hide_results()
+        self.client.force_login(editor.user)
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "case-AC")
+        self.assertNotContains(resp, ">?<")
+
+    # --- Attempt cap (POPUP_LIMIT) ---------------------------------------------
+    # Unlimited-attempt quizzes can accumulate many attempts; the popup must cap
+    # the rows shown (like the submission popup) and flag "has more" via limit+1.
+
+    def _add_attempts(self, n):
+        for i in range(n):
+            QuizAttempt.objects.create(
+                user=self.student,
+                quiz=self.quiz,
+                lesson_quiz=self.lesson_quiz,
+                attempt_number=i + 2,  # setUp already created attempt #1
+                is_submitted=True,
+                score=Decimal("5"),
+                max_score=Decimal("10"),
+                end_time=timezone.now(),
+            )
+
+    def test_quiz_popup_caps_attempt_rows(self):
+        self._add_attempts(3)  # 4 submitted attempts total
+        self.client.force_login(self.viewer.user)
+        with mock.patch.object(CourseLessonUserQuizAttemptsAjax, "POPUP_LIMIT", 2):
+            resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+        # One "lightbox-submissions-time" cell per rendered attempt row.
+        self.assertEqual(resp.content.count(b"lightbox-submissions-time"), 2)
+        self.assertContains(resp, "quiz-attempts-more")  # "has more" hint
+
+    def test_quiz_popup_no_more_hint_when_within_limit(self):
+        # setUp has a single attempt; default limit is 50 -> no "has more" hint.
+        self.client.force_login(self.viewer.user)
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, "quiz-attempts-more")

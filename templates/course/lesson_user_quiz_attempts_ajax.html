@@ -1,17 +1,23 @@
 <h4>{{ _('Quiz attempts of') }} {{ link_user(profile) }}</h4>
 <hr>
+{% set _is_result_hidden = is_result_hidden is defined and is_result_hidden %}
 {% if attempts %}
   <table class="lightbox-submissions">
     <tbody>
       {% for attempt in attempts %}
         <tr>
           <td class="lightbox-submissions-time">{{ attempt.end_time|date(_("g:i a d/m/Y")) }}</td>
-          <td class="case-{{ 'AC' if attempt.score == attempt.max_score else 'WA' }}">
-            {{ attempt.score|floatformat(1) }} / {{ attempt.max_score|floatformat(1) }}
-          </td>
-          <td>
-            ({{ ((attempt.score / attempt.max_score) * 100)|floatformat(0) if attempt.max_score else 0 }}%)
-          </td>
+          {% if _is_result_hidden %}
+            <td>?</td>
+            <td></td>
+          {% else %}
+            <td class="case-{{ 'AC' if attempt.score == attempt.max_score else 'WA' }}">
+              {{ attempt.score|floatformat(1) }} / {{ attempt.max_score|floatformat(1) }}
+            </td>
+            <td>
+              ({{ ((attempt.score / attempt.max_score) * 100)|floatformat(0) if (attempt.max_score and attempt.score is not none) else 0 }}%)
+            </td>
+          {% endif %}
           {% if can_view_results %}
             <td>
               → <a href="{{ url('lesson_quiz_result', course.slug, lesson.id, lesson_quiz.quiz.code, attempt.id) }}">{{ attempt.id }}</a>
@@ -21,7 +27,12 @@
       {% endfor %}
     </tbody>
   </table>
-  {% if best_attempt %}
+  {% if has_more %}
+    <p class="quiz-attempts-more">
+      {% trans count=popup_limit %}Showing the latest {{ count }} attempts.{% endtrans %}
+    </p>
+  {% endif %}
+  {% if not _is_result_hidden and best_attempt %}
     <hr>
     <p>
       <strong>{{ _('Best score') }}:</strong>
@@ -29,5 +40,8 @@
     </p>
   {% endif %}
 {% else %}
-  <p>{{ _('No attempts yet.') }}</p>
+  <div class="lightbox-empty" style="text-align: center; padding: 1.5em 1em;">
+    <i class="fa fa-inbox gray" style="font-size: 2.5em;"></i>
+    <p class="gray" style="margin-top: 0.5em;">{{ _('No attempts yet.') }}</p>
+  </div>
 {% endif %}

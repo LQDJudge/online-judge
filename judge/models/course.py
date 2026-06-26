@@ -305,14 +305,16 @@ class CourseLesson(models.Model):
             *[p["problem_id"] for p in self.get_problems_and_scores()]
         )
 
-    @cache_wrapper(prefix="CLgps", expected_type=list)
+    @cache_wrapper(prefix="CLgps2", expected_type=list)
     def get_problems_and_scores(self):
         """
         Get all problems with their scores for this lesson in order.
-        Returns a list of dictionaries with problem_id and score.
+        Returns a list of dictionaries with problem_id, score and is_result_hidden.
         """
         return list(
-            self.lesson_problems.order_by("order").values("problem_id", "score")
+            self.lesson_problems.order_by("order").values(
+                "problem_id", "score", "is_result_hidden"
+            )
         )
 
     def save(self, *args, **kwargs):
@@ -370,6 +372,11 @@ class CourseLessonProblem(ImmutableIdentityMixin, models.Model):
         verbose_name=_("score"),
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(MAX_COURSE_ITEM_POINTS)],
+    )
+    is_result_hidden = models.BooleanField(
+        default=False,
+        verbose_name=_("Hide Results"),
+        help_text=_("Hide problem results from students in grades (shows ?)."),
     )
 
     def save(self, *args, **kwargs):

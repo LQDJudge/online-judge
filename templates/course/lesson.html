@@ -36,7 +36,9 @@
         {% set quiz = quiz_item.quiz %}
         <a href="{{url('lesson_quiz_detail', course.slug, lesson.id, quiz.code)}}" target="_blank">
           <li>
-            {% if quiz_item.best_score is not none and quiz_item.max_score and quiz_item.best_score >= quiz_item.max_score %}
+            {% if quiz_item.hidden %}
+              <i class="unsolved-problem-color fa fa-minus-circle"></i>
+            {% elif quiz_item.best_score is not none and quiz_item.max_score and quiz_item.best_score >= quiz_item.max_score %}
               <i class="solved-problem-color fa fa-check-circle"></i>
             {% elif quiz_item.best_score is not none %}
               <i class="attempted-problem-color fa fa-minus-circle"></i>
@@ -44,8 +46,10 @@
               <i class="unsolved-problem-color fa fa-minus-circle"></i>
             {% endif %}
             <span class="problem-name">{{quiz.title}}</span>
-            <span class="score">
-              {% if quiz_item.best_score is not none %}
+            <span class="score{% if quiz_item.hidden %} quiz-score-hidden{% endif %}">
+              {% if quiz_item.hidden %}
+                ?
+              {% elif quiz_item.best_score is not none %}
                 {{quiz_item.best_score|floatformat(1)}} / {{quiz_item.max_score|floatformat(0)}}
               {% else %}
                 0 / {{quiz_item.max_score|floatformat(0)}}
@@ -70,7 +74,9 @@
       {% set problem = lesson_problem.problem %}
       <a href="{{url('problem_detail', problem.code)}}" target="_blank">
         <li>
-          {% if problem.id in completed_problem_ids %}
+          {% if lesson_problem.hidden %}
+            <i class="unsolved-problem-color fa fa-minus-circle"></i>
+          {% elif problem.id in completed_problem_ids %}
             <i class="solved-problem-color fa fa-check-circle"></i>
           {% elif problem.id in attempted_problems %}
             <i class="attempted-problem-color fa fa-minus-circle"></i>
@@ -79,8 +85,10 @@
           {% endif %}
           <span class="problem-name">{{problem.name}}</span>
           {% set pp = problem_points[problem.id] %}
-          <span class="score">
-            {% if pp and pp.case_total %}
+          <span class="score{% if lesson_problem.hidden %} problem-score-hidden{% endif %}">
+            {% if lesson_problem.hidden %}
+              ?
+            {% elif pp and pp.case_total %}
               {{(pp.case_points / pp.case_total * lesson_problem.score) |floatformat(1)}} /
               {{lesson_problem.score|floatformat(0)}}
             {% else %}

@@ -45,6 +45,7 @@ from judge.models import (
 )
 from judge.models.course import RoleInCourse, EDITABLE_ROLES
 from judge.utils.course_prerequisites import get_lesson_lock_status
+from judge.utils.hidden_results import mark_hidden_result_submissions
 from judge.utils.identity import SemanticIdentityModelFormSet, save_semantic_formset
 from judge.utils.problems import (
     user_attempted_ids,
@@ -103,10 +104,41 @@ def bulk_max_case_points_per_problem(students, all_problems):
     return result
 
 
-def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
+def hidden_lesson_quiz_ids(lesson_quizzes):
+    """Lesson-quiz ids whose results are hidden in the grades ranking.
+
+    Viewer-INDEPENDENT on purpose: the grades ranking looks the same for every role
+    (student/teacher/admin) -> all see "?" and the quiz is excluded from the total.
+    Editors recover the real score by opening the cell's popup, which IS viewer-aware
+    (CourseLessonUserQuizAttemptsAjax uses Quiz.should_hide_result).
+    `lesson_quizzes` is an iterable of CourseLessonQuiz.
+    """
+    return {lq.id for lq in lesson_quizzes if lq.is_result_hidden}
+
+
+def hidden_lesson_problem_ids(problems_and_scores):
+    """Problem ids whose results are hidden in the grades ranking.
+
+    Single source of truth (mirrors hidden_lesson_quiz_ids) so the grades cells and
+    the submission popup can't drift apart and leak. `problems_and_scores` is the
+    list returned by CourseLesson.get_problems_and_scores().
+    """
+    return {
+        ps["problem_id"] for ps in problems_and_scores if ps.get("is_result_hidden")
+    }
+
+
+def bulk_calculate_lessons_progress(
+    students, lessons, bulk_problem_points, exclude_hidden=True
+):
     """
     Calculate progress for all students and lessons using pre-fetched data.
     Includes both problem scores and quiz scores.
+
+    exclude_hidden=True (default, for DISPLAY): hidden-result quizzes/problems are
+    dropped from achieved/total so the grades pages don't leak them. Pass
+    exclude_hidden=False for the prerequisite gate, which must reflect the student's
+    REAL completion (the gate percentage is internal and never rendered).
 
     Args:
         students: List of Profile objects
@@ -122,7 +154,11 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
     lesson_problems_data = {}
     for lesson in lessons:
         lesson_problems_data[lesson.id] = [
-            {"problem_id": p["problem_id"], "score": p["score"]}
+            {
+                "problem_id": p["problem_id"],
+                "score": p["score"],
+                "is_result_hidden": p.get("is_result_hidden", False),
+            }
             for p in lesson.get_problems_and_scores()
         ]
 
@@ -135,7 +171,12 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
             lesson_id__in=lesson_ids, is_visible=True
         ).select_related("quiz")
     )
+    # Hidden-result quizzes are excluded for DISPLAY (no leak via subtraction); the
+    # prerequisite gate passes exclude_hidden=False so real completion still counts.
+    hidden_ids = hidden_lesson_quiz_ids(all_lesson_quizzes) if exclude_hidden else set()
     for lq in all_lesson_quizzes:
+        if lq.id in hidden_ids:
+            continue
         lesson_quizzes_data[lq.lesson_id].append(
             {"id": lq.id, "quiz_id": lq.quiz_id, "points": lq.points}
         )
@@ -184,6 +225,9 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
             student_points = bulk_problem_points.get(student.id, {})
 
             for lp_data in lesson_problems_data[lesson.id]:
+                # Hidden-result problems excluded for DISPLAY only (see exclude_hidden).
+                if exclude_hidden and lp_data.get("is_result_hidden"):
+                    continue
                 problem_data = student_points.get(lp_data["problem_id"])
                 if problem_data and problem_data["case_total"]:
                     achieved_points += (
@@ -804,11 +848,19 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
         context["completed_problem_ids"] = user_completed_ids(profile)
         context["attempted_problems"] = user_attempted_ids(profile)
         context["problem_points"] = problem_points
+        # Key the score/hidden lookup by problem id: get_problems() can be SHORTER
+        # than get_problems_and_scores() (get_cached_instances drops missing problems),
+        # so a positional zip would attach the wrong score/hidden flag.
+        scores_by_id = {
+            ps["problem_id"]: ps for ps in self.lesson.get_problems_and_scores()
+        }
         context["lesson_problems"] = [
-            {"problem": p, "score": ps["score"]}
-            for p, ps in zip(
-                self.lesson.get_problems(), self.lesson.get_problems_and_scores()
-            )
+            {
+                "problem": p,
+                "score": scores_by_id.get(p.id, {}).get("score", 0),
+                "hidden": scores_by_id.get(p.id, {}).get("is_result_hidden", False),
+            }
+            for p in self.lesson.get_problems()
         ]
 
         # Get quizzes for this lesson
@@ -855,6 +907,9 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
                     "max_attempts": lesson_quiz.max_attempts,
                     "can_attempt": can_attempt,
                     "points": lesson_quiz.points,
+                    # Hidden-result quiz -> template shows "?" (uniform for all roles;
+                    # the real score is only reachable via the viewer-aware popup).
+                    "hidden": lesson_quiz.is_result_hidden,
                 }
             )
 
@@ -886,7 +941,7 @@ CourseLessonFormSet = inlineformset_factory(
 class CourseLessonProblemForm(ModelForm):
     class Meta:
         model = CourseLessonProblem
-        fields = ["order", "problem", "score", "lesson"]
+        fields = ["order", "problem", "score", "is_result_hidden", "lesson"]
         widgets = {
             "problem": HeavySelect2Widget(
                 data_view="problem_select2", attrs={"style": "width: 100%"}
@@ -911,7 +966,15 @@ CourseLessonProblemFormSet = modelformset_factory(
 class CourseLessonQuizForm(ModelForm):
     class Meta:
         model = CourseLessonQuiz
-        fields = ["order", "quiz", "points", "max_attempts", "is_visible", "lesson"]
+        fields = [
+            "order",
+            "quiz",
+            "points",
+            "max_attempts",
+            "is_visible",
+            "is_result_hidden",
+            "lesson",
+        ]
         widgets = {
             "quiz": HeavySelect2Widget(
                 data_view="quiz_select2", attrs={"style": "width: 100%"}
@@ -1869,6 +1932,11 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
     def get_lesson_grades(self):
         self.focus_id = None
         self.my_page = None
+        # Hidden-result lesson quizzes/problems (uniform for all roles; see helpers).
+        self.hidden_quiz_ids = hidden_lesson_quiz_ids(self.lesson_quizzes)
+        self.hidden_problem_ids = hidden_lesson_problem_ids(
+            self.lesson.get_problems_and_scores()
+        )
         self.org_query = _parse_org_filter(self.request)
         self.friend_only = (
             self.request.GET.get("friend") == "1" and self.request.profile
@@ -1907,6 +1975,9 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
             achieved_points = total_points = 0
 
             for ps in self.lesson.get_problems_and_scores():
+                # Hidden-result problems are excluded entirely (uniform for all roles).
+                if ps["problem_id"] in self.hidden_problem_ids:
+                    continue
                 problem_data = student_points.get(ps["problem_id"])
                 if problem_data and problem_data["case_total"]:
                     achieved_points += (
@@ -1917,6 +1988,12 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
                 total_points += ps["score"]
 
             for lesson_quiz in self.lesson_quizzes:
+                # Hidden from this viewer: mask the cell and exclude it from the
+                # total entirely, so the score can't be inferred by subtraction.
+                if lesson_quiz.id in self.hidden_quiz_ids:
+                    grades[student][f"quiz_{lesson_quiz.id}"] = {"hidden": True}
+                    continue
+
                 quiz_points = lesson_quiz.points or 0
                 total_points += quiz_points
 
@@ -2008,11 +2085,18 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
         context["friend_only"] = self.friend_only
         if self.request.profile:
             context["organizations"] = self.request.profile.get_organizations()
+        # Key by problem id (get_problems() may be shorter than the scores list).
+        scores_by_id = {
+            ps["problem_id"]: ps for ps in self.lesson.get_problems_and_scores()
+        }
         context["problems"] = [
-            {"problem": p, "score": ps["score"]}
-            for p, ps in zip(self.problems, self.lesson.get_problems_and_scores())
+            {"problem": p, "score": scores_by_id.get(p.id, {}).get("score", 0)}
+            for p in self.problems
         ]
         context["lesson_quizzes"] = self.lesson_quizzes
+        # get_lesson_grades() runs above and always sets these.
+        context["hidden_quiz_ids"] = self.hidden_quiz_ids
+        context["hidden_problem_ids"] = self.hidden_problem_ids
 
         context["sidebar_lessons"] = _get_unlocked_lessons(
             self.course, self.request.profile, self.is_editable
@@ -2042,9 +2126,8 @@ class CourseLessonUserSubmissionsAjax(CourseAccessibleMixin, View):
         problem = get_object_or_404(Problem, code=self.kwargs["problem"])
 
         # problem must belong to this lesson (get_problems_and_scores -> dicts)
-        lesson_problem_ids = {
-            ps["problem_id"] for ps in lesson.get_problems_and_scores()
-        }
+        problems_scores = lesson.get_problems_and_scores()
+        lesson_problem_ids = {ps["problem_id"] for ps in problems_scores}
         if problem.id not in lesson_problem_ids:
             raise Http404()
 
@@ -2052,13 +2135,31 @@ class CourseLessonUserSubmissionsAjax(CourseAccessibleMixin, View):
         if not CourseRole.objects.filter(course=self.course, user=student).exists():
             raise Http404()
 
+        # Lesson-level "Hide Results" for non-editors: still list the rows (timestamps),
+        # but mask each score AND suppress the source link. Unlike a contest, the
+        # submission detail page can't mask a lesson-hidden problem, so showing the link
+        # would leak; the rows themselves reveal only activity, not scores.
+        lesson_result_hidden = (
+            problem.id in hidden_lesson_problem_ids(problems_scores)
+            and not self.is_editable
+        )
+
         qs = (
             Submission.objects.filter(user=student, problem=problem)
             .select_related("language", "problem")
             .order_by("-id")
         )
-        submissions = list(qs[: self.POPUP_LIMIT])
-        has_more = qs.count() > self.POPUP_LIMIT
+        # Cap the rows; fetch one extra to detect "has more" without a separate COUNT
+        # (same pattern as the quiz popup).
+        submissions = list(qs[: self.POPUP_LIMIT + 1])
+        has_more = len(submissions) > self.POPUP_LIMIT
+        submissions = submissions[: self.POPUP_LIMIT]
+        # Contest-hidden masking (those rows keep their link; that detail page masks).
+        mark_hidden_result_submissions(submissions, request.user)
+        if lesson_result_hidden:
+            # Mask every row's score; the template also drops the link for this case.
+            for s in submissions:
+                s._is_result_hidden = True
         for s in submissions:
             s.display_point = "{} / {}".format(
                 floatformat(s.points, -2), floatformat(problem.points, -2)
@@ -2074,6 +2175,7 @@ class CourseLessonUserSubmissionsAjax(CourseAccessibleMixin, View):
                 "profile": student,
                 "submissions": submissions,
                 "has_more": has_more,
+                "is_result_hidden": lesson_result_hidden,
             },
         )
 
@@ -2088,6 +2190,8 @@ class CourseLessonUserQuizAttemptsAjax(CourseAccessibleMixin, View):
     same gate as LessonQuizResult), so it never points at a page that would 403.
     """
 
+    POPUP_LIMIT = 50
+
     def get(self, request, *args, **kwargs):
         lesson = get_object_or_404(
             CourseLesson, course=self.course, id=self.kwargs["id"]
@@ -2099,19 +2203,32 @@ class CourseLessonUserQuizAttemptsAjax(CourseAccessibleMixin, View):
         lesson_quiz = get_object_or_404(
             CourseLessonQuiz, id=self.kwargs["lesson_quiz_id"], lesson=lesson
         )
+        if not lesson_quiz.is_visible and not self.is_editable:
+            raise Http404()
 
         # target student must be enrolled (get_students() returns a LIST, use CourseRole)
         if not CourseRole.objects.filter(course=self.course, user=student).exists():
             raise Http404()
 
-        attempts = QuizAttempt.objects.filter(
+        qs = QuizAttempt.objects.filter(
             user=student, lesson_quiz=lesson_quiz, is_submitted=True
         ).order_by("-end_time")
-        best_attempt = attempts.order_by("-score").first()
+        # Cap the rows shown; fetch one extra to detect "has more" without a COUNT.
+        attempts = list(qs[: self.POPUP_LIMIT + 1])
+        has_more = len(attempts) > self.POPUP_LIMIT
+        attempts = attempts[: self.POPUP_LIMIT]
+        # best_attempt is ordered by score, not time, so it needs its own query.
+        best_attempt = qs.order_by("-score").first()
 
         # Result link gating mirrors LessonQuizResult: owner or quiz editor only.
         can_view_results = (
             student == request.profile or lesson_quiz.quiz.is_editable_by(request.user)
+        )
+
+        # Score masking mirrors the contest quiz popup: when the teacher hides
+        # results, the score is shown only to course/quiz editors (NOT the owner).
+        is_result_hidden = lesson_quiz.quiz.should_hide_result(
+            request.user, lesson_quiz=lesson_quiz
         )
 
         return render(
@@ -2125,6 +2242,9 @@ class CourseLessonUserQuizAttemptsAjax(CourseAccessibleMixin, View):
                 "attempts": attempts,
                 "best_attempt": best_attempt,
                 "can_view_results": can_view_results,
+                "is_result_hidden": is_result_hidden,
+                "has_more": has_more,
+                "popup_limit": self.POPUP_LIMIT,
             },
         )
 
