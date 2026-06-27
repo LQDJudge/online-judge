@@ -1,6 +1,7 @@
 import secrets
 
 from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
@@ -36,7 +37,10 @@ class FeedView(InfinitePaginationMixin, ListView):
     def get(self, request, *args, **kwargs):
         only_content = request.GET.get("only_content", None)
         if only_content and self.feed_content_template_name:
-            self.page = int(request.GET.get("page"))
+            try:
+                self.page = int(request.GET.get("page") or 1)
+            except (TypeError, ValueError):
+                raise Http404("Page cannot be converted to an int.")
             queryset = self.get_queryset()
             paginator, page, object_list, _ = self.paginate_queryset(
                 queryset, self.paginate_by

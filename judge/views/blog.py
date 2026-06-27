@@ -53,6 +53,19 @@ class PostList(HomeFeedView):
             return super(HomeFeedView, self).get(request, *args, **kwargs)
 
         # For logged-out users: simple post pagination (old behavior)
+        only_content = request.GET.get("only_content")
+        if only_content and request.GET.get("cursor") and not request.GET.get("page"):
+            return render(
+                request,
+                "blog/content.html",
+                {
+                    "posts": [],
+                    "has_next_page": False,
+                    "show_organization_private_icon": True,
+                },
+            )
+        if only_content:
+            self.feed_content_template_name = "blog/content.html"
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):

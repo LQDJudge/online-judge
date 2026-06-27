@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -73,6 +75,55 @@ class BlogEditBase(TestCase):
 
     def _edit_url(self, post):
         return reverse("edit_blog_post", args=[post.id, post.slug])
+
+
+class BlogListFeedTests(TestCase):
+    def _make_post(self, title, minutes_old=0):
+        return BlogPost.objects.create(
+            title=title,
+            slug=title.lower().replace(" ", "-"),
+            visible=True,
+            sticky=False,
+            publish_on=timezone.now() - timedelta(minutes=minutes_old),
+            content="Hello",
+            is_organization_private=False,
+        )
+
+    def test_anonymous_ajax_without_page_defaults_to_first_page(self):
+        self._make_post("Newest post")
+
+        response = self.client.get(reverse("blog_post_list"), {"only_content": "1"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Newest post")
+
+    def test_anonymous_ajax_page_uses_blog_partial(self):
+        for index in range(5):
+            self._make_post("Post %s" % index, minutes_old=index)
+
+        response = self.client.get(
+            reverse("blog_post_list"), {"only_content": "1", "page": "2"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Post 4")
+
+    def test_anonymous_ajax_cursor_without_page_stops_loading(self):
+        self._make_post("Should not be duplicated")
+
+        response = self.client.get(
+            reverse("blog_post_list"),
+            {
+                "only_content": "1",
+                "cursor": "stale-cursor",
+                "ft": "stale-token",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Should not be duplicated")
+        self.assertContains(response, 'class="has_next"')
+        self.assertContains(response, 'value="0"')
 
 
 class BlogEditPermissionTests(BlogEditBase):
