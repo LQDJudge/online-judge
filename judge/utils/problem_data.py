@@ -520,33 +520,48 @@ def _get_latest_cpp_key():
 
 
 def notify_problem_authors(
-    problem, error_message, error_type="Checker Error", submission=None
+    problem,
+    error_message,
+    error_type="Checker Error",
+    submission=None,
+    fallback_to_admin=True,
 ):
     """
-    Send email notification to problem authors when there's a checker error.
+    Send email notification to problem authors/curators when there's a checker error.
 
     Args:
         problem: Problem instance
         error_message: Error message to include in email
         error_type: Type of error (default: "Checker Error")
         submission: Submission instance that caused the error (optional)
+        fallback_to_admin: Whether to email admins when no owner email is available.
     """
-    if not problem or not problem.authors.exists():
-        # Fallback to admin notification if no authors
-        log_exception(
-            f"Problem {problem.code if problem else 'Unknown'} {error_type}: {error_message}"
-        )
+    if not problem:
+        if fallback_to_admin:
+            log_exception(f"Problem Unknown {error_type}: {error_message}")
         return
 
-    # Get author emails
-    author_emails = []
-    for author in problem.authors.all():
-        if author.user.email:
-            author_emails.append(author.user.email)
+    owner_ids = set(problem.authors.values_list("id", flat=True))
+    owner_ids.update(problem.curators.values_list("id", flat=True))
 
-    if not author_emails:
-        # Fallback to admin notification if no author emails
-        log_exception(f"Problem {problem.code} {error_type}: {error_message}")
+    owner_emails = []
+    seen_emails = set()
+    for owner in problem.authors.model.get_cached_instances(*owner_ids):
+        email = owner.get_email()
+        if email and email not in seen_emails:
+            owner_emails.append(email)
+            seen_emails.add(email)
+
+    if not owner_emails:
+        if fallback_to_admin:
+            # Fallback to admin notification if no editable owner can receive email.
+            log_exception(f"Problem {problem.code} {error_type}: {error_message}")
+        else:
+            debug_log.info(
+                "Skipped admin email fallback for %s %s; in-app owner notification sent",
+                problem.code,
+                error_type,
+            )
         return
 
     # Email throttling - check cache to prevent spam
@@ -591,14 +606,14 @@ def notify_problem_authors(
             subject=subject,
             message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=author_emails,
+            recipient_list=owner_emails,
             html_message=html_message,
             fail_silently=False,
         )
 
         # Log successful notification
         debug_log.info(
-            f"Notified problem authors for {problem.code}: {', '.join(author_emails)}"
+            f"Notified problem authors for {problem.code}: {', '.join(owner_emails)}"
         )
 
     except Exception as e:

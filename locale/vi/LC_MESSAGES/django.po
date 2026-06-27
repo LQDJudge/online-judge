@@ -19,6 +19,15 @@ msgstr ""
 "X-Crowdin-Project-ID: 466004\n"
 "X-Generator: crowdin.com\n"
 
+#: judge/bridge/judge_handler.py:57
+msgid "No error details supplied."
+msgstr "Không có chi tiết lỗi."
+
+#: judge/bridge/judge_handler.py:77
+#, python-brace-format
+msgid "Problem data error in {problem}: {summary}. Review test data."
+msgstr "Lỗi dữ liệu bài ở {problem}: {summary}. Hãy kiểm tra dữ liệu test."
+
 #: chat_box/models.py:14
 msgid "last message id"
 msgstr "Tin nhắn"
