@@ -9,12 +9,16 @@ from operator import itemgetter
 from django import db
 from django.conf import settings
 from django.core.cache import cache
-from django.utils import timezone
 from django.db.models import F
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.html import format_html
+from django.utils.translation import gettext as _
 
 from judge import event_poster as event
 from judge.bridge.base_handler import ZlibPacketHandler, proxy_list
 from judge.utils.problems import finished_submission
+from judge.models.notification import Notification, NotificationCategory
 from judge.models import (
     Contest,
     Judge,
@@ -43,6 +47,52 @@ SubmissionData = namedtuple(
     "SubmissionData",
     "time memory short_circuit pretests_only contest_no attempt_no user_id",
 )
+
+
+def _summarize_internal_error(error_message):
+    for line in reversed((error_message or "").splitlines()):
+        line = line.strip()
+        if line:
+            return line[:240]
+    return _("No error details supplied.")
+
+
+def _problem_owner_ids(problem):
+    owner_ids = set(problem.authors.values_list("id", flat=True))
+    owner_ids.update(problem.curators.values_list("id", flat=True))
+    return owner_ids
+
+
+def _notify_problem_owners_in_app(problem, submission, error_type, error_message):
+    owner_ids = _problem_owner_ids(problem)
+    if not owner_ids:
+        return False
+
+    problem_link = format_html(
+        '<a href="{}">{}</a>',
+        reverse("problem_data", args=[problem.code]),
+        problem.name,
+    )
+    html_link = format_html(
+        _("Problem data error in {problem}: {summary}. Review test data."),
+        problem=problem_link,
+        summary=_summarize_internal_error(error_message),
+    )
+    Notification.objects.bulk_create_notifications(
+        user_ids=list(owner_ids),
+        category=NotificationCategory.PROBLEM,
+        html_link=html_link,
+        author=None,
+        extra_data={
+            "problem_code": problem.code,
+            "problem_name": problem.name,
+            "submission_id": submission.id,
+            "error_type": error_type,
+            "error_summary": _summarize_internal_error(error_message),
+        },
+        deduplicate=True,
+    )
+    return True
 
 
 def _ensure_connection():
@@ -817,12 +867,29 @@ class JudgeHandler(ZlibPacketHandler):
             detailed_message += f"Submission ID: {submission_id}\n"
             detailed_message += f"Error details:\n{error_message}"
 
-            # Notify problem authors with submission link
+            try:
+                in_app_notified = _notify_problem_owners_in_app(
+                    problem=problem,
+                    submission=submission,
+                    error_type="Judge Internal Error",
+                    error_message=detailed_message,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to create problem-owner notification for submission %s",
+                    submission_id,
+                )
+                in_app_notified = False
+
+            # Notify problem authors with submission link when email addresses exist.
+            # If an editable owner has no email, the in-app notification above is
+            # the durable delivery channel and should not escalate to admins.
             notify_problem_authors(
                 problem=problem,
                 error_message=detailed_message,
                 error_type="Judge Internal Error",
                 submission=submission,
+                fallback_to_admin=not in_app_notified,
             )
 
             logger.info(
