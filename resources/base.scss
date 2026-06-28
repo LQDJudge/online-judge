@@ -462,9 +462,9 @@ header {
     gap: 5px;
 
     &:hover {
-        color: black;
+        color: $navbar_fg;
         border-radius: 2px;
-        border: 0.5px solid black;
+        border: 0.5px solid $navbar_fg;
         cursor: pointer;
         padding: 3.5px;
     }
@@ -476,11 +476,23 @@ header {
 }
 
 #nav-container {
-    background: white;
+    background: $navbar_bg;
 
     // opacity: 0.77;
     // filter: alpha(opacity=77)
     height: 100%;
+
+    // Right-side controls (FA icons, language label, auth links, hamburger)
+    // sit directly on the dark navbar surface — force a light foreground so
+    // they stay legible in both light and dark mode. Scoped to these specific
+    // navbar elements so the white dropdown panels keep their dark text.
+    .navbar-icon,
+    .nav-right-text,
+    .anon a,
+    #user-links,
+    #navicon {
+        color: $navbar_fg;
+    }
 }
 
 #navigation {
@@ -1589,10 +1601,10 @@ input::placeholder {
                 flex: 1;
                 display: flex;
                 justify-content: center;
-                border-left: $nb-border-width solid $nb-ink;
+                border-left: $nb-border-width solid $navbar_divider;
 
                 &:last-child {
-                    border-right: $nb-border-width solid $nb-ink;
+                    border-right: $nb-border-width solid $navbar_divider;
                 }
             }
 
@@ -1647,7 +1659,7 @@ input::placeholder {
                 align-items: center;
                 justify-content: center;
                 text-decoration: none;
-                color: #666;
+                color: $navbar_fg_muted;
                 font-weight: normal;
                 background: transparent;
                 border-radius: 0;
@@ -1661,7 +1673,7 @@ input::placeholder {
 
                     i {
                         font-size: 20px;
-                        color: #666;
+                        color: $navbar_fg_muted;
                         transition: color 0.1s ease, transform 0.1s ease;
                     }
                 }

@@ -109,7 +109,12 @@ class RegistrationView(OldRegistrationView):
         profile.language = cleaned_data["language"]
         profile.save()
 
-        self.send_activation_email(user.id)
+        # TEMP (test mode): auto-activate accounts without email verification.
+        # To re-enable email activation, remove the two lines below and
+        # uncomment `self.send_activation_email(user.id)`.
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        # self.send_activation_email(user.id)
         return user
 
     def send_activation_email(self, user_id):
