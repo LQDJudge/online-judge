@@ -186,7 +186,10 @@ def grade_short_answer(answer) -> Tuple[float, bool, bool]:
         flags = 0 if case_sensitive else re.IGNORECASE
         for pattern in answers:
             try:
-                if re.match(pattern, text, flags):
+                # fullmatch (not match): the ENTIRE answer must match the pattern,
+                # otherwise an answer that merely starts with an accepted pattern
+                # (e.g. "Chloe: 5 , ...") would be graded correct.
+                if re.fullmatch(pattern, text, flags):
                     is_correct = True
                     break
             except re.error:
