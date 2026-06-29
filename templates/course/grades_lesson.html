@@ -18,6 +18,7 @@
 {% endblock %}
 
 {% block js_media %}
+  <script src="//cdn.jsdelivr.net/npm/featherlight@1.7.14/release/featherlight.min.js" type="text/javascript" charset="utf-8"></script>
   <script>
     $(function() {
       $('#search-org').select2({
@@ -26,6 +27,23 @@
         width: '15em',
       }).on('change', function() {
         $(this).closest('form').submit();
+      });
+      function scrollToGradeRow(el) {
+        if (el) el.scrollIntoView({behavior: 'smooth', block: 'center'});
+      }
+      if (new URLSearchParams(window.location.search).get('focus')) {
+        scrollToGradeRow(document.querySelector('#users-table tr.highlight'));
+      }
+      $('#my-rank-btn').on('click', function (e) {
+        e.preventDefault();
+        var myPage = parseInt($(this).data('page'));
+        var cur = parseInt(new URLSearchParams(window.location.search).get('page') || '1');
+        var mine = document.getElementById('my-grades-row');
+        if (myPage === cur && mine) { mine.classList.add('highlight'); scrollToGradeRow(mine); return; }
+        var u = new URLSearchParams(window.location.search);
+        u.set('focus', $(this).data('username'));
+        u.delete('page');
+        window.location.search = u.toString();
       });
     });
   </script>
@@ -52,6 +70,11 @@
       </label>
       <input type="text" name="search" placeholder="{{_('Search')}}" value="{{ search_query or '' }}">
       <button type="submit" hidden></button>
+      {% if my_page %}
+        <a class="action-btn" id="my-rank-btn" href="#" style="margin-left: auto;"
+           data-page="{{ my_page }}" data-username="{{ request.profile.username }}">
+          <i class="fa fa-user"></i> {{ _('My rank') }}</a>
+      {% endif %}
     </form>
     <div class="table-container">
       <table class="table striped" id="users-table">
@@ -82,7 +105,9 @@
         </thead>
         <tbody>
           {% for student, grade in grades.items() %}
-            <tr>
+            {% set is_focus = focus_id and student.id == focus_id %}
+            {% set is_me = request.profile and student.id == request.profile.id %}
+            <tr{% if is_focus %} class="highlight"{% endif %}{% if is_me %} id="my-grades-row"{% endif %}>
               <td class="rank">{{ global_rank.get(student.id, '') }}</td>
               <td class="user-name static">
                 <div>
@@ -98,21 +123,29 @@
               {% for lesson_quiz in lesson_quizzes %}
                 {% set quiz_grade = grade.get('quiz_' ~ lesson_quiz.id) %}
                 <td class="partial-score quiz-score">
-                  {% if quiz_grade and quiz_grade['achieved'] %}
-                    {{ quiz_grade['achieved'] | floatformat(1) }}
-                  {% else %}
-                    0
-                  {% endif %}
+                  <a data-featherlight="{{ url('course_lesson_user_quiz_attempts_ajax', course.slug, lesson.id, student.username, lesson_quiz.id) }}"
+                     data-featherlight-variant="contest-tag-lightbox" href="#">
+                    {% if quiz_grade and quiz_grade['achieved'] %}
+                      {{ quiz_grade['achieved'] | floatformat(1) }}
+                    {% else %}
+                      0
+                    {% endif %}
+                  </a>
                 </td>
               {% endfor %}
               {% for lesson_problem in problems %}
                 {% set val = grade.get(lesson_problem.problem.id) %}
                 <td class="partial-score">
-                  {% if val and val['case_total'] %}
-                    {{ (val['case_points'] / val['case_total'] * lesson_problem.score) | floatformat(0) }}
-                  {% else %}
-                    0
-                  {% endif %}
+                  <a data-featherlight="{{ url('course_lesson_user_submissions_ajax', course.slug, lesson.id, student.username, lesson_problem.problem.code) }}"
+                     data-featherlight-variant="contest-tag-lightbox" href="#">
+                    {% if val and val['is_result_hidden'] %}
+                      ?
+                    {% elif val and val['case_total'] %}
+                      {{ (val['case_points'] / val['case_total'] * lesson_problem.score) | floatformat(0) }}
+                    {% else %}
+                      0
+                    {% endif %}
+                  </a>
                 </td>
               {% endfor %}
             </tr>

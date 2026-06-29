@@ -12,7 +12,8 @@ from django.forms import (
 )
 from django.core.files.uploadedfile import UploadedFile
 from django.http import Http404, HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.defaultfilters import floatformat
 from django.urls import reverse_lazy, reverse
 from django.utils.html import escape, mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -39,14 +40,18 @@ from judge.models import (
     QuizAttempt,
     BestSubmission,
     BestQuizAttempt,
+    QuizQuestionAssignment,
+    Problem,
+    Submission,
 )
 from judge.models.course import RoleInCourse, EDITABLE_ROLES
 from judge.utils.course_prerequisites import get_lesson_lock_status
-from judge.utils.identity import SemanticIdentityModelFormSet, save_semantic_formset
-from judge.utils.problems import (
-    user_attempted_ids,
-    user_completed_ids,
+from judge.utils.hidden_results import (
+    exclude_hidden_result_submissions,
+    hidden_result_submission_ids,
+    mark_hidden_result_submissions,
 )
+from judge.utils.identity import SemanticIdentityModelFormSet, save_semantic_formset
 from judge.widgets import (
     HeavyPreviewPageDownWidget,
     HeavySelect2MultipleWidget,
@@ -67,13 +72,24 @@ from judge.utils.views import (
 )
 
 
-def bulk_max_case_points_per_problem(students, all_problems):
+def _set_problem_points(
+    result, user_id, problem_id, case_points, case_total, is_result_hidden=False
+):
+    result.setdefault(user_id, {})[problem_id] = {
+        "case_points": case_points or 0,
+        "case_total": case_total or 0,
+        "is_result_hidden": is_result_hidden,
+    }
+
+
+def bulk_max_case_points_per_problem(students, all_problems, viewer=None):
     """
     Fetch max case points for all students and problems using BestSubmission cache.
     Returns nested dict for O(1) lookups: {user_id: {problem_id: {case_points, case_total}}}
 
     This uses the BestSubmission table which caches the best submission per user/problem.
-    Falls back to querying Submission table if BestSubmission records don't exist.
+    When viewer is provided, hidden contest-result best submissions are excluded from
+    the displayed score and replaced with the best visible submission for that pair.
     """
     if not students or not all_problems:
         return {}
@@ -81,23 +97,89 @@ def bulk_max_case_points_per_problem(students, all_problems):
     result = {}
 
     # Try to use BestSubmission cache first
-    best_subs = BestSubmission.objects.filter(
+    best_subs_qs = BestSubmission.objects.filter(
         user__in=students, problem__in=all_problems, case_total__gt=0
-    ).values("user_id", "problem_id", "points", "case_total")
+    )
+
+    best_subs = list(
+        best_subs_qs.values(
+            "user_id", "problem_id", "points", "case_total", "submission_id"
+        )
+    )
+
+    hidden_pairs = set()
+    if viewer is not None:
+        hidden_pairs = set(
+            best_subs_qs.filter(
+                submission_id__in=hidden_result_submission_ids(viewer)
+            ).values_list("user_id", "problem_id")
+        )
 
     for best_sub in best_subs:
         user_id = best_sub["user_id"]
         problem_id = best_sub["problem_id"]
+        if viewer is not None and (user_id, problem_id) in hidden_pairs:
+            continue
 
-        if user_id not in result:
-            result[user_id] = {}
+        _set_problem_points(
+            result,
+            user_id,
+            problem_id,
+            best_sub["points"],
+            best_sub["case_total"],
+        )
 
-        result[user_id][problem_id] = {
-            "case_points": best_sub["points"],
-            "case_total": best_sub["case_total"],
-        }
+    if not hidden_pairs:
+        return result
+
+    hidden_user_ids = {user_id for user_id, _problem_id in hidden_pairs}
+    hidden_problem_ids = {problem_id for _user_id, problem_id in hidden_pairs}
+
+    fallback_submissions = exclude_hidden_result_submissions(
+        Submission.objects.filter(
+            user_id__in=hidden_user_ids,
+            problem_id__in=hidden_problem_ids,
+            status="D",
+            case_total__gt=0,
+        ),
+        viewer,
+    ).order_by("user_id", "problem_id", "-points", "-date")
+
+    for submission in fallback_submissions.values(
+        "user_id", "problem_id", "case_points", "case_total"
+    ):
+        pair = (submission["user_id"], submission["problem_id"])
+        if pair not in hidden_pairs:
+            continue
+        user_id, problem_id = pair
+        if problem_id in result.get(user_id, {}):
+            continue
+        _set_problem_points(
+            result,
+            user_id,
+            problem_id,
+            submission["case_points"],
+            submission["case_total"],
+        )
+
+    for user_id, problem_id in hidden_pairs:
+        if problem_id not in result.get(user_id, {}):
+            _set_problem_points(
+                result, user_id, problem_id, 0, 0, is_result_hidden=True
+            )
 
     return result
+
+
+def _bulk_quiz_total_points(quiz_ids):
+    if not quiz_ids:
+        return {}
+    return {
+        row["quiz_id"]: row["total"] or 0
+        for row in QuizQuestionAssignment.objects.filter(quiz_id__in=set(quiz_ids))
+        .values("quiz_id")
+        .annotate(total=Sum("points"))
+    }
 
 
 def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
@@ -125,19 +207,17 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
 
     # Pre-fetch all lesson quizzes in a single query
     lesson_quizzes_data = {lesson.id: [] for lesson in lessons}
-    quiz_totals = {}  # Map quiz_id -> current total points
     lesson_ids = [lesson.id for lesson in lessons]
     all_lesson_quizzes = list(
         CourseLessonQuiz.objects.filter(
             lesson_id__in=lesson_ids, is_visible=True
         ).select_related("quiz")
     )
+    quiz_totals = _bulk_quiz_total_points({lq.quiz_id for lq in all_lesson_quizzes})
     for lq in all_lesson_quizzes:
         lesson_quizzes_data[lq.lesson_id].append(
             {"id": lq.id, "quiz_id": lq.quiz_id, "points": lq.points}
         )
-        if lq.quiz_id not in quiz_totals:
-            quiz_totals[lq.quiz_id] = lq.quiz.get_total_points()
 
     # Bulk fetch best quiz attempts for all students and lessons
     # Build a dict of {(student_id, lesson_quiz_id): best_score_ratio}
@@ -682,7 +762,9 @@ class CourseDetail(CourseDetailMixin, DetailView):
         for lesson in lessons:
             all_problems.extend(lesson.get_problems())
 
-        bulk_problem_points = bulk_max_case_points_per_problem(students, all_problems)
+        bulk_problem_points = bulk_max_case_points_per_problem(
+            students, all_problems, viewer=self.request.user
+        )
         lesson_progress_bulk = bulk_calculate_lessons_progress(
             students, lessons, bulk_problem_points
         )
@@ -792,15 +874,27 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
         problems = self.lesson.get_problems()
 
         # Use bulk function even for single user for consistency
-        bulk_problem_points = bulk_max_case_points_per_problem([profile], problems)
+        bulk_problem_points = bulk_max_case_points_per_problem(
+            [profile], problems, viewer=self.request.user
+        )
         problem_points = bulk_problem_points.get(profile.id, {})
 
         context["profile"] = profile
         context["title"] = self.lesson.title
         context["lesson"] = self.lesson
-        context["completed_problem_ids"] = user_completed_ids(profile)
-        context["attempted_problems"] = user_attempted_ids(profile)
         context["problem_points"] = problem_points
+        context["completed_problem_ids"] = {
+            problem_id
+            for problem_id, points in problem_points.items()
+            if points.get("case_total")
+            and points.get("case_points", 0) >= points["case_total"]
+        }
+        context["attempted_problems"] = {
+            problem_id
+            for problem_id, points in problem_points.items()
+            if points.get("case_total")
+            and points.get("case_points", 0) < points["case_total"]
+        }
         context["lesson_problems"] = [
             {"problem": p, "score": ps["score"]}
             for p, ps in zip(
@@ -1680,16 +1774,19 @@ def _apply_student_filters(students, request, org_query, friend_only):
     return students
 
 
-def _paginate_students(students, request):
+def _paginate_students(students, request, page_override=None):
     """Paginate a student list using DiggPaginator. Returns (page_students, page_obj)."""
     if not students:
         return [], None
 
     total = len(students)
-    try:
-        page_number = int(request.GET.get("page", 1))
-    except ValueError:
-        page_number = 1
+    if page_override is not None:
+        page_number = page_override
+    else:
+        try:
+            page_number = int(request.GET.get("page", 1))
+        except ValueError:
+            page_number = 1
     num_pages = max(1, (total + GRADES_PAGE_SIZE - 1) // GRADES_PAGE_SIZE)
     page_number = max(1, min(page_number, num_pages))
 
@@ -1701,6 +1798,17 @@ def _paginate_students(students, request):
     ).get_page(page_number)
 
     return page_students, page_obj
+
+
+def _locate_student(students, username):
+    """Return (1-based page, profile.id) of `username` in the already filtered+sorted
+    `students` list, or (None, None) if absent."""
+    if not username:
+        return None, None
+    for i, s in enumerate(students):
+        if s.username == username:
+            return i // GRADES_PAGE_SIZE + 1, s.id
+    return None, None
 
 
 def _get_unlocked_lessons(course, profile, is_editable):
@@ -1730,6 +1838,8 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
         return self.course
 
     def get_grades(self):
+        self.focus_id = None
+        self.my_page = None
         self.org_query = _parse_org_filter(self.request)
         self.friend_only = (
             self.request.GET.get("friend") == "1" and self.request.profile
@@ -1745,7 +1855,7 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
             all_problems.extend(lesson.get_problems())
 
         bulk_problem_points = bulk_max_case_points_per_problem(
-            all_students, all_problems
+            all_students, all_problems, viewer=self.request.user
         )
         grade_lessons = bulk_calculate_lessons_progress(
             all_students, self.lessons, bulk_problem_points
@@ -1775,7 +1885,14 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
         if not students:
             return {}, {}, {}, None, global_rank
 
-        page_students, page_obj = _paginate_students(students, self.request)
+        focus_username = self.request.GET.get("focus", "").strip() or None
+        focus_page, self.focus_id = _locate_student(students, focus_username)
+        self.my_page, _ = _locate_student(
+            students, self.request.profile.username if self.request.profile else None
+        )
+        page_students, page_obj = _paginate_students(
+            students, self.request, page_override=focus_page
+        )
 
         grade_lessons = {s: grade_lessons[s] for s in page_students}
         grade_contests = {s: grade_contests[s] for s in page_students}
@@ -1803,6 +1920,8 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
             context["page_obj"],
             context["global_rank"],
         ) = self.get_grades()
+        context["focus_id"] = self.focus_id
+        context["my_page"] = self.my_page
         if context["page_obj"]:
             context.update(paginate_query_context(self.request))
         context["search_query"] = self.request.GET.get("search", "").strip()
@@ -1839,6 +1958,8 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
             raise Http404()
 
     def get_lesson_grades(self):
+        self.focus_id = None
+        self.my_page = None
         self.org_query = _parse_org_filter(self.request)
         self.friend_only = (
             self.request.GET.get("friend") == "1" and self.request.profile
@@ -1849,13 +1970,13 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
             return {}, None, {}
 
         bulk_problem_points = bulk_max_case_points_per_problem(
-            all_students, self.problems
+            all_students, self.problems, viewer=self.request.user
         )
 
         student_ids = [s.id for s in all_students]
-        quiz_totals = {
-            lq.quiz_id: lq.quiz.get_total_points() for lq in self.lesson_quizzes
-        }
+        quiz_totals = _bulk_quiz_total_points(
+            {lq.quiz_id for lq in self.lesson_quizzes}
+        )
 
         best_quiz_scores = {}
         if self.lesson_quizzes and student_ids:
@@ -1933,7 +2054,14 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
         if not students:
             return {}, None, global_rank
 
-        page_students, page_obj = _paginate_students(students, self.request)
+        focus_username = self.request.GET.get("focus", "").strip() or None
+        focus_page, self.focus_id = _locate_student(students, focus_username)
+        self.my_page, _ = _locate_student(
+            students, self.request.profile.username if self.request.profile else None
+        )
+        page_students, page_obj = _paginate_students(
+            students, self.request, page_override=focus_page
+        )
         sorted_grades = {s: grades[s] for s in page_students}
 
         return sorted_grades, page_obj, global_rank
@@ -1962,6 +2090,8 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
             context["page_obj"],
             context["global_rank"],
         ) = self.get_lesson_grades()
+        context["focus_id"] = self.focus_id
+        context["my_page"] = self.my_page
         if context["page_obj"]:
             context.update(paginate_query_context(self.request))
         context["search_query"] = self.request.GET.get("search", "").strip()
@@ -1979,6 +2109,128 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
             self.course, self.request.profile, self.is_editable
         )
         return context
+
+
+class CourseLessonUserSubmissionsAjax(CourseAccessibleMixin, View):
+    """AJAX fragment: a student's submissions for a problem in a lesson.
+
+    Rendered into the featherlight popup opened from a problem score cell on the
+    lesson grades page. Permission is course-level (CourseAccessibleMixin):
+    anonymous -> login, non-member -> 403. The link to a submission's source only
+    shows if the *viewer* can access it (gated in the template).
+    """
+
+    POPUP_LIMIT = 50
+
+    def get(self, request, *args, **kwargs):
+        lesson = get_object_or_404(
+            CourseLesson, course=self.course, id=self.kwargs["id"]
+        )
+        if not lesson.is_visible and not self.is_editable:
+            raise Http404()
+
+        student = get_object_or_404(Profile, user__username=self.kwargs["user"])
+        problem = get_object_or_404(Problem, code=self.kwargs["problem"])
+
+        # problem must belong to this lesson (get_problems_and_scores -> dicts)
+        lesson_problem_ids = {
+            ps["problem_id"] for ps in lesson.get_problems_and_scores()
+        }
+        if problem.id not in lesson_problem_ids:
+            raise Http404()
+
+        # target student must be enrolled (get_students() returns a LIST, use CourseRole)
+        if not CourseRole.objects.filter(course=self.course, user=student).exists():
+            raise Http404()
+
+        qs = (
+            Submission.objects.filter(user=student, problem=problem)
+            .select_related("language", "problem", "contest_object")
+            .order_by("-id")
+        )
+        submissions = list(qs[: self.POPUP_LIMIT + 1])
+        has_more = len(submissions) > self.POPUP_LIMIT
+        submissions = submissions[: self.POPUP_LIMIT]
+        mark_hidden_result_submissions(submissions, request.user)
+        for s in submissions:
+            s.display_point = "{} / {}".format(
+                floatformat(s.points, -2), floatformat(problem.points, -2)
+            )
+
+        return render(
+            request,
+            "course/lesson_user_submissions_ajax.html",
+            {
+                "course": self.course,
+                "lesson": lesson,
+                "problem": problem,
+                "profile": student,
+                "submissions": submissions,
+                "has_more": has_more,
+            },
+        )
+
+
+class CourseLessonUserQuizAttemptsAjax(CourseAccessibleMixin, View):
+    """AJAX fragment: a student's quiz attempts for a lesson quiz.
+
+    Rendered into the featherlight popup opened from a quiz score cell on the lesson
+    grades page (mirrors the contest quiz-attempts popup). Permission is course-level
+    (CourseAccessibleMixin): anonymous -> login, non-member -> 403. The link to a
+    quiz result only shows if the viewer is the attempt owner or a quiz editor (the
+    same gate as LessonQuizResult), so it never points at a page that would 403.
+    """
+
+    POPUP_LIMIT = 50
+
+    def get(self, request, *args, **kwargs):
+        lesson = get_object_or_404(
+            CourseLesson, course=self.course, id=self.kwargs["id"]
+        )
+        if not lesson.is_visible and not self.is_editable:
+            raise Http404()
+
+        student = get_object_or_404(Profile, user__username=self.kwargs["user"])
+        lesson_quiz = get_object_or_404(
+            CourseLessonQuiz, id=self.kwargs["lesson_quiz_id"], lesson=lesson
+        )
+
+        # target student must be enrolled (get_students() returns a LIST, use CourseRole)
+        if not CourseRole.objects.filter(course=self.course, user=student).exists():
+            raise Http404()
+
+        attempts_qs = (
+            QuizAttempt.objects.filter(
+                user=student, lesson_quiz=lesson_quiz, is_submitted=True
+            )
+            .select_related("quiz", "contest_participation__contest")
+            .order_by("-end_time")
+        )
+        attempts = list(attempts_qs[: self.POPUP_LIMIT])
+
+        is_result_hidden = lesson_quiz.quiz.should_hide_result(
+            request.user, lesson_quiz=lesson_quiz
+        )
+        best_attempt = None
+        if not is_result_hidden:
+            best_attempt = attempts_qs.order_by("-score").first()
+
+        can_view_results = bool(attempts) and attempts[0].is_accessible_by(request.user)
+
+        return render(
+            request,
+            "course/lesson_user_quiz_attempts_ajax.html",
+            {
+                "course": self.course,
+                "lesson": lesson,
+                "lesson_quiz": lesson_quiz,
+                "profile": student,
+                "attempts": attempts,
+                "best_attempt": best_attempt,
+                "can_view_results": can_view_results,
+                "is_result_hidden": is_result_hidden,
+            },
+        )
 
 
 class AddCourseContestForm(forms.ModelForm):

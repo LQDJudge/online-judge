@@ -80,7 +80,9 @@
           <span class="problem-name">{{problem.name}}</span>
           {% set pp = problem_points[problem.id] %}
           <span class="score">
-            {% if pp and pp.case_total %}
+            {% if pp and pp.is_result_hidden %}
+              ? / {{lesson_problem.score|floatformat(0)}}
+            {% elif pp and pp.case_total %}
               {{(pp.case_points / pp.case_total * lesson_problem.score) |floatformat(1)}} /
               {{lesson_problem.score|floatformat(0)}}
             {% else %}

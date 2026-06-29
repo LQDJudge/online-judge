@@ -1,0 +1,32 @@
+<h4>{{ _('Submissions of') }} {{ link_user(profile) }} — {{ problem.name }}</h4>
+<hr>
+{% if submissions %}
+  <table class="lightbox-submissions">
+    <tbody>
+      {% for s in submissions %}
+        {% set is_result_hidden = s._is_result_hidden is defined and s._is_result_hidden %}
+        <tr>
+          <td class="lightbox-submissions-time">{{ s.date|date(_("g:i a d/m/Y")) }}</td>
+          {% if is_result_hidden %}
+            <td>?</td>
+            <td>({{ _('Hidden') }})</td>
+          {% else %}
+            <td class="case-{{ s.result }}">{{ s.display_point }}</td>
+            <td class="case-{{ s.result }}">({{ s.short_status }})</td>
+          {% endif %}
+          {% if s.is_accessible_by(request.profile) %}
+            <td>→ <a href="{{ url('submission_status', s.id) }}">{{ s.id }}</a></td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if has_more %}
+    <hr>
+    <a href="{{ url('user_submissions', user=profile.user.username, problem=problem.code) }}" target="_blank">
+      {{ _('See all submissions') }}
+    </a>
+  {% endif %}
+{% else %}
+  <p>{{ _('No submissions yet.') }}</p>
+{% endif %}

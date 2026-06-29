@@ -37,6 +37,9 @@ from judge.utils.permissions import can_use_ai_features
 from judge.widgets import HeavySelect2MultipleWidget, HeavyPreviewPageDownWidget
 
 from judge.models import (
+    Contest,
+    ContestParticipation,
+    ContestProblem,
     Quiz,
     QuizQuestion,
     QuizQuestionAssignment,
@@ -46,7 +49,6 @@ from judge.models import (
     CourseLessonQuiz,
     CourseLesson,
     Profile,
-    ContestProblem,
 )
 from judge.models.quiz import QuizQuestionType
 from judge.models.course import Course
@@ -2139,7 +2141,12 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
 
     def get_object(self, queryset=None):
         attempt = get_object_or_404(
-            QuizAttempt.objects.select_related("quiz", "user"),
+            QuizAttempt.objects.select_related(
+                "quiz",
+                "user",
+                "contest_participation__contest",
+                "lesson_quiz__lesson__course",
+            ),
             pk=self.kwargs["attempt_id"],
             quiz__code=self.kwargs["code"],
         )
@@ -2148,13 +2155,15 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
 
         # Check quiz accessibility (respects contest mode toggle)
         in_contest = getattr(self.request, "in_contest", False)
-        if not quiz.is_accessible_by(self.request.user, in_contest):
+        can_access_attempt = attempt.is_accessible_by(self.request.user)
+        if not quiz.is_accessible_by(self.request.user, in_contest) and not (
+            attempt.contest_participation_id and can_access_attempt
+        ):
             raise Http404(_("Quiz not found."))
 
-        is_owner = attempt.user == self.request.profile
         # Cache is_editor to avoid repeated DB queries in get_context_data
         self._is_editor = quiz.is_editable_by(self.request.user)
-        if not (is_owner or self._is_editor):
+        if not can_access_attempt:
             raise PermissionDenied(_("You cannot view this result."))
 
         return attempt
@@ -2186,7 +2195,7 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
         context["show_correctness"] = is_editor or quiz.is_shown_correctness
         context["can_edit"] = is_editor
 
-        # Check if results should be hidden in contest context
+        # Check if results should be hidden in contest or lesson context
         is_result_hidden = False
         if attempt.contest_participation_id:
             cp = ContestProblem.objects.filter(
@@ -2196,6 +2205,10 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
                 is_result_hidden = quiz.should_hide_result(
                     self.request.user, contest_problem=cp
                 )
+        elif attempt.lesson_quiz_id:
+            is_result_hidden = quiz.should_hide_result(
+                self.request.user, lesson_quiz=attempt.lesson_quiz
+            )
         context["is_result_hidden"] = is_result_hidden
 
         # Check if user can retake the quiz
@@ -2949,30 +2962,45 @@ class ContestQuizAttemptsAjax(View):
     """AJAX view to show quiz attempts for a user in a contest (for ranking popup)."""
 
     def get(self, request, contest, participation_id, quiz_id):
-        from judge.models import Contest, ContestParticipation
-
         contest_obj = get_object_or_404(Contest, key=contest)
+        if not contest_obj.can_see_own_scoreboard(request.user):
+            raise Http404()
+        if not contest_obj.is_accessible_by(request.user):
+            raise Http404()
+
+        contest_problem = get_object_or_404(
+            ContestProblem.objects.select_related("quiz"),
+            contest=contest_obj,
+            quiz_id=quiz_id,
+        )
         participation = get_object_or_404(
             ContestParticipation, id=participation_id, contest=contest_obj
         )
-        quiz = get_object_or_404(Quiz, id=quiz_id)
+        quiz = contest_problem.quiz
 
         # Get all submitted attempts for this quiz in this contest participation
-        attempts = QuizAttempt.objects.filter(
-            user=participation.user,
-            quiz=quiz,
-            contest_participation=participation,
-            is_submitted=True,
-        ).order_by("-end_time")
+        attempts = list(
+            QuizAttempt.objects.filter(
+                user=participation.user,
+                quiz=quiz,
+                contest_participation=participation,
+                is_submitted=True,
+            )
+            .select_related("quiz", "contest_participation__contest")
+            .order_by("-end_time")
+        )
 
         # Calculate best score
-        best_attempt = attempts.order_by("-score").first()
+        best_attempt = max(
+            attempts, key=lambda attempt: attempt.score or 0, default=None
+        )
+        can_view_results = bool(attempts) and attempts[0].is_accessible_by(request.user)
 
         # Check if results should be hidden
-        cp = ContestProblem.objects.filter(contest=contest_obj, quiz=quiz).first()
-        is_result_hidden = False
-        if cp and cp.is_result_hidden:
-            is_result_hidden = not contest_obj.is_editable_by(request.user)
+        is_result_hidden = (
+            contest_problem.is_result_hidden
+            and not contest_obj.is_editable_by(request.user)
+        )
 
         return render(
             request,
@@ -2985,6 +3013,7 @@ class ContestQuizAttemptsAjax(View):
                 "attempts": attempts,
                 "best_attempt": best_attempt,
                 "is_result_hidden": is_result_hidden,
+                "can_view_results": can_view_results,
             },
         )
 
@@ -3601,9 +3630,8 @@ class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailVi
             quiz__code=self.kwargs["code"],
         )
 
-        is_owner = attempt.user == self.request.profile
         self._is_editor = attempt.quiz.is_editable_by(self.request.user)
-        if not (is_owner or self._is_editor):
+        if not attempt.is_accessible_by(self.request.user):
             raise PermissionDenied(_("You cannot view this result."))
 
         self.validate_attempt_context(attempt)

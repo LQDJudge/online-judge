@@ -752,6 +752,28 @@ class QuizAttempt(models.Model):
     def __str__(self):
         return f"{self.user.user.username} - {self.quiz.title} - Attempt #{self.attempt_number}"
 
+    def is_accessible_by(self, user):
+        if not user or not user.is_authenticated:
+            return False
+
+        if user.is_superuser:
+            return True
+
+        profile = getattr(user, "profile", None)
+        if profile and self.user_id == profile.id:
+            return True
+
+        if profile and self.quiz.is_editor(profile):
+            return True
+
+        if (
+            self.contest_participation_id
+            and self.contest_participation.contest.is_editable_by(user)
+        ):
+            return True
+
+        return False
+
     @property
     def duration(self):
         """
