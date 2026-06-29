@@ -1255,15 +1255,14 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
             and not self.contest.is_editable_by(self.request.user)
         )
         context["is_result_hidden"] = result_hidden
-        if result_hidden:
-            context["submissions"] = None
-            return context
 
         filtered_submissions = []
 
         # Only show this for some users when using ioi16
-        if not self.contest.format.has_hidden_subtasks or self.contest.is_editable_by(
-            self.request.user
+        if (
+            result_hidden
+            or not self.contest.format.has_hidden_subtasks
+            or self.contest.is_editable_by(self.request.user)
         ):
             for s in context["submissions"]:
                 if not hasattr(s, "contest"):
@@ -1276,28 +1275,32 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                 total = floatformat(
                     contest_problem.points, -self.contest.points_precision
                 )
-                points = floatformat(s.contest.points, -self.contest.points_precision)
-                s.display_point = f"{points} / {total}"
+                if not result_hidden:
+                    points = floatformat(
+                        s.contest.points, -self.contest.points_precision
+                    )
+                    s.display_point = f"{points} / {total}"
                 filtered_submissions.append(s)
             context["submissions"] = filtered_submissions
         else:
             context["submissions"] = None
 
-        best_subtasks = self.get_best_subtask_points()
-        if best_subtasks:
-            (
-                context["best_subtasks"],
-                context["points"],
-                context["total"],
-            ) = best_subtasks
-            if context["points"] != "???":
-                context["points"] = floatformat(
-                    context["points"], -self.contest.points_precision
+        if not result_hidden:
+            best_subtasks = self.get_best_subtask_points()
+            if best_subtasks:
+                (
+                    context["best_subtasks"],
+                    context["points"],
+                    context["total"],
+                ) = best_subtasks
+                if context["points"] != "???":
+                    context["points"] = floatformat(
+                        context["points"], -self.contest.points_precision
+                    )
+                context["total"] = floatformat(
+                    context["total"], -self.contest.points_precision
                 )
-            context["total"] = floatformat(
-                context["total"], -self.contest.points_precision
-            )
-            context["subtasks"] = sorted(context["best_subtasks"].keys())
+                context["subtasks"] = sorted(context["best_subtasks"].keys())
         return context
 
     def get(self, request, *args, **kwargs):

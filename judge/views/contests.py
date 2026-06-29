@@ -1420,8 +1420,16 @@ def build_ranking_profiles(contest, problems, participations, show_final=False):
             if result_hidden_ids and cp.id in result_hidden_ids:
                 key = format_data_key(cp)
                 if key in format_data:
+                    # Masked cell: show "?" (no score/state/time leak) but keep the
+                    # popup link so it stays clickable like a normal cell. The popup
+                    # itself masks the score/verdict for non-editors.
                     cell = format_html(
-                        '<td class="problem-score-col"><span>?</span></td>'
+                        '<td class="problem-score-col" title="{tooltip}">'
+                        '<a data-featherlight="{url}" '
+                        'data-featherlight-variant="contest-tag-lightbox" href="#">'
+                        "<span>?</span></a></td>",
+                        tooltip=contest.format.get_problem_tooltip(cp),
+                        url=contest.format.get_submission_url(participation, cp),
                     )
                 else:
                     cell = contest.format.display_empty_cell(cp)

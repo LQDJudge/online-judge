@@ -1,6 +1,4 @@
-<h4>
-  {{ _('Quiz attempts of') }} {{ link_user(profile) }}
-</h4>
+<h4>{{ _('Quiz attempts of') }} {{ link_user(profile) }}</h4>
 <hr>
 {% set _is_result_hidden = is_result_hidden is defined and is_result_hidden %}
 {% if attempts %}
@@ -8,11 +6,7 @@
     <tbody>
       {% for attempt in attempts %}
         <tr>
-          <td class="lightbox-submissions-time">
-            {% trans time=attempt.end_time|date(_("g:i a d/m/Y")) %}
-              {{ time }}
-            {% endtrans %}
-          </td>
+          <td class="lightbox-submissions-time">{{ attempt.end_time|date(_("g:i a d/m/Y")) }}</td>
           {% if _is_result_hidden %}
             <td>?</td>
             <td></td>
@@ -26,7 +20,7 @@
           {% endif %}
           {% if can_view_results %}
             <td>
-              &rarr; <a href="{{ url('quiz_result', quiz.code, attempt.id) }}">{{ attempt.id }}</a>
+              → <a href="{{ url('lesson_quiz_result', course.slug, lesson.id, lesson_quiz.quiz.code, attempt.id) }}">{{ attempt.id }}</a>
             </td>
           {% endif %}
         </tr>
@@ -36,7 +30,8 @@
   {% if not _is_result_hidden and best_attempt %}
     <hr>
     <p>
-      <strong>{{ _('Best score') }}:</strong> {{ best_attempt.score|floatformat(1) }} / {{ best_attempt.max_score|floatformat(1) }}
+      <strong>{{ _('Best score') }}:</strong>
+      {{ best_attempt.score|floatformat(1) }} / {{ best_attempt.max_score|floatformat(1) }}
     </p>
   {% endif %}
 {% else %}

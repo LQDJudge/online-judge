@@ -3,10 +3,7 @@
     href="{{url('contest_user_submissions', contest.key, profile.username, problem.code)}}">#</a>
 </h4>
 <hr>
-{% if is_result_hidden %}
-  <p><i class="fa fa-eye-slash"></i> {{ _('Results are hidden.') }}</p>
-{% endif %}
-{% if best_subtasks and subtasks %}
+{% if not is_result_hidden and best_subtasks and subtasks %}
   <table class="lightbox-submissions">
     <tbody>
       {% for subtask in subtasks %}
@@ -25,7 +22,7 @@
             </td>
           {% endif %}
           {% if cur_subtask.submission %}
-            {% set can_view = cur_subtask.submission.is_accessible_by(profile) %}
+            {% set can_view = cur_subtask.submission.is_accessible_by(request.profile) %}
             {% if can_view %}
               <td>
                 → <a href="{{url('submission_status', cur_subtask.submission.id)}}">{{ cur_subtask.submission.id }}</a>
@@ -51,7 +48,7 @@
     <tbody>
       {% for submission in submissions %}
         <tr>
-          {% set can_view = submission.is_accessible_by(profile) %}
+          {% set can_view = submission.is_accessible_by(request.profile) %}
           <td class="lightbox-submissions-time">
             {% if submission.contest_time %}
               {{submission.contest_time}}
@@ -61,15 +58,20 @@
               {% endtrans %}
             {% endif %}
           </td>
-          <td class="case-{{submission.result}}">{{submission.display_point}}</td>
-          <td class="case-{{submission.result}}">({{submission.short_status}})</td>
-          <td>
-            {% if submission.is_pretested %}
-              [{{_('pretests')}}]
-            {% else %}
-              [{{_('main tests')}}]
-            {% endif %}
-          </td>
+          {% if is_result_hidden %}
+            <td>?</td>
+            <td></td>
+          {% else %}
+            <td class="case-{{submission.result}}">{{submission.display_point}}</td>
+            <td class="case-{{submission.result}}">({{submission.short_status}})</td>
+            <td>
+              {% if submission.is_pretested %}
+                [{{_('pretests')}}]
+              {% else %}
+                [{{_('main tests')}}]
+              {% endif %}
+            </td>
+          {% endif %}
           {% if can_view %}
             <td>
               → <a href="{{url('submission_status', submission.id)}}">{{submission.id}}</a>

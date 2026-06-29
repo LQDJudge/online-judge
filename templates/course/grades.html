@@ -13,6 +13,23 @@
       }).on('change', function() {
         $(this).closest('form').submit();
       });
+      function scrollToGradeRow(el) {
+        if (el) el.scrollIntoView({behavior: 'smooth', block: 'center'});
+      }
+      if (new URLSearchParams(window.location.search).get('focus')) {
+        scrollToGradeRow(document.querySelector('#users-table tr.highlight'));
+      }
+      $('#my-rank-btn').on('click', function (e) {
+        e.preventDefault();
+        var myPage = parseInt($(this).data('page'));
+        var cur = parseInt(new URLSearchParams(window.location.search).get('page') || '1');
+        var mine = document.getElementById('my-grades-row');
+        if (myPage === cur && mine) { mine.classList.add('highlight'); scrollToGradeRow(mine); return; }
+        var u = new URLSearchParams(window.location.search);
+        u.set('focus', $(this).data('username'));
+        u.delete('page');
+        window.location.search = u.toString();
+      });
     });
   </script>
 {% endblock %}
@@ -40,6 +57,11 @@
       </label>
       <input type="text" name="search" placeholder="{{_('Search')}}" value="{{ search_query or '' }}">
       <button type="submit" hidden></button>
+      {% if my_page %}
+        <a class="action-btn" id="my-rank-btn" href="#" style="margin-left: auto;"
+           data-page="{{ my_page }}" data-username="{{ request.profile.username }}">
+          <i class="fa fa-user"></i> {{ _('My rank') }}</a>
+      {% endif %}
     </form>
     <div class="table-container">
       <table class="table striped" id="users-table">
@@ -71,7 +93,9 @@
             {% set grade_lessons_student = grade_lessons.get(student) %}
             {% set grade_contests_student = grade_contests.get(student) %}
             {% set grade_total_student = grade_total.get(student) %}
-            <tr>
+            {% set is_focus = focus_id and student.id == focus_id %}
+            {% set is_me = request.profile and student.id == request.profile.id %}
+            <tr{% if is_focus %} class="highlight"{% endif %}{% if is_me %} id="my-grades-row"{% endif %}>
               <td class="rank">{{ global_rank.get(student.id, '') }}</td>
               <td class="user-name">
                 <div>
@@ -91,21 +115,23 @@
               {% for lesson in lessons %}
                 {% set val = grade_lessons_student.get(lesson.id) %}
                 <td class="partial-score">
-                  {% if val and val['total_points'] %}
-                    {{ (val['achieved_points'] / val['total_points'] * lesson.points) | floatformat(0) }}
-                  {% else %}
-                    0
-                  {% endif %}
+                  <a href="{{ url('course_grades_lesson', course.slug, lesson.id) }}?focus={{ student.username }}">
+                    {% if val and val['total_points'] %}
+                      {{ (val['achieved_points'] / val['total_points'] * lesson.points) | floatformat(0) }}
+                    {% else %}0{% endif %}
+                  </a>
                 </td>
               {% endfor %}
               {% for course_contest in course_contests %}
                 {% set val = grade_contests_student.get(course_contest.id) %}
                 <td class="partial-score">
-                  {% if val and val['total_points'] %}
-                    {{ (val['achieved_points'] / val['total_points'] * course_contest.points) | floatformat(0) }}
-                  {% else %}
-                    0
-                  {% endif %}
+                  <a href="{{ url('contest_ranking', course_contest.contest.key) }}?user={{ student.username|urlencode }}">
+                    {% if val and val['total_points'] %}
+                      {{ (val['achieved_points'] / val['total_points'] * course_contest.points) | floatformat(0) }}
+                    {% else %}
+                      0
+                    {% endif %}
+                  </a>
                 </td>
               {% endfor %}
             </tr>

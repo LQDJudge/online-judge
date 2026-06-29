@@ -14083,3 +14083,15 @@ msgstr "Đã rate qua “Rate tất cả kỳ thi xếp hạng”."
 #: judge/admin/contest.py:444
 msgid "Rated this contest."
 msgstr "Đã rate kỳ thi này."
+
+#: templates/course/lesson_user_submissions_ajax.html:1
+msgid "Submissions of"
+msgstr "Bài nộp của"
+
+#: templates/course/lesson_user_submissions_ajax.html:21
+msgid "See all submissions"
+msgstr "Xem tất cả bài nộp"
+
+#: templates/course/lesson_user_submissions_ajax.html:25
+msgid "No submissions yet."
+msgstr "Chưa có bài nộp nào."
