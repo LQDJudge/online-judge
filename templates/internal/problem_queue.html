@@ -138,6 +138,14 @@
           }
         });
 
+    // Auto-review verdict — styled dropdown to match the sidebar's other
+    // filters. `minimumResultsForSearch: Infinity` hides the search box since
+    // there are only a few fixed options.
+        $('#verdict').select2({
+          minimumResultsForSearch: Infinity,
+          width: '100%',
+        });
+
     // Handle Enter key press in search input
         $search.keypress(function (e) {
           if (e.keyCode == 13)
@@ -678,6 +686,17 @@
           </select>
         </div>
 
+        {% if current_tab == 'request_public' %}
+          <div class="filter-form-group">
+            <label class="bold-text margin-label" for="verdict"><i class="non-italics">{{ _('Auto-review') }}</i></label>
+            <select id="verdict" name="verdict" style="width: 100%">
+              <option value="">{{ _('All') }}</option>
+              <option value="pass"{% if verdict_filter == 'pass' %} selected{% endif %}>{{ _('Pass') }}</option>
+              <option value="fail"{% if verdict_filter == 'fail' %} selected{% endif %}>{{ _('Fail') }}</option>
+            </select>
+          </div>
+        {% endif %}
+
         {% if point_values %}
           <div class="filter-form-group">
             <div class="bold-text margin-label">{{ _('Point range') }}</div>
@@ -692,7 +711,7 @@
 
 <div class="form-submit-group">
   <div id="go" class="action-btn">{{ _('Go') }}</div>
-  {% if search_query or author_query or (point_start and point_start != point_values.min) or (point_end and
+  {% if search_query or author_query or verdict_filter or (point_start and point_start != point_values.min) or (point_end and
   point_end != point_values.max) %}
   <a href="{{ request.path }}{% if current_tab == 'request_public' %}?tab=request_public{% endif %}" class="action-btn background-gray">{{ _('Clear') }}</a>
   {% endif %}

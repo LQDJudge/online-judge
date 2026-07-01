@@ -479,6 +479,10 @@ class InternalProblemQueue(InternalView, ListView):
         self.point_end = safe_float_or_none(request.GET.get("point_end"))
         self.current_tab = request.GET.get("tab", "public")
         self.status_filter = request.GET.get("status", "")
+        # Auto-review verdict filter — accept only the two verdicts we expose
+        # in the UI; anything else (empty/junk) means "no verdict filter".
+        verdict = request.GET.get("verdict", "")
+        self.verdict_filter = verdict if verdict in ("pass", "fail") else ""
 
         # Handle author filter
         if "authors" in request.GET:
@@ -503,7 +507,16 @@ class InternalProblemQueue(InternalView, ListView):
         return queryset.distinct().order_by("-id")
 
     def _get_request_public_queryset(self):
-        """Request public queue: problems with PublicRequest records."""
+        """Request public queue: problems with a PublicRequest.
+
+        The Pending sub-filter is the actionable work list, so there we hide
+        problems that are already site-public (public AND not
+        organization-private) — they need no further action, whether they were
+        published via approval here or through some other path (admin edit,
+        contest publish, etc.) that left a stale pending request behind. The
+        other sub-filters (All / Approved / Rejected) keep the full record for
+        reference.
+        """
         queryset = Problem.objects.filter(public_request__isnull=False).select_related(
             "public_request",
             "public_request__requested_by",
@@ -513,7 +526,26 @@ class InternalProblemQueue(InternalView, ListView):
         if self.status_filter:
             queryset = queryset.filter(public_request__status=self.status_filter)
 
+        if self.status_filter == PublicRequest.PENDING:
+            queryset = queryset.exclude(is_public=True, is_organization_private=False)
+
         queryset = self._apply_search_filters(queryset)
+
+        # Auto-review verdict is a derived value (no DB column), so we can't
+        # express it as a plain .filter(). Resolve the candidate ids first,
+        # compute verdicts in 2 batched queries, then narrow by id. Only runs
+        # when a verdict is actually selected. Mirrors ProblemReviewListView.
+        if self.verdict_filter:
+            candidate_ids = list(queryset.values_list("id", flat=True).distinct())
+            _latest, verdicts = batched_verdicts(
+                candidate_ids,
+                ProblemReviewRun,
+                ProblemReviewCheckResult,
+                "problem_id",
+            )
+            matching = [pid for pid, v in verdicts.items() if v == self.verdict_filter]
+            queryset = queryset.filter(id__in=matching)
+
         return queryset.distinct().order_by("-public_request__created_at")
 
     def _apply_search_filters(self, queryset):
@@ -588,6 +620,7 @@ class InternalProblemQueue(InternalView, ListView):
         context["title"] = self.title
         context["current_tab"] = self.current_tab
         context["status_filter"] = self.status_filter
+        context["verdict_filter"] = self.verdict_filter
 
         # Add filter context data
         context["search_query"] = getattr(self, "search_query", None)
@@ -602,10 +635,17 @@ class InternalProblemQueue(InternalView, ListView):
             context["point_values"],
         ) = self.get_noui_slider_points()
 
-        # Request counts for tab badges
-        context["pending_request_count"] = PublicRequest.objects.filter(
-            status=PublicRequest.PENDING
-        ).count()
+        # Request counts for tab badges. Mirror the request_public queue's
+        # exclusion of already-site-public problems so the badge matches the
+        # number of rows actually shown under the Pending filter.
+        context["pending_request_count"] = (
+            PublicRequest.objects.filter(status=PublicRequest.PENDING)
+            .exclude(
+                problem__is_public=True,
+                problem__is_organization_private=False,
+            )
+            .count()
+        )
 
         # Build pagination URLs that preserve filter parameters
         query_params = self.request.GET.copy()
