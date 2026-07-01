@@ -96,17 +96,26 @@
       <div id="import-summary"></div>
 
       <div id="import-shared-settings" class="import-shared-settings">
-        <label class="import-checkbox-label">
-          <input type="checkbox" id="import-shuffle-choices">
-          {{ _("Shuffle Choices") }}
-        </label>
-        <label class="import-checkbox-label">
-          <input type="checkbox" id="import-is-public">
-          {{ _("Public") }}
-        </label>
-        <button type="button" class="action-btn" id="import-create-all-btn">
-          <i class="fa fa-plus-circle"></i> <span>{{ _("Create All Questions") }}</span>
-        </button>
+        <div class="import-title-prefix-field">
+          <div class="import-title-prefix-row">
+            <label for="import-title-prefix">{{ _("Question title (optional)") }}</label>
+            <input type="text" id="import-title-prefix" placeholder="26M1SL2">
+          </div>
+          <span class="import-field-meta">{{ _("Result: '26M1SL2 C01: ...'. Leave empty for no prefix.") }}</span>
+        </div>
+        <div class="import-shared-actions">
+          <label class="import-checkbox-label">
+            <input type="checkbox" id="import-shuffle-choices">
+            {{ _("Shuffle Choices") }}
+          </label>
+          <label class="import-checkbox-label">
+            <input type="checkbox" id="import-is-public">
+            {{ _("Public") }}
+          </label>
+          <button type="button" class="action-btn" id="import-create-all-btn">
+            <i class="fa fa-plus-circle"></i> <span>{{ _("Create All Questions") }}</span>
+          </button>
+        </div>
       </div>
 
       <div id="import-questions"></div>

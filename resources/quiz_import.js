@@ -2,6 +2,26 @@ $(function () {
     var CONFIG = window.QUIZ_IMPORT_CONFIG;
     if (!CONFIG) return;
 
+    // Pure: build the final question title from an optional prefix + 1-based,
+    // zero-padded counter. Empty prefix -> plain base title. Caps at 255 by
+    // truncating the base title, never the prefix/counter. Exposed on window
+    // for deterministic tests.
+    function composeQuizTitle(prefix, index, total, baseTitle) {
+        prefix = (prefix || '').trim();
+        baseTitle = baseTitle || '';
+        if (!prefix) return baseTitle;
+        var width = String(Math.max(total, 1)).length;
+        var counter = String(index + 1);
+        while (counter.length < width) counter = '0' + counter;
+        var head = prefix + ' C' + counter + ': ';
+        var maxBase = 255 - head.length;
+        if (maxBase < 0) maxBase = 0;
+        if (baseTitle.length > maxBase) baseTitle = baseTitle.slice(0, maxBase);
+        // Final clamp guarantees <= 255 even if the prefix alone overflows.
+        return (head + baseTitle).slice(0, 255);
+    }
+    window.composeQuizImportTitle = composeQuizTitle;
+
     // State
     var questionsData = [];
     var createdQuestions = {}; // index -> {question_id, question_url}
@@ -19,6 +39,17 @@ $(function () {
     // Enable upload button when file is selected
     $fileInput.on('change', function () {
         $uploadBtn.prop('disabled', !this.files.length);
+    });
+
+    // Live-update each card's title-prefix preview as the prefix is typed.
+    $(document).on('input', '#import-title-prefix', function () {
+        var prefix = $(this).val();
+        $('.import-question-card').each(function () {
+            var index = $(this).data('index');
+            $(this).find('.import-title-prefix-preview').text(
+                composeQuizTitle(prefix, index, questionsData.length, '')
+            );
+        });
     });
 
     // Upload handler
@@ -156,6 +187,8 @@ $(function () {
         html += '<div class="import-question-header">';
         html += '<i class="fa fa-chevron-right import-chevron"></i>';
         html += '<span class="import-question-num">#' + (index + 1) + '</span>';
+        var prefixHead = composeQuizTitle($('#import-title-prefix').val(), index, questionsData.length, '');
+        html += '<span class="import-title-prefix-preview">' + escapeHtml(prefixHead) + '</span>';
         html += '<input type="text" class="import-question-title" value="' + escapeAttr(q.title) + '" data-field="title">';
         html += '<span class="question-type-badge badge-' + q.question_type + '">' + escapeHtml(typeName) + '</span>';
         html += '<button type="button" class="action-btn small import-create-btn" data-index="' + index + '">';
@@ -361,7 +394,8 @@ $(function () {
         var q = questionsData[index];
 
         // Read edited values from inputs
-        var title = $card.find('.import-question-title').val() || q.title;
+        var baseTitle = $card.find('.import-question-title').val() || q.title;
+        var title = composeQuizTitle($('#import-title-prefix').val(), index, questionsData.length, baseTitle);
         var qtype = $card.find('.import-question-type-select').val() || q.question_type;
         var content = $card.find('.import-question-content').val() || q.content;
 

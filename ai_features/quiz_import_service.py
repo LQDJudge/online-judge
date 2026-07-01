@@ -45,12 +45,43 @@ If a choice contains code, wrap it in markdown fenced code blocks exactly the sa
 Use JSON newline escapes (backslash-n) to preserve line breaks in multi-line code within JSON string values.
 
 CHOICE FORMAT RULES:
-- Use UPPERCASE letter IDs: "A", "B", "C", "D", etc.
-- For MC: correct_answers = {"answers": "B"} (single letter)
-- For MA: correct_answers = {"answers": ["A", "C"]} (array of letters)
-- For TF: choices = [{"id": "A", "text": "True"}, {"id": "B", "text": "False"}], correct_answers = {"answers": "A"} or {"answers": "B"}
-- For SA: no choices, correct_answers = {"answers": ["exact answer 1", "answer 2"]}
-- For ES: no choices, correct_answers = null
+- Use UPPERCASE letter IDs for choices: "A", "B", "C", "D", etc.
+- MC/MA/TF have choices; SA and ES have no choices.
+- See ANSWER SEMANTICS below for exactly what to put in correct_answers per type.
+
+ANSWER SEMANTICS — how our system interprets correct_answers (READ CAREFULLY):
+The meaning of correct_answers is DIFFERENT for each question type. Emitting the
+wrong shape or wrong meaning causes silent grading bugs, so follow each rule exactly.
+
+- MC (single choice): {"answers": "B"}
+  - "answers" is ONE choice id, and it MUST be one of the ids you listed in "choices".
+  - Exactly one correct choice.
+
+- MA (multiple answers): {"answers": ["A", "C"]}
+  - "answers" is the COMPLETE set of choice ids that are correct TOGETHER (logical AND).
+  - The student must select exactly this set. List every correct id and no wrong ones.
+    Every id must appear in "choices".
+
+- TF (true/false): choices = [{"id": "A", "text": "True"}, {"id": "B", "text": "False"}];
+  {"answers": "A"} for true, {"answers": "B"} for false.
+
+- SA (short answer): {"type": "exact", "case_sensitive": false, "answers": ["<answer>", ...]}
+  - CRITICAL: the "answers" list is a set of ALTERNATIVE, EQUIVALENT answers. The student
+    types ONE answer and is graded correct if it matches ANY ONE entry (logical OR).
+  - The list is NOT the parts of a single answer. If the correct answer has multiple parts
+    (e.g. the ages of 4 people), it is ONE entry containing the WHOLE answer:
+        RIGHT: {"answers": ["Chloe: 5, Leo: 8, Emma: 13, Lily: 15"]}
+        WRONG: {"answers": ["Chloe: 5", "Leo: 8", "Emma: 13", "Lily: 15"]}
+  - Add more than one entry ONLY when the document explicitly gives equivalent forms
+    (e.g. an answer key that says "5 or five" -> ["5", "five"]).
+  - ANSWER FORMAT INSTRUCTIONS: if the question tells students how to write the answer
+    (e.g. "Hướng dẫn ghi đáp án", "write in the format: ..."), the single accepted
+    answer MUST follow that exact format.
+  - SA answers are always graded case-insensitively with exact match - write answers that
+    grade correctly under that rule (do not rely on capitalization).
+
+- ES (essay): correct_answers = null (manually graded).
+
 - If the correct answer is NOT determinable from the document, set correct_answers to null
 
 CONTENT RULES (CRITICAL — follow exactly):
@@ -82,9 +113,14 @@ ANSWER HANDLING:
 - If you cannot determine the answer at all, set correct_answers to null
 
 TITLE RULES:
-- Create a brief, descriptive title from the question content
-- Max 255 characters
-- Example: "Tìm giá trị x thỏa phương trình bậc 2" or "Calculate area of triangle"
+- Create a SHORT, NEUTRAL, THEMATIC title from the question's story or setting.
+- The title MUST NOT reveal or hint at the solution, the method/algorithm/approach,
+  the data structure, the complexity, the topic/category, or what to compute. A
+  student who reads ONLY the title must gain no advantage.
+- Prefer the scenario, characters, or theme over describing the task.
+- Preserve the document's language. Max 255 characters.
+- Spoiler (BAD): "Xác định tọa độ cây bị thiếu", "Dijkstra shortest path"
+- Neutral (GOOD): "Khu vườn của bác Ba", "Qua cầu trong đêm"
 """
 
 QUIZ_IMPORT_USER_PROMPT = (

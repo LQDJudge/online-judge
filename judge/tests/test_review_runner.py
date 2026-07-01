@@ -104,6 +104,45 @@ class ReviewProblemTaskTest(TestCase):
             run.check_results.first().status, ProblemReviewCheckResult.SKIPPED
         )
 
+    def test_redelivery_of_done_run_is_idempotent(self):
+        # Celery delivers at-least-once: a worker restart with in-flight
+        # messages (or a duplicate enqueue) can run review_problem twice for
+        # the same run_id. The first run leaves rows + status=DONE; the second
+        # must NOT collide on the (run, check_id) unique constraint.
+        run = self._make_run()
+        with patch("judge.tasks.review.CHECKS", [_DummyCheck()]):
+            review_problem(run.id)
+            # Second delivery of the same task message.
+            result = review_problem(run.id)
+
+        self.assertTrue(result["success"])
+        run.refresh_from_db()
+        self.assertEqual(run.status, ProblemReviewRun.DONE)
+        # Still exactly one row per check — no duplicate, no IntegrityError.
+        self.assertEqual(run.check_results.count(), 1)
+
+    def test_rerun_overwrites_stale_partial_rows(self):
+        # A prior attempt that crashed mid-loop leaves the run in RUNNING with
+        # some check-result rows already written. A redelivered task must
+        # overwrite those rows (update_or_create), not collide with create().
+        run = self._make_run()
+        ProblemReviewCheckResult.objects.create(
+            run=run,
+            check_id="dummy_pass",
+            status=ProblemReviewCheckResult.ERROR,
+            reason="stale partial row from crashed attempt",
+        )
+        with patch("judge.tasks.review.CHECKS", [_DummyCheck()]):
+            result = review_problem(run.id)
+
+        self.assertTrue(result["success"])
+        run.refresh_from_db()
+        self.assertEqual(run.status, ProblemReviewRun.DONE)
+        rows = list(run.check_results.all())
+        self.assertEqual(len(rows), 1)
+        # The stale ERROR row was overwritten by the fresh SUCCESS result.
+        self.assertEqual(rows[0].status, ProblemReviewCheckResult.SUCCESS)
+
     def test_runner_crash_marks_run_error_and_notifies(self):
         # If the registry iteration itself crashes (not a per-check crash
         # which is already handled by the inner try/except), the outer

@@ -81,17 +81,47 @@
     // Shared settings bar
     .import-shared-settings {
         display: flex;
-        align-items: center;
+        flex-direction: column;
         gap: 15px;
         padding: 10px 15px;
         border: 1px solid $border_gray;
         border-radius: 6px;
         margin-bottom: 15px;
+    }
+
+    .import-shared-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
         flex-wrap: wrap;
 
         .action-btn {
             margin-left: auto;
         }
+    }
+
+    .import-title-prefix-field {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-right: 1em;
+
+        .import-title-prefix-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            input {
+                max-width: 220px;
+            }
+        }
+    }
+
+    .import-title-prefix-preview {
+        opacity: 0.75;
+        margin-right: 4px;
+        white-space: nowrap;
+        font-weight: bold;
     }
 
     .import-checkbox-label {

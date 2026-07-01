@@ -49,15 +49,36 @@ def review_problem(self, run_id):
         logger.error("review_problem: ProblemReviewRun %s not found", run_id)
         return {"success": False, "error": "run not found"}
 
+    # Idempotency guard for the common redelivery case. Celery delivers
+    # at-least-once, so this task can be handed the same run_id more than once —
+    # most often a backlog drain after downtime or a duplicate enqueue, where
+    # the run has already reached DONE. Re-running a DONE run would collide on
+    # the (run, check_id) unique constraint AND re-spend LLM tokens, so treat it
+    # as a no-op. NOTE: a redelivery that races a still-RUNNING run is not
+    # deduped here — update_or_create below keeps that case from crashing, but
+    # it may double-emit notifications; a stronger claim/lock is a follow-up.
+    if run.status == ProblemReviewRun.DONE:
+        logger.info("review_problem: run %s already DONE, ignoring redelivery", run_id)
+        return {"success": True, "run_id": run.id, "idempotent": True}
+
     try:
         problem = run.problem
 
         for check in CHECKS:
-            result = ProblemReviewCheckResult.objects.create(
+            # update_or_create (not create): a prior attempt that crashed
+            # mid-loop leaves the run in RUNNING with some rows already
+            # written. A redelivered task must overwrite those rows rather
+            # than collide with create() on the (run, check_id) constraint.
+            result, _created = ProblemReviewCheckResult.objects.update_or_create(
                 run=run,
                 check_id=check.id,
-                status=ProblemReviewCheckResult.PENDING,
-                started_at=datetime.now(timezone.utc),
+                defaults={
+                    "status": ProblemReviewCheckResult.PENDING,
+                    "started_at": datetime.now(timezone.utc),
+                    "reason": "",
+                    "details_json": {},
+                    "finished_at": None,
+                },
             )
             try:
                 data = check.run(problem, run)
