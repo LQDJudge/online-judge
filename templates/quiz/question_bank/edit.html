@@ -128,14 +128,11 @@
         var html = '<div id="sa-editor-container" class="sa-editor">';
         html += '<h4>{{ _("Correct Answers Configuration") }}</h4>';
 
-      // Match Type
+      // Match Type: normalized exact. Hidden field preserves the question's type
+      // (defaults to exact; keeps any legacy regex question intact on edit). No dropdown.
+        html += '<input type="hidden" id="sa-type" value="' + (saType || 'exact') + '">';
         html += '<div class="sa-field">';
-        html += '<label for="sa-type">{{ _("Match Type") }}:</label>';
-        html += '<select id="sa-type" class="sa-select">';
-        html += '<option value="exact"' + (saType === 'exact' ? ' selected' : '') + '>{{ _("Exact Match") }}</option>';
-        html += '<option value="regex"' + (saType === 'regex' ? ' selected' : '') + '>{{ _("Regular Expression") }}</option>';
-        html += '</select>';
-        html += '<span class="sa-help">{{ _("Exact: student answer must match one of the answers. Regex: use regular expression patterns.") }}</span>';
+        html += '<span class="sa-help">{{ _("Answers are matched ignoring spaces and capitalization. Everything else (digits, commas, dots, order) must match.") }}</span>';
         html += '</div>';
 
       // Case Sensitive

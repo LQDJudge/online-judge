@@ -74,11 +74,16 @@ wrong shape or wrong meaning causes silent grading bugs, so follow each rule exa
         WRONG: {"answers": ["Chloe: 5", "Leo: 8", "Emma: 13", "Lily: 15"]}
   - Add more than one entry ONLY when the document explicitly gives equivalent forms
     (e.g. an answer key that says "5 or five" -> ["5", "five"]).
-  - ANSWER FORMAT INSTRUCTIONS: if the question tells students how to write the answer
-    (e.g. "Hướng dẫn ghi đáp án", "write in the format: ..."), the single accepted
-    answer MUST follow that exact format.
-  - SA answers are always graded case-insensitively with exact match - write answers that
-    grade correctly under that rule (do not rely on capitalization).
+  - REQUIRED ANSWER FORMAT: every SA question's "content" MUST include a clear instruction
+    telling the student the exact format to type, WITH a concrete example — e.g.
+    "Nhập đáp án đúng định dạng: Chloe: <tuổi>, Leo: <tuổi>, ... (ví dụ: Chloe: 5, Leo: 8, ...)".
+    If the source states a format ("Hướng dẫn ghi đáp án", or "write in the format: ..."),
+    keep it; if it does NOT, ADD a clear one yourself. Then output ONE canonical "answers"
+    entry that follows that exact format.
+  - SA answers are graded by NORMALIZED EXACT match: whitespace and letter case are ignored,
+    but everything else must match exactly — digits, commas, dots, and the ORDER of parts.
+    So write the one canonical answer in the stated format; do not rely on capitalization or
+    spacing, and never reorder the parts.
 
 - ES (essay): correct_answers = null (manually graded).
 

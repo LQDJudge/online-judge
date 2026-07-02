@@ -33,6 +33,14 @@ class QuizImportPromptSemanticsTest(SimpleTestCase):
         # MC single id must exist among the listed choices.
         self.assertIn("one of the ids", p)
 
+    def test_prompt_requires_sa_answer_format_and_example(self):
+        p = QUIZ_IMPORT_SYSTEM_PROMPT
+        # SA questions must embed a required format instruction + example.
+        self.assertIn("REQUIRED ANSWER FORMAT", p)
+        self.assertIn("ví dụ", p)  # the example marker in the sample instruction
+        # Grading is normalized exact (whitespace/case ignored, order matters).
+        self.assertIn("NORMALIZED EXACT", p)
+
 
 class QuizImportTitleRulesTest(SimpleTestCase):
     """TITLE RULES must instruct non-spoiler, thematic titles."""

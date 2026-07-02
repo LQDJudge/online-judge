@@ -12,6 +12,32 @@ from django.urls import reverse
 from django.utils import timezone
 
 
+def normalize_sa(s, case_sensitive=False):
+    """Normalize a short-answer string for comparison.
+
+    Touches ONLY whitespace and case — never meaning-bearing characters.
+    Commas, dots, digits, letters, brackets and operators are preserved exactly,
+    so "1,2", "1.2", "12" and "1 2" all stay distinct (critical for math/CP).
+    Forgives: case, leading/trailing/repeated whitespace, and spaces adjacent to
+    punctuation ("5, 8" == "5,8", "Chloe: 5" == "Chloe:5"). It never removes or
+    alters punctuation itself, and never removes a space between two alphanumerics
+    (so "1 2" != "12").
+    """
+    s = "" if s is None else str(s)  # tolerate non-string entries (e.g. numbers)
+    if not case_sensitive:
+        s = s.lower()
+    s = s.strip()
+    s = re.sub(r"\s+", " ", s)  # collapse whitespace runs to a single space
+    s = re.sub(r"\s*([^\w\s])\s*", r"\1", s)  # drop spaces adjacent to punctuation
+    return s
+
+
+def sa_exact_match(text, answers, case_sensitive=False):
+    """True if `text` normalizes equal to ANY entry in `answers` (logical OR)."""
+    normalized = normalize_sa(text, case_sensitive)
+    return any(normalized == normalize_sa(a, case_sensitive) for a in answers)
+
+
 def grade_multiple_choice(answer) -> Tuple[float, bool]:
     """
     Grade MC/TF question - single correct choice.
@@ -174,15 +200,14 @@ def grade_short_answer(answer) -> Tuple[float, bool, bool]:
     if not answers:
         return (0, False, True)
 
-    compare_text = text if case_sensitive else text.lower()
-
     is_correct = False
 
     if answer_type == "exact":
-        compare_answers = answers if case_sensitive else [a.lower() for a in answers]
-        is_correct = compare_text in compare_answers
+        # Normalized exact: forgives whitespace/case, never touches meaning.
+        is_correct = sa_exact_match(text, answers, case_sensitive)
 
     elif answer_type == "regex":
+        # Legacy: retained for old questions; no longer creatable in the UI.
         flags = 0 if case_sensitive else re.IGNORECASE
         for pattern in answers:
             try:
