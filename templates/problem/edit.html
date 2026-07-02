@@ -188,8 +188,9 @@
       $('#request-public-btn').click(function() {
         var $btn = $(this);
         var $status = $('#request-public-status');
+        var confirmMessage = "{{ _('Request this problem to be public? Use this only for a standalone problem that should appear in the public problem list. If this problem belongs to a private contest, request public from the contest edit page instead so admins review the contest as a whole.')|escapejs }}";
 
-        if (!confirm('{{ _("Are you sure you want to request this problem to be made public?") }}')) {
+        if (!confirm(confirmMessage)) {
           return;
         }
 

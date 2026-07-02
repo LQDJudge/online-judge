@@ -10996,9 +10996,17 @@ msgstr "Sao chép"
 msgid "Inserted into editor!"
 msgstr "Đã chèn vào trình soạn thảo!"
 
-#: templates/problem/edit.html:192
-msgid "Are you sure you want to request this problem to be made public?"
-msgstr "Bạn có chắc muốn yêu cầu công khai bài tập này?"
+#: templates/problem/edit.html:191
+msgid ""
+"Request this problem to be public? Use this only for a standalone problem "
+"that should appear in the public problem list. If this problem belongs to a "
+"private contest, request public from the contest edit page instead so admins "
+"review the contest as a whole."
+msgstr ""
+"Yêu cầu công khai bài tập này? Chỉ dùng nút này cho bài tập độc lập cần xuất "
+"hiện trong danh sách bài tập công khai. Nếu bài tập này thuộc một kỳ thi "
+"riêng tư, hãy yêu cầu công khai từ trang chỉnh sửa kỳ thi để quản trị viên "
+"xem xét toàn bộ kỳ thi."
 
 #: templates/problem/edit.html:283
 msgid "Analyzing problem..."
