@@ -520,6 +520,9 @@ class ContestMixin(object):
         context["og_image"] = self.object.og_image or metadata[1]
         context["has_moss_api_key"] = settings.MOSS_API_KEY is not None
         context["contest_has_hidden_subtasks"] = self.object.format.has_hidden_subtasks
+        context["can_view_clarifications"] = can_view_contest_clarifications(
+            self.object, self.request
+        )
         has_hidden_results = self.object.contest_problems.filter(
             is_result_hidden=True
         ).exists()
@@ -720,7 +723,7 @@ class ContestDetail(
                 context["attempted_problems"] = user_attempted_ids(self.profile)
 
         # Clarifications
-        if self.object.use_clarifications:
+        if self.object.use_clarifications and context["can_view_clarifications"]:
             context["clarifications"] = (
                 ContestProblemClarification.objects.filter(
                     Q(problem__contest=self.object)
@@ -828,7 +831,7 @@ class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
                 context["attempted_problems"] = user_attempted_ids(self.profile)
 
         # Clarifications
-        if contest.use_clarifications:
+        if contest.use_clarifications and context["can_view_clarifications"]:
             context["clarifications"] = (
                 ContestProblemClarification.objects.filter(
                     Q(problem__contest=contest)
@@ -839,6 +842,25 @@ class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
             )
 
         return context
+
+
+def can_view_contest_clarifications(contest, request):
+    user = request.user
+    if not user.is_authenticated:
+        return False
+    if (
+        getattr(request, "in_contest", False)
+        and getattr(request, "participation", None) is not None
+        and request.participation.contest_id == contest.id
+    ):
+        return True
+    if contest.is_editable_by(user):
+        return True
+    if user.has_perm("judge.see_private_contest"):
+        return True
+
+    profile = request.profile
+    return profile is not None and profile.id in contest.tester_ids
 
 
 def is_contest_clonable(request, contest):
@@ -2096,8 +2118,8 @@ class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView
 class ContestClarificationAjax(ContestMixin, DetailView):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        if not self.object.is_accessible_by(request.user):
-            raise Http404()
+        if not can_view_contest_clarifications(self.object, request):
+            return JsonResponse({"error": _("Access denied")}, status=403)
 
         polling_time = 1  # minute
         last_one_minute = timezone.now() - timezone.timedelta(minutes=polling_time)

@@ -16,7 +16,7 @@
       $('.time-remaining').each(function () {
         count_down($(this));
       });
-      {% if contest.use_clarifications %}
+      {% if contest.use_clarifications and can_view_clarifications %}
         window.register_contest_notification("{{url('contest_clarification_ajax', contest.key)}}");
       {% endif %}
     });
@@ -102,7 +102,7 @@
     </div>
   {% endif %}
 
-  {% if contest.use_clarifications %}
+  {% if contest.use_clarifications and can_view_clarifications %}
     <section class="contest-clarifications">
       <div class="contest-clarifications-header">
         <h2>

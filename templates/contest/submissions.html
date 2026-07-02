@@ -4,7 +4,7 @@
 {% endblock %}
 
 {% block submission_extra_js %}
-  {% if contest.use_clarifications %}
+  {% if contest.use_clarifications and can_view_clarifications %}
     {% include "contest/clarification-notification-js.html" %}
     <script type="text/javascript">
       $(function () {
