@@ -5,6 +5,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import get_default_password_validators
+from django.db import IntegrityError
 from django.forms import ChoiceField, ModelChoiceField
 from django.shortcuts import render
 from django.utils.translation import gettext, gettext_lazy as _
@@ -81,6 +82,21 @@ class RegistrationView(OldRegistrationView):
 
     # Set to False to disable parent sending email, which sends before creating profile
     SEND_ACTIVATION_EMAIL = False
+
+    @staticmethod
+    def is_duplicate_username_error(error):
+        message = " ".join(str(arg) for arg in getattr(error, "args", (error,)))
+        return "Duplicate entry" in message and "username" in message
+
+    def form_valid(self, form):
+        try:
+            return super(RegistrationView, self).form_valid(form)
+        except IntegrityError as error:
+            if not self.is_duplicate_username_error(error):
+                raise
+            username_field = User._meta.get_field("username")
+            form.add_error("username", username_field.error_messages["unique"])
+            return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
         if "title" not in kwargs:
