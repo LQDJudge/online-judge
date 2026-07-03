@@ -62,7 +62,7 @@ class DMOJLoginMiddleware(object):
                 profile, _ = Profile.objects.get_or_create(
                     user=request.user,
                     defaults={
-                        "language": Language.get_default_language(),
+                        "language": Language.get_default_language_pk(),
                     },
                 )
                 request.profile = profile
