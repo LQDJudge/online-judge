@@ -84,6 +84,8 @@
             <th class="chat-user-column">{{ _("User") }}</th>
             <th>{{ _("Message") }}</th>
             <th class="chat-action-column">{{ _("Action") }}</th>
+            <th>{{ _("Reason") }}</th>
+            <th>{{ _("Expires") }}</th>
             <th class="chat-source-column">{{ _("Source") }}</th>
             <th class="chat-button-column"></th>
           </tr>
@@ -107,12 +109,28 @@
                 {{ log.message.body[:80] }}{% if log.message.body|length > 80 %}...{% endif %}
               </td>
               <td>
-                {% if log.action == "mute" %}
+                {% if log.action in ["mute", "mute_temp", "mute_perm"] %}
                   <span class="red">{{ _("Muted") }}</span>
                 {% elif log.action == "hide" %}
                   <span class="gray">{{ _("Hidden") }}</span>
                 {% else %}
                   <span class="green">{{ _("Kept") }}</span>
+                {% endif %}
+              </td>
+              <td class="chat-message-cell" title="{{ log.reason }}">
+                {% if log.reason %}
+                  {{ log.reason[:80] }}{% if log.reason|length > 80 %}...{% endif %}
+                {% else %}
+                  <span class="gray">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if log.mute_until %}
+                  {{ log.mute_until | date(_("N j, Y, g:i a")) }}
+                {% elif log.action in ["mute", "mute_perm"] %}
+                  {{ _("Forever") }}
+                {% else %}
+                  <span class="gray">-</span>
                 {% endif %}
               </td>
               <td>
@@ -127,7 +145,7 @@
                 {% endif %}
               </td>
               <td>
-                {% if log.action == "mute" and log.message.author and log.message.author.mute %}
+                {% if log.action in ["mute", "mute_temp", "mute_perm"] and log.message.author and log.message.author.mute %}
                   <button class="unmute-button action-btn" data-profile-id="{{ log.message.author.id }}">
                     {{ _("Unmute") }}
                   </button>
@@ -136,7 +154,7 @@
             </tr>
           {% else %}
             <tr>
-              <td colspan="6" class="gray">
+              <td colspan="8" class="gray">
                 {{ _("No moderation logs found") }}
               </td>
             </tr>

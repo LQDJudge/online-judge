@@ -51,6 +51,7 @@ class NotificationCategory(models.TextChoices):
         "Contest auto-review error"
     )
     REVIEW_COMMENT = "review_comment", _("New review comment")
+    CHAT_MUTE = "chat_mute", _("Chat muted")
 
 
 class NotificationManager(models.Manager):

@@ -12,6 +12,7 @@ from django.urls import Resolver404, resolve, reverse
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext as _
+from django.utils import timezone
 from django.contrib.auth.models import User
 
 from judge.models import Organization, Course, Language, Profile
@@ -66,6 +67,17 @@ class DMOJLoginMiddleware(object):
                     },
                 )
                 request.profile = profile
+
+            if (
+                profile.mute
+                and profile.mute_until
+                and profile.mute_until <= timezone.now()
+            ):
+                profile.mute = False
+                profile.mute_until = None
+                profile.mute_reason = ""
+                profile.save(update_fields=["mute", "mute_until", "mute_reason"])
+                Profile.dirty_cache(profile.id)
 
             login_2fa_path = reverse("login_2fa")
             if (

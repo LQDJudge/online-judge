@@ -1,3 +1,8 @@
+{% set can_delete_message = request.user.has_perm('judge.change_comment') or request.profile.id == message.author_id %}
+{% set can_mute_temp_message = request.user.has_perm('judge.change_comment') and request.profile.id != message.author_id and not message.room_id %}
+{% set can_mute_perm_message = request.user.is_superuser and request.profile.id != message.author_id and not message.room_id %}
+{% set can_mute_message = can_mute_temp_message or can_mute_perm_message %}
+{% set mute_reason_required = not request.user.is_superuser %}
 <li class="message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}" data-time="{{ message.time.timestamp()|int }}">
   <div class="message-avatar">
     <img loading="lazy" src="{{ gravatar(message.author_id, 135) }}" class="profile-pic user-img">
@@ -13,14 +18,22 @@
       <div class="message-text message-bubble {% if request.profile.id != message.author_id %}message-text-other message-bubble-other{% else %}message-text-myself message-bubble-self{% endif %}" id="message-text-{{ message.id }}">
         {{message.body|markdown(lazy_load=False)|reference|str|safe }}
       </div>
-      <div class="message-actions">
-        {% if request.user.has_perm('judge.change_comment') or request.profile.id == message.author_id %}
-          <a class="chat_remove" value="{{message.id}}">{{_('Delete')}}</a>
-        {% endif %}
-        {% if request.user.has_perm('judge.change_comment') and request.profile.id != message.author_id and not message.room_id %}
-          <a class="chat_mute" value="{{message.id}}">{{_('Mute')}}</a>
-        {% endif %}
-      </div>
+      {% if can_delete_message or can_mute_message %}
+        <div class="message-actions">
+          <button type="button" class="message-actions-toggle" aria-haspopup="true" aria-expanded="false" title="{{ _('Message options') }}">
+            <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+            <span class="sr-only">{{ _('Message options') }}</span>
+          </button>
+          <div class="message-actions-menu" role="menu">
+            {% if can_delete_message %}
+              <button type="button" class="chat_remove" value="{{message.id}}" role="menuitem">{{_('Delete')}}</button>
+            {% endif %}
+            {% if can_mute_message %}
+              <button type="button" class="chat_mute" value="{{message.id}}" data-can-permanent="{{ '1' if can_mute_perm_message else '0' }}" data-reason-required="{{ '1' if mute_reason_required else '0' }}" role="menuitem">{{_('Mute')}}</button>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
     </div>
   </div>
 </li>

@@ -13,7 +13,11 @@
 {% endif %}
 <span class="info-name username">
   {% if other_user %}
-    {{link_user(other_user)}}
+    {% if is_self_room %}
+      {{link_user(other_user)}}<span class="gray">&nbsp;({{ _('You') }})</span>
+    {% else %}
+      {{link_user(other_user)}}
+    {% endif %}
     {% if not other_online %}
       <span class="active-span-mobile">{{ relative_time(other_user.last_access, abs=_('Online {time}'), rel=_('Online {time}'), format=_('d/m')) }}</span>
     {% endif %}
@@ -26,7 +30,7 @@
   <span class="active-span">{{ relative_time(other_user.last_access, abs=_('Last online on {time}'), rel=_('Online {time}'), format=_('g:i a d/m/Y')) }}</span>
 {% endif %}
 
-{% if other_user %}
+{% if other_user and not is_self_room %}
   <div class="setting-wrapper">
     <div class="control-button small user-setting-button">
       <i class="fa fa-ellipsis-h"></i>
@@ -41,6 +45,6 @@
       </a>
     </div>
   </div>
-{% else %}
-  <span class="active-span">{{online_count}} {{_('users are online')}}</span>
+{% elif not other_user %}
+  <span class="active-span">{% trans count=online_count %}{{ count }} users are online{% endtrans %}</span>
 {% endif %}

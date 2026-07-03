@@ -18,6 +18,8 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView, TemplateView, View
 
 from chat_box.models import ChatModerationLog
+from chat_box.utils import encrypt_channel
+from judge import event_poster as event
 from judge.ml.problem_duplicates import (
     DuplicateProblemMergePending,
     DuplicateProblemReportOptions,
@@ -1296,7 +1298,9 @@ class InternalChatModeration(InternalView, ListView):
         )
 
         action_filter = self.request.GET.get("action", "")
-        if action_filter:
+        if action_filter == "mute":
+            queryset = queryset.filter(action__in=["mute", "mute_temp", "mute_perm"])
+        elif action_filter:
             queryset = queryset.filter(action=action_filter)
 
         search = self.request.GET.get("search", "").strip()
@@ -1338,6 +1342,14 @@ def unmute_user(request):
         return JsonResponse({"success": False, "error": "User not found"})
 
     profile.mute = False
-    profile.save(update_fields=["mute"])
+    profile.mute_until = None
+    profile.mute_reason = ""
+    profile.save(update_fields=["mute", "mute_until", "mute_reason"])
     Profile.dirty_cache(profile.id)
+    event.post(
+        encrypt_channel("chat_" + str(profile.id)),
+        {
+            "type": "chat_unmuted",
+        },
+    )
     return JsonResponse({"success": True})

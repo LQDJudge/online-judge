@@ -61,14 +61,15 @@ Posts to review:
 
 CHAT_SYSTEM_PROMPT = """You are a chat lobby moderator. Review messages and decide the action for each.
 
-Respond ONLY with valid JSON array: [{"id": <message_id>, "action": "hide" or "mute" or "keep"}]
+Respond ONLY with valid JSON array: [{"id": <message_id>, "action": "hide" or "mute_temp" or "mute_perm" or "keep", "reason": "<short reason>"}]
 
 Actions:
 - "hide": Hide this single message. Use for: spam, off-topic advertising, mildly inappropriate content.
-- "mute": Hide ALL lobby messages from this user AND mute them from future lobby posting. Use for: severe harassment, hate speech, threats, doxxing, repeated spam from same user.
+- "mute_temp": Hide ALL lobby messages from this user and temporarily mute them. Use for: repeated spam, insults, disruptive behavior, or moderate harassment.
+- "mute_perm": Hide ALL lobby messages from this user and permanently mute them. Use for: severe harassment, hate speech, threats, doxxing, explicit sexual content, or dangerous abuse.
 - "keep": Message is acceptable. Keep it visible.
 
-HIDE single messages for isolated violations. MUTE only for severe or repeated abuse.
+Include a concise reason for every hide or mute action. HIDE single messages for isolated violations. Use temporary mute for moderate repeated abuse. Use permanent mute only for severe abuse.
 When in doubt, KEEP the message.
 
 IMAGES: Messages containing images (shown as [imageN] with an attached file) are normal in this community — users share screenshots, problem images, memes, etc. KEEP image messages unless the image is clearly harmful (nudity, gore, hate symbols). If you cannot see an image or it failed to load, always KEEP the message."""
@@ -644,9 +645,25 @@ class Command(BaseCommand):
 
                 author_name = msg.author.user.username if msg.author else "Anonymous"
 
-                if action == "mute":
+                reason = (result.get("reason") or "").strip()
+                if action in (
+                    "hide",
+                    "mute",
+                    "mute_perm",
+                    "mute_permanent",
+                    "mute_temp",
+                    "mute_temporary",
+                ):
+                    reason = reason or "Automated moderation"
+
+                if action in ("mute", "mute_perm", "mute_permanent"):
                     if not self.dry_run:
-                        mute_chat_user(msg, is_automated=True)
+                        mute_chat_user(
+                            msg,
+                            is_automated=True,
+                            reason=reason,
+                            mute_type="permanent",
+                        )
                     muted_authors.add(msg.author_id)
                     stats["chat_muted"] += 1
                     self.stdout.write(
@@ -655,9 +672,25 @@ class Command(BaseCommand):
                         )
                     )
 
+                elif action in ("mute_temp", "mute_temporary"):
+                    if not self.dry_run:
+                        mute_chat_user(
+                            msg,
+                            is_automated=True,
+                            reason=reason,
+                            mute_type="temporary",
+                        )
+                    muted_authors.add(msg.author_id)
+                    stats["chat_muted"] += 1
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"    TEMP MUTED: {author_name} - {msg.body[:50]}..."
+                        )
+                    )
+
                 elif action == "hide":
                     if not self.dry_run:
-                        hide_lobby_message(msg, is_automated=True)
+                        hide_lobby_message(msg, is_automated=True, reason=reason)
                     stats["chat_hidden"] += 1
                     self.stdout.write(
                         self.style.WARNING(

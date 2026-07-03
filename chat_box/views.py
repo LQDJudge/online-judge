@@ -1,35 +1,77 @@
-from django.utils.translation import gettext as _
-from django.views.generic import ListView
+from django.contrib.auth.decorators import login_required
+from django.db.models import F
 from django.http import (
     HttpResponse,
-    JsonResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
+    JsonResponse,
 )
 from django.shortcuts import render
-from django.db.models import F
-from django.utils import timezone
-from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.html import format_html
+from django.utils.translation import gettext as _
+from django.views.generic import ListView
 
+from reversion import revisions
 
 from judge import event_poster as event
 from judge.caching import cache_wrapper
-
+from judge.models.notification import Notification, NotificationCategory
 from chat_box.models import (
+    ChatModerationLog,
+    Ignore,
     Message,
     Profile,
     Room,
     UserRoom,
-    Ignore,
-    ChatModerationLog,
+    get_first_msg_id,
     get_ignored_user_ids,
     get_user_room_list,
-    get_first_msg_id,
 )
 from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes
 
-from reversion import revisions
+CHAT_TEMP_MUTE_CAP_DAYS = 30
+
+
+def can_mute_chat_temporarily(user):
+    return user.has_perm("judge.change_comment")
+
+
+def can_mute_chat_permanently(user):
+    return user.is_superuser
+
+
+def can_mute_chat(user):
+    return can_mute_chat_temporarily(user) or can_mute_chat_permanently(user)
+
+
+def clear_expired_chat_mute(profile):
+    if not profile.mute or not profile.mute_until:
+        return False
+
+    if profile.mute_until > timezone.now():
+        return False
+
+    profile.mute = False
+    profile.mute_until = None
+    profile.mute_reason = ""
+    profile.save(update_fields=["mute", "mute_until", "mute_reason"])
+    Profile.dirty_cache(profile.id)
+    return True
+
+
+def is_chat_muted(profile):
+    clear_expired_chat_mute(profile)
+    return profile.mute
+
+
+def get_temporary_mute_duration_days(profile):
+    previous_mutes = ChatModerationLog.objects.filter(
+        message__author=profile,
+        action="mute_temp",
+    ).count()
+    return min(previous_mutes + 1, CHAT_TEMP_MUTE_CAP_DAYS)
 
 
 class ChatView(ListView):
@@ -54,13 +96,32 @@ class ChatView(ListView):
             return False
         return Message(id=msg_id) not in self.messages
 
+    def get_message_page(self, last_id, page_size):
+        message_ids = list(
+            Message.objects.filter(
+                hidden=False, room=self.room_id, id__lt=last_id
+            ).values_list("id", flat=True)[:page_size]
+        )
+        if not message_ids:
+            return []
+
+        messages_by_id = {
+            message.id: message
+            for message in Message.objects.filter(id__in=message_ids)
+        }
+        return [
+            messages_by_id[message_id]
+            for message_id in message_ids
+            if message_id in messages_by_id
+        ]
+
     def get(self, request, *args, **kwargs):
         request_room = kwargs["room_id"]
         page_size = self.follow_up_page_size
         try:
             last_id = int(request.GET.get("last_id"))
         except Exception:
-            last_id = 1e15
+            last_id = 2**63 - 1
             page_size = self.first_page_size
         only_messages = request.GET.get("only_messages")
 
@@ -75,11 +136,7 @@ class ChatView(ListView):
             request_room = None
 
         self.room_id = request_room
-        self.messages = list(
-            Message.objects.filter(hidden=False, room=self.room_id, id__lt=last_id)[
-                :page_size
-            ]
-        )
+        self.messages = self.get_message_page(last_id, page_size)
         if not only_messages:
             return super().get(request, *args, **kwargs)
 
@@ -101,19 +158,28 @@ class ChatView(ListView):
         context["room"] = self.room_id
         context["has_next"] = self.has_next()
         context["unread_count_lobby"] = get_unread_count(None, self.request.profile)
+        context["is_chat_muted"] = is_chat_muted(self.request.profile)
+        context["can_mute_chat_temporarily"] = can_mute_chat_temporarily(
+            self.request.user
+        )
+        context["can_mute_chat_permanently"] = can_mute_chat_permanently(
+            self.request.user
+        )
         context["chat_channel"] = encrypt_channel(
             "chat_" + str(self.request.profile.id)
         )
         context["chat_lobby_channel"] = encrypt_channel("chat_lobby")
         if self.room:
-            users_room = self.room.get_users()
-            other_users = [u for u in users_room if u.id != self.request.profile.id]
-            if other_users:
-                context["other_user"] = other_users[0]
+            other_user = self.room.other_user(self.request.profile)
+            if other_user:
+                context["other_user"] = other_user
+                context["is_self_room"] = other_user.id == self.request.profile.id
                 context["other_online"] = get_user_online_status(context["other_user"])
-                context["is_ignored"] = Ignore.is_ignored(
-                    self.request.profile, context["other_user"]
-                )
+                context["is_ignored"] = False
+                if not context["is_self_room"]:
+                    context["is_ignored"] = Ignore.is_ignored(
+                        self.request.profile, context["other_user"]
+                    )
         else:
             context["online_count"] = get_online_count()
         context["message_template"] = {
@@ -125,7 +191,7 @@ class ChatView(ListView):
         return context
 
 
-def hide_lobby_message(message, is_automated=False, moderator=None):
+def hide_lobby_message(message, is_automated=False, moderator=None, reason=""):
     """Hide a single lobby message and log the action."""
     message.hidden = True
     message.save(update_fields=["hidden"])
@@ -133,30 +199,90 @@ def hide_lobby_message(message, is_automated=False, moderator=None):
     ChatModerationLog.log_action(
         message=message,
         action="hide",
+        reason=reason,
         is_automated=is_automated,
         moderator=moderator,
     )
 
 
-def mute_chat_user(message, is_automated=False, moderator=None):
-    """Mute a user: hide all their lobby messages and prevent future posting."""
+def notify_chat_mute(profile, mute_until=None, reason=""):
+    if mute_until:
+        until = timezone.localtime(mute_until).strftime("%Y-%m-%d %H:%M")
+        summary = _("Your chat access has been muted until %(until)s.") % {
+            "until": until
+        }
+    else:
+        summary = _("Your chat access has been muted permanently.")
+
+    if reason:
+        reason_text = _("Reason: %(reason)s") % {"reason": reason}
+        html_link = format_html("{}<br>{}", summary, reason_text)
+    else:
+        html_link = summary
+
+    Notification.objects.create_notification(
+        owner=profile,
+        category=NotificationCategory.CHAT_MUTE,
+        html_link=html_link,
+        author=None,
+        deduplicate=False,
+    )
+    event.post(
+        encrypt_channel("chat_" + str(profile.id)),
+        {
+            "type": "chat_muted",
+            "mute_until": mute_until.isoformat() if mute_until else None,
+        },
+    )
+
+
+def mute_chat_user(
+    message,
+    is_automated=False,
+    moderator=None,
+    reason="",
+    mute_type="permanent",
+):
+    """Mute a user, hide lobby messages, log the action, and notify them."""
+    now = timezone.now()
+    mute_until = None
+    duration_days = None
+    action = "mute_perm"
+
+    if mute_type == "temporary":
+        duration_days = get_temporary_mute_duration_days(message.author)
+        base_time = message.author.mute_until or now
+        if base_time < now:
+            base_time = now
+        mute_until = base_time + timezone.timedelta(days=duration_days)
+        action = "mute_temp"
+
     message.author.mute = True
-    message.author.save(update_fields=["mute"])
+    message.author.mute_until = mute_until
+    message.author.mute_reason = reason
+    message.author.save(update_fields=["mute", "mute_until", "mute_reason"])
     Profile.dirty_cache(message.author_id)
     Message.objects.filter(room=None, author=message.author).update(hidden=True)
     get_first_msg_id.dirty(None)
     ChatModerationLog.log_action(
         message=message,
-        action="mute",
+        action=action,
+        reason=reason,
         is_automated=is_automated,
         moderator=moderator,
+        mute_until=mute_until,
+        mute_duration_days=duration_days,
     )
+    notify_chat_mute(message.author, mute_until=mute_until, reason=reason)
 
 
 def delete_message(request):
     ret = {"delete": "done"}
 
     if request.method == "GET":
+        return HttpResponseBadRequest()
+
+    if not request.user.is_authenticated:
         return HttpResponseBadRequest()
 
     try:
@@ -217,7 +343,10 @@ def mute_message(request):
     if request.method == "GET":
         return HttpResponseBadRequest()
 
-    if not request.user.has_perm("judge.change_comment"):
+    if not request.user.is_authenticated:
+        return HttpResponseBadRequest()
+
+    if not can_mute_chat(request.user):
         return HttpResponseBadRequest()
 
     try:
@@ -226,10 +355,37 @@ def mute_message(request):
     except:
         return HttpResponseBadRequest()
 
+    if mess.room_id or mess.author_id == request.profile.id:
+        return HttpResponseBadRequest()
+
+    mute_type = request.POST.get("mute_type", "permanent")
+    reason = request.POST.get("reason", "").strip()
+
+    if mute_type == "temporary":
+        if not can_mute_chat_temporarily(request.user):
+            return HttpResponseBadRequest()
+    elif mute_type == "permanent":
+        if not can_mute_chat_permanently(request.user):
+            return HttpResponseBadRequest()
+    else:
+        return HttpResponseBadRequest()
+
+    if (
+        not reason
+        and mute_type == "temporary"
+        and not can_mute_chat_permanently(request.user)
+    ):
+        return JsonResponse({"error": _("Reason is required.")}, status=400)
+
     with revisions.create_revision():
         revisions.set_comment(_("Mute chat") + ": " + mess.body)
         revisions.set_user(request.user)
-        mute_chat_user(mess, moderator=request.profile)
+        mute_chat_user(
+            mess,
+            moderator=request.profile,
+            reason=reason,
+            mute_type=mute_type,
+        )
 
     return JsonResponse(ret)
 
@@ -241,7 +397,7 @@ def check_valid_message(request, room):
     if not room and len(request.POST["body"]) > 200:
         return False
 
-    if not can_access_room(request, room) or request.profile.mute:
+    if not can_access_room(request, room) or is_chat_muted(request.profile):
         return False
 
     last_msg = Message.objects.filter(room=room).first()
@@ -324,6 +480,8 @@ def post_message(request):
                     event_data["unread_count"] = user_room.unread_count
                     # Include other user's ID for badge update
                     event_data["other_user_id"] = request.profile.id
+            elif len(room.get_user_ids()) == 1:
+                event_data["other_user_id"] = request.profile.id
 
             event.post(encrypt_channel("chat_" + str(user.id)), event_data)
 
@@ -420,13 +578,17 @@ def user_online_status_ajax(request):
             return HttpResponseBadRequest()
 
         is_online = get_user_online_status(user)
+        is_self_room = user.id == request.profile.id
         return render(
             request,
             "chat/user_online_status.html",
             {
                 "other_user": user,
                 "other_online": is_online,
-                "is_ignored": Ignore.is_ignored(request.profile, user),
+                "is_ignored": (
+                    False if is_self_room else Ignore.is_ignored(request.profile, user)
+                ),
+                "is_self_room": is_self_room,
             },
         )
     else:
@@ -457,17 +619,14 @@ def get_online_status(profile, other_profile_ids, rooms=None):
         for i in unread_count:
             room_id = i["room"]
             room = Room(id=room_id)
-            # Find the other user in a two-person room
-            user_ids = room.get_user_ids()
-            if len(user_ids) == 2:
-                other_id = user_ids[0] if user_ids[1] == profile.id else user_ids[1]
+            other_id = room.other_user_id(profile)
+            if other_id:
                 count[other_id] = i["unread_count"]
 
         for room_id in rooms:
             room = Room(id=room_id)
-            user_ids = room.get_user_ids()
-            if len(user_ids) == 2:
-                other_id = user_ids[0] if user_ids[1] == profile.id else user_ids[1]
+            other_id = room.other_user_id(profile)
+            if other_id:
                 last_msg[other_id] = room.get_last_message()
                 room_of_user[other_id] = room_id
 
@@ -485,6 +644,7 @@ def get_online_status(profile, other_profile_ids, rooms=None):
                 }
             )
         user_dict["url"] = encrypt_url(profile.id, other_profile.id)
+        user_dict["is_self"] = profile.id == other_profile.id
         ret.append(user_dict)
     return ret
 
@@ -514,7 +674,7 @@ def get_status_context(profile, include_ignored=False):
     admin_ids = [
         i
         for i in get_admin_ids()
-        if i not in ignored_users and i not in recent_profile_ids
+        if i != profile.id and i not in ignored_users and i not in recent_profile_ids
     ]
 
     Profile.prefetch_cache_last_access(*(recent_profile_ids + admin_ids))
@@ -608,6 +768,9 @@ def toggle_ignore(request, **kwargs):
     try:
         other_user = Profile.objects.get(id=user_id)
     except:
+        return HttpResponseBadRequest()
+
+    if other_user.id == request.profile.id:
         return HttpResponseBadRequest()
 
     Ignore.toggle_ignore(request.profile, other_user)

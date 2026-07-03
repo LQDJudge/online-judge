@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-02 14:25+0700\n"
+"POT-Creation-Date: 2026-07-03 16:01+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -23,61 +23,87 @@ msgstr ""
 msgid "last message id"
 msgstr "Tin nhắn"
 
-#: chat_box/models.py:162 chat_box/models.py:187 chat_box/models.py:203
+#: chat_box/models.py:164 chat_box/models.py:189 chat_box/models.py:205
 #: judge/admin/interface.py:149 judge/models/contest.py:814
 #: judge/models/contest.py:1153 judge/models/course.py:222
-#: judge/models/course.py:492 judge/models/profile.py:727
-#: judge/models/profile.py:790 judge/models/quiz.py:1080
+#: judge/models/course.py:492 judge/models/profile.py:739
+#: judge/models/profile.py:802 judge/models/quiz.py:1080
 #: judge/models/submission.py:421
 msgid "user"
 msgstr "người dùng"
 
-#: chat_box/models.py:164 judge/models/comment.py:133
-#: judge/models/notification.py:336
+#: chat_box/models.py:166 judge/models/comment.py:133
+#: judge/models/notification.py:337
 msgid "posted time"
 msgstr "thời gian đăng"
 
-#: chat_box/models.py:166 judge/models/comment.py:138
+#: chat_box/models.py:168 judge/models/comment.py:138
 msgid "body of comment"
 msgstr "nội dung bình luận"
 
-#: chat_box/models.py:191
+#: chat_box/models.py:193
 msgid "last seen"
 msgstr "xem lần cuối"
 
-#: chat_box/models.py:269 templates/organization/moderation_log.html:82
+#: chat_box/models.py:271 templates/organization/moderation_log.html:82
 msgid "Keep"
 msgstr "Giữ lại"
 
-#: chat_box/models.py:270
+#: chat_box/models.py:272
 msgid "Hide Message"
 msgstr "Ẩn tin nhắn"
 
-#: chat_box/models.py:271
+#: chat_box/models.py:273
 msgid "Mute User"
 msgstr "Chặn người dùng"
 
-#: chat_box/models.py:295
+#: chat_box/models.py:274
+msgid "Temporarily Mute User"
+msgstr "Tạm cấm chat người dùng"
+
+#: chat_box/models.py:275
+msgid "Permanently Mute User"
+msgstr "Cấm chat vĩnh viễn người dùng"
+
+#: chat_box/models.py:301
 msgid "chat moderation log"
 msgstr "nhật ký kiểm duyệt chat"
 
-#: chat_box/models.py:296
+#: chat_box/models.py:302
 msgid "chat moderation logs"
 msgstr "nhật ký kiểm duyệt chat"
 
-#: chat_box/views.py:38
+#: chat_box/views.py:80
 msgid "LQDOJ Chat"
 msgstr "Khung chat"
 
-#: chat_box/views.py:230
+#: chat_box/views.py:211
+#, python-format
+msgid "Your chat access has been muted until %(until)s."
+msgstr "Bạn bị cấm chat đến %(until)s."
+
+#: chat_box/views.py:215
+msgid "Your chat access has been muted permanently."
+msgstr "Bạn bị cấm chat vĩnh viễn."
+
+#: chat_box/views.py:218
+#, python-format
+msgid "Reason: %(reason)s"
+msgstr "Lý do: %(reason)s"
+
+#: chat_box/views.py:378 templates/chat/chat.html:54
+msgid "Reason is required."
+msgstr "Lý do là bắt buộc."
+
+#: chat_box/views.py:381
 msgid "Mute chat"
 msgstr "Cấm chat"
 
-#: chat_box/views.py:524
+#: chat_box/views.py:684
 msgid "Recent"
 msgstr "Gần đây"
 
-#: chat_box/views.py:528 templates/base.html:233
+#: chat_box/views.py:688 templates/base.html:233
 #: templates/contest/contest-list-tabs.html:10
 #: templates/contest/contest-tabs.html:51
 #: templates/contest/ranking-table.html:78 templates/contest/ranking.html:353
@@ -966,21 +992,21 @@ msgstr "Các tác giả đã đóng góp cho lời giải chính thức này."
 msgid "N j, Y, g:i a"
 msgstr "g:i a j b, Y"
 
-#: judge/jinja2/datetime.py:26 templates/chat/message.html:9
+#: judge/jinja2/datetime.py:26 templates/chat/message.html:14
 #: templates/comments/comment-item.html:9
 #, python-brace-format
 msgid "{time}"
 msgstr "{time}"
 
-#: judge/middleware.py:156 templates/course/members.html:130
+#: judge/middleware.py:168 templates/course/members.html:130
 msgid "No permission"
 msgstr "Không có quyền truy cập"
 
-#: judge/middleware.py:157
+#: judge/middleware.py:169
 msgid "You need to join this group first"
 msgstr "Bạn phải là thành viên của nhóm."
 
-#: judge/middleware.py:167 judge/middleware.py:168
+#: judge/middleware.py:179 judge/middleware.py:180
 msgid "No such group"
 msgstr "Nhóm không tồn tại"
 
@@ -1029,7 +1055,7 @@ msgstr "bình luận"
 msgid "Editorial for "
 msgstr "Hướng dẫn cho {0}"
 
-#: judge/models/comment.py:402 judge/views/internal.py:1032
+#: judge/models/comment.py:402 judge/views/internal.py:1034
 #: templates/contest/contest-list-tabs.html:7
 #: templates/contest/contest-tabs.html:49 templates/contest/review.html:34
 #: templates/internal/problem_duplicates.html:202
@@ -1871,7 +1897,7 @@ msgid "Warning"
 msgstr "còn lại"
 
 #: judge/models/contest_review.py:140 judge/models/problem_review.py:95
-#: judge/models/profile.py:1095 templates/organization/moderation_log.html:94
+#: judge/models/profile.py:1107 templates/organization/moderation_log.html:94
 msgid "Skipped"
 msgstr "Bỏ qua"
 
@@ -1884,7 +1910,7 @@ msgid "check id"
 msgstr "id kiểm tra"
 
 #: judge/models/contest_review.py:157 judge/models/problem_review.py:112
-#: judge/models/profile.py:747 judge/models/profile.py:1130
+#: judge/models/profile.py:759 judge/models/profile.py:1142
 msgid "reason"
 msgstr "lý do"
 
@@ -1935,7 +1961,7 @@ msgid "reviewed by"
 msgstr "duyệt bởi"
 
 #: judge/models/contest_review.py:217 judge/models/problem_review.py:174
-#: judge/models/profile.py:1140 judge/models/public_request.py:46
+#: judge/models/profile.py:1152 judge/models/public_request.py:46
 msgid "created at"
 msgstr "tạo lúc"
 
@@ -2098,7 +2124,7 @@ msgstr "Tiến độ bài học"
 msgid "Lesson Progress Records"
 msgstr "Bản ghi tiến độ bài học"
 
-#: judge/models/email_change.py:8 judge/models/profile.py:646
+#: judge/models/email_change.py:8 judge/models/profile.py:658
 msgid "user profile"
 msgstr "thông tin người dùng"
 
@@ -2330,71 +2356,75 @@ msgstr "Lỗi tự động đánh giá kỳ thi"
 msgid "New review comment"
 msgstr "Bình luận đánh giá mới"
 
-#: judge/models/notification.py:330
+#: judge/models/notification.py:54
+msgid "Chat muted"
+msgstr "Đã bị cấm chat"
+
+#: judge/models/notification.py:331
 msgid "owner"
 msgstr "chủ sở hữu"
 
-#: judge/models/notification.py:339
+#: judge/models/notification.py:340
 msgid "category"
 msgstr "danh mục"
 
-#: judge/models/notification.py:346
+#: judge/models/notification.py:347
 msgid "html link to comments, used for non-comments"
 msgstr "liên kết html đến bình luận, dùng cho không phải bình luận"
 
-#: judge/models/notification.py:353
+#: judge/models/notification.py:354
 msgid "who triggered, used for non-comment"
 msgstr "ai kích hoạt, dùng cho không phải bình luận"
 
-#: judge/models/notification.py:359
+#: judge/models/notification.py:360
 msgid "is read"
 msgstr "đã đọc"
 
-#: judge/models/notification.py:365
+#: judge/models/notification.py:366
 msgid "read at"
 msgstr "đọc lúc"
 
-#: judge/models/notification.py:370
+#: judge/models/notification.py:371
 msgid "extra data"
 msgstr "dữ liệu bổ sung"
 
-#: judge/models/notification.py:371
+#: judge/models/notification.py:372
 msgid "Additional data for complex notifications"
 msgstr "Dữ liệu bổ sung cho thông báo phức tạp"
 
-#: judge/models/notification.py:383
+#: judge/models/notification.py:384
 msgid "notification"
 msgstr "thông báo"
 
-#: judge/models/notification.py:384
+#: judge/models/notification.py:385
 msgid "notifications"
 msgstr "thông báo"
 
-#: judge/models/notification.py:406
+#: judge/models/notification.py:407
 msgid "The problem is public to: "
 msgstr "Bài tập được công khai trong: "
 
-#: judge/models/notification.py:408
+#: judge/models/notification.py:409
 msgid "The problem is private to: "
 msgstr "Bài tập riêng tư trong: "
 
-#: judge/models/notification.py:411
+#: judge/models/notification.py:412
 msgid "The problem is public to everyone."
 msgstr "Bài tập được công khai với mọi người."
 
-#: judge/models/notification.py:413
+#: judge/models/notification.py:414
 msgid "The problem is private."
 msgstr "Bài tập được đánh dấu riêng tư."
 
-#: judge/models/notification.py:438
+#: judge/models/notification.py:439
 msgid "last read time"
 msgstr "thời gian đọc cuối"
 
-#: judge/models/notification.py:442
+#: judge/models/notification.py:443
 msgid "notification profile"
 msgstr "hồ sơ thông báo"
 
-#: judge/models/notification.py:443
+#: judge/models/notification.py:444
 msgid "notification profiles"
 msgstr "hồ sơ thông báo"
 
@@ -3318,8 +3348,8 @@ msgid "Moderators can approve/reject posts and manage comments"
 msgstr "Người kiểm duyệt có thể duyệt/từ chối bài đăng và quản lý bình luận"
 
 #: judge/models/profile.py:305 judge/models/profile.py:340
-#: judge/models/profile.py:733 judge/models/profile.py:797
-#: judge/models/profile.py:1102
+#: judge/models/profile.py:745 judge/models/profile.py:809
+#: judge/models/profile.py:1114
 msgid "organization"
 msgstr "tổ chức"
 
@@ -3360,154 +3390,170 @@ msgid "Some users are at their best when silent."
 msgstr "Một số người dùng tốt nhất khi im lặng."
 
 #: judge/models/profile.py:362
+msgid "muted until"
+msgstr "cấm chat đến"
+
+#: judge/models/profile.py:366
+msgid "If set, the mute expires at this time."
+msgstr "Nếu được đặt, lệnh cấm chat hết hạn vào thời điểm này."
+
+#: judge/models/profile.py:369
+msgid "mute reason"
+msgstr "lý do cấm chat"
+
+#: judge/models/profile.py:371
+msgid "Reason shown to the muted user."
+msgstr "Lý do hiển thị cho người dùng bị cấm chat."
+
+#: judge/models/profile.py:374
 msgid "unlisted user"
 msgstr "người dùng không liệt kê"
 
-#: judge/models/profile.py:363
+#: judge/models/profile.py:375
 msgid "User will not be ranked."
 msgstr "Người dùng sẽ không được xếp hạng."
 
-#: judge/models/profile.py:369
+#: judge/models/profile.py:381
 msgid "current contest"
 msgstr "kỳ thi hiện tại"
 
-#: judge/models/profile.py:376
+#: judge/models/profile.py:388
 msgid "2FA enabled"
 msgstr "2FA được bật"
 
-#: judge/models/profile.py:378
+#: judge/models/profile.py:390
 msgid "check to enable TOTP-based two factor authentication"
 msgstr "đánh dấu để sử dụng TOTP-based two factor authentication"
 
-#: judge/models/profile.py:384
+#: judge/models/profile.py:396
 msgid "TOTP key"
 msgstr "mã TOTP"
 
-#: judge/models/profile.py:385
+#: judge/models/profile.py:397
 msgid "32 character base32-encoded key for TOTP"
 msgstr "Khóa 32 ký tự mã hóa base32 cho TOTP"
 
-#: judge/models/profile.py:387
+#: judge/models/profile.py:399
 msgid "TOTP key must be empty or base32"
 msgstr "Khóa TOTP phải để trống hoặc là base32"
 
-#: judge/models/profile.py:391
+#: judge/models/profile.py:403
 msgid "internal notes"
 msgstr "ghi chú nội bộ"
 
-#: judge/models/profile.py:394
+#: judge/models/profile.py:406
 msgid "Notes for administrators regarding this user."
 msgstr "Ghi chú riêng cho quản trị viên."
 
-#: judge/models/profile.py:400
+#: judge/models/profile.py:412
 msgid "Profile image"
 msgstr "Ảnh đại diện"
 
-#: judge/models/profile.py:406
+#: judge/models/profile.py:418
 msgid "Background image"
 msgstr "Ảnh nền"
 
-#: judge/models/profile.py:412
+#: judge/models/profile.py:424
 msgid "Dynamic effect"
 msgstr "Hiệu ứng động"
 
-#: judge/models/profile.py:647
+#: judge/models/profile.py:659
 msgid "user profiles"
 msgstr "thông tin người dùng"
 
-#: judge/models/profile.py:697
+#: judge/models/profile.py:709
 msgid "profile associated"
 msgstr "trang tương ứng"
 
-#: judge/models/profile.py:704
+#: judge/models/profile.py:716
 msgid "t-shirt size"
 msgstr "size áo"
 
-#: judge/models/profile.py:709
+#: judge/models/profile.py:721
 msgid "date of birth"
 msgstr "sinh nhật"
 
-#: judge/models/profile.py:715
+#: judge/models/profile.py:727
 msgid "address"
 msgstr "địa chỉ"
 
-#: judge/models/profile.py:737
+#: judge/models/profile.py:749
 msgid "request time"
 msgstr "thời gian đăng ký"
 
-#: judge/models/profile.py:740
+#: judge/models/profile.py:752
 msgid "state"
 msgstr "trạng thái"
 
-#: judge/models/profile.py:750
+#: judge/models/profile.py:762
 msgid "organization join request"
 msgstr "đơn đăng ký tham gia"
 
-#: judge/models/profile.py:751
+#: judge/models/profile.py:763
 msgid "organization join requests"
 msgstr "đơn đăng ký tham gia"
 
-#: judge/models/profile.py:802
+#: judge/models/profile.py:814
 msgid "last visit"
 msgstr "truy cập gần nhất"
 
-#: judge/models/profile.py:1090
+#: judge/models/profile.py:1102
 msgid "Hide Comment"
 msgstr "Ẩn bình luận"
 
-#: judge/models/profile.py:1091
+#: judge/models/profile.py:1103
 msgid "Unhide Comment"
 msgstr "Hiện bình luận"
 
-#: judge/models/profile.py:1092
+#: judge/models/profile.py:1104
 msgid "Keep Comment"
 msgstr "Giữ bình luận"
 
-#: judge/models/profile.py:1093 templates/organization/blog/pending-js.html:27
+#: judge/models/profile.py:1105 templates/organization/blog/pending-js.html:27
 msgid "Approve Post"
 msgstr "Chấp thuận bài đăng"
 
-#: judge/models/profile.py:1094 templates/organization/blog/pending-js.html:29
+#: judge/models/profile.py:1106 templates/organization/blog/pending-js.html:29
 msgid "Reject Post"
 msgstr "Từ chối bài đăng"
 
-#: judge/models/profile.py:1110
+#: judge/models/profile.py:1122
 msgid "moderator"
 msgstr "người kiểm duyệt"
 
-#: judge/models/profile.py:1111
+#: judge/models/profile.py:1123
 msgid "Null if action was automated by LLM"
 msgstr "Null nếu hành động được thực hiện bởi AI"
 
-#: judge/models/profile.py:1118
+#: judge/models/profile.py:1130
 msgid "content type"
 msgstr "loại nội dung"
 
-#: judge/models/profile.py:1120
+#: judge/models/profile.py:1132
 msgid "object ID"
 msgstr "ID đối tượng"
 
-#: judge/models/profile.py:1126
+#: judge/models/profile.py:1138
 msgid "action"
 msgstr "hành động"
 
-#: judge/models/profile.py:1131
+#: judge/models/profile.py:1143
 msgid "LLM explanation or moderator note"
 msgstr "Ghi chú của AI hoặc người kiểm duyệt"
 
-#: judge/models/profile.py:1135
+#: judge/models/profile.py:1147
 msgid "automated"
 msgstr "tự động"
 
-#: judge/models/profile.py:1136
+#: judge/models/profile.py:1148
 msgid "True if action was taken by LLM"
 msgstr "True nếu hành động được thực hiện bởi AI"
 
-#: judge/models/profile.py:1149
+#: judge/models/profile.py:1161
 msgid "moderation log"
 msgstr "nhật ký kiểm duyệt"
 
-#: judge/models/profile.py:1150
+#: judge/models/profile.py:1162
 msgid "moderation logs"
 msgstr "nhật ký kiểm duyệt"
 
@@ -3520,32 +3566,32 @@ msgid "public requests"
 msgstr "yêu cầu công khai"
 
 #: judge/models/quiz.py:28 templates/quiz/import.html:24
-#: templates/quiz/question_bank/create.html:754
-#: templates/quiz/question_bank/edit.html:753
+#: templates/quiz/question_bank/create.html:756
+#: templates/quiz/question_bank/edit.html:755
 msgid "Multiple Choice"
 msgstr "Trắc nghiệm một đáp án"
 
 #: judge/models/quiz.py:29 templates/quiz/import.html:25
-#: templates/quiz/question_bank/create.html:755
-#: templates/quiz/question_bank/edit.html:754
+#: templates/quiz/question_bank/create.html:757
+#: templates/quiz/question_bank/edit.html:756
 msgid "Multiple Answer"
 msgstr "Trắc nghiệm nhiều đáp án"
 
 #: judge/models/quiz.py:30 templates/quiz/import.html:27
-#: templates/quiz/question_bank/create.html:757
-#: templates/quiz/question_bank/edit.html:756
+#: templates/quiz/question_bank/create.html:759
+#: templates/quiz/question_bank/edit.html:758
 msgid "Short Answer"
 msgstr "Trả lời ngắn"
 
 #: judge/models/quiz.py:31 templates/quiz/grade.html:139
-#: templates/quiz/import.html:28 templates/quiz/question_bank/create.html:758
-#: templates/quiz/question_bank/edit.html:757
+#: templates/quiz/import.html:28 templates/quiz/question_bank/create.html:760
+#: templates/quiz/question_bank/edit.html:759
 msgid "Essay"
 msgstr "Tự luận"
 
 #: judge/models/quiz.py:32 templates/quiz/import.html:26
-#: templates/quiz/question_bank/create.html:756
-#: templates/quiz/question_bank/edit.html:755
+#: templates/quiz/question_bank/create.html:758
+#: templates/quiz/question_bank/edit.html:757
 msgid "True/False"
 msgstr "Đúng/Sai"
 
@@ -3573,9 +3619,9 @@ msgstr "Nội dung câu hỏi hiển thị cho học sinh"
 
 #: judge/models/quiz.py:57 templates/quiz/grading/grade.html:131
 #: templates/quiz/grading/grade.html:150
-#: templates/quiz/question_bank/create.html:555
+#: templates/quiz/question_bank/create.html:557
 #: templates/quiz/question_bank/detail.html:51
-#: templates/quiz/question_bank/edit.html:554
+#: templates/quiz/question_bank/edit.html:556
 msgid "Choices"
 msgstr "Các lựa chọn"
 
@@ -3616,8 +3662,8 @@ msgstr "Xáo trộn lựa chọn"
 msgid "Randomize choice order for this question"
 msgstr "Xáo trộn thứ tự các lựa chọn cho câu hỏi này"
 
-#: judge/models/quiz.py:97 templates/quiz/question_bank/create.html:766
-#: templates/quiz/question_bank/edit.html:765
+#: judge/models/quiz.py:97 templates/quiz/question_bank/create.html:768
+#: templates/quiz/question_bank/edit.html:767
 msgid "All or Nothing"
 msgstr "Tất cả hoặc không"
 
@@ -3625,8 +3671,8 @@ msgstr "Tất cả hoặc không"
 msgid "Partial Credit (with penalty)"
 msgstr "Điểm thành phần (có trừ điểm)"
 
-#: judge/models/quiz.py:99 templates/quiz/question_bank/create.html:769
-#: templates/quiz/question_bank/edit.html:767
+#: judge/models/quiz.py:99 templates/quiz/question_bank/create.html:771
+#: templates/quiz/question_bank/edit.html:769
 msgid "Right Minus Wrong"
 msgstr "Đúng trừ sai"
 
@@ -3905,8 +3951,8 @@ msgid "Auto-graded or manually graded result"
 msgstr "Kết quả chấm tự động hoặc thủ công"
 
 #: judge/models/quiz.py:928 templates/quiz/grading/grade.html:269
-#: templates/quiz/question_bank/create.html:768
-#: templates/quiz/question_bank/edit.html:766
+#: templates/quiz/question_bank/create.html:770
+#: templates/quiz/question_bank/edit.html:768
 msgid "Partial Credit"
 msgstr "Điểm thành phần"
 
@@ -4695,7 +4741,7 @@ msgstr "Đường dẫn file không hợp lệ"
 #: templates/contest/contest-problem-table.html:59
 #: templates/course/lesson_user_submissions_ajax.html:12
 #: templates/internal/chat_moderation.html:60
-#: templates/internal/chat_moderation.html:113 templates/submission/row.html:19
+#: templates/internal/chat_moderation.html:115 templates/submission/row.html:19
 msgid "Hidden"
 msgstr "Ẩn"
 
@@ -4897,7 +4943,7 @@ msgstr "Bạn không được phép chỉnh sửa bài đăng này."
 
 #: judge/views/blog.py:196 judge/views/organization.py:1404
 #: judge/views/organization.py:1496 templates/internal/chat_moderation.html:64
-#: templates/internal/chat_moderation.html:111
+#: templates/internal/chat_moderation.html:113
 #, fuzzy
 #| msgid "Mute"
 msgid "Muted"
@@ -4982,15 +5028,15 @@ msgstr "Bạn phải giải ít nhất một bài trước khi được phép b�
 msgid "Contest auto-review is currently disabled."
 msgstr "Tự động đánh giá kỳ thi hoàn tất"
 
-#: judge/views/contest_review.py:341 judge/views/internal.py:874
+#: judge/views/contest_review.py:341 judge/views/internal.py:876
 msgid "Review currently running, please wait."
 msgstr "Phiên xem xét đang chạy, vui lòng chờ."
 
-#: judge/views/contest_review.py:360 judge/views/internal.py:893
+#: judge/views/contest_review.py:360 judge/views/internal.py:895
 msgid "No changes since your last review — edit something and try again."
 msgstr "Không có thay đổi kể từ lần xem xét trước — hãy sửa gì đó rồi thử lại."
 
-#: judge/views/contest_review.py:383 judge/views/internal.py:922
+#: judge/views/contest_review.py:383 judge/views/internal.py:924
 #, python-format
 msgid "Please wait %(mmss)s before requesting review again."
 msgstr "Vui lòng chờ %(mmss)s trước khi yêu cầu xem xét lại."
@@ -5857,75 +5903,75 @@ msgstr "Trang \"%s\" không tồn tại hoặc bạn không có quyền truy c�
 msgid "corrupt page %s"
 msgstr "trang bị sập %s"
 
-#: judge/views/internal.py:75 templates/internal/left-sidebar.html:4
+#: judge/views/internal.py:77 templates/internal/left-sidebar.html:4
 #: templates/internal/problem_duplicates.html:9
 msgid "Duplicate Problems"
 msgstr "Bài tập trùng lặp"
 
-#: judge/views/internal.py:95 judge/views/internal.py:391
+#: judge/views/internal.py:97 judge/views/internal.py:393
 #, python-format
 msgid "Marked %(source)s and %(target)s as not duplicated."
 msgstr "Đã đánh dấu %(source)s và %(target)s là không trùng."
 
-#: judge/views/internal.py:102
+#: judge/views/internal.py:104
 #, python-format
 msgid "No open duplicate candidate was found for %(source)s and %(target)s."
 msgstr ""
 "Không tìm thấy ứng viên trùng lặp đang mở cho %(source)s và %(target)s."
 
-#: judge/views/internal.py:116
+#: judge/views/internal.py:118
 msgid "A duplicate report refresh is already pending."
 msgstr "Đã có tác vụ làm mới báo cáo bài trùng đang chờ."
 
-#: judge/views/internal.py:118
+#: judge/views/internal.py:120
 msgid "Duplicate report refresh queued."
 msgstr "Đã đưa tác vụ làm mới báo cáo bài trùng vào hàng đợi."
 
-#: judge/views/internal.py:129
+#: judge/views/internal.py:131
 msgid "USE_ML is disabled"
 msgstr "USE_ML đang tắt"
 
-#: judge/views/internal.py:169
+#: judge/views/internal.py:171
 #: templates/internal/problem_duplicate_detail.html:70
 msgid "Duplicate Problem Review"
 msgstr "Xem xét bài tập trùng lặp"
 
-#: judge/views/internal.py:317
+#: judge/views/internal.py:319
 msgid "Problem not found."
 msgstr "Không tìm thấy bài tập."
 
-#: judge/views/internal.py:324
+#: judge/views/internal.py:326
 msgid "No accepted source submissions with stored source code were found."
 msgstr "Không tìm thấy bài nộp AC có lưu mã nguồn."
 
-#: judge/views/internal.py:345
+#: judge/views/internal.py:347
 #, python-format
 msgid "Queued %(count)s verification submissions."
 msgstr "Đã đưa %(count)s bài nộp kiểm chứng vào hàng đợi."
 
-#: judge/views/internal.py:352
+#: judge/views/internal.py:354
 msgid "Type MERGE to confirm the merge."
 msgstr "Nhập MERGE để xác nhận gộp."
 
-#: judge/views/internal.py:365
+#: judge/views/internal.py:367
 msgid "A merge for these problems is already pending."
 msgstr "Đã có yêu cầu gộp cho các bài này đang chờ."
 
-#: judge/views/internal.py:375
+#: judge/views/internal.py:377
 #, python-format
 msgid "Merge queued for %(source)s into %(target)s."
 msgstr "Đã đưa yêu cầu gộp %(source)s vào %(target)s vào hàng đợi."
 
-#: judge/views/internal.py:456
+#: judge/views/internal.py:458
 msgid "Internal problem queue"
 msgstr "Bài trong hàng đợi nội bộ"
 
-#: judge/views/internal.py:741
+#: judge/views/internal.py:743
 #, python-format
 msgid "**[System]** This problem was approved by %(name)s. It is now public."
 msgstr "**[Hệ thống]** Đề đã được %(name)s chấp nhận và công khai."
 
-#: judge/views/internal.py:781
+#: judge/views/internal.py:783
 #, python-format
 msgid ""
 "**[System]** This problem was rejected by %(name)s.\n"
@@ -5936,21 +5982,21 @@ msgstr ""
 "\n"
 "**Lý do:** %(reason)s"
 
-#: judge/views/internal.py:785
+#: judge/views/internal.py:787
 #, python-format
 msgid ""
 "**[System]** This problem was rejected by %(name)s. No reason was provided."
 msgstr "**[Hệ thống]** Đề bị %(name)s từ chối. Không có lý do được cung cấp."
 
-#: judge/views/internal.py:1000
+#: judge/views/internal.py:1002
 msgid "A pending request already exists."
 msgstr "Yêu cầu đang chờ xử lý đã tồn tại."
 
-#: judge/views/internal.py:1206
+#: judge/views/internal.py:1208
 msgid "Request times"
 msgstr "thời gian đăng ký"
 
-#: judge/views/internal.py:1275 templates/internal/left-sidebar.html:6
+#: judge/views/internal.py:1277 templates/internal/left-sidebar.html:6
 msgid "Chat Moderation"
 msgstr "Kiểm duyệt chat"
 
@@ -6752,8 +6798,8 @@ msgid "Question Bank"
 msgstr "Ngân hàng câu hỏi"
 
 #: judge/views/quiz.py:456 templates/quiz/edit.html:456
-#: templates/quiz/question_bank/create.html:780
-#: templates/quiz/question_bank/create.html:789
+#: templates/quiz/question_bank/create.html:782
+#: templates/quiz/question_bank/create.html:791
 #: templates/quiz/question_bank/list.html:140
 msgid "Create Question"
 msgstr "Tạo câu hỏi"
@@ -7656,7 +7702,8 @@ msgstr "Chỉnh sửa bài đăng"
 msgid "Save"
 msgstr "Lưu"
 
-#: templates/blog/edit.html:38 templates/comments/edit-ajax.html:13
+#: templates/blog/edit.html:38 templates/chat/chat.html:56
+#: templates/chat/chat.html:146 templates/comments/edit-ajax.html:13
 #: templates/comments/inline-comments.html:160
 #: templates/comments/inline-comments.html:358
 #: templates/comments/inline-comments.html:391
@@ -7674,50 +7721,93 @@ msgstr "Lưu"
 #: templates/problem/data.html:1603 templates/problem/data.html:1643
 #: templates/problem/solution_codes.html:629 templates/quiz/create.html:390
 #: templates/quiz/delete.html:21 templates/quiz/edit.html:608
-#: templates/quiz/question_bank/create.html:792
+#: templates/quiz/question_bank/create.html:794
 #: templates/quiz/question_bank/delete.html:26
-#: templates/quiz/question_bank/edit.html:790
+#: templates/quiz/question_bank/edit.html:792
 msgid "Cancel"
 msgstr "Hủy"
 
-#: templates/chat/chat.html:5 templates/chat/chat.html:44
+#: templates/chat/chat.html:5 templates/chat/chat.html:46
 msgid "Chat Box"
 msgstr "Khung chat"
 
-#: templates/chat/chat.html:42
+#: templates/chat/chat.html:44
 msgid "New message(s)"
 msgstr "Tin nhắn mới"
 
-#: templates/chat/chat.html:43
+#: templates/chat/chat.html:45
 msgid "New message"
 msgstr "Tin nhắn mới"
 
-#: templates/chat/chat.html:45
-msgid "Mute this user and delete all messages?"
-msgstr "Mute người dùng này và xóa tất cả tin nhắn chung?"
+#: templates/chat/chat.html:47 templates/problem/chatbot.html:43
+msgid "Delete this message?"
+msgstr "Xóa tin nhắn này?"
 
-#: templates/chat/chat.html:46 templates/chat/chat.html:70
+#: templates/chat/chat.html:48 templates/chat/chat.html:127
+msgid "Mute user"
+msgstr "Cấm chat người dùng"
+
+#: templates/chat/chat.html:49
+msgid "Mute this user and delete all lobby messages?"
+msgstr "Cấm chat người dùng này và xóa tất cả tin nhắn ở sảnh?"
+
+#: templates/chat/chat.html:50 templates/chat/chat.html:130
+msgid "Mute duration"
+msgstr "Thời hạn cấm chat"
+
+#: templates/chat/chat.html:51 templates/chat/chat.html:134
+msgid "Temporary"
+msgstr "Tạm thời"
+
+#: templates/chat/chat.html:52 templates/chat/chat.html:138
+#: templates/internal/chat_moderation.html:131
+msgid "Forever"
+msgstr "Vĩnh viễn"
+
+#: templates/chat/chat.html:53 templates/chat/chat.html:142
+#: templates/internal/chat_moderation.html:87
+#: templates/organization/moderation_log.html:51
+#: templates/organization/requests/log.html:12
+#: templates/organization/requests/pending.html:22
+msgid "Reason"
+msgstr "Lý do"
+
+#: templates/chat/chat.html:55 templates/chat/chat.html:143
+msgid "Explain why this user is being muted..."
+msgstr "Giải thích lý do người dùng này bị cấm chat..."
+
+#: templates/chat/chat.html:57 templates/chat/chat.html:147
+msgid "Confirm mute"
+msgstr "Xác nhận cấm chat"
+
+#: templates/chat/chat.html:58 templates/chat/chat.html:109
+msgid "You are muted from chat."
+msgstr "Bạn đang bị cấm chat."
+
+#: templates/chat/chat.html:59 templates/chat/chat.html:113
+msgid "Emoji"
+msgstr "Biểu cảm"
+
+#: templates/chat/chat.html:60 templates/chat/chat.html:84
 #: templates/organization/add-member.html:26
 #: templates/user/base-users-js.html:9
 #: templates/user/base-users-two-col.html:19
 msgid "Search by handle..."
 msgstr "Tìm kiếm theo tên..."
 
-#: templates/chat/chat.html:47 templates/chat/chat.html:97
+#: templates/chat/chat.html:61 templates/chat/chat.html:109
 msgid "Enter your message"
 msgstr "Nhập tin nhắn"
 
-#: templates/chat/chat.html:92
-#, fuzzy
-#| msgid "There is no saved contest."
+#: templates/chat/chat.html:106
 msgid "Chat is disabled during contest."
-msgstr "Không có kỳ thi đã lưu."
+msgstr "Chat bị tắt trong kỳ thi."
 
-#: templates/chat/chat.html:98
-msgid "Emoji"
-msgstr "Biểu cảm"
+#: templates/chat/message.html:23 templates/chat/message.html:25
+msgid "Message options"
+msgstr "Tùy chọn tin nhắn"
 
-#: templates/chat/message.html:18 templates/course/edit_lesson.html:410
+#: templates/chat/message.html:29 templates/course/edit_lesson.html:410
 #: templates/course/members.html:127 templates/fine_uploader/script.html:25
 #: templates/organization/blog/edit.html:47
 #: templates/organization/blog/pending.html:105
@@ -7736,7 +7826,7 @@ msgstr "Biểu cảm"
 msgid "Delete"
 msgstr "Xóa"
 
-#: templates/chat/message.html:21
+#: templates/chat/message.html:32
 msgid "Mute"
 msgstr "Mute"
 
@@ -7745,32 +7835,38 @@ msgid "You are connected now. Say something to start the conversation."
 msgstr "Bạn đã kết nối. Nhắn gì đó để bắt đầu cuộc trò chuyện."
 
 #: templates/chat/online_status.html:6
-#: templates/chat/user_online_status.html:21
+#: templates/chat/user_online_status.html:25
 msgid "Lobby"
 msgstr "Sảnh chung"
 
-#: templates/chat/online_status.html:48
-#: templates/chat/user_online_status.html:39
+#: templates/chat/online_status.html:31
+#: templates/chat/user_online_status.html:17
+msgid "You"
+msgstr "Bạn"
+
+#: templates/chat/online_status.html:52
+#: templates/chat/user_online_status.html:43
 msgid "Ignore"
 msgstr "Tắt thông báo"
 
-#: templates/chat/user_online_status.html:18
+#: templates/chat/user_online_status.html:22
 #, python-brace-format
 msgid "Online {time}"
 msgstr "Trực tuyến {time}"
 
-#: templates/chat/user_online_status.html:26
+#: templates/chat/user_online_status.html:30
 #, python-brace-format
 msgid "Last online on {time}"
 msgstr "Trực tuyến vào {time}"
 
-#: templates/chat/user_online_status.html:37
+#: templates/chat/user_online_status.html:41
 msgid "Unignore"
 msgstr "Mở lại thông báo"
 
-#: templates/chat/user_online_status.html:45
-msgid "users are online"
-msgstr "người đang trực tuyến"
+#: templates/chat/user_online_status.html:49
+#, python-format
+msgid "%(count)s users are online"
+msgstr "%(count)s người đang trực tuyến"
 
 #: templates/comments/comment-item.html:15
 #, python-format
@@ -7879,8 +7975,8 @@ msgstr "Đăng"
 #: templates/comments/inline-comments.html:526
 #: templates/comments/media-js.html:80 templates/comments/media-js.html:198
 #: templates/comments/media-js.html:453
-#: templates/quiz/question_bank/create.html:179
-#: templates/quiz/question_bank/edit.html:178
+#: templates/quiz/question_bank/create.html:181
+#: templates/quiz/question_bank/edit.html:180
 msgid "Expand editor"
 msgstr "Mở rộng trình soạn thảo"
 
@@ -9521,7 +9617,11 @@ msgstr "Nhắn tin"
 msgid "Action"
 msgstr "Hành động"
 
-#: templates/internal/chat_moderation.html:87
+#: templates/internal/chat_moderation.html:88
+msgid "Expires"
+msgstr "Hết hạn"
+
+#: templates/internal/chat_moderation.html:89
 #: templates/internal/problem_duplicate_detail.html:229
 #: templates/internal/problem_duplicates.html:41
 #: templates/internal/problem_duplicates.html:87
@@ -9529,29 +9629,29 @@ msgstr "Hành động"
 msgid "Source"
 msgstr "Mã nguồn"
 
-#: templates/internal/chat_moderation.html:103
+#: templates/internal/chat_moderation.html:105
 #: templates/organization/blog/pending.html:69
 #: templates/organization/moderation_log.html:68
 msgid "Unknown"
 msgstr "Không rõ"
 
-#: templates/internal/chat_moderation.html:115
+#: templates/internal/chat_moderation.html:117
 msgid "Kept"
 msgstr "Giữ lại"
 
-#: templates/internal/chat_moderation.html:120
+#: templates/internal/chat_moderation.html:138
 msgid "Auto"
 msgstr "Tự động"
 
-#: templates/internal/chat_moderation.html:126
+#: templates/internal/chat_moderation.html:144
 msgid "Manual"
 msgstr "Thủ công"
 
-#: templates/internal/chat_moderation.html:132
+#: templates/internal/chat_moderation.html:150
 msgid "Unmute"
 msgstr "Bỏ chặn"
 
-#: templates/internal/chat_moderation.html:140
+#: templates/internal/chat_moderation.html:158
 msgid "No moderation logs found"
 msgstr "Không có nhật ký kiểm duyệt"
 
@@ -9870,8 +9970,8 @@ msgid "Task timed out. Please try again."
 msgstr "Tác vụ đã hết thời gian. Vui lòng thử lại."
 
 #: templates/internal/problem_queue.html:484 templates/problem/edit.html:32
-#: templates/quiz/question_bank/create.html:571
-#: templates/quiz/question_bank/edit.html:570
+#: templates/quiz/question_bank/create.html:573
+#: templates/quiz/question_bank/edit.html:572
 msgid "No improvements needed"
 msgstr "Không cần cải thiện"
 
@@ -9886,12 +9986,12 @@ msgstr "Cải thiện markdown thất bại"
 #: templates/problem/edit.html:150 templates/problem/edit.html:230
 #: templates/problem/edit.html:265 templates/problem/edit.html:304
 #: templates/problem/solutions.html:67 templates/problem/solutions.html:104
-#: templates/quiz/question_bank/create.html:427
-#: templates/quiz/question_bank/create.html:580
-#: templates/quiz/question_bank/create.html:706
-#: templates/quiz/question_bank/edit.html:426
-#: templates/quiz/question_bank/edit.html:579
-#: templates/quiz/question_bank/edit.html:705
+#: templates/quiz/question_bank/create.html:429
+#: templates/quiz/question_bank/create.html:582
+#: templates/quiz/question_bank/create.html:708
+#: templates/quiz/question_bank/edit.html:428
+#: templates/quiz/question_bank/edit.html:581
+#: templates/quiz/question_bank/edit.html:707
 msgid "Network error occurred"
 msgstr "Xảy ra lỗi mạng"
 
@@ -10180,7 +10280,7 @@ msgid "Contests: "
 msgstr "Kỳ thi: "
 
 #: templates/organization/course/edit.html:86
-#: templates/quiz/question_bank/edit.html:787
+#: templates/quiz/question_bank/edit.html:789
 msgid "Save Changes"
 msgstr "Lưu thay đổi"
 
@@ -10287,10 +10387,10 @@ msgstr "Bạn có chắc muốn bỏ chặn nhóm?"
 
 #: templates/organization/home-js.html:49 templates/problem/edit.html:161
 #: templates/problem/solutions.html:116
-#: templates/quiz/question_bank/create.html:621
-#: templates/quiz/question_bank/create.html:731
-#: templates/quiz/question_bank/edit.html:620
-#: templates/quiz/question_bank/edit.html:730
+#: templates/quiz/question_bank/create.html:623
+#: templates/quiz/question_bank/create.html:733
+#: templates/quiz/question_bank/edit.html:622
+#: templates/quiz/question_bank/edit.html:732
 msgid "Copied!"
 msgstr "Đã sao chép!"
 
@@ -10384,12 +10484,6 @@ msgstr "Ít"
 #: templates/organization/moderation_log.html:47
 msgid "Moderator"
 msgstr "Người kiểm duyệt"
-
-#: templates/organization/moderation_log.html:51
-#: templates/organization/requests/log.html:12
-#: templates/organization/requests/pending.html:22
-msgid "Reason"
-msgstr "Lý do"
 
 #: templates/organization/moderation_log.html:78
 msgid "Unhide"
@@ -10528,8 +10622,8 @@ msgid "Are you sure you want to kick this user from the organization?"
 msgstr "Bạn có chắc muốn đuổi người dùng này?"
 
 #: templates/pagedown.html:9 templates/quiz/import.html:58
-#: templates/quiz/question_bank/create.html:271
-#: templates/quiz/question_bank/edit.html:270
+#: templates/quiz/question_bank/create.html:273
+#: templates/quiz/question_bank/edit.html:272
 msgid "Update Preview"
 msgstr "Cập nhật xem trước"
 
@@ -10664,10 +10758,6 @@ msgstr "Đang gửi..."
 #: templates/problem/chatbot.html:42
 msgid "Clear conversation history?"
 msgstr "Xóa lịch sử cuộc trò chuyện?"
-
-#: templates/problem/chatbot.html:43
-msgid "Delete this message?"
-msgstr "Xóa tin nhắn này?"
 
 #: templates/problem/chatbot.html:44 templates/problem/chatbot.html:118
 msgid "Type your message... (Shift+Enter for new line)"
@@ -10934,8 +11024,8 @@ msgstr "Xóa"
 msgid "Add new case"
 msgstr "Thêm test mới"
 
-#: templates/problem/edit.html:28 templates/quiz/question_bank/create.html:565
-#: templates/quiz/question_bank/edit.html:564
+#: templates/problem/edit.html:28 templates/quiz/question_bank/create.html:567
+#: templates/quiz/question_bank/edit.html:566
 msgid "Markdown improved!"
 msgstr "Đã cải thiện markdown!"
 
@@ -10944,16 +11034,16 @@ msgstr "Đã cải thiện markdown!"
 #: templates/problem/edit.html:145 templates/problem/edit.html:299
 #: templates/problem/solutions.html:46 templates/problem/solutions.html:59
 #: templates/problem/solutions.html:98
-#: templates/quiz/question_bank/create.html:421
-#: templates/quiz/question_bank/create.html:569
-#: templates/quiz/question_bank/create.html:575
-#: templates/quiz/question_bank/create.html:694
-#: templates/quiz/question_bank/create.html:700
-#: templates/quiz/question_bank/edit.html:420
-#: templates/quiz/question_bank/edit.html:568
-#: templates/quiz/question_bank/edit.html:574
-#: templates/quiz/question_bank/edit.html:693
-#: templates/quiz/question_bank/edit.html:699
+#: templates/quiz/question_bank/create.html:423
+#: templates/quiz/question_bank/create.html:571
+#: templates/quiz/question_bank/create.html:577
+#: templates/quiz/question_bank/create.html:696
+#: templates/quiz/question_bank/create.html:702
+#: templates/quiz/question_bank/edit.html:422
+#: templates/quiz/question_bank/edit.html:570
+#: templates/quiz/question_bank/edit.html:576
+#: templates/quiz/question_bank/edit.html:695
+#: templates/quiz/question_bank/edit.html:701
 msgid "Error: "
 msgstr "Lỗi: "
 
@@ -10965,39 +11055,39 @@ msgstr "Gán nhãn bài thành công!"
 msgid "Please enter a problem code first."
 msgstr "Vui lòng nhập tên bài"
 
-#: templates/problem/edit.html:126 templates/quiz/question_bank/create.html:533
-#: templates/quiz/question_bank/edit.html:532
+#: templates/problem/edit.html:126 templates/quiz/question_bank/create.html:535
+#: templates/quiz/question_bank/edit.html:534
 msgid "Improving markdown..."
 msgstr "Đang cải thiện markdown..."
 
 #: templates/problem/edit.html:142 templates/problem/edit.html:296
 #: templates/problem/solutions.html:95
-#: templates/quiz/question_bank/create.html:546
-#: templates/quiz/question_bank/create.html:685
-#: templates/quiz/question_bank/edit.html:545
-#: templates/quiz/question_bank/edit.html:684
+#: templates/quiz/question_bank/create.html:548
+#: templates/quiz/question_bank/create.html:687
+#: templates/quiz/question_bank/edit.html:547
+#: templates/quiz/question_bank/edit.html:686
 msgid "Processing... please wait"
 msgstr "Đang xử lý... vui lòng chờ"
 
 #: templates/problem/edit.html:163 templates/problem/edit.html:467
 #: templates/problem/solutions.html:118 templates/problem/solutions.html:241
 #: templates/problem/solutions.html:349
-#: templates/quiz/question_bank/create.html:448
-#: templates/quiz/question_bank/create.html:492
-#: templates/quiz/question_bank/create.html:624
-#: templates/quiz/question_bank/create.html:734
-#: templates/quiz/question_bank/edit.html:447
-#: templates/quiz/question_bank/edit.html:491
-#: templates/quiz/question_bank/edit.html:623
-#: templates/quiz/question_bank/edit.html:733
+#: templates/quiz/question_bank/create.html:450
+#: templates/quiz/question_bank/create.html:494
+#: templates/quiz/question_bank/create.html:626
+#: templates/quiz/question_bank/create.html:736
+#: templates/quiz/question_bank/edit.html:449
+#: templates/quiz/question_bank/edit.html:493
+#: templates/quiz/question_bank/edit.html:625
+#: templates/quiz/question_bank/edit.html:735
 msgid "Copy"
 msgstr "Sao chép"
 
 #: templates/problem/edit.html:176 templates/problem/solutions.html:131
-#: templates/quiz/question_bank/create.html:613
-#: templates/quiz/question_bank/create.html:722
-#: templates/quiz/question_bank/edit.html:612
-#: templates/quiz/question_bank/edit.html:721
+#: templates/quiz/question_bank/create.html:615
+#: templates/quiz/question_bank/create.html:724
+#: templates/quiz/question_bank/edit.html:614
+#: templates/quiz/question_bank/edit.html:723
 msgid "Inserted into editor!"
 msgstr "Đã chèn vào trình soạn thảo!"
 
@@ -11025,8 +11115,8 @@ msgstr ""
 "Một số trường bị khóa vì bài tập này đã được công khai. Liên hệ admin để "
 "chỉnh sửa."
 
-#: templates/problem/edit.html:455 templates/quiz/question_bank/create.html:439
-#: templates/quiz/question_bank/edit.html:438
+#: templates/problem/edit.html:455 templates/quiz/question_bank/create.html:441
+#: templates/quiz/question_bank/edit.html:440
 msgid "Auto Improve Markdown"
 msgstr "Tự động cải thiện Markdown"
 
@@ -11038,17 +11128,17 @@ msgstr ""
 "Mẹo: Tải PDF lên bên dưới và lưu trước, sau đó dùng tính năng này để chuyển "
 "PDF thành markdown. Hoặc dùng để định dạng lại markdown hiện có."
 
-#: templates/problem/edit.html:464 templates/quiz/question_bank/create.html:445
-#: templates/quiz/question_bank/edit.html:444
+#: templates/problem/edit.html:464 templates/quiz/question_bank/create.html:447
+#: templates/quiz/question_bank/edit.html:446
 msgid "Improved Markdown:"
 msgstr "Markdown đã cải thiện:"
 
 #: templates/problem/edit.html:466 templates/problem/solutions.html:240
 #: templates/problem/solutions.html:348
-#: templates/quiz/question_bank/create.html:447
-#: templates/quiz/question_bank/create.html:491
-#: templates/quiz/question_bank/edit.html:446
-#: templates/quiz/question_bank/edit.html:490
+#: templates/quiz/question_bank/create.html:449
+#: templates/quiz/question_bank/create.html:493
+#: templates/quiz/question_bank/edit.html:448
+#: templates/quiz/question_bank/edit.html:492
 msgid "Insert"
 msgstr "Chèn"
 
@@ -11739,8 +11829,8 @@ msgid ""
 msgstr ""
 
 #: templates/problem/solution_codes.html:626
-#: templates/quiz/question_bank/create.html:483
-#: templates/quiz/question_bank/edit.html:482
+#: templates/quiz/question_bank/create.html:485
+#: templates/quiz/question_bank/edit.html:484
 msgid "Generate"
 msgstr "Tạo"
 
@@ -11786,8 +11876,8 @@ msgstr ""
 "thể nhập ý tưởng sơ bộ của mình."
 
 #: templates/problem/solutions.html:228 templates/problem/solutions.html:336
-#: templates/quiz/question_bank/create.html:480
-#: templates/quiz/question_bank/edit.html:479
+#: templates/quiz/question_bank/create.html:482
+#: templates/quiz/question_bank/edit.html:481
 msgid "Your rough ideas (optional):"
 msgstr "Ý tưởng sơ bộ của bạn (tùy chọn):"
 
@@ -12336,9 +12426,9 @@ msgid "Student Answer"
 msgstr "Câu trả lời của học sinh"
 
 #: templates/quiz/grading/grade.html:193 templates/quiz/import.html:54
-#: templates/quiz/question_bank/create.html:147
+#: templates/quiz/question_bank/create.html:149
 #: templates/quiz/question_bank/detail.html:114
-#: templates/quiz/question_bank/edit.html:146
+#: templates/quiz/question_bank/edit.html:148
 msgid "Accepted Answers"
 msgstr "Đáp án được chấp nhận"
 
@@ -12560,157 +12650,157 @@ msgstr "Chưa có câu hỏi nào trong câu hỏi lý thuyết này."
 msgid "Correct Answers Configuration"
 msgstr "Cấu hình đáp án đúng"
 
-#: templates/quiz/question_bank/create.html:134
-#: templates/quiz/question_bank/edit.html:133
+#: templates/quiz/question_bank/create.html:136
+#: templates/quiz/question_bank/edit.html:135
 msgid ""
 "Answers are matched ignoring spaces and capitalization. Everything else "
 "(digits, commas, dots, order) must match."
 msgstr ""
-"Đáp án được so khớp bỏ qua khoảng trắng và chữ hoa/thường. Mọi thứ khác "
-"(chữ số, dấu phẩy, dấu chấm, thứ tự) phải khớp chính xác."
+"Đáp án được so khớp bỏ qua khoảng trắng và chữ hoa/thường. Mọi thứ khác (chữ "
+"số, dấu phẩy, dấu chấm, thứ tự) phải khớp chính xác."
 
-#: templates/quiz/question_bank/create.html:141
+#: templates/quiz/question_bank/create.html:143
 #: templates/quiz/question_bank/detail.html:107
-#: templates/quiz/question_bank/edit.html:140
+#: templates/quiz/question_bank/edit.html:142
 msgid "Case Sensitive"
 msgstr "Phân biệt hoa/thường"
 
-#: templates/quiz/question_bank/create.html:158
-#: templates/quiz/question_bank/edit.html:157
+#: templates/quiz/question_bank/create.html:160
+#: templates/quiz/question_bank/edit.html:159
 msgid "Add Answer"
 msgstr "Thêm đáp án"
 
-#: templates/quiz/question_bank/create.html:178
-#: templates/quiz/question_bank/edit.html:177
+#: templates/quiz/question_bank/create.html:180
+#: templates/quiz/question_bank/edit.html:179
 msgid "Enter an accepted answer..."
 msgstr "Nhập đáp án được chấp nhận..."
 
-#: templates/quiz/question_bank/create.html:265
-#: templates/quiz/question_bank/edit.html:264
+#: templates/quiz/question_bank/create.html:267
+#: templates/quiz/question_bank/edit.html:266
 msgid "Collapse"
 msgstr "Thu gọn"
 
-#: templates/quiz/question_bank/create.html:474
-#: templates/quiz/question_bank/create.html:636
-#: templates/quiz/question_bank/edit.html:473
-#: templates/quiz/question_bank/edit.html:635
+#: templates/quiz/question_bank/create.html:476
+#: templates/quiz/question_bank/create.html:638
+#: templates/quiz/question_bank/edit.html:475
+#: templates/quiz/question_bank/edit.html:637
 msgid "Generate Explanation"
 msgstr "Tạo giải thích"
 
-#: templates/quiz/question_bank/create.html:481
-#: templates/quiz/question_bank/edit.html:480
+#: templates/quiz/question_bank/create.html:483
+#: templates/quiz/question_bank/edit.html:482
 msgid "Enter rough ideas or a draft explanation to guide the AI..."
 msgstr "Nhập ý tưởng hoặc bản nháp giải thích để hướng dẫn AI..."
 
-#: templates/quiz/question_bank/create.html:489
-#: templates/quiz/question_bank/edit.html:488
+#: templates/quiz/question_bank/create.html:491
+#: templates/quiz/question_bank/edit.html:490
 msgid "AI Explanation:"
 msgstr "Giải thích bởi AI:"
 
-#: templates/quiz/question_bank/create.html:525
-#: templates/quiz/question_bank/create.html:659
-#: templates/quiz/question_bank/edit.html:524
-#: templates/quiz/question_bank/edit.html:658
+#: templates/quiz/question_bank/create.html:527
+#: templates/quiz/question_bank/create.html:661
+#: templates/quiz/question_bank/edit.html:526
+#: templates/quiz/question_bank/edit.html:660
 msgid "Please enter question content first."
 msgstr "Vui lòng nhập nội dung câu hỏi trước."
 
-#: templates/quiz/question_bank/create.html:566
-#: templates/quiz/question_bank/edit.html:565
+#: templates/quiz/question_bank/create.html:568
+#: templates/quiz/question_bank/edit.html:567
 msgid "(choices included)"
 msgstr "(bao gồm đáp án)"
 
-#: templates/quiz/question_bank/create.html:634
-#: templates/quiz/question_bank/edit.html:633
+#: templates/quiz/question_bank/create.html:636
+#: templates/quiz/question_bank/edit.html:635
 msgid "Improve Explanation"
 msgstr "Cải thiện giải thích"
 
-#: templates/quiz/question_bank/create.html:668
-#: templates/quiz/question_bank/edit.html:667
+#: templates/quiz/question_bank/create.html:670
+#: templates/quiz/question_bank/edit.html:669
 msgid "Generating explanation..."
 msgstr "Đang tạo giải thích..."
 
-#: templates/quiz/question_bank/create.html:691
-#: templates/quiz/question_bank/edit.html:690
+#: templates/quiz/question_bank/create.html:693
+#: templates/quiz/question_bank/edit.html:692
 msgid "Explanation generated!"
 msgstr "Đã tạo giải thích!"
 
-#: templates/quiz/question_bank/create.html:691
-#: templates/quiz/question_bank/edit.html:690
+#: templates/quiz/question_bank/create.html:693
+#: templates/quiz/question_bank/edit.html:692
 msgid "Explanation improved!"
 msgstr "Đã cải thiện giải thích!"
 
-#: templates/quiz/question_bank/create.html:696
-#: templates/quiz/question_bank/edit.html:695
+#: templates/quiz/question_bank/create.html:698
+#: templates/quiz/question_bank/edit.html:697
 msgid "Could not generate explanation"
 msgstr "Không thể tạo giải thích"
 
-#: templates/quiz/question_bank/create.html:749
-#: templates/quiz/question_bank/edit.html:748
+#: templates/quiz/question_bank/create.html:751
+#: templates/quiz/question_bank/edit.html:750
 msgid "Help"
 msgstr "Trợ giúp"
 
-#: templates/quiz/question_bank/create.html:752
-#: templates/quiz/question_bank/edit.html:751
+#: templates/quiz/question_bank/create.html:754
+#: templates/quiz/question_bank/edit.html:753
 msgid "Question Types"
 msgstr "Các loại câu hỏi"
 
-#: templates/quiz/question_bank/create.html:754
-#: templates/quiz/question_bank/edit.html:753
+#: templates/quiz/question_bank/create.html:756
+#: templates/quiz/question_bank/edit.html:755
 msgid "Single correct answer"
 msgstr "Một đáp án đúng"
 
-#: templates/quiz/question_bank/create.html:755
-#: templates/quiz/question_bank/edit.html:754
+#: templates/quiz/question_bank/create.html:757
+#: templates/quiz/question_bank/edit.html:756
 msgid "Multiple correct answers"
 msgstr "Nhiều đáp án đúng"
 
-#: templates/quiz/question_bank/create.html:756
-#: templates/quiz/question_bank/edit.html:755
+#: templates/quiz/question_bank/create.html:758
+#: templates/quiz/question_bank/edit.html:757
 msgid "Binary choice"
 msgstr "Lựa chọn đúng/sai"
 
-#: templates/quiz/question_bank/create.html:757
-#: templates/quiz/question_bank/edit.html:756
+#: templates/quiz/question_bank/create.html:759
+#: templates/quiz/question_bank/edit.html:758
 msgid "Text-based answer"
 msgstr "Trả lời bằng văn bản"
 
-#: templates/quiz/question_bank/create.html:758
-#: templates/quiz/question_bank/edit.html:757
+#: templates/quiz/question_bank/create.html:760
+#: templates/quiz/question_bank/edit.html:759
 msgid "Long-form, manually graded"
 msgstr "Câu hỏi dài, chấm thủ công"
 
-#: templates/quiz/question_bank/create.html:763
-#: templates/quiz/question_bank/edit.html:762
+#: templates/quiz/question_bank/create.html:765
+#: templates/quiz/question_bank/edit.html:764
 msgid "Grading Strategies"
 msgstr "Cách tính điểm"
 
-#: templates/quiz/question_bank/create.html:764
-#: templates/quiz/question_bank/edit.html:763
+#: templates/quiz/question_bank/create.html:766
+#: templates/quiz/question_bank/edit.html:765
 msgid "For Multiple Answer questions:"
 msgstr "Với câu hỏi nhiều đáp án:"
 
-#: templates/quiz/question_bank/create.html:766
-#: templates/quiz/question_bank/edit.html:765
+#: templates/quiz/question_bank/create.html:768
+#: templates/quiz/question_bank/edit.html:767
 msgid "Full points only if all correct answers selected"
 msgstr "Được điểm tối đa khi chọn đúng tất cả đáp án"
 
-#: templates/quiz/question_bank/create.html:768
-#: templates/quiz/question_bank/edit.html:766
+#: templates/quiz/question_bank/create.html:770
+#: templates/quiz/question_bank/edit.html:768
 msgid "Gains points for correct, loses for wrong"
 msgstr "Được điểm khi đúng, mất điểm khi sai"
 
-#: templates/quiz/question_bank/create.html:769
-#: templates/quiz/question_bank/edit.html:767
+#: templates/quiz/question_bank/create.html:771
+#: templates/quiz/question_bank/edit.html:769
 msgid "Correct count minus wrong count"
 msgstr "Số đáp án đúng trừ số đáp án sai"
 
-#: templates/quiz/question_bank/create.html:770
-#: templates/quiz/question_bank/edit.html:768
+#: templates/quiz/question_bank/create.html:772
+#: templates/quiz/question_bank/edit.html:770
 msgid "Correct Only"
 msgstr "Chỉ tính đáp án đúng"
 
-#: templates/quiz/question_bank/create.html:770
-#: templates/quiz/question_bank/edit.html:768
+#: templates/quiz/question_bank/create.html:772
+#: templates/quiz/question_bank/edit.html:770
 msgid "Only gains points for correct selections"
 msgstr "Chỉ cộng điểm cho các lựa chọn đúng"
 
@@ -12761,7 +12851,7 @@ msgstr "Biểu thức chính quy"
 msgid "Used in Quizzes"
 msgstr "Được sử dụng trong các câu hỏi lý thuyết"
 
-#: templates/quiz/question_bank/edit.html:778
+#: templates/quiz/question_bank/edit.html:780
 msgid "Edit Question"
 msgstr "Chỉnh sửa câu hỏi"
 

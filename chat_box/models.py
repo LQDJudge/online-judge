@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import CASCADE, Max
+from django.db.models import CASCADE, Count, Max
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
@@ -37,16 +37,17 @@ class Room(CacheableModel):
         return profile.id in self.get_user_ids()
 
     def other_user(self, profile):
-        """Get the other user in a two-person room"""
-        user_ids = self.get_user_ids()
-        if len(user_ids) == 2:
-            other_id = user_ids[0] if user_ids[1] == profile.id else user_ids[1]
+        """Get the display user for this room from the current user's perspective."""
+        other_id = self.other_user_id(profile)
+        if other_id:
             return Profile(id=other_id)
         return None
 
     def other_user_id(self, profile):
-        """Get the other user's ID in a two-person room"""
+        """Get the display user ID for this room from the current user's perspective."""
         user_ids = self.get_user_ids()
+        if len(user_ids) == 1 and user_ids[0] == profile.id:
+            return profile.id
         if len(user_ids) == 2:
             return user_ids[0] if user_ids[1] == profile.id else user_ids[1]
         return None
@@ -102,14 +103,15 @@ class Room(CacheableModel):
         # No existing room found, create new room
         room = cls.objects.create(last_msg_id=None)
 
-        # Create UserRoom entries for both users
+        # Create UserRoom entries for both users. A self-chat room has one member.
         UserRoom.objects.create(user=user_one, room=room, last_seen=timezone.now())
-        UserRoom.objects.create(user=user_two, room=room, last_seen=timezone.now())
+        if user_one.id != user_two.id:
+            UserRoom.objects.create(user=user_two, room=room, last_seen=timezone.now())
 
-        # Dirty caches for both users
         cls.dirty_cache(room.id)
         get_user_room_list.dirty(user_one.id)
-        get_user_room_list.dirty(user_two.id)
+        if user_one.id != user_two.id:
+            get_user_room_list.dirty(user_two.id)
 
         room.save()
 
@@ -269,13 +271,17 @@ class ChatModerationLog(models.Model):
         ("keep", _("Keep")),
         ("hide", _("Hide Message")),
         ("mute", _("Mute User")),
+        ("mute_temp", _("Temporarily Mute User")),
+        ("mute_perm", _("Permanently Mute User")),
     )
 
     message = models.ForeignKey(
         Message, on_delete=CASCADE, related_name="moderation_logs"
     )
-    action = models.CharField(max_length=10, choices=ACTIONS)
+    action = models.CharField(max_length=20, choices=ACTIONS)
     reason = models.TextField(blank=True)
+    mute_until = models.DateTimeField(null=True, blank=True)
+    mute_duration_days = models.PositiveIntegerField(null=True, blank=True)
     is_automated = models.BooleanField(default=False)
     moderator = models.ForeignKey(
         Profile,
@@ -299,13 +305,24 @@ class ChatModerationLog(models.Model):
         return f"{self.get_action_display()} - Message #{self.message_id} - {self.created_at}"
 
     @classmethod
-    def log_action(cls, message, action, reason="", is_automated=False, moderator=None):
+    def log_action(
+        cls,
+        message,
+        action,
+        reason="",
+        is_automated=False,
+        moderator=None,
+        mute_until=None,
+        mute_duration_days=None,
+    ):
         return cls.objects.create(
             message=message,
             action=action,
             reason=reason,
             is_automated=is_automated,
             moderator=moderator,
+            mute_until=mute_until,
+            mute_duration_days=mute_duration_days,
         )
 
 
@@ -482,6 +499,17 @@ def get_first_msg_id(room_id):
 
 
 def get_common_room_id(user_one, user_two):
+    if user_one.id == user_two.id:
+        return (
+            UserRoom.objects.filter(user=user_one)
+            .values("room_id")
+            .annotate(user_count=Count("room__userroom"))
+            .filter(user_count=1)
+            .order_by("-room__last_msg_id")
+            .values_list("room_id", flat=True)
+            .first()
+        )
+
     user_rooms_1 = set(get_user_room_list(user_one.id))
     user_rooms_2 = get_user_room_list(user_two.id)
 

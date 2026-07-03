@@ -1,12 +1,23 @@
-from django.test import TestCase, Client
-from django.contrib.auth.models import User
-from django.core.cache import cache
-from django.utils import timezone
 from unittest.mock import patch
 
-from chat_box.models import Room, Message, UserRoom, get_user_room_list
-from chat_box.utils import get_unread_boxes
-from judge.models import Profile
+from django.contrib.auth.models import Permission, User
+from django.core.cache import cache
+from django.db import connection
+from django.test import Client, TestCase
+from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
+
+from chat_box.models import (
+    ChatModerationLog,
+    Room,
+    Message,
+    UserRoom,
+    get_user_room_list,
+)
+from chat_box.utils import encrypt_url, get_unread_boxes
+from chat_box.views import ChatView, get_status_context
+from judge.models import Notification, Profile
+from judge.models.notification import NotificationCategory
 
 
 class DeleteMessageCacheTest(TestCase):
@@ -209,6 +220,254 @@ class DeleteMessageCacheTest(TestCase):
         # Verify unread_count is unchanged
         user_room2.refresh_from_db()
         self.assertEqual(user_room2.unread_count, 0)
+
+
+class ChatMuteTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = Client()
+        self.mod_user = User.objects.create_user(
+            username="chatmod", password="password123"
+        )
+        self.mod_profile, _ = Profile.objects.get_or_create(user=self.mod_user)
+        self.author_user = User.objects.create_user(
+            username="muteduser", password="password123"
+        )
+        self.author_profile, _ = Profile.objects.get_or_create(user=self.author_user)
+        self.admin_user = User.objects.create_superuser(
+            username="chatadmin", password="password123"
+        )
+        self.admin_profile, _ = Profile.objects.get_or_create(user=self.admin_user)
+        self.temp_perm = Permission.objects.get(codename="change_comment")
+        self.mod_user.user_permissions.add(self.temp_perm)
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_temporary_mute_requires_reason_for_moderator(self):
+        message = Message.objects.create(
+            room=None, author=self.author_profile, body="bad lobby message"
+        )
+        self.client.login(username="chatmod", password="password123")
+        response = self.client.post(
+            "/chat/mute/",
+            {"message": message.id, "mute_type": "temporary", "reason": ""},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.author_profile.refresh_from_db()
+        self.assertFalse(self.author_profile.mute)
+
+    def test_temporary_mute_escalates_and_notifies_user(self):
+        old_message = Message.objects.create(
+            room=None, author=self.author_profile, body="old bad lobby message"
+        )
+        ChatModerationLog.log_action(
+            message=old_message,
+            action="mute_temp",
+            reason="Previous warning",
+            mute_duration_days=1,
+        )
+        message = Message.objects.create(
+            room=None, author=self.author_profile, body="new bad lobby message"
+        )
+
+        before = timezone.now()
+        self.client.login(username="chatmod", password="password123")
+        response = self.client.post(
+            "/chat/mute/",
+            {
+                "message": message.id,
+                "mute_type": "temporary",
+                "reason": "Repeated spam",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.author_profile.refresh_from_db()
+        self.assertTrue(self.author_profile.mute)
+        self.assertEqual(self.author_profile.mute_reason, "Repeated spam")
+        self.assertIsNotNone(self.author_profile.mute_until)
+        self.assertGreaterEqual(
+            self.author_profile.mute_until, before + timezone.timedelta(days=2)
+        )
+        self.assertLessEqual(
+            self.author_profile.mute_until, timezone.now() + timezone.timedelta(days=3)
+        )
+
+        log = ChatModerationLog.objects.get(message=message)
+        self.assertEqual(log.action, "mute_temp")
+        self.assertEqual(log.reason, "Repeated spam")
+        self.assertEqual(log.mute_duration_days, 2)
+
+        notification = Notification.objects.get(owner=self.author_profile)
+        self.assertEqual(notification.category, NotificationCategory.CHAT_MUTE)
+        self.assertIn("Repeated spam", notification.html_link)
+
+    def test_moderator_cannot_permanently_mute(self):
+        message = Message.objects.create(
+            room=None, author=self.author_profile, body="severe lobby message"
+        )
+        self.client.login(username="chatmod", password="password123")
+        response = self.client.post(
+            "/chat/mute/",
+            {
+                "message": message.id,
+                "mute_type": "permanent",
+                "reason": "Too severe",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+
+        self.author_profile.refresh_from_db()
+        self.assertFalse(self.author_profile.mute)
+
+    def test_permanent_mute_allowed_for_superuser_without_reason(self):
+        message = Message.objects.create(
+            room=None, author=self.author_profile, body="severe lobby message"
+        )
+        self.client.login(username="chatadmin", password="password123")
+        response = self.client.post(
+            "/chat/mute/",
+            {"message": message.id, "mute_type": "permanent", "reason": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.author_profile.refresh_from_db()
+        self.assertTrue(self.author_profile.mute)
+        self.assertIsNone(self.author_profile.mute_until)
+
+        log = ChatModerationLog.objects.get(message=message)
+        self.assertEqual(log.action, "mute_perm")
+        self.assertIsNone(log.mute_until)
+
+
+class ChatPaginationTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(username="chatpager")
+        self.profile, _ = Profile.objects.get_or_create(user=self.user)
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_get_message_page_uses_id_page_then_row_hydration(self):
+        messages = [
+            Message.objects.create(
+                room=None,
+                author=self.profile,
+                body="message %(index)s" % {"index": index},
+            )
+            for index in range(6)
+        ]
+        messages[2].hidden = True
+        messages[2].save(update_fields=["hidden"])
+
+        view = ChatView()
+        view.room_id = None
+        last_id = messages[-1].id + 1
+
+        with CaptureQueriesContext(connection) as queries:
+            page = view.get_message_page(last_id=last_id, page_size=3)
+
+        self.assertEqual(len(queries), 2)
+        self.assertEqual(
+            [message.id for message in page],
+            [
+                messages[5].id,
+                messages[4].id,
+                messages[3].id,
+            ],
+        )
+
+    def test_get_message_page_stops_after_empty_id_page(self):
+        view = ChatView()
+        view.room_id = None
+
+        with CaptureQueriesContext(connection) as queries:
+            page = view.get_message_page(last_id=1, page_size=3)
+
+        self.assertEqual(len(queries), 1)
+        self.assertEqual(page, [])
+
+
+class ChatSelfRoomTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="selfchat", password="password123"
+        )
+        self.profile, _ = Profile.objects.get_or_create(user=self.user)
+        self.other_user = User.objects.create_user(username="selfchatother")
+        self.other_profile, _ = Profile.objects.get_or_create(user=self.other_user)
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_self_room_is_single_member_and_not_existing_dm(self):
+        other_room = Room.get_or_create_room(self.profile, self.other_profile)
+
+        self_room = Room.get_or_create_room(self.profile, self.profile)
+        self.assertNotEqual(self_room.id, other_room.id)
+        self.assertEqual(UserRoom.objects.filter(room=self_room).count(), 1)
+        self.assertTrue(
+            UserRoom.objects.filter(room=self_room, user=self.profile).exists()
+        )
+        self.assertEqual(self_room.other_user_id(self.profile), self.profile.id)
+
+        same_self_room = Room.get_or_create_room(self.profile, self.profile)
+        self.assertEqual(same_self_room.id, self_room.id)
+        self.assertEqual(UserRoom.objects.filter(room=self_room).count(), 1)
+
+    def test_get_or_create_room_accepts_self_chat(self):
+        self.client.login(username="selfchat", password="password123")
+
+        response = self.client.get(
+            "/chat/get_or_create_room",
+            {"other": encrypt_url(self.profile.id, self.profile.id)},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["other_user_id"], self.profile.id)
+        self.assertEqual(
+            UserRoom.objects.filter(room_id=payload["room"], user=self.profile).count(),
+            1,
+        )
+        self.assertEqual(UserRoom.objects.filter(room_id=payload["room"]).count(), 1)
+
+    def test_self_room_appears_in_recent_status_context(self):
+        self_room = Room.get_or_create_room(self.profile, self.profile)
+        Message.objects.create(room=self_room, author=self.profile, body="private note")
+        self_room.last_msg_id = Message.objects.filter(room=self_room).first().id
+        self_room.save(update_fields=["last_msg_id"])
+        Room.dirty_cache(self_room.id)
+        get_user_room_list.dirty(self.profile.id)
+
+        recent = get_status_context(self.profile)[0]["user_list"]
+
+        self.assertEqual(len(recent), 1)
+        self.assertEqual(recent[0]["user"].id, self.profile.id)
+        self.assertTrue(recent[0]["is_self"])
+        self.assertEqual(recent[0]["room"], self_room.id)
+        self.assertEqual(recent[0]["last_msg"], "private note")
+
+    def test_can_post_message_to_self_room(self):
+        self_room = Room.get_or_create_room(self.profile, self.profile)
+        self.client.login(username="selfchat", password="password123")
+
+        response = self.client.post(
+            "/chat/post/",
+            {"room": self_room.id, "body": "remember this", "tmp_id": "self-1"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            Message.objects.filter(
+                room=self_room, author=self.profile, body="remember this"
+            ).exists()
+        )
+        self.assertEqual(UserRoom.objects.get(room=self_room).unread_count, 0)
 
 
 class UnreadBoxesCacheTest(TestCase):

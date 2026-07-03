@@ -26,7 +26,9 @@
       user: {
         id: {{ request.profile.id }},
         isStaff: {{ request.user.has_perm('judge.change_comment')|tojson }},
-        isMuted: {{ request.profile.mute|tojson }}
+        canModerateChat: {{ (can_mute_chat_temporarily or can_mute_chat_permanently)|tojson }},
+        canMutePermanently: {{ can_mute_chat_permanently|tojson }},
+        isMuted: {{ is_chat_muted|tojson }}
       },
       room: {
         id: "{{ room if room else '' }}",
@@ -42,7 +44,19 @@
         newMessages: "{{ _('New message(s)') }}",
         newMessage: "{{ _('New message') }}",
         chatBox: "{{ _('Chat Box') }}",
-        muteConfirm: "{{ _('Mute this user and delete all messages?') }}",
+        deleteConfirm: "{{ _('Delete this message?') }}",
+        muteTitle: "{{ _('Mute user') }}",
+        muteConfirm: "{{ _('Mute this user and delete all lobby messages?') }}",
+        muteDuration: "{{ _('Mute duration') }}",
+        muteTemporary: "{{ _('Temporary') }}",
+        muteForever: "{{ _('Forever') }}",
+        muteReason: "{{ _('Reason') }}",
+        muteReasonRequired: "{{ _('Reason is required.') }}",
+        muteReasonPlaceholder: "{{ _('Explain why this user is being muted...') }}",
+        cancel: "{{ _('Cancel') }}",
+        confirmMute: "{{ _('Confirm mute') }}",
+        chatMuted: "{{ _('You are muted from chat.') }}",
+        emoji: "{{ _('Emoji') }}",
         searchPlaceholder: "{{ _('Search by handle...') }}",
         enterMessage: "{{ _('Enter your message') }}"
       },
@@ -92,20 +106,47 @@
             {{ _('Chat is disabled during contest.') }}
           </div>
         {% else %}
-          <div id="chat-input-container" class="chat-input-area">
+          {% set chat_input_placeholder = _('You are muted from chat.') if is_chat_muted else _('Enter your message') %}
+          <div id="chat-input-container" class="chat-input-area {% if is_chat_muted %}is-muted{% endif %}">
             <div class="chat-input-wrapper">
-              <textarea rows="1" maxlength="{{5000 if room else 200}}" id="chat-input" class="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
-              <div class="chat-input-icon chat-emoji-btn" id="emoji-button" title="{{_('Emoji')}}">
+              <textarea rows="1" maxlength="{{5000 if room else 200}}" id="chat-input" class="chat-input" placeholder="{{ chat_input_placeholder }}"{% if is_chat_muted %} disabled aria-disabled="true"{% endif %}></textarea>
+              <div class="chat-input-icon chat-emoji-btn {% if is_chat_muted %}is-disabled{% endif %}" id="emoji-button" title="{{ chat_input_placeholder if is_chat_muted else _('Emoji') }}"{% if is_chat_muted %} aria-disabled="true" tabindex="-1"{% endif %}>
                 <i class="icofont-slightly-smile"></i>
               </div>
             </div>
-            <div class="chat-input-icon chat-submit-btn" id="chat-submit-button">
+            <div class="chat-input-icon chat-submit-btn {% if is_chat_muted %}is-disabled{% endif %}" id="chat-submit-button"{% if is_chat_muted %} aria-disabled="true" tabindex="-1"{% endif %}>
               <i class="fa fa-paper-plane"></i>
             </div>
           </div>
         {% endif %}
         <div class="tooltip emoji-tooltip" role="tooltip">
           <emoji-picker></emoji-picker>
+        </div>
+        <div id="chat-mute-modal" class="chat-modal-backdrop" aria-hidden="true">
+          <div class="chat-modal" role="dialog" aria-modal="true" aria-labelledby="chat-mute-title">
+            <h3 id="chat-mute-title">{{ _("Mute user") }}</h3>
+            <p id="chat-mute-summary" class="chat-modal-summary"></p>
+            <div id="chat-mute-type-row" class="chat-mute-type-row">
+              <span class="chat-mute-type-label">{{ _("Mute duration") }}</span>
+              <div class="chat-mute-type-options">
+                <label>
+                  <input type="radio" name="chat-mute-type" value="temporary" checked>
+                  <span>{{ _("Temporary") }}</span>
+                </label>
+                <label>
+                  <input type="radio" name="chat-mute-type" value="permanent">
+                  <span>{{ _("Forever") }}</span>
+                </label>
+              </div>
+            </div>
+            <label for="chat-mute-reason" id="chat-mute-reason-label">{{ _("Reason") }}</label>
+            <textarea id="chat-mute-reason" rows="4" maxlength="500" placeholder="{{ _('Explain why this user is being muted...') }}"></textarea>
+            <p id="chat-mute-error" class="chat-modal-error" aria-live="polite"></p>
+            <div class="chat-modal-actions">
+              <button type="button" id="chat-mute-cancel" class="action-btn background-gray">{{ _("Cancel") }}</button>
+              <button type="button" id="chat-mute-confirm" class="action-btn">{{ _("Confirm mute") }}</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

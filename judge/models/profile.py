@@ -358,6 +358,18 @@ class Profile(CacheableModel):
         help_text=_("Some users are at their best when silent."),
         default=False,
     )
+    mute_until = models.DateTimeField(
+        verbose_name=_("muted until"),
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text=_("If set, the mute expires at this time."),
+    )
+    mute_reason = models.TextField(
+        verbose_name=_("mute reason"),
+        blank=True,
+        help_text=_("Reason shown to the muted user."),
+    )
     is_unlisted = models.BooleanField(
         verbose_name=_("unlisted user"),
         help_text=_("User will not be ranked."),

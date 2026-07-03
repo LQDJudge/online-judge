@@ -18,6 +18,10 @@
     unreadCount: 0,
     hasNext: false,
     pushedMessages: new Set(),
+    drafts: {},
+    roomCache: {},
+    messageLoadToken: 0,
+    chatInfoToken: 0,
 
     init: function() {
       this.roomId = ChatConfig.room.id;
@@ -34,6 +38,9 @@
     chatInput: null,
     chatInfo: null,
     chatOnlineList: null,
+    chatInputContainer: null,
+    chatSubmitButton: null,
+    emojiButton: null,
     loader: null,
 
     init: function() {
@@ -42,6 +49,9 @@
       this.chatInput = $('#chat-input');
       this.chatInfo = $('#chat-info');
       this.chatOnlineList = $('#chat-online-list');
+      this.chatInputContainer = $('#chat-input-container');
+      this.chatSubmitButton = $('#chat-submit-button');
+      this.emojiButton = $('#emoji-button');
       this.loader = $('#loader');
     }
   };
@@ -66,11 +76,33 @@
       return window.matchMedia('only screen and (max-width: 799px)').matches;
     },
 
-    postProcessMessages: function() {
-      register_time($('.time-with-rel'));
-      if (typeof renderKatex === 'function') {
-        renderKatex();
+    findInSelfAndDescendants: function($container, selector) {
+      return $container.filter(selector).add($container.find(selector));
+    },
+
+    postProcessMessages: function($container, regroupMode) {
+      if (!$container || !$container.length) {
+        $container = ChatElements.chatLog;
       }
+
+      register_time(this.findInSelfAndDescendants($container, '.time-with-rel'));
+      if (typeof renderKatex === 'function') {
+        $container.each(function() {
+          renderKatex(this);
+        });
+      }
+
+      if (regroupMode === 'none') {
+        return;
+      }
+
+      if (regroupMode === 'incremental') {
+        this.mergeConsecutiveMessagesFor(
+          this.findInSelfAndDescendants($container, '.message')
+        );
+        return;
+      }
+
       this.mergeConsecutiveMessages();
     },
 
@@ -98,6 +130,32 @@
         lastAuthorId = authorId;
         lastTime = time;
       });
+    },
+
+    mergeConsecutiveMessagesFor: function($messages) {
+      var self = this;
+      $messages.each(function() {
+        var $message = $(this);
+        var $previous = $message.prevAll('.message').first();
+        self.updateMessageGrouping($message, $previous);
+      });
+    },
+
+    updateMessageGrouping: function($message, $previous) {
+      var GROUP_THRESHOLD = 300; // 5 minutes in seconds
+      var authorId = $message.attr('data-author');
+      var time = parseInt($message.attr('data-time'), 10);
+      var isGrouped = false;
+
+      if ($previous && $previous.length) {
+        var previousAuthorId = $previous.attr('data-author');
+        var previousTime = parseInt($previous.attr('data-time'), 10);
+        isGrouped = authorId === previousAuthorId && time - previousTime <= GROUP_THRESHOLD;
+      }
+
+      $message
+        .toggleClass('grouped', isGrouped)
+        .toggleClass('group-start', !isGrouped);
     },
 
     insertAtCursor: function(element, text) {
@@ -143,11 +201,15 @@
       });
     },
 
-    muteMessage: function(messageId) {
+    muteMessage: function(messageId, muteType, reason) {
       return $.ajax({
         url: ChatConfig.urls.muteMessage,
         type: 'post',
-        data: { message: messageId },
+        data: {
+          message: messageId,
+          mute_type: muteType,
+          reason: reason
+        },
         dataType: 'json'
       });
     },
@@ -246,27 +308,72 @@
 
     highlightSelectedRoom: function() {
       $('.status-row').removeClass('selected');
-      $('#room-' + ChatState.otherUserId).addClass('selected');
+      if (ChatState.otherUserId) {
+        $('#click_space_' + ChatState.otherUserId).addClass('selected');
+      } else {
+        $('#lobby_row').addClass('selected');
+      }
+    },
+
+    renderHeaderFromStatusRow: function($row) {
+      if (!$row || !$row.length) return;
+
+      var isLobby = $row.attr('id') === 'lobby_row';
+      var $avatar = $row.find('.status-pic').first().clone();
+      $avatar
+        .removeClass('status-pic')
+        .addClass('info-pic');
+
+      var $status = $row.find('.status-circle').first().clone();
+      $status
+        .removeClass('status-circle')
+        .addClass('info-circle');
+
+      var nameHtml = isLobby
+        ? $row.find('.status-username').html()
+        : $row.find('.username').html();
+
+      var $header = $('<div>');
+      $header.append(
+        $('<div onclick="ChatApp.UI.hideRightPanel()" class="back-button"><i class="fa fa-arrow-left"></i></div>')
+      );
+
+      var $avatarWrapper = $('<div class="status-container chat-header-avatar">').append($avatar);
+      if (!isLobby && $status.length) {
+        $avatarWrapper.append($status);
+      }
+      $header.append($avatarWrapper);
+      $header.append($('<span class="info-name username">').html(nameHtml));
+      $header.append($('<span class="spacer">'));
+
+      ChatElements.chatInfo.html($header.contents());
     },
 
     addMessage: function(html, forceScroll) {
       var wasNearBottom = this.isNearBottom();
-      ChatElements.chatLog.append(html);
-      ChatUtils.postProcessMessages();
+      var $nodes = $(html);
+      ChatElements.chatLog.append($nodes);
+      ChatUtils.postProcessMessages($nodes, 'incremental');
       if (forceScroll || wasNearBottom) {
         this.scrollToBottom();
       } else {
         this.newMessageCount++;
         this.showNewMessagesBubble(this.newMessageCount);
       }
+      ChatRoomCache.updateCurrent();
     },
 
     prependMessages: function(html) {
       var scrollTopBefore = this.getScrollTopOfBottom();
-      ChatElements.chatLog.prepend(html);
-      ChatUtils.postProcessMessages();
+      var $nextMessage = ChatElements.chatLog.children('.message').first();
+      var $nodes = $(html);
+      var $messages = $nodes.filter('.message').add($nodes.find('.message'));
+      ChatElements.chatLog.prepend($nodes);
+      ChatUtils.postProcessMessages($nodes, 'none');
+      ChatUtils.mergeConsecutiveMessagesFor($messages.add($nextMessage));
       var scrollTopAfter = this.getScrollTopOfBottom();
       ChatElements.chatBox.scrollTop(scrollTopAfter - scrollTopBefore);
+      ChatRoomCache.updateCurrent();
     },
 
     clearMessages: function() {
@@ -339,6 +446,153 @@
         var $headerCircle = $('.chat-header .info-circle, #chat-info .info-circle');
         $headerCircle.removeClass('offline').addClass('online');
       }
+    },
+
+    setMutedState: function(isMuted) {
+      ChatConfig.user.isMuted = isMuted;
+
+      ChatElements.chatInput
+        .prop('disabled', isMuted)
+        .attr('placeholder', isMuted ? ChatConfig.i18n.chatMuted : ChatConfig.i18n.enterMessage);
+      ChatElements.chatInputContainer.toggleClass('is-muted', isMuted);
+      ChatElements.chatSubmitButton.toggleClass('is-disabled', isMuted);
+      ChatElements.emojiButton
+        .toggleClass('is-disabled', isMuted)
+        .attr('title', isMuted ? ChatConfig.i18n.chatMuted : ChatConfig.i18n.emoji);
+
+      if (isMuted) {
+        ChatElements.chatInput.attr('aria-disabled', 'true');
+        ChatElements.chatSubmitButton
+          .attr('aria-disabled', 'true')
+          .attr('tabindex', '-1');
+        ChatElements.emojiButton
+          .attr('aria-disabled', 'true')
+          .attr('tabindex', '-1');
+        $('.emoji-tooltip').removeClass('shown');
+      } else {
+        ChatElements.chatInput.removeAttr('aria-disabled');
+        ChatElements.chatSubmitButton
+          .removeAttr('aria-disabled')
+          .removeAttr('tabindex');
+        ChatElements.emojiButton
+          .removeAttr('aria-disabled')
+          .removeAttr('tabindex');
+      }
+    },
+
+    applyMutedState: function() {
+      this.setMutedState(ChatConfig.user.isMuted);
+    }
+  };
+
+  // ============================================
+  // Draft Handling
+  // ============================================
+  var ChatDrafts = {
+    getCurrentKey: function() {
+      return ChatState.roomId ? 'room:' + ChatState.roomId : 'lobby';
+    },
+
+    setInputValue: function(value) {
+      ChatElements.chatInput.val(value);
+      ChatElements.chatInput.trigger('input');
+    },
+
+    saveCurrent: function() {
+      if (!ChatElements.chatInput || !ChatElements.chatInput.length) return;
+
+      var key = this.getCurrentKey();
+      var value = ChatElements.chatInput.val();
+      if (value) {
+        ChatState.drafts[key] = value;
+      } else {
+        delete ChatState.drafts[key];
+      }
+    },
+
+    restoreCurrent: function() {
+      var value = ChatState.drafts[this.getCurrentKey()] || '';
+      this.setInputValue(value);
+    },
+
+    clearCurrent: function() {
+      delete ChatState.drafts[this.getCurrentKey()];
+      this.setInputValue('');
+    }
+  };
+
+  // ============================================
+  // Message Cache
+  // ============================================
+  var ChatRoomCache = {
+    getCurrentKey: function() {
+      return ChatState.roomId ? 'room:' + ChatState.roomId : 'lobby';
+    },
+
+    saveCurrent: function() {
+      if (!ChatElements.chatLog || !ChatElements.chatLog.length) return;
+
+      ChatState.roomCache[this.getCurrentKey()] = {
+        html: ChatElements.chatLog.html(),
+        scrollTop: ChatElements.chatBox.scrollTop(),
+        hasNext: ChatState.hasNext,
+        cachedAt: Date.now()
+      };
+    },
+
+    restoreCurrent: function() {
+      var cached = ChatState.roomCache[this.getCurrentKey()];
+      if (!cached) return false;
+
+      $('.has_next').remove();
+      ChatElements.chatLog.html(cached.html);
+      ChatUtils.postProcessMessages(ChatElements.chatLog);
+      ChatState.hasNext = cached.hasNext;
+      ChatUI.hideLoader();
+      ChatElements.chatBox.scrollTop(cached.scrollTop);
+      return true;
+    },
+
+    updateCurrent: function() {
+      this.saveCurrent();
+    },
+
+    appendToRoom: function(roomId, html) {
+      var key = roomId ? 'room:' + roomId : 'lobby';
+      var cached = ChatState.roomCache[key];
+      if (cached) {
+        cached.html += html;
+        cached.cachedAt = Date.now();
+      }
+    },
+
+    replaceTemporaryMessage: function(roomId, tmpId, html) {
+      var key = roomId ? 'room:' + roomId : 'lobby';
+      var cached = ChatState.roomCache[key];
+      if (!cached) return;
+
+      var $container = $('<div>').html(cached.html);
+      var $newMessage = $(html);
+
+      if ($container.find('#message-' + tmpId).length) {
+        $container.find('#message-' + tmpId).replaceWith($newMessage);
+      } else if ($container.find('#message-block-' + tmpId).length) {
+        $container.find('#message-block-' + tmpId).replaceWith($newMessage.find('.message-block'));
+      } else {
+        $container.append($newMessage);
+      }
+
+      cached.html = $container.html();
+      cached.cachedAt = Date.now();
+    },
+
+    hasRoom: function(roomId) {
+      var key = roomId ? 'room:' + roomId : 'lobby';
+      return !!ChatState.roomCache[key];
+    },
+
+    invalidateCurrent: function() {
+      delete ChatState.roomCache[this.getCurrentKey()];
     }
   };
 
@@ -365,8 +619,7 @@
 
       var tmpId = Date.now();
 
-      ChatElements.chatInput.val('');
-      ChatElements.chatInput.css('height', '');
+      ChatDrafts.clearCurrent();
       $('#chat-input-container').height('auto');
 
       this.addFromTemplate(body, tmpId);
@@ -384,44 +637,46 @@
     },
 
     loadNextPage: function(lastId, refreshHtml) {
+      var requestRoomId = ChatState.roomId;
+      var loadToken = ++ChatState.messageLoadToken;
       if (refreshHtml) {
         ChatState.isLocked = true;
-        ChatElements.chatLog.html('');
-        ChatUI.showLoader();
+        if (!ChatRoomCache.restoreCurrent()) {
+          ChatElements.chatLog.html('');
+          ChatUI.showLoader();
+        }
       }
-
-      // Save scroll position before loading - use old approach
-      var scrollHeightBefore = ChatElements.chatBox[0].scrollHeight;
 
       ChatAPI.loadMessages(lastId)
         .done(function(data) {
+          if (requestRoomId !== ChatState.roomId || loadToken !== ChatState.messageLoadToken) {
+            return;
+          }
+
           $('.has_next').remove();
           ChatUI.hideLoader();
 
           if (refreshHtml) {
             ChatElements.chatLog.append(data);
-            ChatUtils.postProcessMessages();
+            ChatUtils.postProcessMessages(ChatElements.chatLog);
             ChatUI.scrollToBottom();
             // Scroll again after images load
             ChatElements.chatLog.find('img').on('load', function() {
               ChatUI.scrollToBottom();
             });
+            ChatRoomCache.updateCurrent();
           } else {
-            // Prepend older messages
-            ChatElements.chatLog.prepend(data);
-            ChatUtils.postProcessMessages();
-
-            // Restore scroll position - keep view on same content
-            var scrollHeightAfter = ChatElements.chatBox[0].scrollHeight;
-            var scrollDiff = scrollHeightAfter - scrollHeightBefore;
-            ChatElements.chatBox.scrollTop(scrollDiff);
+            ChatUI.prependMessages(data);
           }
 
           ChatState.isLocked = false;
           ChatState.hasNext = parseInt($('.has_next').attr('value')) || 0;
         })
         .fail(function() {
+          if (loadToken !== ChatState.messageLoadToken) return;
+
           console.log('Failed to load messages');
+          ChatUI.hideLoader();
           ChatState.isLocked = false;
         });
     },
@@ -480,11 +735,32 @@
           }
           ChatUI.moveConversationToTop(wsMessage.other_user_id);
         }
+
+        if (ChatRoomCache.hasRoom(room)) {
+          ChatAPI.getMessage(messageId)
+            .done(function(data) {
+              ChatRoomCache.appendToRoom(room, data);
+            })
+            .fail(function() {
+              console.log('Could not cache new message');
+            });
+        }
       }
     },
 
     checkNewMessage: function(messageId, tmpId, room) {
-      if (room !== ChatState.roomId) return;
+      if (room !== ChatState.roomId) {
+        if (ChatRoomCache.hasRoom(room)) {
+          ChatAPI.getMessage(messageId)
+            .done(function(data) {
+              ChatRoomCache.replaceTemporaryMessage(room, tmpId, data);
+            })
+            .fail(function() {
+              console.log('Failed to cache confirmed message');
+            });
+        }
+        return;
+      }
 
       ChatAPI.getMessage(messageId)
         .done(function(data) {
@@ -500,8 +776,19 @@
           } else {
             ChatMessages.addNewMessage(messageId, room, true);
           }
+          if (room) {
+            var msgText = $newMessage.find('.message-text').text().trim();
+            if (msgText.length > 50) {
+              msgText = msgText.substring(0, 50) + '...';
+            }
+            ChatUI.setLastMessagePreview(room, msgText || ChatConfig.i18n.newMessage);
+          }
+          if (ChatState.otherUserId) {
+            ChatUI.moveConversationToTop(ChatState.otherUserId);
+          }
           ChatUI.updateUnreadBadge(ChatState.otherUserId, true);
-          ChatUtils.postProcessMessages();
+          ChatUtils.postProcessMessages($newMessage, 'incremental');
+          ChatRoomCache.updateCurrent();
         })
         .fail(function() {
           console.log('Failed to check message');
@@ -516,9 +803,12 @@
   // Event Handlers
   // ============================================
   var ChatEvents = {
+    pendingMuteAction: null,
+
     init: function() {
       this.bindMessageInput();
       this.bindScrollLoad();
+      this.bindMessageActionMenus();
       this.bindMessageActions();
       this.bindRoomSelection();
       this.bindEmojiPicker();
@@ -559,6 +849,7 @@
       ChatElements.chatInput.on('input', function() {
         this.style.height = 'auto';
         this.style.height = this.scrollHeight + 'px';
+        ChatDrafts.saveCurrent();
       });
     },
 
@@ -575,67 +866,200 @@
             ChatState.hasNext) {
           ChatState.isLocked = true;
           ChatUI.showLoader();
-          var messageIds = $('.message').map(function() {
-            return parseInt($(this).attr('data-id'));
-          }).get();
-          if (messageIds.length) {
-            ChatMessages.loadNextPage(Math.min.apply(null, messageIds));
+          var oldestMessageId = parseInt(
+            ChatElements.chatLog.children('.message').first().attr('data-id'),
+            10
+          );
+          if (oldestMessageId) {
+            ChatMessages.loadNextPage(oldestMessageId);
           }
         }
       });
+    },
+
+    closeMessageActionMenus: function() {
+      $('.message-actions.is-open')
+        .removeClass('is-open')
+        .find('.message-actions-toggle')
+        .attr('aria-expanded', 'false');
+      $('.message.has-open-actions').removeClass('has-open-actions');
+    },
+
+    bindMessageActionMenus: function() {
+      var self = this;
+
+      $(document).on('click', '.message-actions-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var $actions = $(this).closest('.message-actions');
+        $('.message-actions').not($actions)
+          .removeClass('is-open')
+          .find('.message-actions-toggle')
+          .attr('aria-expanded', 'false');
+        $('.message').not($actions.closest('.message')).removeClass('has-open-actions');
+
+        var isOpen = !$actions.hasClass('is-open');
+        $actions.toggleClass('is-open', isOpen);
+        $actions.closest('.message').toggleClass('has-open-actions', isOpen);
+        $(this).attr('aria-expanded', isOpen ? 'true' : 'false');
+      });
+
+      $(document).on('click', '.message-actions-menu', function(e) {
+        e.stopPropagation();
+      });
+
+      $(document).on('click', function() {
+        self.closeMessageActionMenus();
+      });
+
+      $(document).on('keydown', function(e) {
+        if (e.keyCode === 27) {
+          self.closeMessageActionMenus();
+        }
+      });
+    },
+
+    openMuteModal: function(messageId, canPermanent, reasonRequired) {
+      this.pendingMuteAction = {
+        messageId: messageId,
+        canPermanent: canPermanent,
+        reasonRequired: reasonRequired
+      };
+
+      $('#chat-mute-title').text(ChatConfig.i18n.muteTitle);
+      $('#chat-mute-summary').text(ChatConfig.i18n.muteConfirm);
+      $('#chat-mute-type-row').toggle(canPermanent);
+      $('input[name="chat-mute-type"][value="temporary"]').prop('checked', true);
+      $('#chat-mute-reason-label').text(
+        reasonRequired
+          ? ChatConfig.i18n.muteReason + ' *'
+          : ChatConfig.i18n.muteReason
+      );
+      $('#chat-mute-reason')
+        .val('')
+        .attr('placeholder', ChatConfig.i18n.muteReasonPlaceholder);
+      $('#chat-mute-error').text('');
+      $('#chat-mute-modal')
+        .addClass('is-open')
+        .attr('aria-hidden', 'false');
+      $('#chat-mute-reason').focus();
+    },
+
+    closeMuteModal: function() {
+      this.pendingMuteAction = null;
+      $('#chat-mute-modal')
+        .removeClass('is-open')
+        .attr('aria-hidden', 'true');
+      $('#chat-mute-error').text('');
+    },
+
+    submitMuteModal: function() {
+      if (!this.pendingMuteAction) return;
+
+      var reason = $('#chat-mute-reason').val().trim();
+      if (this.pendingMuteAction.reasonRequired && !reason) {
+        $('#chat-mute-error').text(ChatConfig.i18n.muteReasonRequired);
+        $('#chat-mute-reason').focus();
+        return;
+      }
+
+      var muteAction = this.pendingMuteAction;
+      var muteType = muteAction.canPermanent
+        ? $('input[name="chat-mute-type"]:checked').val()
+        : 'temporary';
+      var $confirm = $('#chat-mute-confirm');
+      $confirm.prop('disabled', true);
+
+      ChatAPI.muteMessage(muteAction.messageId, muteType, reason)
+        .done(function() {
+          window.location.reload();
+        })
+        .fail(function(response) {
+          var message = response.responseJSON && response.responseJSON.error
+            ? response.responseJSON.error
+            : ChatConfig.i18n.muteReasonRequired;
+          $('#chat-mute-error').text(message);
+        })
+        .always(function() {
+          $confirm.prop('disabled', false);
+        });
     },
 
     bindMessageActions: function() {
       $(document).on('click', '.chat_remove', function() {
         var $this = $(this);
         var messageId = $this.attr('value');
+        ChatEvents.closeMessageActionMenus();
+
+        if (!window.confirm(ChatConfig.i18n.deleteConfirm)) {
+          return;
+        }
 
         ChatAPI.deleteMessage(messageId)
           .done(function() {
-            var $block = $this.parent();
-            if ($block.parent().find('.message-block').length > 1) {
-              $block.remove();
+            var $message = $this.closest('li.message');
+            if ($message.length) {
+              $message.remove();
             } else {
-              $this.closest('li').remove();
+              $this.closest('.message-block').remove();
             }
             // Recalculate message grouping to fix avatar/name visibility
             ChatUtils.mergeConsecutiveMessages();
+            ChatRoomCache.updateCurrent();
           })
           .fail(function() {
             console.log('Failed to delete');
           });
       });
 
-      if (ChatConfig.user.isStaff) {
+      if (ChatConfig.user.canModerateChat) {
         $(document).on('click', '.chat_mute', function() {
-          if (confirm(ChatConfig.i18n.muteConfirm)) {
-            var messageId = $(this).attr('value');
-            ChatAPI.muteMessage(messageId)
-              .done(function() {
-                window.location.reload();
-              })
-              .fail(function() {
-                console.log('Failed to mute');
-              });
-          }
+          ChatEvents.closeMessageActionMenus();
+          var reasonRequired = String($(this).data('reason-required')) === '1';
+          var canPermanent = String($(this).data('can-permanent')) === '1';
+          ChatEvents.openMuteModal(
+            $(this).attr('value'),
+            canPermanent,
+            reasonRequired
+          );
         });
       }
+
+      $('#chat-mute-confirm').on('click', function() {
+        ChatEvents.submitMuteModal();
+      });
+
+      $('#chat-mute-cancel').on('click', function() {
+        ChatEvents.closeMuteModal();
+      });
+
+      $('#chat-mute-modal').on('click', function(e) {
+        if (e.target === this) {
+          ChatEvents.closeMuteModal();
+        }
+      });
     },
 
     bindRoomSelection: function() {
       $(document).on('click', '.click_space', function() {
-        var clickedUserId = $(this).attr('id').replace('click_space_', '');
+        var $row = $(this);
+        var clickedUserId = $row.data('user-id') || $row.attr('id').replace('click_space_', '');
         if (clickedUserId === ChatState.otherUserId) {
           ChatUI.showRightPanel();
           return;
         }
-        var encryptedUser = $(this).attr('value');
-        ChatEvents.loadRoom(encryptedUser);
+        var roomId = String($row.data('room') || '');
+        if (roomId) {
+          ChatEvents.loadKnownRoom(roomId, String(clickedUserId), $row);
+        } else {
+          ChatEvents.loadRoom($row.attr('value'), $row);
+        }
       });
 
       $(document).on('click', '#lobby_row', function() {
         if (ChatState.roomId) {
-          ChatEvents.loadRoom(null);
+          ChatEvents.loadKnownRoom('', '', $(this));
         } else {
           ChatUI.showRightPanel();
         }
@@ -647,29 +1071,58 @@
       });
     },
 
-    loadRoom: function(encryptedUser) {
+    openCurrentRoom: function($row) {
+      history.replaceState(null, '', ChatConfig.urls.chat + ChatState.roomId);
+      ChatUI.hideNewMessagesBubble();
+      ChatUI.highlightSelectedRoom();
+      if ($row && $row.length) {
+        ChatUI.renderHeaderFromStatusRow($row);
+      }
+      ChatMessages.loadNextPage(null, true);
+      ChatAPI.updateLastSeen(ChatState.roomId);
+      ChatEvents.refreshChatInfo(false);
+      ChatUI.updateUnreadBadge(ChatState.otherUserId || null, true);
+      ChatUI.showRightPanel();
+      ChatUI.applyMutedState();
+      if (!ChatConfig.user.isMuted) {
+        ChatElements.chatInput.focus();
+      }
+      ChatDrafts.restoreCurrent();
+    },
+
+    setCurrentRoom: function(roomId, otherUserId) {
+      ChatState.roomId = roomId;
+      ChatState.otherUserId = otherUserId;
+      ChatConfig.room.id = roomId;
+      ChatConfig.room.otherUserId = otherUserId;
+      ChatElements.chatInput.attr('maxlength', roomId ? 5000 : 200);
+    },
+
+    loadKnownRoom: function(roomId, otherUserId, $row) {
       if (ChatState.lockClickSpace) return;
       ChatState.lockClickSpace = true;
+      ChatDrafts.saveCurrent();
+      ChatRoomCache.saveCurrent();
 
-      var onRoomReady = function() {
-        history.replaceState(null, '', ChatConfig.urls.chat + ChatState.roomId);
-        ChatUI.hideNewMessagesBubble();
-        ChatMessages.loadNextPage(null, true);
-        ChatAPI.updateLastSeen(ChatState.roomId);
-        ChatEvents.refreshStatus(true);
-        ChatUI.showRightPanel();
-        ChatElements.chatInput.focus();
-        ChatElements.chatInput.val('').trigger('input');
-      };
+      this.setCurrentRoom(String(roomId || ''), String(otherUserId || ''));
+      this.openCurrentRoom($row);
+      ChatState.lockClickSpace = false;
+    },
+
+    loadRoom: function(encryptedUser, $row) {
+      if (ChatState.lockClickSpace) return;
+      ChatState.lockClickSpace = true;
+      ChatDrafts.saveCurrent();
+      ChatRoomCache.saveCurrent();
 
       if (encryptedUser) {
         ChatAPI.getOrCreateRoom(encryptedUser)
           .done(function(data) {
-            ChatState.roomId = String(data.room);
-            ChatState.otherUserId = String(data.other_user_id);
-            ChatUI.highlightSelectedRoom();
-            ChatElements.chatInput.attr('maxlength', 5000);
-            onRoomReady();
+            ChatEvents.setCurrentRoom(String(data.room), String(data.other_user_id));
+            if ($row && $row.length) {
+              $row.attr('data-room', data.room).data('room', data.room);
+            }
+            ChatEvents.openCurrentRoom($row);
           })
           .fail(function() {
             console.log('Failed to get_or_create_room');
@@ -678,11 +1131,8 @@
             ChatState.lockClickSpace = false;
           });
       } else {
-        ChatState.roomId = '';
-        ChatState.otherUserId = '';
-        ChatUI.highlightSelectedRoom();
-        ChatElements.chatInput.attr('maxlength', 200);
-        onRoomReady();
+        this.setCurrentRoom('', '');
+        this.openCurrentRoom($row);
         ChatState.lockClickSpace = false;
       }
     },
@@ -705,6 +1155,7 @@
       $('#emoji-button').on('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        if (ChatConfig.user.isMuted) return;
         toggleEmoji();
       });
 
@@ -715,6 +1166,7 @@
       });
 
       $('emoji-picker').on('emoji-click', function(e) {
+        if (ChatConfig.user.isMuted) return;
         var chatInput = ChatElements.chatInput.get(0);
         ChatUtils.insertAtCursor(chatInput, e.detail.unicode);
         chatInput.focus();
@@ -723,6 +1175,8 @@
       $(document).on('keydown', function(e) {
         if (e.keyCode === 27 && tooltip.classList.contains('shown')) {
           toggleEmoji();
+        } else if (e.keyCode === 27 && $('#chat-mute-modal').hasClass('is-open')) {
+          ChatEvents.closeMuteModal();
         }
       });
     },
@@ -765,8 +1219,7 @@
     initSelect2Search: function() {
       $('#search-handle').replaceWith($('<select>').attr({
         id: 'search-handle',
-        name: 'other',
-        onchange: 'form.submit()'
+        name: 'other'
       }));
 
       var inUserRedirect = false;
@@ -804,6 +1257,11 @@
         }
       }).on('select2:selecting', function() {
         return !inUserRedirect;
+      }).on('select2:select', function(e) {
+        var encryptedUser = e.params.data.id;
+        if (!encryptedUser) return;
+        ChatEvents.loadRoom(encryptedUser);
+        $(this).val(null).trigger('change');
       });
     },
 
@@ -822,11 +1280,24 @@
         });
 
       if (refreshChatInfo) {
+        this.refreshChatInfo(true);
+      }
+    },
+
+    refreshChatInfo: function(clearFirst) {
+      var requestOtherUserId = ChatState.otherUserId;
+      var requestToken = ++ChatState.chatInfoToken;
+
+      if (clearFirst) {
         ChatElements.chatInfo.html('');
       }
 
-      ChatAPI.getUserOnlineStatus(ChatState.otherUserId)
+      ChatAPI.getUserOnlineStatus(requestOtherUserId)
         .done(function(data) {
+          if (requestOtherUserId !== ChatState.otherUserId || requestToken !== ChatState.chatInfoToken) {
+            return;
+          }
+
           ChatElements.chatInfo.html(data);
           register_time($('.time-with-rel'));
         })
@@ -867,6 +1338,16 @@
     },
 
     handleMessage: function(message) {
+      if (message.type === 'chat_muted') {
+        ChatUI.setMutedState(true);
+        return;
+      }
+
+      if (message.type === 'chat_unmuted') {
+        ChatUI.setMutedState(false);
+        return;
+      }
+
       if (ChatState.pushedMessages.has(message.message)) {
         return;
       }
@@ -891,6 +1372,7 @@
 
     ChatUI.hideLoader();
     ChatUI.highlightSelectedRoom();
+    ChatUI.applyMutedState();
     ChatUtils.postProcessMessages();
 
     ChatState.hasNext = parseInt($('.has_next').attr('value')) || 0;
@@ -911,7 +1393,9 @@
       }
     }
 
-    ChatElements.chatInput.focus();
+    if (!ChatConfig.user.isMuted) {
+      ChatElements.chatInput.focus();
+    }
 
     // Show chat log then scroll to bottom
     ChatElements.chatLog.show();
@@ -928,6 +1412,7 @@
     API: ChatAPI,
     UI: ChatUI,
     Utils: ChatUtils,
+    Drafts: ChatDrafts,
     Messages: ChatMessages,
     Events: ChatEvents,
     WebSocket: ChatWebSocket,

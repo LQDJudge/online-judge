@@ -491,6 +491,23 @@ body:has(.chat-page) {
     margin-bottom: 2px;
     animation: messageSlideIn 0.2s ease-out;
 
+    &.has-open-actions {
+      position: relative;
+      z-index: 140;
+      isolation: isolate;
+
+      .message-header {
+        position: relative;
+        z-index: 1;
+      }
+
+      .message-bubble-wrapper,
+      .body-block {
+        position: relative;
+        z-index: 2;
+      }
+    }
+
     // Grouped messages (same author as previous)
     &.grouped {
       .message-avatar {
@@ -543,10 +560,12 @@ body:has(.chat-page) {
 
   .message-bubble-wrapper {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
+    position: relative;
 
-    &:hover .message-actions {
+    &:hover .message-actions,
+    &:focus-within .message-actions {
       opacity: 1;
     }
   }
@@ -598,22 +617,80 @@ body:has(.chat-page) {
   .message-actions {
     opacity: 0;
     transition: opacity 0.15s ease;
-    display: flex;
-    gap: 4px;
+    position: relative;
     flex-shrink: 0;
 
-    a {
-      font-size: 0.7rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(0, 0, 0, 0.06);
-      color: #65676b;
+    &.is-open {
+      opacity: 1;
+      z-index: 130;
+
+      .message-actions-menu {
+        display: block;
+      }
+    }
+  }
+
+  .message-actions-toggle {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: $text-muted;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+
+    &:hover,
+    &:focus {
+      background: $background_light_gray;
+      color: $widget_black;
+      outline: none;
+    }
+  }
+
+  .message-actions-menu {
+    display: none;
+    position: absolute;
+    left: calc(100% + 4px);
+    right: auto;
+    bottom: 50%;
+    transform: translateY(50%);
+    min-width: 120px;
+    padding: 4px 0;
+    background: $surface-primary;
+    background-color: $surface-primary;
+    border: 1px solid $border_gray;
+    border-radius: 8px;
+    box-shadow: $shadow-md;
+    z-index: 1000;
+
+    button {
+      display: block;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: $text-primary;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: left;
+      padding: 8px 12px;
       cursor: pointer;
       white-space: nowrap;
 
-      &:hover {
-        background: rgba(0, 0, 0, 0.1);
+      &:hover,
+      &:focus {
+        background: $background_light_gray;
+        outline: none;
       }
+    }
+
+    .chat_mute {
+      color: $announcement_red;
     }
   }
 
@@ -647,31 +724,111 @@ body:has(.chat-page) {
 
   .body-block {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
 
-    &:hover .message-actions a,
-    &:hover .chat_remove,
-    &:hover .chat_mute {
+    &:hover .message-actions,
+    &:focus-within .message-actions {
       opacity: 1;
     }
   }
 
-  .chat_remove,
-  .chat_mute {
-    font-size: 0.7rem;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.06);
-    color: #65676b;
-    cursor: pointer;
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity 0.15s ease;
+  .chat-modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1500;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
 
-    &:hover {
-      background: rgba(0, 0, 0, 0.1);
+    &.is-open {
+      display: flex;
     }
+  }
+
+  .chat-modal {
+    width: min(420px, 100%);
+    background: $surface-primary;
+    border: 1px solid $border_gray;
+    border-radius: 8px;
+    box-shadow: $shadow-modal;
+    padding: 16px;
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      resize: vertical;
+      border: 1px solid $border_gray;
+      border-radius: 6px;
+      background: $surface-primary;
+      color: $text-primary;
+      padding: 8px;
+      font: inherit;
+    }
+  }
+
+  .chat-modal-summary {
+    color: $text-muted;
+    margin: 0 0 12px;
+  }
+
+  .chat-mute-type-row {
+    margin-bottom: 12px;
+  }
+
+  .chat-mute-type-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .chat-mute-type-options {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      padding: 6px 10px;
+      border: 1px solid $border_gray;
+      border-radius: 6px;
+      background: $background_light_gray;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    input {
+      margin: 0;
+    }
+  }
+
+  .chat-modal-error {
+    color: $announcement_red;
+    min-height: 1.2em;
+    margin: 6px 0 0;
+  }
+
+  .chat-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
   }
 
   // ============================================
@@ -788,6 +945,44 @@ body:has(.chat-page) {
 
     &:active {
       transform: scale(0.95);
+    }
+  }
+
+  #chat-input-container.is-muted {
+    .chat-input-wrapper {
+      background: $background_light_gray;
+      border-color: $border_gray;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    #chat-input {
+      color: $text-muted;
+      cursor: not-allowed;
+    }
+
+    #emoji-button,
+    .chat-submit-btn {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+
+      &:hover,
+      &:active {
+        transform: none;
+      }
+    }
+
+    .chat-submit-btn {
+      background: $border_gray;
+    }
+
+    #emoji-button:hover {
+      color: $text-muted;
+    }
+
+    .chat-submit-btn:hover {
+      background: $border_gray;
     }
   }
 
@@ -1105,6 +1300,14 @@ body:has(.chat-page) {
       max-width: 80%;
       padding: 6px 10px;
       font-size: 0.9rem;
+    }
+
+    .message-actions {
+      opacity: 1;
+    }
+
+    .message-actions-menu {
+      min-width: 110px;
     }
 
     .message-header a {

@@ -19,7 +19,7 @@
     </div>
     <ul class="status-list toggled">
       {% for user_dict in section.user_list %}
-        <li class="click_space status-row" id="click_space_{{user_dict.user.id}}" value="{{user_dict.url}}">
+        <li class="click_space status-row" id="click_space_{{user_dict.user.id}}" value="{{user_dict.url}}" data-user-id="{{user_dict.user.id}}" data-room="{{user_dict.room or ''}}" data-is-self="{{ '1' if user_dict.is_self else '0' }}">
           <div class="status-container">
             <img loading="lazy" src="{{ gravatar(user_dict.user.id, 135) }}" class="status-pic user-img">
             <span class="status-circle {{ 'online' if user_dict.is_online else 'offline' }}"></span>
@@ -27,6 +27,9 @@
           <div class="status-user">
             <span class="username {{ user_dict.user.css_class }} wrapline">
               {{ user_dict.user.username }}
+              {% if user_dict.is_self %}
+                <span class="gray">&nbsp;({{ _('You') }})</span>
+              {% endif %}
             </span>
             {% if user_dict.last_msg %}
               <span class="status_last_message status-last-message wrapline" {% if user_dict.room %}id="last_msg-{{user_dict.room}}"{% endif %}>
@@ -39,16 +42,18 @@
               {{user_dict.unread_count}}
             </span>
           {% endif %}
-          <div class="setting-wrapper">
-            <div class="control-button small setting-button">
-              <i class="fa fa-ellipsis-h"></i>
+          {% if not user_dict.is_self %}
+            <div class="setting-wrapper">
+              <div class="control-button small setting-button">
+                <i class="fa fa-ellipsis-h"></i>
+              </div>
+              <div class="setting-content">
+                <a href="{{url('toggle_ignore', user_dict.user.id)}}" class="red">
+                  {{_('Ignore')}}
+                </a>
+              </div>
             </div>
-            <div class="setting-content">
-              <a href="{{url('toggle_ignore', user_dict.user.id)}}" class="red">
-                {{_('Ignore')}}
-              </a>
-            </div>
-          </div>
+          {% endif %}
         </li>
       {% endfor %}
     </ul>
