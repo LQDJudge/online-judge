@@ -81,10 +81,11 @@ $nb-grid-color: #9ea2b3;       // visible gridlines (replaces faint #ccc on data
 $nb-grid-width: 1px;
 $nb-header-rule: $nb-border-width-bold; // bold ink rule under table/leaderboard headers
 
-// --- Dark navbar surface ---
-// The top navbar uses a dark surface in BOTH light and dark mode (so it never
-// flashes a harsh white bar). Foreground tokens keep icons/text legible on it.
-$navbar_bg: #1d1e2a;                       // dark navbar background
+// --- Navbar surface ---
+// In light mode the navbar uses the brand theme color so it matches the
+// primary buttons; the light foreground tokens below keep icons/text legible
+// on it. (Dark mode regenerates its own navbar surface.)
+$navbar_bg: $theme_color;                  // brand-blue navbar background (#1f6feb)
 $navbar_fg: #e8e8ec;                       // primary text/icons on navbar
 $navbar_fg_muted: #b8b9c4;                 // resting-state icon color
 $navbar_divider: rgba(255, 255, 255, 0.16);// subtle cell dividers on dark navbar
