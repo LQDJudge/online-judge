@@ -5,6 +5,7 @@
 *.py[co]
 *.mo
 *~
+__pycache__/
 [a-z0-9]{40,}
 dmoj/local_settings.py
 resources/style.css
@@ -39,3 +40,4 @@ plan/
 .playwright-mcp/
 playwright.config.ts
 tmp/
+venv/

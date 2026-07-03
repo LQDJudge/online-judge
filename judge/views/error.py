@@ -53,3 +53,15 @@ def error500(request):
         },
         500,
     )
+
+
+def error429(request) -> None:
+    return render(
+        request,
+        "generic-message.html",
+        {
+            "title": _("Too many requests"),
+            "message": _("You have submitted too many submissions. Please slow down."),
+        },
+        status=429,
+    )
