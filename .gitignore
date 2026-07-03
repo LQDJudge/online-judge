@@ -39,3 +39,4 @@ plan/
 .playwright-mcp/
 playwright.config.ts
 tmp/
+venv/
