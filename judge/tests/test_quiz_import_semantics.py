@@ -38,6 +38,9 @@ class QuizImportPromptSemanticsTest(SimpleTestCase):
         # SA questions must embed a required format instruction + example.
         self.assertIn("REQUIRED ANSWER FORMAT", p)
         self.assertIn("ví dụ", p)  # the example marker in the sample instruction
+        # The example must NOT be the real answer (anti-spoiler guidance).
+        self.assertIn("spoil", p)
+        self.assertIn("invented values", p)
         # Grading is normalized exact (whitespace/case ignored, order matters).
         self.assertIn("NORMALIZED EXACT", p)
 

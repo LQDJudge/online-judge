@@ -74,12 +74,15 @@ wrong shape or wrong meaning causes silent grading bugs, so follow each rule exa
         WRONG: {"answers": ["Chloe: 5", "Leo: 8", "Emma: 13", "Lily: 15"]}
   - Add more than one entry ONLY when the document explicitly gives equivalent forms
     (e.g. an answer key that says "5 or five" -> ["5", "five"]).
-  - REQUIRED ANSWER FORMAT: every SA question's "content" MUST include a clear instruction
-    telling the student the exact format to type, WITH a concrete example — e.g.
-    "Nhập đáp án đúng định dạng: Chloe: <tuổi>, Leo: <tuổi>, ... (ví dụ: Chloe: 5, Leo: 8, ...)".
-    If the source states a format ("Hướng dẫn ghi đáp án", or "write in the format: ..."),
-    keep it; if it does NOT, ADD a clear one yourself. Then output ONE canonical "answers"
-    entry that follows that exact format.
+  - REQUIRED ANSWER FORMAT: every SA question's "content" MUST tell the student the exact
+    format to type, using PLACEHOLDERS for the values (e.g. <tên>, <số>, <x>, <y>). If you
+    include a concrete example of the format, it MUST use invented values that are clearly
+    NOT the real answer — NEVER echo the actual answer, which would spoil the question.
+        GOOD: "Nhập đáp án đúng định dạng: <Tên>: <số>, ... (ví dụ định dạng: An: 1, Bình: 2)"
+        BAD:  "... (ví dụ: Chloe: 5, Leo: 8, Emma: 13, Lily: 15)"  <- this IS the real answer
+    If the source already states a format ("Hướng dẫn ghi đáp án", or "write in the format:
+    ..."), keep it; otherwise ADD one. Then output ONE canonical "answers" entry that
+    follows that exact format.
   - SA answers are graded by NORMALIZED EXACT match: whitespace and letter case are ignored,
     but everything else must match exactly — digits, commas, dots, and the ORDER of parts.
     So write the one canonical answer in the stated format; do not rely on capitalization or
