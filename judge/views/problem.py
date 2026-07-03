@@ -119,7 +119,7 @@ from judge.tasks.llm import (
     improve_markdown_task,
     tag_problem_task,
 )
-
+from judge.views.error import error429
 
 def get_contest_problem(problem, profile):
     try:
@@ -1071,9 +1071,8 @@ def problem_submit(request, problem, submission=None):
                 .count()
                 >= settings.DMOJ_SUBMISSION_LIMIT
             ):
-                return HttpResponse(
-                    _("<h1>You have submitted too many submissions.</h1>"), status=429
-                )
+                return error429(request)
+
             if not problem.allowed_languages.filter(
                 id=form.cleaned_data["language"].id
             ).exists():
@@ -1104,10 +1103,7 @@ def problem_submit(request, problem, submission=None):
                         if t is not None and timezone.now() - t < timezone.timedelta(
                             minutes=1
                         ):
-                            return HttpResponse(
-                                _("<h1>You have submitted too many submissions.</h1>"),
-                                status=429,
-                            )
+                            return error429(request)
 
                     try:
                         contest_problem = problem.contests.get(contest_id=contest_id)
