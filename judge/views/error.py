@@ -55,7 +55,7 @@ def error500(request):
     )
 
 
-def error429(request):
+def error429(request) -> None:
     return render(
         request,
         "generic-message.html",

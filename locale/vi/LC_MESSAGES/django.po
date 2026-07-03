@@ -5192,6 +5192,14 @@ msgstr "Thông báo làm rõ mới cho %(contest)s"
 msgid "Access denied"
 msgstr "Truy cập bị từ chối"
 
+#: judge/views/error.py:63
+msgid "Too many requests"
+msgstr "Bạn đã gửi quá nhiều yêu cầu"
+
+#: judge/views/error.py:64
+msgid "You have submitted too many submissions. Please slow down."
+msgstr "Bạn đã gửi quá nhiều yêu cầu. Vui lòng đợi trong giây lát."
+
 #: judge/views/contests.py:2146
 #, python-format
 msgid "Problem %(order)s (%(name)s)"
