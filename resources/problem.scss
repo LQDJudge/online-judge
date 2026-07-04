@@ -1350,6 +1350,14 @@ body:not(.problem-raw) {
     }
 }
 
+.problem-add-form {
+    max-width: none;
+    margin: 0;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
 // Visually distinguish disabled (locked) form fields
 .problem-edit-form,
 .language-limits-page {

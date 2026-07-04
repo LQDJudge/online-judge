@@ -84,10 +84,14 @@
       if (!$container || !$container.length) {
         $container = ChatElements.chatLog;
       }
+      var $elements = $container.filter(function() {
+        return this.nodeType === 1;
+      });
+      if (!$elements.length) return;
 
-      register_time(this.findInSelfAndDescendants($container, '.time-with-rel'));
+      register_time(this.findInSelfAndDescendants($elements, '.time-with-rel'));
       if (typeof renderKatex === 'function') {
-        $container.each(function() {
+        $elements.each(function() {
           renderKatex(this);
         });
       }
@@ -98,7 +102,7 @@
 
       if (regroupMode === 'incremental') {
         this.mergeConsecutiveMessagesFor(
-          this.findInSelfAndDescendants($container, '.message')
+          this.findInSelfAndDescendants($elements, '.message')
         );
         return;
       }
@@ -364,15 +368,18 @@
     },
 
     prependMessages: function(html) {
-      var scrollTopBefore = this.getScrollTopOfBottom();
+      var chatBox = ChatElements.chatBox[0];
+      var scrollHeightBefore = chatBox.scrollHeight;
+      var scrollTopBefore = chatBox.scrollTop;
       var $nextMessage = ChatElements.chatLog.children('.message').first();
       var $nodes = $(html);
       var $messages = $nodes.filter('.message').add($nodes.find('.message'));
       ChatElements.chatLog.prepend($nodes);
       ChatUtils.postProcessMessages($nodes, 'none');
       ChatUtils.mergeConsecutiveMessagesFor($messages.add($nextMessage));
-      var scrollTopAfter = this.getScrollTopOfBottom();
-      ChatElements.chatBox.scrollTop(scrollTopAfter - scrollTopBefore);
+      ChatElements.chatBox.scrollTop(
+        scrollTopBefore + chatBox.scrollHeight - scrollHeightBefore
+      );
       ChatRoomCache.updateCurrent();
     },
 
@@ -638,7 +645,7 @@
 
     loadNextPage: function(lastId, refreshHtml) {
       var requestRoomId = ChatState.roomId;
-      var loadToken = ++ChatState.messageLoadToken;
+      var loadToken = refreshHtml ? ++ChatState.messageLoadToken : ChatState.messageLoadToken;
       if (refreshHtml) {
         ChatState.isLocked = true;
         if (!ChatRoomCache.restoreCurrent()) {

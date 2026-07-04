@@ -15,36 +15,12 @@
   </script>
 {% endblock %}
 
-{% block two_col_media %}
-  <style>
-    #content {
-      width: 100%;
-      margin-left: 0;
-    }
-
-    @media(min-width: 800px) {
-      .middle-right-content {
-        margin-left: 13%;
-        display: flex;
-        margin-right: 2%;
-      }
-    }
-
-    @media(max-width: 799px) {
-      .middle-right-content {
-        display: block;
-      }
-    }
-
-  </style>
-{% endblock %}
-
 {% block left_sidebar %}
   {% include "problem/left-sidebar.html" %}
 {% endblock %}
 
 {% block middle_content %}
-  <div class="problem-edit-form">
+  <div class="problem-edit-form problem-add-form">
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
 
