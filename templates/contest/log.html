@@ -1,0 +1,20 @@
+{% extends "two-column-content.html" %}
+{% set page_type = 'log' %}
+
+{% block left_sidebar %}
+  {% set title = contest.name %}
+  {% include "contest/contest-tabs.html" %}
+{% endblock %}
+
+{% block middle_title %}
+  <h2 class="content-title">{{ title }}</h2>
+  <hr>
+{% endblock %}
+
+{% block middle_content %}
+  {% include "history/log_entries.html" %}
+{% endblock %}
+
+{% block js_media %}
+  {% include "history/log_scripts.html" %}
+{% endblock %}

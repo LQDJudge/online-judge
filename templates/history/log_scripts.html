@@ -1,0 +1,43 @@
+<script type="text/javascript">
+  (function () {
+    function switchDiffTab(button) {
+      var uid = button.getAttribute('data-diff-target');
+      var mode = button.getAttribute('data-diff-mode');
+      var tabs = button.parentElement.querySelectorAll('.diff-tab');
+      for (var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+      }
+      button.classList.add('active');
+      document.getElementById(uid + '-diff').hidden = mode !== 'diff';
+      document.getElementById(uid + '-old').hidden = mode !== 'old';
+      document.getElementById(uid + '-new').hidden = mode !== 'new';
+    }
+
+    function toggleChanges(header) {
+      var changes = header.nextElementSibling;
+      var icon = header.querySelector('.toggle-icon');
+      if (changes.hidden) {
+        changes.hidden = false;
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+      } else {
+        changes.hidden = true;
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+      }
+    }
+
+    document.addEventListener('click', function (event) {
+      var diffTab = event.target.closest('.edit-history-log .diff-tab');
+      if (diffTab) {
+        switchDiffTab(diffTab);
+        return;
+      }
+
+      var header = event.target.closest('.edit-history-log .log-header-toggle');
+      if (header) {
+        toggleChanges(header);
+      }
+    });
+  })();
+</script>

@@ -1024,6 +1024,7 @@ urlpatterns = [
                 ),
                 # Teacher views
                 re_path(r"^/edit/$", quiz.QuizEdit.as_view(), name="quiz_edit"),
+                re_path(r"^/log/$", quiz.QuizLog.as_view(), name="quiz_log"),
                 re_path(
                     r"^/regrade/$", quiz.QuizRegrade.as_view(), name="quiz_regrade"
                 ),
@@ -1139,6 +1140,11 @@ urlpatterns = [
                     r"^/edit$",
                     contests.ContestEdit.as_view(),
                     name="contest_edit",
+                ),
+                re_path(
+                    r"^/log$",
+                    contests.ContestLog.as_view(),
+                    name="contest_log",
                 ),
                 re_path(
                     r"^/problems$",

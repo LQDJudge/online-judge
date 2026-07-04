@@ -46,6 +46,7 @@
       {{ make_tab_item('moss', 'fa fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
     {% endif %}
     {{ make_tab_item('edit', 'fa fa-edit', url('contest_edit', contest.key), _('Edit')) }}
+    {{ make_tab_item('log', 'fa fa-history', url('contest_log', contest.key), _('History')) }}
     {{ make_tab_item('review', 'fa fa-clipboard-check', url('contest_review_dashboard', contest.key), _('Review')) }}
     {% if request.user.is_superuser %}
       {{ make_tab_item('admin', 'fa fa-cog', url('admin:judge_contest_change', contest.id), _('Admin'), force_new_page=True) }}

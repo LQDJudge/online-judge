@@ -13,6 +13,7 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import (
     ImproperlyConfigured,
@@ -57,6 +58,7 @@ from django.views.generic.detail import (
 )
 
 from reversion import revisions
+from reversion.models import Version
 
 from judge import event_poster as event
 from judge.views.comment import CommentableMixin
@@ -77,6 +79,7 @@ from judge.models import (
     Organization,
     Problem,
     Profile,
+    Quiz,
     Submission,
     ContestProblemClarification,
     ContestsSummary,
@@ -99,6 +102,7 @@ from judge.utils.hidden_results import (
     hidden_result_contest_problem_ids,
     hidden_result_problem_ids,
 )
+from judge.utils.history import RevisionDiffMixin
 from judge.utils.opengraph import generate_opengraph
 from judge.utils.problems import _get_result_data
 from judge.views.problem import SolvedProblemMixin
@@ -2593,7 +2597,9 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
             )
 
         try:
-            with transaction.atomic():
+            with transaction.atomic(), revisions.create_revision():
+                revisions.set_comment(_("Edited from site"))
+                revisions.set_user(self.request.user)
                 save_semantic_formset(
                     rows_formset,
                     parent_field="contest",
@@ -2646,13 +2652,332 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
     def form_valid(self, form):
         # SingleObjectFormView inherits FormView (not ModelFormMixin), so
         # FormView.form_valid does NOT save — call form.save() directly.
-        with revisions.create_revision():
-            revisions.set_comment(_("Edited from site"))
-            revisions.set_user(self.request.user)
-            self.object = form.save()
-            maybe_trigger_contest_rescore(form, self.object, True)
+        self.object = form.save()
+        maybe_trigger_contest_rescore(form, self.object, True)
         messages.success(self.request, _("Contest saved."))
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("contest_edit", args=[self.object.key])
+
+
+class ContestLog(
+    LoginRequiredMixin,
+    RevisionDiffMixin,
+    ContestMixin,
+    TitleMixin,
+    SingleObjectMixin,
+    ListView,
+):
+    template_name = "contest/log.html"
+    context_object_name = None
+    paginate_by = 50
+    text_diff_fields = {"description", "summary", "problem_label_script"}
+    id_fields = {
+        "authors": ("judge.Profile", "user__username"),
+        "curators": ("judge.Profile", "user__username"),
+        "testers": ("judge.Profile", "user__username"),
+        "view_contest_scoreboard": ("judge.Profile", "user__username"),
+        "rate_exclude": ("judge.Profile", "user__username"),
+        "private_contestants": ("judge.Profile", "user__username"),
+        "banned_users": ("judge.Profile", "user__username"),
+        "organizations": ("judge.Organization", "name"),
+        "tags": ("judge.ContestTag", "name"),
+    }
+    profile_fields = {
+        "authors",
+        "curators",
+        "testers",
+        "view_contest_scoreboard",
+        "rate_exclude",
+        "private_contestants",
+        "banned_users",
+    }
+    skip_fields = {"id", "user_count"}
+    row_fields = (
+        "problem",
+        "quiz",
+        "order",
+        "points",
+        "partial",
+        "is_pretested",
+        "show_testcases",
+        "max_submissions",
+        "hidden_subtasks",
+        "is_result_hidden",
+    )
+
+    def get_object(self, queryset=None):
+        if not hasattr(self, "object"):
+            self.object = get_object_or_404(
+                Contest, key=self.kwargs[self.slug_url_kwarg]
+            )
+        return self.object
+
+    def _user_can_edit(self, user, contest):
+        if not user.is_authenticated:
+            return False
+        if contest.is_editable_by(user):
+            return True
+        if hasattr(user, "profile"):
+            for org in contest.organizations.all():
+                if user.profile.can_edit_organization(org):
+                    return True
+            if contest.is_in_course:
+                course_contest = contest.course.first()
+                if course_contest and Course.is_editable_by(
+                    course_contest.course, user.profile
+                ):
+                    return True
+        return False
+
+    def should_bypass_access_check(self, contest):
+        return self._user_can_edit(self.request.user, contest)
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not self._user_can_edit(request.user, self.object):
+            return generic_message(
+                request,
+                _("Permission denied"),
+                _("You do not have permission to view this contest history."),
+                status=403,
+            )
+        return super().get(request, *args, **kwargs)
+
+    def get_title(self):
+        return _("Edit history for %s") % self.object.name
+
+    def get_queryset(self):
+        contest_versions = list(
+            Version.objects.get_for_object(self.object)
+            .select_related("revision__user__profile")
+            .order_by("-revision__date_created", "-id")
+        )
+        raw_fields = [self._get_raw_fields(version) for version in contest_versions]
+        self._name_cache = self._build_name_cache(raw_fields)
+
+        for i, version in enumerate(contest_versions):
+            version.object_type = "contest"
+            if i < len(contest_versions) - 1:
+                version.changes = self._compute_changes(
+                    raw_fields[i + 1], raw_fields[i], model=Contest
+                )
+            else:
+                version.changes = []
+
+        row_versions = self._get_contest_row_history_entries(contest_versions)
+        row_revision_ids = {version.revision_id for version in row_versions}
+        contest_versions = [
+            version
+            for version in contest_versions
+            if version.changes or version.revision_id not in row_revision_ids
+        ]
+        all_versions = contest_versions + row_versions
+        all_versions.sort(
+            key=lambda version: version.revision.date_created, reverse=True
+        )
+        return all_versions
+
+    def _get_contest_row_history_entries(self, contest_versions):
+        revision_ids = {version.revision_id for version in contest_versions}
+        if not revision_ids:
+            return []
+
+        row_content_type = ContentType.objects.get_for_model(ContestProblem)
+        candidate_versions = list(
+            Version.objects.filter(
+                content_type=row_content_type,
+                db=self.object._state.db,
+                revision_id__in=revision_ids,
+            )
+            .select_related("revision__user__profile")
+            .order_by("-id")
+        )
+        row_versions = []
+        for version in candidate_versions:
+            raw_fields = self._get_raw_fields(version)
+            if raw_fields.get("contest") == self.object.id:
+                version._raw_fields = raw_fields
+                row_versions.append(version)
+
+        if not row_versions:
+            return []
+
+        object_ids = {version.object_id for version in row_versions}
+        all_row_versions = []
+        for version in Version.objects.filter(
+            content_type=row_content_type,
+            db=self.object._state.db,
+            object_id__in=object_ids,
+        ).order_by("id"):
+            raw_fields = self._get_raw_fields(version)
+            if raw_fields.get("contest") == self.object.id:
+                all_row_versions.append((version, raw_fields))
+
+        versions_by_object = defaultdict(list)
+        latest_version_ids = {}
+        name_cache = self._build_contest_row_name_cache(
+            [raw_fields for _, raw_fields in all_row_versions]
+        )
+        for version, raw_fields in all_row_versions:
+            versions_by_object[version.object_id].append((version, raw_fields))
+            latest_version_ids[version.object_id] = version.id
+
+        current_row_ids = set(
+            str(row_id)
+            for row_id in ContestProblem.objects.filter(
+                contest=self.object
+            ).values_list("id", flat=True)
+        )
+        entries_by_revision = {}
+        for version in row_versions:
+            changes = self._summarize_contest_row_version(
+                version,
+                version._raw_fields,
+                versions_by_object.get(version.object_id, []),
+                current_row_ids,
+                latest_version_ids,
+                name_cache,
+            )
+            if not changes:
+                continue
+            entry = entries_by_revision.setdefault(version.revision_id, version)
+            entry.object_type = "contest_row"
+            entry.object_label = _("Contest Rows")
+            entry.object_label_class = "log-type-test-data"
+            if entry is version:
+                entry.changes = []
+            entry.changes.extend(changes)
+
+        return list(entries_by_revision.values())
+
+    def _summarize_contest_row_version(
+        self,
+        version,
+        raw_fields,
+        object_versions,
+        current_row_ids,
+        latest_version_ids,
+        name_cache,
+    ):
+        previous_raw = None
+        for other_version, other_raw_fields in object_versions:
+            if other_version.id == version.id:
+                break
+            previous_raw = other_raw_fields
+
+        if (
+            version.object_id not in current_row_ids
+            and latest_version_ids.get(version.object_id) == version.id
+        ):
+            return [
+                {
+                    "field": _("Removed contest row"),
+                    "old": self._format_contest_row(raw_fields, name_cache),
+                    "new": "",
+                }
+            ]
+
+        if previous_raw is None:
+            return [
+                {
+                    "field": _("Added contest row"),
+                    "old": "",
+                    "new": self._format_contest_row(raw_fields, name_cache),
+                }
+            ]
+
+        changed_fields = [
+            self._contest_row_field_label(field)
+            for field in self.row_fields
+            if previous_raw.get(field) != raw_fields.get(field)
+        ]
+        if not changed_fields:
+            return []
+
+        return [
+            {
+                "field": _("Changed contest row (%(fields)s)")
+                % {"fields": ", ".join(changed_fields)},
+                "old": self._format_contest_row(previous_raw, name_cache),
+                "new": self._format_contest_row(raw_fields, name_cache),
+            }
+        ]
+
+    def _build_contest_row_name_cache(self, raw_fields_list):
+        problem_ids = {
+            fields.get("problem") for fields in raw_fields_list if fields.get("problem")
+        }
+        quiz_ids = {
+            fields.get("quiz") for fields in raw_fields_list if fields.get("quiz")
+        }
+        problem_names = {
+            problem.id: problem.name
+            for problem in Problem.get_cached_instances(*problem_ids)
+        }
+        quiz_names = dict(
+            Quiz.objects.filter(id__in=quiz_ids).values_list("id", "title")
+        )
+        return {"problem": problem_names, "quiz": quiz_names}
+
+    def _contest_row_field_label(self, field):
+        try:
+            return str(ContestProblem._meta.get_field(field).verbose_name)
+        except Exception:
+            return field
+
+    def _format_contest_row(self, fields, name_cache):
+        order = fields.get("order") or "?"
+        problem = fields.get("problem")
+        quiz = fields.get("quiz")
+        if problem:
+            item = name_cache["problem"].get(problem, str(problem))
+        elif quiz:
+            item = name_cache["quiz"].get(quiz, str(quiz))
+        else:
+            item = _("empty row")
+
+        parts = [_("row #%(order)s: %(item)s") % {"order": order, "item": item}]
+        points = fields.get("points")
+        if points not in (None, ""):
+            parts.append(_("points=%(points)s") % {"points": points})
+        parts.append(
+            _("partial=%(partial)s")
+            % {"partial": self._format_history_bool(fields.get("partial"))}
+        )
+        parts.append(
+            _("pretest=%(pretest)s")
+            % {"pretest": self._format_history_bool(fields.get("is_pretested"))}
+        )
+        max_submissions = fields.get("max_submissions")
+        if max_submissions not in (None, ""):
+            parts.append(
+                _("max submissions=%(max_submissions)s")
+                % {"max_submissions": max_submissions}
+            )
+        hidden_subtasks = fields.get("hidden_subtasks")
+        if hidden_subtasks:
+            parts.append(
+                _("hidden subtasks=%(hidden_subtasks)s")
+                % {"hidden_subtasks": hidden_subtasks}
+            )
+        parts.append(
+            _("hidden result=%(hidden_result)s")
+            % {
+                "hidden_result": self._format_history_bool(
+                    fields.get("is_result_hidden")
+                )
+            }
+        )
+        return "\n".join(parts)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["contest"] = self.object
+        context["history_entries"] = context.get("object_list", self.object_list)
+        context["page_type"] = "log"
+        context["can_edit"] = True
+        context["first_page_href"] = reverse("contest_log", args=[self.object.key])
+        context["empty_message"] = _("No edit history available for this contest.")
+        return context

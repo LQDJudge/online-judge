@@ -1,11 +1,13 @@
 import csv
 import json
 import logging
+from collections import defaultdict
 
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import redirect_to_login
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q, Max, Avg
@@ -27,6 +29,10 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
+from django.views.generic.detail import SingleObjectMixin
+
+from reversion import revisions
+from reversion.models import Version
 
 from judge.tasks.llm import (
     improve_question_markdown_task,
@@ -57,6 +63,7 @@ from judge.utils.views import (
     DiggPaginatorMixin,
     paginate_query_context,
 )
+from judge.utils.history import RevisionDiffMixin
 
 # =============================================================================
 # Permission Mixins
@@ -820,7 +827,7 @@ class QuizCreate(
         return context
 
     def form_valid(self, form):
-        with transaction.atomic():
+        with transaction.atomic(), revisions.create_revision():
             self.object = form.save(commit=False)
             if not self.request.user.is_superuser:
                 self.object.is_public = False
@@ -858,6 +865,9 @@ class QuizCreate(
                                 pass
                 except (json.JSONDecodeError, KeyError):
                     pass
+
+            revisions.set_comment(_("Created quiz"))
+            revisions.set_user(self.request.user)
 
         if self.object.quiz_questions.exists():
             messages.success(
@@ -968,22 +978,23 @@ class QuizEdit(
         return context
 
     def form_valid(self, form):
-        if not self.request.user.is_superuser:
-            # Non-superusers cannot set private -> public
-            if not self._original_is_public:
-                form.instance.is_public = False
-        response = super().form_valid(form)
+        with transaction.atomic(), revisions.create_revision():
+            if not self.request.user.is_superuser:
+                # Non-superusers cannot set private -> public
+                if not self._original_is_public:
+                    form.instance.is_public = False
+            revisions.set_comment(_("Edited from site"))
+            revisions.set_user(self.request.user)
+            response = super().form_valid(form)
 
-        # Process question changes from the form
-        question_changes = self.request.POST.get("question_changes")
-        if question_changes:
-            try:
-                import json
-
-                changes = json.loads(question_changes)
-                self._apply_question_changes(changes)
-            except (json.JSONDecodeError, KeyError):
-                pass
+            # Process question changes from the form
+            question_changes = self.request.POST.get("question_changes")
+            if question_changes:
+                try:
+                    changes = json.loads(question_changes)
+                    self._apply_question_changes(changes)
+                except (json.JSONDecodeError, KeyError):
+                    pass
 
         messages.success(self.request, _("Quiz updated successfully."))
         return response
@@ -995,9 +1006,10 @@ class QuizEdit(
         # 1. Remove questions marked for deletion
         removed_ids = changes.get("removed", [])
         if removed_ids:
-            QuizQuestionAssignment.objects.filter(
+            for assignment in QuizQuestionAssignment.objects.filter(
                 quiz=quiz, id__in=removed_ids
-            ).delete()
+            ):
+                assignment.delete()
 
         # 2. Update existing question points
         updated = changes.get("updated", {})
@@ -1045,11 +1057,252 @@ class QuizEdit(
         order_list = changes.get("order", [])
         for index, assignment_id in enumerate(order_list):
             try:
-                QuizQuestionAssignment.objects.filter(
+                assignment = QuizQuestionAssignment.objects.get(
                     quiz=quiz, id=int(assignment_id)
-                ).update(order=index)
+                )
+                if assignment.order != index:
+                    assignment.order = index
+                    assignment.save(update_fields=["order"])
             except ValueError:
                 pass
+            except QuizQuestionAssignment.DoesNotExist:
+                pass
+
+
+class QuizLog(
+    LoginRequiredMixin,
+    QuizObjectEditorMixin,
+    RevisionDiffMixin,
+    TitleMixin,
+    SingleObjectMixin,
+    ListView,
+):
+    model = Quiz
+    template_name = "quiz/log.html"
+    context_object_name = None
+    slug_field = "code"
+    slug_url_kwarg = "code"
+    paginate_by = 50
+    text_diff_fields = {"description"}
+    id_fields = {
+        "authors": ("judge.Profile", "user__username"),
+        "curators": ("judge.Profile", "user__username"),
+        "testers": ("judge.Profile", "user__username"),
+    }
+    profile_fields = {"authors", "curators", "testers"}
+    skip_fields = {"id"}
+    assignment_fields = ("question", "order", "points")
+
+    def get_object(self, queryset=None):
+        if not hasattr(self, "object"):
+            self.object = get_object_or_404(Quiz, code=self.kwargs[self.slug_url_kwarg])
+        return self.object
+
+    def get_title(self):
+        return _("Edit history for %s") % self.object.title
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        quiz_versions = list(
+            Version.objects.get_for_object(self.object)
+            .select_related("revision__user__profile")
+            .order_by("-revision__date_created", "-id")
+        )
+        raw_fields = [self._get_raw_fields(version) for version in quiz_versions]
+        self._name_cache = self._build_name_cache(raw_fields)
+
+        for i, version in enumerate(quiz_versions):
+            version.object_type = "quiz"
+            if i < len(quiz_versions) - 1:
+                version.changes = self._compute_changes(
+                    raw_fields[i + 1], raw_fields[i], model=Quiz
+                )
+            else:
+                version.changes = []
+
+        assignment_versions = self._get_assignment_history_entries(quiz_versions)
+        assignment_revision_ids = {
+            version.revision_id for version in assignment_versions
+        }
+        quiz_versions = [
+            version
+            for version in quiz_versions
+            if version.changes or version.revision_id not in assignment_revision_ids
+        ]
+        all_versions = quiz_versions + assignment_versions
+        all_versions.sort(
+            key=lambda version: version.revision.date_created, reverse=True
+        )
+        return all_versions
+
+    def _get_assignment_history_entries(self, quiz_versions):
+        revision_ids = {version.revision_id for version in quiz_versions}
+        if not revision_ids:
+            return []
+
+        assignment_content_type = ContentType.objects.get_for_model(
+            QuizQuestionAssignment
+        )
+        candidate_versions = list(
+            Version.objects.filter(
+                content_type=assignment_content_type,
+                db=self.object._state.db,
+                revision_id__in=revision_ids,
+            )
+            .select_related("revision__user__profile")
+            .order_by("-id")
+        )
+        assignment_versions = []
+        for version in candidate_versions:
+            raw_fields = self._get_raw_fields(version)
+            if raw_fields.get("quiz") == self.object.id:
+                version._raw_fields = raw_fields
+                assignment_versions.append(version)
+
+        if not assignment_versions:
+            return []
+
+        object_ids = {version.object_id for version in assignment_versions}
+        all_assignment_versions = []
+        for version in Version.objects.filter(
+            content_type=assignment_content_type,
+            db=self.object._state.db,
+            object_id__in=object_ids,
+        ).order_by("id"):
+            raw_fields = self._get_raw_fields(version)
+            if raw_fields.get("quiz") == self.object.id:
+                all_assignment_versions.append((version, raw_fields))
+
+        versions_by_object = defaultdict(list)
+        latest_version_ids = {}
+        question_names = self._build_assignment_question_names(
+            [raw_fields for _, raw_fields in all_assignment_versions]
+        )
+        for version, raw_fields in all_assignment_versions:
+            versions_by_object[version.object_id].append((version, raw_fields))
+            latest_version_ids[version.object_id] = version.id
+
+        current_assignment_ids = set(
+            str(assignment_id)
+            for assignment_id in QuizQuestionAssignment.objects.filter(
+                quiz=self.object
+            ).values_list("id", flat=True)
+        )
+        entries_by_revision = {}
+        for version in assignment_versions:
+            changes = self._summarize_assignment_version(
+                version,
+                version._raw_fields,
+                versions_by_object.get(version.object_id, []),
+                current_assignment_ids,
+                latest_version_ids,
+                question_names,
+            )
+            if not changes:
+                continue
+            entry = entries_by_revision.setdefault(version.revision_id, version)
+            entry.object_type = "quiz_assignment"
+            entry.object_label = _("Questions")
+            entry.object_label_class = "log-type-solution"
+            if entry is version:
+                entry.changes = []
+            entry.changes.extend(changes)
+
+        return list(entries_by_revision.values())
+
+    def _summarize_assignment_version(
+        self,
+        version,
+        raw_fields,
+        object_versions,
+        current_assignment_ids,
+        latest_version_ids,
+        question_names,
+    ):
+        previous_raw = None
+        for other_version, other_raw_fields in object_versions:
+            if other_version.id == version.id:
+                break
+            previous_raw = other_raw_fields
+
+        if (
+            version.object_id not in current_assignment_ids
+            and latest_version_ids.get(version.object_id) == version.id
+        ):
+            return [
+                {
+                    "field": _("Removed question"),
+                    "old": self._format_assignment(raw_fields, question_names),
+                    "new": "",
+                }
+            ]
+
+        if previous_raw is None:
+            return [
+                {
+                    "field": _("Added question"),
+                    "old": "",
+                    "new": self._format_assignment(raw_fields, question_names),
+                }
+            ]
+
+        changed_fields = [
+            self._assignment_field_label(field)
+            for field in self.assignment_fields
+            if previous_raw.get(field) != raw_fields.get(field)
+        ]
+        if not changed_fields:
+            return []
+
+        return [
+            {
+                "field": _("Changed question assignment (%(fields)s)")
+                % {"fields": ", ".join(changed_fields)},
+                "old": self._format_assignment(previous_raw, question_names),
+                "new": self._format_assignment(raw_fields, question_names),
+            }
+        ]
+
+    def _build_assignment_question_names(self, raw_fields_list):
+        question_ids = {
+            fields.get("question")
+            for fields in raw_fields_list
+            if fields.get("question")
+        }
+        return dict(
+            QuizQuestion.objects.filter(id__in=question_ids).values_list("id", "title")
+        )
+
+    def _assignment_field_label(self, field):
+        try:
+            return str(QuizQuestionAssignment._meta.get_field(field).verbose_name)
+        except Exception:
+            return field
+
+    def _format_assignment(self, fields, question_names):
+        question_id = fields.get("question")
+        question = question_names.get(question_id, str(question_id or ""))
+        order = fields.get("order")
+        points = fields.get("points")
+        parts = [_("question=%(question)s") % {"question": question}]
+        if order not in (None, ""):
+            parts.append(_("order=%(order)s") % {"order": order})
+        if points not in (None, ""):
+            parts.append(_("points=%(points)s") % {"points": points})
+        return "\n".join(parts)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["quiz"] = self.object
+        context["history_entries"] = context.get("object_list", self.object_list)
+        context["page_type"] = "log"
+        context["can_edit"] = True
+        context["first_page_href"] = reverse("quiz_log", args=[self.object.code])
+        context["empty_message"] = _("No edit history available for this quiz.")
+        return context
 
 
 class QuizDelete(LoginRequiredMixin, QuizObjectEditorMixin, TitleMixin, DeleteView):
@@ -1122,14 +1375,19 @@ class QuizAddQuestion(LoginRequiredMixin, QuizObjectEditorMixin, View):
             or 0
         )
 
-        assignment, created = QuizQuestionAssignment.objects.get_or_create(
-            quiz=quiz,
-            question=question,
-            defaults={"points": points, "order": max_order + 1},
-        )
-
-        if not created:
+        if QuizQuestionAssignment.objects.filter(quiz=quiz, question=question).exists():
             return JsonResponse({"error": "Question already in quiz"}, status=400)
+
+        with transaction.atomic(), revisions.create_revision():
+            assignment = QuizQuestionAssignment.objects.create(
+                quiz=quiz,
+                question=question,
+                points=points,
+                order=max_order + 1,
+            )
+            revisions.add_to_revision(quiz)
+            revisions.set_user(request.user)
+            revisions.set_comment(_("Added question to quiz"))
 
         return JsonResponse(
             {
@@ -1152,7 +1410,11 @@ class QuizRemoveQuestion(LoginRequiredMixin, QuizObjectEditorMixin, View):
 
         try:
             assignment = QuizQuestionAssignment.objects.get(pk=assignment_id, quiz=quiz)
-            assignment.delete()
+            with transaction.atomic(), revisions.create_revision():
+                assignment.delete()
+                revisions.add_to_revision(quiz)
+                revisions.set_user(request.user)
+                revisions.set_comment(_("Removed question from quiz"))
             return JsonResponse({"success": True})
         except QuizQuestionAssignment.DoesNotExist:
             return JsonResponse({"error": "Assignment not found"}, status=404)
@@ -1172,11 +1434,24 @@ class QuizReorderQuestions(LoginRequiredMixin, QuizObjectEditorMixin, View):
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-        with transaction.atomic():
+        changed = False
+        with transaction.atomic(), revisions.create_revision():
             for item in order_data:
-                QuizQuestionAssignment.objects.filter(pk=item["id"], quiz=quiz).update(
-                    order=item["order"]
-                )
+                try:
+                    assignment = QuizQuestionAssignment.objects.get(
+                        pk=item["id"], quiz=quiz
+                    )
+                except QuizQuestionAssignment.DoesNotExist:
+                    continue
+                if assignment.order == item["order"]:
+                    continue
+                assignment.order = item["order"]
+                assignment.save(update_fields=["order"])
+                changed = True
+            if changed:
+                revisions.add_to_revision(quiz)
+                revisions.set_user(request.user)
+                revisions.set_comment(_("Reordered quiz questions"))
 
         return JsonResponse({"success": True})
 
@@ -1203,8 +1478,12 @@ class QuizUpdatePoints(LoginRequiredMixin, QuizObjectEditorMixin, View):
 
         try:
             assignment = QuizQuestionAssignment.objects.get(pk=assignment_id, quiz=quiz)
-            assignment.points = points
-            assignment.save(update_fields=["points"])
+            with transaction.atomic(), revisions.create_revision():
+                assignment.points = points
+                assignment.save(update_fields=["points"])
+                revisions.add_to_revision(quiz)
+                revisions.set_user(request.user)
+                revisions.set_comment(_("Updated quiz question points"))
             return JsonResponse({"success": True, "points": points})
         except QuizQuestionAssignment.DoesNotExist:
             return JsonResponse({"error": "Assignment not found"}, status=404)

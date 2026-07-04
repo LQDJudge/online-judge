@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-03 16:01+0700\n"
+"POT-Creation-Date: 2026-07-05 06:34+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -105,7 +105,7 @@ msgstr "Gần đây"
 
 #: chat_box/views.py:688 templates/base.html:233
 #: templates/contest/contest-list-tabs.html:10
-#: templates/contest/contest-tabs.html:51
+#: templates/contest/contest-tabs.html:52
 #: templates/contest/ranking-table.html:78 templates/contest/ranking.html:353
 #: templates/course/left_sidebar.html:11
 #: templates/course/list_left_sidebar.html:15
@@ -290,8 +290,9 @@ msgid "link path"
 msgstr "đường dẫn"
 
 #: judge/admin/interface.py:93 judge/admin/problem.py:203
-#: templates/course/lesson.html:28 templates/notification/list.html:138
-#: templates/organization/moderation_log.html:49 templates/problem/add.html:61
+#: templates/course/lesson.html:28 templates/history/log_entries.html:22
+#: templates/notification/list.html:138
+#: templates/organization/moderation_log.html:49 templates/problem/add.html:37
 #: templates/problem/edit.html:335 templates/problem/edit_base.html:12
 msgid "Content"
 msgstr "Nội dung"
@@ -304,9 +305,8 @@ msgstr "Tổng kết"
 msgid "object"
 msgstr "đối tượng"
 
-#: judge/admin/interface.py:226
+#: judge/admin/interface.py:226 templates/history/log_entries.html:66
 #: templates/internal/problem_duplicate_detail.html:227
-#: templates/problem/log.html:62
 msgid "Diff"
 msgstr "Khác biệt"
 
@@ -347,7 +347,7 @@ msgstr "Phân loại"
 #: templates/contest/feed/item.html:33 templates/contest/problems.html:37
 #: templates/contest/problemset.html:33 templates/course/contest_list.html:142
 #: templates/internal/problem_duplicate_detail.html:202
-#: templates/internal/problem_queue.html:857 templates/problem/add.html:221
+#: templates/internal/problem_queue.html:857 templates/problem/add.html:197
 #: templates/problem/data.html:1709 templates/problem/edit.html:531
 #: templates/problem/list.html:37 templates/profile-table.html:31
 #: templates/profile-table.html:41 templates/quiz/create.html:82
@@ -375,14 +375,15 @@ msgstr "Giới hạn"
 msgid "Language"
 msgstr "Ngôn ngữ"
 
-#: judge/admin/problem.py:239 templates/internal/problem_duplicates.html:19
-#: templates/problem/edit_base.html:21
+#: judge/admin/problem.py:239 templates/contest/contest-tabs.html:49
+#: templates/internal/problem_duplicates.html:19
+#: templates/problem/edit_base.html:21 templates/quiz/quiz-tabs.html:11
 msgid "History"
 msgstr "Lịch sử"
 
 #: judge/admin/problem.py:291 judge/admin/quiz.py:140 judge/admin/quiz.py:311
 #: templates/contest/review_list.html:45 templates/contest/review_list.html:154
-#: templates/internal/problem_queue.html:133 templates/problem/add.html:123
+#: templates/internal/problem_queue.html:133 templates/problem/add.html:99
 #: templates/problem/edit.html:397 templates/problem/list-base.html:90
 #: templates/problem/review_list.html:88 templates/problem/review_list.html:195
 msgid "Authors"
@@ -502,8 +503,8 @@ msgstr "Cài đặt câu hỏi lý thuyết"
 
 #: judge/admin/quiz.py:462 judge/models/quiz.py:329
 #: templates/contest/contest-quiz-table.html:7 templates/contest/edit.html:92
-#: templates/contest/edit.html:93 templates/quiz/grade.html:125
-#: templates/quiz/grading/dashboard.html:59
+#: templates/contest/edit.html:93 templates/history/log_entries.html:26
+#: templates/quiz/grade.html:125 templates/quiz/grading/dashboard.html:59
 #: templates/quiz/grading/grade.html:91 templates/quiz/list.html:51
 #: templates/quiz/quiz-list-tabs.html:2
 msgid "Quiz"
@@ -875,7 +876,7 @@ msgid "Selected course does not exist."
 msgstr "Khóa học bạn chọn không tồn tại."
 
 #: judge/forms.py:1067 judge/views/course.py:2763 judge/views/course.py:2773
-#: templates/problem/add.html:99 templates/problem/edit.html:373
+#: templates/problem/add.html:75 templates/problem/edit.html:373
 #: templates/user/import/table_csv.html:9
 msgid "Organizations"
 msgstr "Nhóm"
@@ -1057,7 +1058,7 @@ msgstr "Hướng dẫn cho {0}"
 
 #: judge/models/comment.py:402 judge/views/internal.py:1034
 #: templates/contest/contest-list-tabs.html:7
-#: templates/contest/contest-tabs.html:49 templates/contest/review.html:34
+#: templates/contest/contest-tabs.html:50 templates/contest/review.html:34
 #: templates/internal/problem_duplicates.html:202
 #: templates/problem/edit_base.html:20 templates/problem/left-sidebar.html:17
 msgid "Review"
@@ -3790,10 +3791,11 @@ msgid ""
 "submission"
 msgstr "Đáp án và giải thích có được hiển thị sau khi nộp bài hay không"
 
-#: judge/models/quiz.py:286 templates/contest/contest-quiz-table.html:9
-#: templates/quiz/create.html:328 templates/quiz/detail.html:87
-#: templates/quiz/edit.html:485 templates/quiz/edit.html:527
-#: templates/quiz/manage.html:39 templates/quiz/take.html:332
+#: judge/models/quiz.py:286 judge/views/quiz.py:1206
+#: templates/contest/contest-quiz-table.html:9 templates/quiz/create.html:328
+#: templates/quiz/detail.html:87 templates/quiz/edit.html:485
+#: templates/quiz/edit.html:527 templates/quiz/manage.html:39
+#: templates/quiz/take.html:332
 msgid "Questions"
 msgstr "Các câu hỏi"
 
@@ -3821,7 +3823,7 @@ msgstr ""
 "Câu hỏi lý thuyết này có được hiển thị công khai cho tất cả người dùng hay "
 "không"
 
-#: judge/models/quiz.py:330 judge/views/quiz.py:646
+#: judge/models/quiz.py:330 judge/views/quiz.py:653
 #: templates/contest/problems.html:100
 #: templates/course/edit_lesson_new_window.html:89
 #: templates/course/lesson.html:33 templates/home/feed-quizzes-card.html:5
@@ -3913,7 +3915,7 @@ msgstr "Khi nộp bài hoặc hết thời gian"
 msgid "Is Submitted"
 msgstr "Đã nộp"
 
-#: judge/models/quiz.py:732 judge/views/contests.py:1611
+#: judge/models/quiz.py:732 judge/views/contests.py:1615
 #: templates/comments/inline-comments.html:22 templates/comments/list.html:18
 #: templates/comments/list.html:27 templates/course/course.html:105
 #: templates/internal/problem_duplicates.html:174
@@ -4745,6 +4747,14 @@ msgstr "Đường dẫn file không hợp lệ"
 msgid "Hidden"
 msgstr "Ẩn"
 
+#: judge/utils/history.py:141 judge/views/problem.py:1853
+msgid "yes"
+msgstr "có"
+
+#: judge/utils/history.py:141 judge/views/problem.py:1853
+msgid "no"
+msgstr "không"
+
 #: judge/utils/identity.py:9
 #, python-format
 msgid ""
@@ -4910,7 +4920,7 @@ msgstr "Giới thiệu"
 msgid "Contest Format Instructions"
 msgstr "Hướng dẫn thể thức kỳ thi"
 
-#: judge/views/blog.py:170 judge/views/contests.py:2540
+#: judge/views/blog.py:170 judge/views/contests.py:2544
 #: judge/views/organization.py:1366
 #, python-format
 msgid "Edit %s"
@@ -4926,14 +4936,15 @@ msgid ""
 "page."
 msgstr "Bài đăng này thuộc riêng một nhóm. Hãy chỉnh sửa qua trang của nhóm."
 
-#: judge/views/blog.py:189 judge/views/contests.py:2495
-#: judge/views/contests.py:2502 judge/views/custom_file_upload.py:416
-#: judge/views/custom_file_upload.py:496 judge/views/direct_upload.py:156
-#: judge/views/direct_upload.py:252 judge/views/organization.py:1603
-#: judge/views/organization.py:1610 judge/views/organization.py:1644
-#: judge/views/organization.py:1659 judge/views/organization.py:1686
-#: judge/views/organization.py:1858 judge/views/quiz_import.py:68
-#: judge/views/quiz_import.py:130 judge/views/quiz_import.py:184
+#: judge/views/blog.py:189 judge/views/contests.py:2499
+#: judge/views/contests.py:2506 judge/views/contests.py:2742
+#: judge/views/custom_file_upload.py:416 judge/views/custom_file_upload.py:496
+#: judge/views/direct_upload.py:156 judge/views/direct_upload.py:252
+#: judge/views/organization.py:1603 judge/views/organization.py:1610
+#: judge/views/organization.py:1644 judge/views/organization.py:1659
+#: judge/views/organization.py:1686 judge/views/organization.py:1858
+#: judge/views/quiz_import.py:68 judge/views/quiz_import.py:130
+#: judge/views/quiz_import.py:184
 msgid "Permission denied"
 msgstr "Truy cập bị từ chối"
 
@@ -4954,8 +4965,8 @@ msgid "Muted users are not allowed to edit blog posts."
 msgstr "Người dùng bị cấm chat không được phép chỉnh sửa bài đăng."
 
 #: judge/views/blog.py:219 judge/views/comment/edit_views.py:25
-#: judge/views/contests.py:2650 judge/views/organization.py:1382
-#: judge/views/organization.py:1753
+#: judge/views/contests.py:2601 judge/views/organization.py:1382
+#: judge/views/organization.py:1753 judge/views/quiz.py:986
 msgid "Edited from site"
 msgstr "Chỉnh sửa từ web"
 
@@ -5049,17 +5060,17 @@ msgstr "Không có yêu cầu công khai nào để xử lý."
 msgid "Contest reviews"
 msgstr "Đánh giá đề thi"
 
-#: judge/views/contests.py:155 judge/views/contests.py:583
-#: judge/views/contests.py:588 judge/views/contests.py:1124
+#: judge/views/contests.py:159 judge/views/contests.py:587
+#: judge/views/contests.py:592 judge/views/contests.py:1128
 msgid "No such contest"
 msgstr "Không có contest nào như vậy"
 
-#: judge/views/contests.py:156 judge/views/contests.py:584
+#: judge/views/contests.py:160 judge/views/contests.py:588
 #, python-format
 msgid "Could not find a contest with the key \"%s\"."
 msgstr "Không tìm thấy kỳ thi với mã \"%s\"."
 
-#: judge/views/contests.py:184 judge/views/contests.py:2194
+#: judge/views/contests.py:188 judge/views/contests.py:2198
 #: judge/views/stats.py:204 templates/contest/list.html:174
 #: templates/contest/list.html:216 templates/contest/list.html:253
 #: templates/contest/list.html:287 templates/contest/recommended_list.html:65
@@ -5070,105 +5081,105 @@ msgstr "Không tìm thấy kỳ thi với mã \"%s\"."
 msgid "Contests"
 msgstr "Kỳ thi"
 
-#: judge/views/contests.py:437
+#: judge/views/contests.py:441
 msgid "Start time (asc.)"
 msgstr "Thời gian bắt đầu (tăng)"
 
-#: judge/views/contests.py:438
+#: judge/views/contests.py:442
 msgid "Start time (desc.)"
 msgstr "Thời gian bắt đầu (giảm)"
 
-#: judge/views/contests.py:439 judge/views/organization.py:584
+#: judge/views/contests.py:443 judge/views/organization.py:584
 msgid "Name (asc.)"
 msgstr "Tên (A-Z)"
 
-#: judge/views/contests.py:440 judge/views/organization.py:585
+#: judge/views/contests.py:444 judge/views/organization.py:585
 msgid "Name (desc.)"
 msgstr "Tên (Z-A)"
 
-#: judge/views/contests.py:441
+#: judge/views/contests.py:445
 msgid "User count (asc.)"
 msgstr "Số lượng tham gia (tăng)"
 
-#: judge/views/contests.py:442
+#: judge/views/contests.py:446
 msgid "User count (desc.)"
 msgstr "Số lượng tham gia (giảm)"
 
-#: judge/views/contests.py:588
+#: judge/views/contests.py:592
 msgid "Could not find such contest."
 msgstr "Không tìm thấy kỳ thi nào như vậy."
 
-#: judge/views/contests.py:596
+#: judge/views/contests.py:600
 #, python-format
 msgid "Access to contest \"%s\" denied"
 msgstr "Truy cập tới kỳ thi \"%s\" bị từ chối"
 
-#: judge/views/contests.py:745
+#: judge/views/contests.py:749
 #, python-format
 msgid "Problems in %s"
 msgstr "Bài tập trong %s"
 
-#: judge/views/contests.py:892
+#: judge/views/contests.py:896
 msgid "Clone Contest"
 msgstr "Nhân bản kỳ thi"
 
-#: judge/views/contests.py:1003
+#: judge/views/contests.py:1007
 msgid "Contest not ongoing"
 msgstr "Kỳ thi đang không diễn ra"
 
-#: judge/views/contests.py:1004
+#: judge/views/contests.py:1008
 #, python-format
 msgid "\"%s\" is not currently ongoing."
 msgstr "\"%s\" kỳ thi đang không diễn ra."
 
-#: judge/views/contests.py:1017
+#: judge/views/contests.py:1021
 msgid "Banned from joining"
 msgstr "Bị cấm tham gia"
 
-#: judge/views/contests.py:1019
+#: judge/views/contests.py:1023
 msgid ""
 "You have been declared persona non grata for this contest. You are "
 "permanently barred from joining this contest."
 msgstr "Bạn không được phép tham gia kỳ thi này."
 
-#: judge/views/contests.py:1108
+#: judge/views/contests.py:1112
 #, python-format
 msgid "Enter access code for \"%s\""
 msgstr "Nhập mật khẩu truy cập cho \"%s\""
 
-#: judge/views/contests.py:1125
+#: judge/views/contests.py:1129
 #, python-format
 msgid "You are not in contest \"%s\"."
 msgstr "Bạn không ở trong kỳ thi \"%s\"."
 
-#: judge/views/contests.py:1147
+#: judge/views/contests.py:1151
 msgid "ContestCalendar requires integer year and month"
 msgstr "Lịch thi yêu cầu giá trị cho năm và tháng là số nguyên"
 
-#: judge/views/contests.py:1205
+#: judge/views/contests.py:1209
 #, python-format
 msgid "Contests in %(month)s"
 msgstr "Các kỳ thi trong %(month)s"
 
-#: judge/views/contests.py:1206
+#: judge/views/contests.py:1210
 msgid "F Y"
 msgstr "F Y"
 
-#: judge/views/contests.py:1266
+#: judge/views/contests.py:1270
 #, python-format
 msgid "%s Statistics"
 msgstr "%s Thống kê"
 
-#: judge/views/contests.py:1566
+#: judge/views/contests.py:1570
 #, python-format
 msgid "%s Rankings"
 msgstr "%s Bảng điểm"
 
-#: judge/views/contests.py:1611 templates/contest/contests_summary.html:37
+#: judge/views/contests.py:1615 templates/contest/contests_summary.html:37
 msgid "Rank"
 msgstr "Rank"
 
-#: judge/views/contests.py:1611 judge/views/register.py:33
+#: judge/views/contests.py:1615 judge/views/register.py:33
 #: templates/notification/list.html:98
 #: templates/registration/registration_form.html:34
 #: templates/user/base-users-table.html:5
@@ -5176,105 +5187,105 @@ msgstr "Rank"
 msgid "Username"
 msgstr "Tên đăng nhập"
 
-#: judge/views/contests.py:1611
+#: judge/views/contests.py:1615
 #, fuzzy
 #| msgid "Full name"
 msgid "Full Name"
 msgstr "Họ tên"
 
-#: judge/views/contests.py:1611 templates/contest/ranking-table.html:87
+#: judge/views/contests.py:1615 templates/contest/ranking-table.html:87
 #: templates/user/edit-profile.html:99 templates/user/import/table_csv.html:7
 msgid "School"
 msgstr "Trường"
 
-#: judge/views/contests.py:1685
+#: judge/views/contests.py:1689
 msgid "???"
 msgstr "???"
 
-#: judge/views/contests.py:1867
+#: judge/views/contests.py:1871
 #, python-format
 msgid "Your participation in %s"
 msgstr "Lần tham gia trong %s"
 
-#: judge/views/contests.py:1868
+#: judge/views/contests.py:1872
 #, python-format
 msgid "%(username)s's participation in %(contest)s"
 msgstr "Lần tham gia của %(username)s trong %(contest)s"
 
-#: judge/views/contests.py:1890
+#: judge/views/contests.py:1894
 msgid "Live"
 msgstr "Trực tiếp"
 
-#: judge/views/contests.py:1901 templates/contest/contest-tabs.html:24
+#: judge/views/contests.py:1905 templates/contest/contest-tabs.html:24
 msgid "Participation"
 msgstr "Lần tham gia"
 
-#: judge/views/contests.py:1980
+#: judge/views/contests.py:1984
 #, python-format
 msgid "%s MOSS Results"
 msgstr "%s Kết quả MOSS"
 
-#: judge/views/contests.py:2016
+#: judge/views/contests.py:2020
 #, python-format
 msgid "Running MOSS for %s..."
 msgstr "Đang chạy MOSS cho %s..."
 
-#: judge/views/contests.py:2039
+#: judge/views/contests.py:2043
 #, python-format
 msgid "Contest tag: %s"
 msgstr "Nhãn kỳ thi: %s"
 
-#: judge/views/contests.py:2054 judge/views/ticket.py:76
+#: judge/views/contests.py:2058 judge/views/ticket.py:76
 msgid "Issue description"
 msgstr "Mô tả vấn đề"
 
-#: judge/views/contests.py:2094 judge/views/contests.py:2098
+#: judge/views/contests.py:2098 judge/views/contests.py:2102
 #, python-format
 msgid "New clarification for %(contest)s"
 msgstr "Thông báo làm rõ mới cho %(contest)s"
 
-#: judge/views/contests.py:2122 judge/views/course.py:630
+#: judge/views/contests.py:2126 judge/views/course.py:630
 #: judge/views/error.py:38
 msgid "Access denied"
 msgstr "Truy cập bị từ chối"
 
-#: judge/views/contests.py:2146
+#: judge/views/contests.py:2150
 #, python-format
 msgid "Problem %(order)s (%(name)s)"
 msgstr "Bài %(order)s (%(name)s)"
 
-#: judge/views/contests.py:2157 templates/contest/clarification.html:56
+#: judge/views/contests.py:2161 templates/contest/clarification.html:56
 #: templates/contest/problems.html:134 templates/problem/list.html:165
 #: templates/problem/problem.html:482
 msgid "Entire contest"
 msgstr "Toàn bộ kỳ thi"
 
-#: judge/views/contests.py:2329 templates/contest/contest-list-tabs.html:4
+#: judge/views/contests.py:2333 templates/contest/contest-list-tabs.html:4
 msgid "For you"
 msgstr "Dành cho bạn"
 
-#: judge/views/contests.py:2385
+#: judge/views/contests.py:2389
 #, python-brace-format
 msgid "{contest_name} Problemset"
 msgstr "Bộ đề thi của {contest_name}"
 
-#: judge/views/contests.py:2399 judge/views/contests.py:2419
+#: judge/views/contests.py:2403 judge/views/contests.py:2423
 msgid "Problemset not available"
 msgstr "Bộ đề không khả dụng"
 
-#: judge/views/contests.py:2401
+#: judge/views/contests.py:2405
 msgid "The contest has not started yet. Please wait until the contest begins."
 msgstr "Kỳ thi chưa bắt đầu. Vui lòng đợi đến khi kỳ thi bắt đầu."
 
-#: judge/views/contests.py:2420
+#: judge/views/contests.py:2424
 msgid "You must join the contest to view the problemset."
 msgstr "Bạn phải tham gia kỳ thi để xem bộ đề."
 
-#: judge/views/contests.py:2496 judge/views/contests.py:2503
+#: judge/views/contests.py:2500 judge/views/contests.py:2507
 msgid "You do not have permission to edit this contest."
 msgstr "Bạn không có quyền chỉnh sửa kỳ thi này."
 
-#: judge/views/contests.py:2555 templates/contest/edit.html:235
+#: judge/views/contests.py:2559 templates/contest/edit.html:235
 #: templates/course/create.html:44 templates/course/edit.html:33
 #: templates/course/edit_lesson_new_window.html:58
 #: templates/organization/course/add.html:39
@@ -5283,7 +5294,7 @@ msgstr "Bạn không có quyền chỉnh sửa kỳ thi này."
 msgid "Please fix below errors"
 msgstr "Vui lòng sửa các lỗi bên dưới"
 
-#: judge/views/contests.py:2641
+#: judge/views/contests.py:2647
 #, fuzzy, python-format
 #| msgid "This will replace the current description. Continue?"
 msgid "Saving this edit will delete %(count)d contest submission. Continue?"
@@ -5291,11 +5302,80 @@ msgid_plural ""
 "Saving this edit will delete %(count)d contest submissions. Continue?"
 msgstr[0] "Thao tác này sẽ thay thế nội dung hiện tại. Tiếp tục?"
 
-#: judge/views/contests.py:2654
-#, fuzzy
-#| msgid "Contest is over."
+#: judge/views/contests.py:2657
 msgid "Contest saved."
-msgstr "Kỳ thi đã kết thúc."
+msgstr "Đã lưu kỳ thi."
+
+#: judge/views/contests.py:2743
+msgid "You do not have permission to view this contest history."
+msgstr "Bạn không có quyền xem lịch sử chỉnh sửa kỳ thi này."
+
+#: judge/views/contests.py:2749 judge/views/problem.py:1552
+#: judge/views/problem.py:1556 judge/views/quiz.py:1102
+#, python-format
+msgid "Edit history for %s"
+msgstr "Lịch sử chỉnh sửa %s"
+
+#: judge/views/contests.py:2845
+msgid "Contest Rows"
+msgstr "Các dòng trong kỳ thi"
+
+#: judge/views/contests.py:2874
+msgid "Removed contest row"
+msgstr "Đã xóa dòng trong kỳ thi"
+
+#: judge/views/contests.py:2883
+msgid "Added contest row"
+msgstr "Đã thêm dòng trong kỳ thi"
+
+#: judge/views/contests.py:2899
+#, python-format
+msgid "Changed contest row (%(fields)s)"
+msgstr "Đã thay đổi dòng trong kỳ thi (%(fields)s)"
+
+#: judge/views/contests.py:2937
+msgid "empty row"
+msgstr "dòng trống"
+
+#: judge/views/contests.py:2939
+#, python-format
+msgid "row #%(order)s: %(item)s"
+msgstr "dòng #%(order)s: %(item)s"
+
+#: judge/views/contests.py:2942 judge/views/problem.py:1834
+#: judge/views/quiz.py:1292
+#, python-format
+msgid "points=%(points)s"
+msgstr "điểm=%(points)s"
+
+#: judge/views/contests.py:2944
+#, python-format
+msgid "partial=%(partial)s"
+msgstr "chấm từng phần=%(partial)s"
+
+#: judge/views/contests.py:2948 judge/views/problem.py:1837
+#, python-format
+msgid "pretest=%(pretest)s"
+msgstr "pretest=%(pretest)s"
+
+#: judge/views/contests.py:2954
+#, python-format
+msgid "max submissions=%(max_submissions)s"
+msgstr "số lần nộp tối đa=%(max_submissions)s"
+
+#: judge/views/contests.py:2960
+#, python-format
+msgid "hidden subtasks=%(hidden_subtasks)s"
+msgstr "subtask ẩn=%(hidden_subtasks)s"
+
+#: judge/views/contests.py:2964
+#, python-format
+msgid "hidden result=%(hidden_result)s"
+msgstr "ẩn kết quả=%(hidden_result)s"
+
+#: judge/views/contests.py:2980
+msgid "No edit history available for this contest."
+msgstr "Không có lịch sử chỉnh sửa cho kỳ thi này."
 
 #: judge/views/course.py:509 templates/organization/courses.html:87
 msgid "Add Course"
@@ -6443,113 +6523,167 @@ msgstr "Chỉnh sửa {0}"
 msgid "Editing problem for %s"
 msgstr "Chỉnh sửa bài tập cho %s"
 
-#: judge/views/problem.py:1521 judge/views/problem.py:1525
-#, python-format
-msgid "Edit history for %s"
-msgstr "Lịch sử chỉnh sửa %s"
+#: judge/views/problem.py:1756 templates/problem/data.html:1701
+msgid "Test Cases"
+msgstr "Bộ Test"
 
-#: judge/views/problem.py:1783
+#: judge/views/problem.py:1779
+msgid "Removed test case"
+msgstr "Đã xóa test"
+
+#: judge/views/problem.py:1788
+msgid "Added test case"
+msgstr "Đã thêm test"
+
+#: judge/views/problem.py:1804
+#, python-format
+msgid "Changed test case (%(fields)s)"
+msgstr "Đã thay đổi test (%(fields)s)"
+
+#: judge/views/problem.py:1819
+#, python-format
+msgid "case #%(order)s"
+msgstr "test #%(order)s"
+
+#: judge/views/problem.py:1822
+#, python-format
+msgid "type=%(type)s"
+msgstr "loại=%(type)s"
+
+#: judge/views/problem.py:1825
+#, python-format
+msgid "input=%(input)s"
+msgstr "input=%(input)s"
+
+#: judge/views/problem.py:1828
+#, python-format
+msgid "output=%(output)s"
+msgstr "output=%(output)s"
+
+#: judge/views/problem.py:1831
+#, python-format
+msgid "generator=%(generator)s"
+msgstr "bộ sinh=%(generator)s"
+
+#: judge/views/problem.py:1842
+#, python-format
+msgid "batch=%(batch)s"
+msgstr "nhóm=%(batch)s"
+
+#: judge/views/problem.py:1847
+msgid "normal"
+msgstr "thường"
+
+#: judge/views/problem.py:1848
+msgid "batch start"
+msgstr "bắt đầu nhóm"
+
+#: judge/views/problem.py:1849
+msgid "batch end"
+msgstr "kết thúc nhóm"
+
+#: judge/views/problem.py:1865
 msgid "Add Problem"
 msgstr "Thêm bài tập"
 
-#: judge/views/problem.py:1815
+#: judge/views/problem.py:1897
 #, python-format
 msgid "Problem '%(name)s' has been created successfully!"
 msgstr "Bài tập '%(name)s' đã được tạo thành công!"
 
-#: judge/views/problem.py:1841
+#: judge/views/problem.py:1923
 #, python-brace-format
 msgid "Edit Language Limits - {0}"
 msgstr "Chỉnh sửa giới hạn ngôn ngữ - {0}"
 
-#: judge/views/problem.py:1845
+#: judge/views/problem.py:1927
 #, python-format
 msgid "Editing language limits for %s"
 msgstr "Chỉnh sửa giới hạn ngôn ngữ cho %s"
 
-#: judge/views/problem.py:1947
+#: judge/views/problem.py:2029
 #, python-brace-format
 msgid "Edit Language Templates - {0}"
 msgstr "Chỉnh sửa code mẫu - {0}"
 
-#: judge/views/problem.py:1951
+#: judge/views/problem.py:2033
 #, python-format
 msgid "Editing language templates for %s"
 msgstr "Chỉnh sửa code mẫu cho %s"
 
-#: judge/views/problem.py:1997
+#: judge/views/problem.py:2079
 msgid "Language template deleted successfully."
 msgstr "Đoạn code mẫu được xóa thành công."
 
-#: judge/views/problem.py:1999 judge/views/problem.py:2018
+#: judge/views/problem.py:2081 judge/views/problem.py:2100
 msgid "Language template not found."
 msgstr "Code mẫu không tìm thấy"
 
-#: judge/views/problem.py:2013
+#: judge/views/problem.py:2095
 msgid "Language template updated successfully."
 msgstr "Đoạn code mẫu được cập nhật thành công"
 
-#: judge/views/problem.py:2030
+#: judge/views/problem.py:2112
 msgid "Language template added successfully."
 msgstr "Code mẫu được thêm thành công"
 
-#: judge/views/problem.py:2064
+#: judge/views/problem.py:2146
 #, python-brace-format
 msgid "Edit Solutions - {0}"
 msgstr "Chỉnh sửa lời giải - {0}"
 
-#: judge/views/problem.py:2068
+#: judge/views/problem.py:2150
 #, python-format
 msgid "Editing solutions for %s"
 msgstr "Chỉnh sửa lời giải cho %s"
 
-#: judge/views/problem.py:2124
+#: judge/views/problem.py:2206
 msgid "Solution deleted successfully."
 msgstr "Lời giải đã xóa thành công"
 
-#: judge/views/problem.py:2126
+#: judge/views/problem.py:2208
 msgid "Solution not found."
 msgstr "Lời giải không tìm thấy"
 
-#: judge/views/problem.py:2135
+#: judge/views/problem.py:2217
 msgid "Solution updated successfully."
 msgstr "Lời giải cập nhật thành công"
 
-#: judge/views/problem.py:2140
+#: judge/views/problem.py:2222
 msgid "A solution already exists for this problem."
 msgstr "Lời giải đã tồn tại cho bài tập này."
 
-#: judge/views/problem.py:2148
+#: judge/views/problem.py:2230
 msgid "Solution added successfully."
 msgstr "Lời giải được thêm thành công"
 
-#: judge/views/problem.py:2216
+#: judge/views/problem.py:2298
 #, python-brace-format
 msgid "Edit Translations - {0}"
 msgstr "Chỉnh sửa bản dịch - {0}"
 
-#: judge/views/problem.py:2220
+#: judge/views/problem.py:2302
 #, python-format
 msgid "Editing translations for %s"
 msgstr "Chỉnh sửa bản dịch cho %s"
 
-#: judge/views/problem.py:2272
+#: judge/views/problem.py:2354
 msgid "Translation deleted successfully."
 msgstr "Bản dịch cập nhật thành công"
 
-#: judge/views/problem.py:2274 judge/views/problem.py:2329
+#: judge/views/problem.py:2356 judge/views/problem.py:2411
 msgid "Translation not found."
 msgstr "Bản dịch không tìm thấy"
 
-#: judge/views/problem.py:2293
+#: judge/views/problem.py:2375
 msgid "Translation updated successfully."
 msgstr "Bản dịch cập nhật thành công"
 
-#: judge/views/problem.py:2341
+#: judge/views/problem.py:2423
 msgid "A translation for this language already exists."
 msgstr "Bản dịch với ngôn ngữ này đã tồn tại"
 
-#: judge/views/problem.py:2350
+#: judge/views/problem.py:2432
 msgid "Translation added successfully."
 msgstr "Bản dịch được thêm thành công"
 
@@ -6781,181 +6915,228 @@ msgid "Successfully scheduled %d submission for rejudging."
 msgid_plural "Successfully scheduled %d submissions for rejudging."
 msgstr[0] "Đã lên lịch chấm lại cho %d bài nộp."
 
-#: judge/views/quiz.py:78
+#: judge/views/quiz.py:85
 msgid "You do not have permission to manage quizzes."
 msgstr "Bạn không có quyền để quản lý câu hỏi lý thuyết."
 
-#: judge/views/quiz.py:124
+#: judge/views/quiz.py:131
 msgid "You do not have permission to edit this question."
 msgstr "Bạn không có quyền để chỉnh sửa câu hỏi này."
 
-#: judge/views/quiz.py:157
+#: judge/views/quiz.py:164
 msgid "You do not have permission to edit this quiz."
 msgstr "Bạn không có quyền để chỉnh sửa câu hỏi lý thuyết này."
 
-#: judge/views/quiz.py:245 templates/quiz/quiz-list-tabs.html:3
+#: judge/views/quiz.py:252 templates/quiz/quiz-list-tabs.html:3
 msgid "Question Bank"
 msgstr "Ngân hàng câu hỏi"
 
-#: judge/views/quiz.py:456 templates/quiz/edit.html:456
+#: judge/views/quiz.py:463 templates/quiz/edit.html:456
 #: templates/quiz/question_bank/create.html:782
 #: templates/quiz/question_bank/create.html:791
 #: templates/quiz/question_bank/list.html:140
 msgid "Create Question"
 msgstr "Tạo câu hỏi"
 
-#: judge/views/quiz.py:489
+#: judge/views/quiz.py:496
 msgid "Question created successfully."
 msgstr "Đã tạo câu hỏi thành công."
 
-#: judge/views/quiz.py:522
+#: judge/views/quiz.py:529
 #, python-format
 msgid "Edit Question: %s"
 msgstr "Chỉnh sửa câu hỏi: %s"
 
-#: judge/views/quiz.py:545
+#: judge/views/quiz.py:552
 msgid "Question updated successfully."
 msgstr "Đã cập nhật câu hỏi thành công."
 
-#: judge/views/quiz.py:597
+#: judge/views/quiz.py:604
 #, python-format
 msgid "Delete Question: %s"
 msgstr "Xóa câu hỏi: %s"
 
-#: judge/views/quiz.py:617
+#: judge/views/quiz.py:624
 #, python-format
 msgid "Cannot delete question. It is used in %d quiz(es)."
 msgstr ""
 "Không thể xóa câu hỏi. Câu hỏi này đang được sử dụng trong %d câu hỏi lý "
 "thuyết."
 
-#: judge/views/quiz.py:621
+#: judge/views/quiz.py:628
 msgid "Question deleted successfully."
 msgstr "Đã xóa câu hỏi thành công."
 
-#: judge/views/quiz.py:805 templates/course/edit_lesson_new_window.html:91
+#: judge/views/quiz.py:812 templates/course/edit_lesson_new_window.html:91
 #: templates/quiz/create.html:314 templates/quiz/create.html:387
 #: templates/quiz/import.html:158
 msgid "Create Quiz"
 msgstr "Tạo câu hỏi lý thuyết"
 
-#: judge/views/quiz.py:864
+#: judge/views/quiz.py:869
+msgid "Created quiz"
+msgstr "Đã tạo quiz"
+
+#: judge/views/quiz.py:874
 msgid "Quiz created successfully with questions."
 msgstr "Đã tạo câu hỏi lý thuyết thành công với các câu hỏi."
 
-#: judge/views/quiz.py:868
+#: judge/views/quiz.py:878
 msgid "Quiz created successfully. Now add questions."
 msgstr "Đã tạo câu hỏi lý thuyết thành công. Bây giờ hãy thêm câu hỏi."
 
-#: judge/views/quiz.py:938
+#: judge/views/quiz.py:948
 #, python-format
 msgid "Edit Quiz: %s"
 msgstr "Chỉnh sửa câu hỏi lý thuyết: %s"
 
-#: judge/views/quiz.py:988
+#: judge/views/quiz.py:999
 msgid "Quiz updated successfully."
 msgstr "Đã cập nhật câu hỏi lý thuyết thành công."
 
-#: judge/views/quiz.py:1064
+#: judge/views/quiz.py:1235
+msgid "Removed question"
+msgstr "Đã xóa câu hỏi"
+
+#: judge/views/quiz.py:1244
+msgid "Added question"
+msgstr "Đã thêm câu hỏi"
+
+#: judge/views/quiz.py:1260
+#, python-format
+msgid "Changed question assignment (%(fields)s)"
+msgstr "Đã thay đổi câu hỏi trong quiz (%(fields)s)"
+
+#: judge/views/quiz.py:1288
+#, python-format
+msgid "question=%(question)s"
+msgstr "câu hỏi=%(question)s"
+
+#: judge/views/quiz.py:1290
+#, python-format
+msgid "order=%(order)s"
+msgstr "thứ tự=%(order)s"
+
+#: judge/views/quiz.py:1302
+msgid "No edit history available for this quiz."
+msgstr "Không có lịch sử chỉnh sửa cho quiz này."
+
+#: judge/views/quiz.py:1315
 #, python-format
 msgid "Delete Quiz: %s"
 msgstr "Xóa câu hỏi lý thuyết: %s"
 
-#: judge/views/quiz.py:1076
+#: judge/views/quiz.py:1327
 msgid "Quiz deleted successfully."
 msgstr "Đã xóa câu hỏi lý thuyết thành công."
 
-#: judge/views/quiz.py:1090
+#: judge/views/quiz.py:1341
 #, python-format
 msgid "Successfully regraded %(count)d attempts."
 msgstr "Đã chấm lại %(count)d lượt làm bài thành công."
 
-#: judge/views/quiz.py:1268
+#: judge/views/quiz.py:1388
+msgid "Added question to quiz"
+msgstr "Đã thêm câu hỏi vào quiz"
+
+#: judge/views/quiz.py:1415
+msgid "Removed question from quiz"
+msgstr "Đã xóa câu hỏi khỏi quiz"
+
+#: judge/views/quiz.py:1452
+msgid "Reordered quiz questions"
+msgstr "Đã sắp xếp lại câu hỏi trong quiz"
+
+#: judge/views/quiz.py:1484
+msgid "Updated quiz question points"
+msgstr "Đã cập nhật điểm câu hỏi trong quiz"
+
+#: judge/views/quiz.py:1545
 msgid "Invalid request body."
 msgstr "Dữ liệu yêu cầu không hợp lệ."
 
-#: judge/views/quiz.py:1271
+#: judge/views/quiz.py:1548
 msgid "No IDs provided."
 msgstr "Không có ID nào được cung cấp."
 
-#: judge/views/quiz.py:1282
+#: judge/views/quiz.py:1559
 msgid "No valid IDs provided."
 msgstr "Không có ID hợp lệ nào được cung cấp."
 
-#: judge/views/quiz.py:1325
+#: judge/views/quiz.py:1602
 msgid "Add Quiz to Lesson"
 msgstr "Thêm câu hỏi lý thuyết vào bài học"
 
-#: judge/views/quiz.py:1334 judge/views/quiz.py:1377 judge/views/quiz.py:1408
+#: judge/views/quiz.py:1611 judge/views/quiz.py:1654 judge/views/quiz.py:1685
 msgid "You do not have permission to edit this course."
 msgstr "Bạn không có quyền để chỉnh sửa khóa học này."
 
-#: judge/views/quiz.py:1356
+#: judge/views/quiz.py:1633
 msgid "Quiz added to lesson successfully."
 msgstr "Đã thêm câu hỏi lý thuyết vào bài học thành công."
 
-#: judge/views/quiz.py:1381
+#: judge/views/quiz.py:1658
 msgid "Edit Lesson Quiz Settings"
 msgstr "Chỉnh sửa cài đặt câu hỏi lý thuyết trong bài học"
 
-#: judge/views/quiz.py:1390
+#: judge/views/quiz.py:1667
 msgid "Lesson quiz settings updated."
 msgstr "Đã cập nhật cài đặt câu hỏi lý thuyết trong bài học."
 
-#: judge/views/quiz.py:1412
+#: judge/views/quiz.py:1689
 msgid "Remove Quiz from Lesson"
 msgstr "Xóa câu hỏi lý thuyết khỏi bài học"
 
-#: judge/views/quiz.py:1421
+#: judge/views/quiz.py:1698
 msgid "Quiz removed from lesson."
 msgstr "Đã xóa câu hỏi lý thuyết khỏi bài học."
 
-#: judge/views/quiz.py:1443 judge/views/quiz.py:1520 judge/views/quiz.py:2162
-#: judge/views/quiz.py:2255
+#: judge/views/quiz.py:1720 judge/views/quiz.py:1797 judge/views/quiz.py:2439
+#: judge/views/quiz.py:2532
 msgid "Quiz not found."
 msgstr "Không tìm thấy câu hỏi lý thuyết."
 
-#: judge/views/quiz.py:1544
+#: judge/views/quiz.py:1821
 msgid "Contest has not started yet."
 msgstr "Kỳ thi chưa bắt đầu."
 
-#: judge/views/quiz.py:1548
+#: judge/views/quiz.py:1825
 msgid "Contest has ended."
 msgstr "Kỳ thi đã kết thúc."
 
-#: judge/views/quiz.py:1556
+#: judge/views/quiz.py:1833
 msgid "Your contest time has ended."
 msgstr "Thời gian thi của bạn đã hết."
 
-#: judge/views/quiz.py:1572 judge/views/quiz.py:3329
+#: judge/views/quiz.py:1849 judge/views/quiz.py:3606
 #, python-format
 msgid "You have reached the maximum number of attempts (%d) for this quiz."
 msgstr "Bạn đã đạt số lần làm bài tối đa (%d) cho câu hỏi lý thuyết này."
 
-#: judge/views/quiz.py:1649 judge/views/quiz.py:3391
+#: judge/views/quiz.py:1926 judge/views/quiz.py:3668
 #, python-format
 msgid "Taking: %s"
 msgstr "Đang làm: %s"
 
-#: judge/views/quiz.py:1657 judge/views/quiz.py:3401
+#: judge/views/quiz.py:1934 judge/views/quiz.py:3678
 msgid "This is not your attempt."
 msgstr "Đây không phải lượt làm bài của bạn."
 
-#: judge/views/quiz.py:1670 judge/views/quiz.py:3415
+#: judge/views/quiz.py:1947 judge/views/quiz.py:3692
 msgid "Time has expired. Your quiz has been submitted automatically."
 msgstr "Đã hết thời gian. Câu hỏi lý thuyết của bạn đã được nộp tự động."
 
-#: judge/views/quiz.py:1683
+#: judge/views/quiz.py:1960
 msgid "Contest has ended. Your quiz has been submitted automatically."
 msgstr "Kỳ thi đã kết thúc. Câu hỏi lý thuyết của bạn đã được nộp tự động."
 
-#: judge/views/quiz.py:1695
+#: judge/views/quiz.py:1972
 msgid ""
 "Your contest time has ended. Your quiz has been submitted automatically."
 msgstr ""
 "Thời gian thi của bạn đã hết. Câu hỏi lý thuyết của bạn đã được nộp tự động."
 
-#: judge/views/quiz.py:1719
+#: judge/views/quiz.py:1996
 msgid ""
 "Warning: You may have this quiz open in another tab. Only one tab should be "
 "active."
@@ -6963,84 +7144,84 @@ msgstr ""
 "Cảnh báo: Có thể bạn đang mở câu hỏi lý thuyết này ở tab khác. Chỉ nên sử "
 "dụng một tab."
 
-#: judge/views/quiz.py:1868 judge/views/quiz.py:3535
+#: judge/views/quiz.py:2145 judge/views/quiz.py:3812
 msgid "This attempt was already submitted."
 msgstr "Lượt làm bài này đã được nộp."
 
-#: judge/views/quiz.py:1952 judge/views/quiz.py:3597
+#: judge/views/quiz.py:2229 judge/views/quiz.py:3874
 msgid ""
 "Time had expired. Your answers were saved and the quiz has been submitted."
 msgstr ""
 "Đã hết thời gian. Câu trả lời của bạn đã được lưu và câu hỏi lý thuyết đã "
 "được nộp."
 
-#: judge/views/quiz.py:1956 judge/views/quiz.py:3601
+#: judge/views/quiz.py:2233 judge/views/quiz.py:3878
 msgid "Quiz submitted successfully!"
 msgstr "Đã nộp câu hỏi lý thuyết thành công!"
 
-#: judge/views/quiz.py:2140 judge/views/quiz.py:3624
+#: judge/views/quiz.py:2417 judge/views/quiz.py:3901
 #, python-format
 msgid "Results: %s"
 msgstr "Kết quả: %s"
 
-#: judge/views/quiz.py:2167 judge/views/quiz.py:3635
+#: judge/views/quiz.py:2444 judge/views/quiz.py:3912
 msgid "You cannot view this result."
 msgstr "Bạn không thể xem kết quả này."
 
-#: judge/views/quiz.py:2283
+#: judge/views/quiz.py:2560
 #, python-format
 msgid "Attempts by %(user)s: %(quiz)s"
 msgstr "Các lượt làm bài của %(user)s: %(quiz)s"
 
-#: judge/views/quiz.py:2287 judge/views/quiz.py:3707
+#: judge/views/quiz.py:2564 judge/views/quiz.py:3984
 #, python-format
 msgid "My Attempts: %s"
 msgstr "Các lượt làm bài của tôi: %s"
 
-#: judge/views/quiz.py:2380
+#: judge/views/quiz.py:2657
 msgid "Grading Dashboard"
 msgstr "Bảng điều khiển chấm bài"
 
-#: judge/views/quiz.py:2535
+#: judge/views/quiz.py:2812
 msgid "Grade Attempt"
 msgstr "Chấm lượt làm bài"
 
-#: judge/views/quiz.py:2540
+#: judge/views/quiz.py:2817
 msgid "You cannot grade this quiz."
 msgstr "Bạn không thể chấm câu hỏi lý thuyết này."
 
-#: judge/views/quiz.py:2597
+#: judge/views/quiz.py:2874
 msgid "Grading saved successfully."
 msgstr "Đã lưu chấm điểm thành công."
 
-#: judge/views/quiz.py:2660
+#: judge/views/quiz.py:2937
 #, python-format
 msgid "Statistics: %s"
 msgstr "Thống kê: %s"
 
-#: judge/views/quiz.py:2733
+#: judge/views/quiz.py:3010
 msgid "You cannot export this quiz's grades."
 msgstr "Bạn không có quyền xuất điểm của câu hỏi lý thuyết này."
 
-#: judge/views/quiz.py:2835
+#: judge/views/quiz.py:3112
 #, python-format
 msgid "Question Analysis: %s"
 msgstr "Phân tích câu hỏi: %s"
 
-#: judge/views/quiz.py:3047
+#: judge/views/quiz.py:3324
 #, python-format
 msgid "Grade: %s"
 msgstr "Điểm: %s"
 
-#: judge/views/quiz.py:3234
+#: judge/views/quiz.py:3511
 msgid "This attempt does not belong to this lesson."
 msgstr "Lần làm bài này không thuộc về bài học này."
 
-#: judge/views/quiz.py:3337
+#: judge/views/quiz.py:3614
 msgid "You cannot attempt this quiz."
 msgstr "Bạn không thể làm câu hỏi lý thuyết này."
 
-#: judge/views/quiz.py:3435
+#: judge/views/quiz.py:3712
 msgid "You already have another attempt in progress."
 msgstr "Bạn đang có một lần làm bài khác chưa hoàn thành."
 
@@ -8610,8 +8791,8 @@ msgstr "Chỉ những nhóm sau được tham gia kỳ thi:"
 msgid "AC Rate"
 msgstr "Tỷ lệ AC"
 
-#: templates/contest/problems.html:77 templates/problem/list.html:47
-#: templates/problem/list.html:111 templates/problem/log.html:24
+#: templates/contest/problems.html:77 templates/history/log_entries.html:28
+#: templates/problem/list.html:47 templates/problem/list.html:111
 msgid "Editorial"
 msgstr "Hướng dẫn"
 
@@ -8640,6 +8821,7 @@ msgid "Add"
 msgstr "Thêm mới"
 
 #: templates/contest/problems.html:133 templates/contest/review_list.html:43
+#: templates/history/log_entries.html:24
 msgid "Contest"
 msgstr "Kỳ thi"
 
@@ -8660,7 +8842,7 @@ msgstr "Trở lại kỳ thi"
 msgid "#"
 msgstr "#"
 
-#: templates/contest/problemset.html:35 templates/problem/add.html:259
+#: templates/contest/problemset.html:35 templates/problem/add.html:235
 #: templates/problem/edit.html:569 templates/problem/import.html:37
 #: templates/problem/language_limits.html:65
 #: templates/problem/language_limits.html:170
@@ -9536,6 +9718,40 @@ msgstr "Tiếp tục"
 msgid "Dear"
 msgstr "Xin chào"
 
+#: templates/history/log_entries.html:17 templates/notification/list.html:160
+#: templates/ticket/logs.html:26
+msgid "System"
+msgstr "Hệ thống"
+
+#: templates/history/log_entries.html:30 templates/problem/edit_base.html:13
+#: templates/problem/import.html:38
+msgid "Test Data"
+msgstr "Dữ liệu Test"
+
+#: templates/history/log_entries.html:32 templates/problem/edit_base.html:15
+msgid "Solution Codes"
+msgstr "Code lời giải"
+
+#: templates/history/log_entries.html:53
+msgid "Field"
+msgstr "Trường"
+
+#: templates/history/log_entries.html:54
+msgid "Old value"
+msgstr "Giá trị cũ"
+
+#: templates/history/log_entries.html:55
+msgid "New value"
+msgstr "Giá trị mới"
+
+#: templates/history/log_entries.html:67
+msgid "Old"
+msgstr "Cũ"
+
+#: templates/history/log_entries.html:68 templates/quiz/edit.html:158
+msgid "New"
+msgstr "Mới"
+
 #: templates/home.html:12 templates/recent-organization.html:3
 msgid "Recent groups"
 msgstr "Nhóm gần đây"
@@ -10078,7 +10294,7 @@ msgid ""
 "Review and modify the AI suggestions before applying them to the problem."
 msgstr "Xem xét và sửa đổi các đề xuất trước khi lưu."
 
-#: templates/internal/problem_queue.html:863 templates/problem/add.html:194
+#: templates/internal/problem_queue.html:863 templates/problem/add.html:170
 #: templates/problem/edit.html:492
 msgid "Problem Types"
 msgstr "Dạng bài tập"
@@ -10114,12 +10330,12 @@ msgid "There has been an error with your problem data configuration."
 msgstr "Hiện đang có lỗi với bộ dữ liệu của bài tập của bạn"
 
 #: templates/judge/emails/problem_checker_error.html:19
-#: templates/problem/add.html:70 templates/problem/edit.html:344
+#: templates/problem/add.html:46 templates/problem/edit.html:344
 msgid "Problem Code"
 msgstr "Mã bài tập"
 
 #: templates/judge/emails/problem_checker_error.html:20
-#: templates/problem/add.html:82 templates/problem/edit.html:356
+#: templates/problem/add.html:58 templates/problem/edit.html:356
 msgid "Problem Name"
 msgstr "Tên bài tập"
 
@@ -10196,11 +10412,6 @@ msgstr "Thử điều chỉnh bộ lọc để xem thêm thông báo."
 #: templates/notification/list.html:128
 msgid "You have no notifications yet."
 msgstr "Bạn chưa có thông báo nào."
-
-#: templates/notification/list.html:160 templates/problem/log.html:21
-#: templates/ticket/logs.html:26
-msgid "System"
-msgstr "Hệ thống"
 
 #: templates/organization/add-member.html:9
 msgid "Search user"
@@ -10643,58 +10854,58 @@ msgstr "Từ máy tính của bạn"
 msgid "This will replace the current description. Continue?"
 msgstr "Thao tác này sẽ thay thế nội dung hiện tại. Tiếp tục?"
 
-#: templates/problem/add.html:62 templates/problem/edit.html:336
+#: templates/problem/add.html:38 templates/problem/edit.html:336
 msgid "Metadata"
 msgstr "Dữ liệu"
 
-#: templates/problem/add.html:111 templates/problem/edit.html:385
+#: templates/problem/add.html:87 templates/problem/edit.html:385
 msgid "Publication Date"
 msgstr "Ngày được tạo"
 
-#: templates/problem/add.html:135 templates/problem/edit.html:409
+#: templates/problem/add.html:111 templates/problem/edit.html:409
 msgid "Curators"
 msgstr "Người quản lý"
 
-#: templates/problem/add.html:147 templates/problem/edit.html:421
+#: templates/problem/add.html:123 templates/problem/edit.html:421
 msgid "Testers"
 msgstr "Người kiểm tra"
 
-#: templates/problem/add.html:160 templates/problem/edit.html:434
+#: templates/problem/add.html:136 templates/problem/edit.html:434
 msgid "Problem Description"
 msgstr "Đề bài"
 
-#: templates/problem/add.html:162 templates/problem/edit.html:436
+#: templates/problem/add.html:138 templates/problem/edit.html:436
 msgid "Use Template"
 msgstr "Dùng mẫu"
 
-#: templates/problem/add.html:178 templates/problem/edit.html:475
+#: templates/problem/add.html:154 templates/problem/edit.html:475
 msgid "PDF Description"
 msgstr "Đề bài PDF"
 
-#: templates/problem/add.html:206 templates/problem/edit.html:504
+#: templates/problem/add.html:182 templates/problem/edit.html:504
 msgid "Problem Group"
 msgstr "Nhóm bài tập"
 
-#: templates/problem/add.html:246 templates/problem/edit.html:556
+#: templates/problem/add.html:222 templates/problem/edit.html:556
 #: templates/problem/language_limits.html:64
 #: templates/problem/language_limits.html:158
 msgid "Time Limit (s)"
 msgstr "Giới hạn thời gian (giây)"
 
-#: templates/problem/add.html:270 templates/problem/edit.html:581
+#: templates/problem/add.html:246 templates/problem/edit.html:581
 #: templates/problem/language_limits.html:182
 msgid "Memory Unit"
 msgstr "Đơn vị bộ nhớ"
 
-#: templates/problem/add.html:285 templates/problem/edit.html:596
+#: templates/problem/add.html:261 templates/problem/edit.html:596
 msgid "Allowed Languages"
 msgstr "Ngôn ngữ lập trình cho phép"
 
-#: templates/problem/add.html:289 templates/problem/edit.html:600
+#: templates/problem/add.html:265 templates/problem/edit.html:600
 msgid "Select All"
 msgstr "Chọn tất cả"
 
-#: templates/problem/add.html:306
+#: templates/problem/add.html:282
 msgid "Create Problem"
 msgstr "Tạo bài tập"
 
@@ -10994,10 +11205,6 @@ msgstr "File định nghĩa"
 msgid "Apply!"
 msgstr "Lưu!"
 
-#: templates/problem/data.html:1701
-msgid "Test Cases"
-msgstr "Bộ Test"
-
 #: templates/problem/data.html:1707
 msgid "Input file"
 msgstr "File Input"
@@ -11164,18 +11371,9 @@ msgstr "Đang chạy…"
 msgid "Rejection feedback:"
 msgstr "phản hồi từ máy chấm"
 
-#: templates/problem/edit_base.html:13 templates/problem/import.html:38
-#: templates/problem/log.html:26
-msgid "Test Data"
-msgstr "Dữ liệu Test"
-
 #: templates/problem/edit_base.html:14
 msgid "Attachments"
 msgstr "Tệp đính kèm"
-
-#: templates/problem/edit_base.html:15 templates/problem/log.html:28
-msgid "Solution Codes"
-msgstr "Code lời giải"
 
 #: templates/problem/edit_base.html:16
 msgid "Languages"
@@ -11441,27 +11639,7 @@ msgstr "Số AC"
 msgid "Add clarifications"
 msgstr "Thêm thông báo"
 
-#: templates/problem/log.html:49
-msgid "Field"
-msgstr ""
-
-#: templates/problem/log.html:50
-msgid "Old value"
-msgstr "Giá trị cũ"
-
-#: templates/problem/log.html:51
-msgid "New value"
-msgstr "Giá trị mới"
-
-#: templates/problem/log.html:63
-msgid "Old"
-msgstr "Cũ"
-
-#: templates/problem/log.html:64 templates/quiz/edit.html:158
-msgid "New"
-msgstr "Mới"
-
-#: templates/problem/log.html:93
+#: templates/problem/log.html:5
 msgid "No edit history available for this problem."
 msgstr "Không có lịch sử chỉnh sửa cho bài tập này."
 

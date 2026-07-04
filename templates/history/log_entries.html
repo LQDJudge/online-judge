@@ -1,0 +1,100 @@
+<div class="problem-log edit-history-log">
+  {% if history_entries %}
+    <div class="log-entries">
+      {% for version in history_entries %}
+        <div class="log-entry">
+          <div class="log-header{% if version.changes %} log-header-toggle{% endif %}">
+            <div class="log-info">
+              <div class="log-user">
+                {% if version.revision.user %}
+                  <img src="{{ gravatar(version.revision.user.profile.id, 32) }}"
+                       class="gravatar" width="24" height="24" loading="lazy">
+                  <a href="{{ url('user_page', version.revision.user.username) }}"
+                     class="{{ version.revision.user.profile.css_class }}">
+                    {{ version.revision.user.username }}
+                  </a>
+                {% else %}
+                  <span class="gray">{{ _('System') }}</span>
+                {% endif %}
+                {% if version.object_label %}
+                  <span class="log-type {{ version.object_label_class }}">{{ version.object_label }}</span>
+                {% elif version.object_type == "problem" %}
+                  <span class="log-type log-type-solution-code">{{ _('Content') }}</span>
+                {% elif version.object_type == "contest" %}
+                  <span class="log-type log-type-solution-code">{{ _('Contest') }}</span>
+                {% elif version.object_type == "quiz" %}
+                  <span class="log-type log-type-solution-code">{{ _('Quiz') }}</span>
+                {% elif version.object_type == "solution" %}
+                  <span class="log-type log-type-solution">{{ _('Editorial') }}</span>
+                {% elif version.object_type == "test_data" %}
+                  <span class="log-type log-type-test-data">{{ _('Test Data') }}</span>
+                {% elif version.object_type == "solution_code" %}
+                  <span class="log-type log-type-solution-code">{{ _('Solution Codes') }}</span>
+                {% endif %}
+              </div>
+              <div class="log-comment">
+                {% if version.revision.comment %}
+                  {{ version.revision.comment }}
+                {% endif %}
+              </div>
+            </div>
+            <div class="log-meta">
+              <span class="log-time">{{ relative_time(version.revision.date_created) }}</span>
+              {% if version.changes %}
+                <i class="fa fa-chevron-down toggle-icon"></i>
+              {% endif %}
+            </div>
+          </div>
+          {% if version.changes %}
+            <div class="log-changes" hidden>
+              <table class="changes-table">
+                <thead>
+                  <tr>
+                    <th>{{ _('Field') }}</th>
+                    <th>{{ _('Old value') }}</th>
+                    <th>{{ _('New value') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for change in version.changes %}
+                    {% if change.diff_lines is defined and change.diff_lines %}
+                      {% set uid = 'diff-' ~ version.id ~ '-' ~ loop.index %}
+                      <tr>
+                        <td class="change-field">{{ change.field }}</td>
+                        <td class="change-diff" colspan="2">
+                          <div class="diff-tabs">
+                            <button type="button" class="diff-tab active" data-diff-target="{{ uid }}" data-diff-mode="diff">{{ _('Diff') }}</button>
+                            <button type="button" class="diff-tab" data-diff-target="{{ uid }}" data-diff-mode="old">{{ _('Old') }}</button>
+                            <button type="button" class="diff-tab" data-diff-target="{{ uid }}" data-diff-mode="new">{{ _('New') }}</button>
+                          </div>
+                          <pre class="diff-block" id="{{ uid }}-diff">{% for line in change.diff_lines %}<span class="{% if line.startswith('@@') %}diff-hunk{% elif line.startswith('+') %}diff-add{% elif line.startswith('-') %}diff-del{% else %}diff-ctx{% endif %}">{{ line }}</span>
+{% endfor %}</pre>
+                          <pre class="diff-block" id="{{ uid }}-old" hidden>{% if change.old is not none and change.old != '' %}{{ change.old }}{% else %}-{% endif %}</pre>
+                          <pre class="diff-block" id="{{ uid }}-new" hidden>{% if change.new is not none and change.new != '' %}{{ change.new }}{% else %}-{% endif %}</pre>
+                        </td>
+                      </tr>
+                    {% else %}
+                      <tr>
+                        <td class="change-field">{{ change.field }}</td>
+                        <td class="change-old">{% if change.old is not none and change.old != '' %}{{ change.old }}{% else %}-{% endif %}</td>
+                        <td class="change-new">{% if change.new is not none and change.new != '' %}{{ change.new }}{% else %}-{% endif %}</td>
+                      </tr>
+                    {% endif %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if page_obj.has_other_pages and page_obj.paginator.num_pages > 1 %}
+      {% include "list-pages.html" %}
+    {% endif %}
+  {% else %}
+    <div class="no-logs">
+      <p>{{ empty_message }}</p>
+    </div>
+  {% endif %}
+</div>
