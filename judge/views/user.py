@@ -409,7 +409,7 @@ class UserPerformancePointsAjax(UserProblemsPage):
     template_name = "user/pp-table-body.html"
 
     def get_context_data(self, **kwargs):
-        context = super(UserPerformancePointsAjax, self).get_context_data(**kwargs)
+        context = dict(kwargs)
         try:
             start = int(self.request.GET.get("start", 0))
             end = int(self.request.GET.get("end", settings.DMOJ_PP_ENTRIES))
