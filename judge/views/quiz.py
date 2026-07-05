@@ -1300,6 +1300,7 @@ class QuizLog(
         context["history_entries"] = context.get("object_list", self.object_list)
         context["page_type"] = "log"
         context["can_edit"] = True
+        context["page_prefix"] = "?page="
         context["first_page_href"] = reverse("quiz_log", args=[self.object.code])
         context["empty_message"] = _("No edit history available for this quiz.")
         return context

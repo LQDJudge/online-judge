@@ -44,7 +44,7 @@ class EditHistoryViewTests(TestCase):
         )
 
     def setUp(self):
-        self.user = User.objects.create_user("history-user", password="password")
+        self.user = User.objects.create_user("history_user", password="password")
         self.profile, _ = Profile.objects.get_or_create(
             user=self.user, defaults={"language": self.language}
         )
@@ -58,6 +58,21 @@ class EditHistoryViewTests(TestCase):
             memory_limit=65536,
             points=1.0,
         )
+
+    def add_history_revisions(self, obj, field_name, label, count=51):
+        original = getattr(obj, field_name) or ""
+        for i in range(count):
+            with revisions.create_revision():
+                setattr(
+                    obj,
+                    field_name,
+                    "%s\n\nPagination regression %s %02d" % (original, label, i),
+                )
+                obj.save(update_fields=[field_name])
+                revisions.set_user(self.user)
+                revisions.set_comment(
+                    "Pagination regression %s entry %02d" % (label, i)
+                )
 
     def test_history_routes_render_for_editors(self):
         self.user.is_staff = True
@@ -94,6 +109,50 @@ class EditHistoryViewTests(TestCase):
             with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, 200)
+
+    def test_history_routes_paginate_with_querystring_links(self):
+        self.user.is_staff = True
+        self.user.is_superuser = True
+        self.user.save(update_fields=["is_staff", "is_superuser"])
+
+        problem = self.make_problem("histpaginateprob")
+        problem.authors.add(self.profile)
+        now = timezone.now()
+        contest = Contest.objects.create(
+            key="histpaginatecontest",
+            name="History Pagination Contest",
+            start_time=now,
+            end_time=now + timezone.timedelta(hours=2),
+        )
+        contest.authors.add(self.profile)
+        quiz = Quiz.objects.create(
+            code="histpaginatequiz", title="History Pagination Quiz"
+        )
+        quiz.authors.add(self.profile)
+
+        self.add_history_revisions(problem, "summary", "problem")
+        self.add_history_revisions(contest, "summary", "contest")
+        self.add_history_revisions(quiz, "description", "quiz")
+
+        self.client.force_login(self.user)
+        targets = [
+            (reverse("problem_log", args=[problem.code]), "problem"),
+            (reverse("contest_log", args=[contest.key]), "contest"),
+            (reverse("quiz_log", args=[quiz.code]), "quiz"),
+        ]
+
+        for url, label in targets:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'href="?page=2"', html=False)
+
+                page_two = self.client.get(url, {"page": 2})
+                self.assertEqual(page_two.status_code, 200)
+                self.assertContains(
+                    page_two,
+                    "Pagination regression %s entry 00" % label,
+                )
 
     def test_problem_history_summarizes_testcase_changes(self):
         problem = self.make_problem()

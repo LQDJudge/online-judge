@@ -2978,6 +2978,7 @@ class ContestLog(
         context["history_entries"] = context.get("object_list", self.object_list)
         context["page_type"] = "log"
         context["can_edit"] = True
+        context["page_prefix"] = "?page="
         context["first_page_href"] = reverse("contest_log", args=[self.object.key])
         context["empty_message"] = _("No edit history available for this contest.")
         return context
