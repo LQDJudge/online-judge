@@ -34,20 +34,14 @@ CHATBOT_SUPPORTED_MODELS = [
         "context_tokens": 1_000_000,
     },
     {
-        "id": "GPT-5.5",
-        "name": "GPT 5.5",
+        "id": "gpt-5.4",
+        "name": "GPT 5.4",
         "default": False,
         "context_tokens": 1_000_000,
     },
     {
         "id": "Gemini-3.1-Pro",
         "name": "Gemini 3.1 Pro",
-        "default": False,
-        "context_tokens": 1_000_000,
-    },
-    {
-        "id": "GPT-5.5-Pro",
-        "name": "GPT 5.5 Pro",
         "default": False,
         "context_tokens": 1_000_000,
     },
