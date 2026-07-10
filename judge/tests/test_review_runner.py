@@ -162,3 +162,40 @@ class ReviewProblemTaskTest(TestCase):
         self.assertEqual(run.status, ProblemReviewRun.ERROR)
         self.assertIsNotNone(run.finished_at)
         mock_emit.assert_called_once()
+
+    def test_emit_notifications_default_notifies_on_done(self):
+        # Default (author / admin-rerun flow): a completed run emits the
+        # per-problem "review done" / "new public request" notifications.
+        run = self._make_run()
+        with patch("judge.tasks.review.CHECKS", [_DummyCheck()]), patch(
+            "judge.tasks.review._emit_review_done_notifications"
+        ) as mock_done:
+            review_problem(run.id)
+        mock_done.assert_called_once()
+
+    def test_emit_notifications_false_suppresses_done(self):
+        # Contest-review flow: per-problem reviews triggered as part of a
+        # contest review MUST NOT emit their own notifications — the contest
+        # review emits contest-level notifications instead.
+        run = self._make_run()
+        with patch("judge.tasks.review.CHECKS", [_DummyCheck()]), patch(
+            "judge.tasks.review._emit_review_done_notifications"
+        ) as mock_done:
+            review_problem(run.id, emit_notifications=False)
+        run.refresh_from_db()
+        # The run still completes normally — only the notification is skipped.
+        self.assertEqual(run.status, ProblemReviewRun.DONE)
+        mock_done.assert_not_called()
+
+    def test_emit_notifications_false_suppresses_error(self):
+        # A runner-level crash under emit_notifications=False marks the run
+        # ERROR (state is preserved) but skips the error notification, since
+        # the contest review reports the failure via its own verdict.
+        run = self._make_run()
+        with patch("judge.tasks.review.CHECKS", None), patch(
+            "judge.tasks.review._emit_review_error_notifications"
+        ) as mock_emit:
+            review_problem(run.id, emit_notifications=False)
+        run.refresh_from_db()
+        self.assertEqual(run.status, ProblemReviewRun.ERROR)
+        mock_emit.assert_not_called()

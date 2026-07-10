@@ -36,6 +36,7 @@ def trigger_problem_review_for(
     profile,
     *,
     dispatch="celery",
+    emit_notifications=True,
 ):
     """Create a fresh ProblemReviewRun and dispatch the review_problem task.
 
@@ -48,6 +49,14 @@ def trigger_problem_review_for(
         profile: judge.models.Profile triggering the run
         dispatch: "celery" → fire-and-forget via review_problem.delay();
                   "sync"   → run review_problem.apply().get() inline (blocks).
+        emit_notifications: forwarded to review_problem. Pass False from the
+                  contest-review pipeline so the per-problem review doesn't
+                  emit its own "new public request"/"review done" notifications
+                  — the contest review emits contest-level notifications and
+                  the per-problem ones would be duplicate spam (contest runs
+                  create no PublicRequest, so the problem isn't in the queue
+                  the notification links to). Leave True for author "Request
+                  public" and admin Rerun flows.
 
     Caller is expected to be inside a transaction.atomic() block — this helper
     does NOT open its own to keep composition flexible (e.g., the contest path
@@ -77,7 +86,11 @@ def trigger_problem_review_for(
         # on_commit so the worker doesn't pick up the row before our INSERT
         # is durably visible (avoids "ProblemReviewRun matching query does
         # not exist" inside the task).
-        transaction.on_commit(lambda: review_problem.delay(new_run.id))
+        transaction.on_commit(
+            lambda: review_problem.delay(
+                new_run.id, emit_notifications=emit_notifications
+            )
+        )
     elif dispatch == "sync":
         # Sync path is called from within another Celery worker (the contest
         # review pipeline). `.apply()` runs the task body in the current
@@ -93,7 +106,11 @@ def trigger_problem_review_for(
         # `throw=True` re-raises any exception the task raised, which is the
         # behavior the caller expects (the check's except-Exception block
         # catches and logs it).
-        review_problem.apply(args=[new_run.id], throw=True)
+        review_problem.apply(
+            args=[new_run.id],
+            kwargs={"emit_notifications": emit_notifications},
+            throw=True,
+        )
     else:
         raise ValueError(f"trigger_problem_review_for: unknown dispatch={dispatch!r}")
 

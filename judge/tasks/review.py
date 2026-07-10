@@ -30,13 +30,21 @@ def _call_llm_text(system_prompt: str, user_prompt: str) -> str:
 
 
 @shared_task(bind=True)
-def review_problem(self, run_id):
+def review_problem(self, run_id, emit_notifications=True):
     """
     Execute every check in CHECKS against the ProblemReviewRun's problem, writing
     one ProblemReviewCheckResult row per check. Marks the run Done at the end.
     If the runner itself crashes outside per-check handling, mark the run as
     ERROR and notify so it doesn't stay stuck in RUNNING (the reaper would
     eventually pick it up, but explicit handling is faster + cleaner).
+
+    emit_notifications: when False, the per-problem "review done"/"new public
+    request"/"review error" notifications are suppressed. The contest-review
+    pipeline triggers per-problem reviews as a side effect of reviewing the
+    contest — it emits its own contest-level notifications instead, so the
+    per-problem ones would just be duplicate spam pointing at a public queue
+    the problem was never added to (contest-triggered runs create no
+    PublicRequest). Author-facing and admin-rerun flows leave this True.
     """
     # Celery tasks run outside the HTTP request cycle, so Django's locale
     # middleware never fires. Without an explicit activate(), gettext() falls
@@ -104,7 +112,8 @@ def review_problem(self, run_id):
         run.finished_at = datetime.now(timezone.utc)
         run.save(update_fields=["status", "finished_at", "summary_report"])
 
-        _emit_review_done_notifications(run)
+        if emit_notifications:
+            _emit_review_done_notifications(run)
         return {"success": True, "run_id": run.id}
     except Exception as exc:
         # Runner-level crash (e.g., DB connection drop mid-loop, unhandled
@@ -116,11 +125,14 @@ def review_problem(self, run_id):
             status=ProblemReviewRun.ERROR,
             finished_at=datetime.now(timezone.utc),
         )
-        try:
-            run.refresh_from_db()
-            _emit_review_error_notifications(run, reason=str(exc))
-        except Exception:
-            logger.exception("Failed to emit error notifications for run %s", run_id)
+        if emit_notifications:
+            try:
+                run.refresh_from_db()
+                _emit_review_error_notifications(run, reason=str(exc))
+            except Exception:
+                logger.exception(
+                    "Failed to emit error notifications for run %s", run_id
+                )
         return {"success": False, "error": str(exc)}
 
 
