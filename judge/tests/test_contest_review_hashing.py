@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from judge.models import Contest, Language, Problem, ProblemGroup, Profile
 from judge.models.contest import ContestProblem
+from judge.models.quiz import Quiz
 from judge.review.contest_hashing import compute_contest_input_hash
 
 
@@ -115,3 +116,31 @@ class ComputeContestInputHashTest(TestCase):
         self.contest.testers.add(profile2)
         h2 = compute_contest_input_hash(self.contest)
         self.assertNotEqual(h1, h2)
+
+    def test_ignores_null_problem_slots(self):
+        # ContestProblem.problem is nullable (quiz slots have no problem).
+        # A null slot must not crash the hash (it used to raise
+        # AttributeError on cp.problem.code and 500 the request_public call)
+        # and must not affect the hash value, since null slots aren't reviewed.
+        h_before = compute_contest_input_hash(self.contest)
+        # bulk_create bypasses ContestProblem.save()/full_clean() (which would
+        # reject a slot with neither problem nor quiz). Real null-problem slots
+        # are quiz slots that reach the DB the same way; the hash only cares
+        # that problem is None, so this faithfully reproduces the crash row.
+        ContestProblem.objects.bulk_create(
+            [ContestProblem(contest=self.contest, problem=None, points=0, order=3)]
+        )
+        h_after = compute_contest_input_hash(self.contest)
+        self.assertEqual(h_before, h_after)
+
+    def test_changes_when_quiz_slot_added(self):
+        # A quiz slot IS part of the reviewed surface (the quiz-leak check runs
+        # on it), so adding/removing one must dirty the hash — otherwise a
+        # non-admin author couldn't re-request review after adding a quiz.
+        h_before = compute_contest_input_hash(self.contest)
+        quiz = Quiz.objects.create(code="chqz1", title="Hash Quiz")
+        ContestProblem.objects.create(
+            contest=self.contest, quiz=quiz, points=0, order=3
+        )
+        h_after = compute_contest_input_hash(self.contest)
+        self.assertNotEqual(h_before, h_after)
