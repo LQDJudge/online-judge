@@ -17,9 +17,9 @@
     lockClickSpace: false,
     unreadCount: 0,
     hasNext: false,
+    roomVisible: true,
     pushedMessages: new Set(),
     drafts: {},
-    roomCache: {},
     messageLoadToken: 0,
     chatInfoToken: 0,
 
@@ -290,9 +290,20 @@
     },
 
     showRightPanel: function() {
+      // The room's message panel is now on screen (true on desktop as well,
+      // where both panels are always visible side by side).
+      ChatState.roomVisible = true;
       if (ChatUtils.isMobile()) {
-        $('.chat-sidebar').hide();
-        $('.chat-area').css('display', 'flex');
+        // Toggle via classes (see .mobile-visible / .mobile-hidden in SCSS)
+        // rather than inline styles, so a mobile->desktop resize can't strand
+        // a panel with a leftover inline display value.
+        $('.chat-area').addClass('mobile-visible');
+        $('.chat-sidebar').addClass('mobile-hidden');
+        // Returning to the room means we're viewing it again: mark it seen.
+        if (ChatState.roomId) {
+          ChatAPI.updateLastSeen(ChatState.roomId);
+          ChatUI.updateUnreadBadge(ChatState.otherUserId || null, true);
+        }
         // Scroll to bottom after display change
         var self = this;
         setTimeout(function() {
@@ -302,9 +313,13 @@
     },
 
     hideRightPanel: function() {
+      // Back button: the message panel is no longer visible. roomId stays set
+      // so returning is cheap, but incoming messages must now be treated as
+      // background (unread badge) instead of being appended + marked seen.
+      ChatState.roomVisible = false;
       if (ChatUtils.isMobile()) {
-        $('.chat-sidebar').css('display', 'flex');
-        $('.chat-area').hide();
+        $('.chat-area').removeClass('mobile-visible');
+        $('.chat-sidebar').removeClass('mobile-hidden');
         // Scroll sidebar to top
         $('#chat-online-content').scrollTop(0);
       }
@@ -339,7 +354,7 @@
 
       var $header = $('<div>');
       $header.append(
-        $('<div onclick="ChatApp.UI.hideRightPanel()" class="back-button"><i class="fa fa-arrow-left"></i></div>')
+        $('<div class="back-button"><i class="fa fa-arrow-left"></i></div>')
       );
 
       var $avatarWrapper = $('<div class="status-container chat-header-avatar">').append($avatar);
@@ -364,7 +379,6 @@
         this.newMessageCount++;
         this.showNewMessagesBubble(this.newMessageCount);
       }
-      ChatRoomCache.updateCurrent();
     },
 
     prependMessages: function(html) {
@@ -380,7 +394,6 @@
       ChatElements.chatBox.scrollTop(
         scrollTopBefore + chatBox.scrollHeight - scrollHeightBefore
       );
-      ChatRoomCache.updateCurrent();
     },
 
     clearMessages: function() {
@@ -529,81 +542,6 @@
   };
 
   // ============================================
-  // Message Cache
-  // ============================================
-  var ChatRoomCache = {
-    getCurrentKey: function() {
-      return ChatState.roomId ? 'room:' + ChatState.roomId : 'lobby';
-    },
-
-    saveCurrent: function() {
-      if (!ChatElements.chatLog || !ChatElements.chatLog.length) return;
-
-      ChatState.roomCache[this.getCurrentKey()] = {
-        html: ChatElements.chatLog.html(),
-        scrollTop: ChatElements.chatBox.scrollTop(),
-        hasNext: ChatState.hasNext,
-        cachedAt: Date.now()
-      };
-    },
-
-    restoreCurrent: function() {
-      var cached = ChatState.roomCache[this.getCurrentKey()];
-      if (!cached) return false;
-
-      $('.has_next').remove();
-      ChatElements.chatLog.html(cached.html);
-      ChatUtils.postProcessMessages(ChatElements.chatLog);
-      ChatState.hasNext = cached.hasNext;
-      ChatUI.hideLoader();
-      ChatElements.chatBox.scrollTop(cached.scrollTop);
-      return true;
-    },
-
-    updateCurrent: function() {
-      this.saveCurrent();
-    },
-
-    appendToRoom: function(roomId, html) {
-      var key = roomId ? 'room:' + roomId : 'lobby';
-      var cached = ChatState.roomCache[key];
-      if (cached) {
-        cached.html += html;
-        cached.cachedAt = Date.now();
-      }
-    },
-
-    replaceTemporaryMessage: function(roomId, tmpId, html) {
-      var key = roomId ? 'room:' + roomId : 'lobby';
-      var cached = ChatState.roomCache[key];
-      if (!cached) return;
-
-      var $container = $('<div>').html(cached.html);
-      var $newMessage = $(html);
-
-      if ($container.find('#message-' + tmpId).length) {
-        $container.find('#message-' + tmpId).replaceWith($newMessage);
-      } else if ($container.find('#message-block-' + tmpId).length) {
-        $container.find('#message-block-' + tmpId).replaceWith($newMessage.find('.message-block'));
-      } else {
-        $container.append($newMessage);
-      }
-
-      cached.html = $container.html();
-      cached.cachedAt = Date.now();
-    },
-
-    hasRoom: function(roomId) {
-      var key = roomId ? 'room:' + roomId : 'lobby';
-      return !!ChatState.roomCache[key];
-    },
-
-    invalidateCurrent: function() {
-      delete ChatState.roomCache[this.getCurrentKey()];
-    }
-  };
-
-  // ============================================
   // Message Handling
   // ============================================
   var ChatMessages = {
@@ -648,10 +586,8 @@
       var loadToken = refreshHtml ? ++ChatState.messageLoadToken : ChatState.messageLoadToken;
       if (refreshHtml) {
         ChatState.isLocked = true;
-        if (!ChatRoomCache.restoreCurrent()) {
-          ChatElements.chatLog.html('');
-          ChatUI.showLoader();
-        }
+        ChatElements.chatLog.html('');
+        ChatUI.showLoader();
       }
 
       ChatAPI.loadMessages(lastId)
@@ -667,11 +603,13 @@
             ChatElements.chatLog.append(data);
             ChatUtils.postProcessMessages(ChatElements.chatLog);
             ChatUI.scrollToBottom();
-            // Scroll again after images load
+            // Re-pin to bottom as images load, but only if the user hasn't
+            // scrolled up in the meantime (otherwise we'd yank them back down).
             ChatElements.chatLog.find('img').on('load', function() {
-              ChatUI.scrollToBottom();
+              if (ChatUI.isNearBottom()) {
+                ChatUI.scrollToBottom();
+              }
             });
-            ChatRoomCache.updateCurrent();
           } else {
             ChatUI.prependMessages(data);
           }
@@ -689,7 +627,15 @@
     },
 
     addNewMessage: function(messageId, room, isSelfAuthor, wsMessage) {
-      var isCurrentRoom = room === ChatState.roomId;
+      // Only treat the room as "live" when its panel is actually on screen.
+      // On mobile the back button hides the chat area (roomVisible = false)
+      // without changing roomId; messages arriving then must go through the
+      // sidebar/unread path instead of being appended + silently marked seen.
+      // The panel is always visible on desktop, so scope the flag to mobile —
+      // this also avoids a stale roomVisible=false stranding desktop after a
+      // mobile->desktop resize.
+      var isCurrentRoom = room === ChatState.roomId &&
+        (!ChatUtils.isMobile() || ChatState.roomVisible);
 
       // Sender is online since they just sent a message
       if (wsMessage && wsMessage.author_id) {
@@ -742,30 +688,13 @@
           }
           ChatUI.moveConversationToTop(wsMessage.other_user_id);
         }
-
-        if (ChatRoomCache.hasRoom(room)) {
-          ChatAPI.getMessage(messageId)
-            .done(function(data) {
-              ChatRoomCache.appendToRoom(room, data);
-            })
-            .fail(function() {
-              console.log('Could not cache new message');
-            });
-        }
       }
     },
 
     checkNewMessage: function(messageId, tmpId, room) {
       if (room !== ChatState.roomId) {
-        if (ChatRoomCache.hasRoom(room)) {
-          ChatAPI.getMessage(messageId)
-            .done(function(data) {
-              ChatRoomCache.replaceTemporaryMessage(room, tmpId, data);
-            })
-            .fail(function() {
-              console.log('Failed to cache confirmed message');
-            });
-        }
+        // Our own message confirmed for a room we're no longer viewing. There's
+        // no live DOM to reconcile; it will render fresh next time we open it.
         return;
       }
 
@@ -795,7 +724,6 @@
           }
           ChatUI.updateUnreadBadge(ChatState.otherUserId, true);
           ChatUtils.postProcessMessages($newMessage, 'incremental');
-          ChatRoomCache.updateCurrent();
         })
         .fail(function() {
           console.log('Failed to check message');
@@ -1013,7 +941,6 @@
             }
             // Recalculate message grouping to fix avatar/name visibility
             ChatUtils.mergeConsecutiveMessages();
-            ChatRoomCache.updateCurrent();
           })
           .fail(function() {
             console.log('Failed to delete');
@@ -1053,6 +980,12 @@
         var $row = $(this);
         var clickedUserId = $row.data('user-id') || $row.attr('id').replace('click_space_', '');
         if (clickedUserId === ChatState.otherUserId) {
+          // Re-tapping the room we already have open. If it was backgrounded
+          // (mobile back button), reload to pull any messages that arrived
+          // while hidden before revealing the panel.
+          if (!ChatState.roomVisible) {
+            ChatMessages.loadNextPage(null, true);
+          }
           ChatUI.showRightPanel();
           return;
         }
@@ -1068,6 +1001,10 @@
         if (ChatState.roomId) {
           ChatEvents.loadKnownRoom('', '', $(this));
         } else {
+          // Already in the lobby; reload if it was backgrounded, then reveal.
+          if (!ChatState.roomVisible) {
+            ChatMessages.loadNextPage(null, true);
+          }
           ChatUI.showRightPanel();
         }
       });
@@ -1091,7 +1028,9 @@
       ChatUI.updateUnreadBadge(ChatState.otherUserId || null, true);
       ChatUI.showRightPanel();
       ChatUI.applyMutedState();
-      if (!ChatConfig.user.isMuted) {
+      // Don't auto-focus on mobile: it would pop the on-screen keyboard the
+      // moment a conversation is opened, covering the input and newest messages.
+      if (!ChatConfig.user.isMuted && !ChatUtils.isMobile()) {
         ChatElements.chatInput.focus();
       }
       ChatDrafts.restoreCurrent();
@@ -1109,7 +1048,6 @@
       if (ChatState.lockClickSpace) return;
       ChatState.lockClickSpace = true;
       ChatDrafts.saveCurrent();
-      ChatRoomCache.saveCurrent();
 
       this.setCurrentRoom(String(roomId || ''), String(otherUserId || ''));
       this.openCurrentRoom($row);
@@ -1120,7 +1058,6 @@
       if (ChatState.lockClickSpace) return;
       ChatState.lockClickSpace = true;
       ChatDrafts.saveCurrent();
-      ChatRoomCache.saveCurrent();
 
       if (encryptedUser) {
         ChatAPI.getOrCreateRoom(encryptedUser)
@@ -1259,11 +1196,30 @@
               'class': 'user-redirect'
             })
               .append($('<i>', { 'class': 'fa fa-mail-forward' }))
+              // Hover covers desktop; mousedown/touchstart makes the "select2
+              // is selecting" guard fire on touch too (no reliable hover there).
               .on('mouseover', function() { inUserRedirect = true; })
-              .on('mouseout', function() { inUserRedirect = false; }));
+              .on('mouseout', function() { inUserRedirect = false; })
+              .on('mousedown touchstart', function() { inUserRedirect = true; })
+              // Follow the profile link directly instead of opening a DM.
+              .on('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                window.location.href = $(this).attr('href');
+              }));
         }
       }).on('select2:selecting', function() {
-        return !inUserRedirect;
+        // Consume the flag so a touch that set it (touchstart) but never fired a
+        // click (e.g. finger moved into a scroll) can't stick and block the next
+        // legitimate result selection.
+        if (inUserRedirect) {
+          inUserRedirect = false;
+          return false;
+        }
+        return true;
+      }).on('select2:close', function() {
+        // Clear any stale touch state between dropdown sessions.
+        inUserRedirect = false;
       }).on('select2:select', function(e) {
         var encryptedUser = e.params.data.id;
         if (!encryptedUser) return;
@@ -1400,16 +1356,21 @@
       }
     }
 
-    if (!ChatConfig.user.isMuted) {
+    // Skip auto-focus on mobile so the keyboard doesn't cover the chat on load.
+    if (!ChatConfig.user.isMuted && !ChatUtils.isMobile()) {
       ChatElements.chatInput.focus();
     }
 
     // Show chat log then scroll to bottom
     ChatElements.chatLog.show();
     ChatUI.scrollToBottom();
-    // Scroll again after images load
+    // Re-pin to bottom as images load, but only if the user hasn't scrolled up
+    // (otherwise slow-loading avatars keep yanking them back down, especially
+    // on mobile where images trickle in over several seconds).
     $('#chat-log img').on('load', function() {
-      ChatUI.scrollToBottom();
+      if (ChatUI.isNearBottom()) {
+        ChatUI.scrollToBottom();
+      }
     });
   }
 
