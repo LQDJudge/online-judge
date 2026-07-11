@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-10 14:46+0700\n"
+"POT-Creation-Date: 2026-07-11 12:25+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -188,7 +188,7 @@ msgstr "Các kỳ thi bao gồm"
 #: templates/contest/review.html:356 templates/contest/review.html:383
 #: templates/contest/submissions.html:55
 #: templates/internal/problem_duplicate_detail.html:198
-#: templates/problem/import.html:27 templates/problem/list.html:23
+#: templates/problem/import.html:28 templates/problem/list.html:23
 #: templates/problem/list.html:153 templates/problem/review_list.html:86
 #: templates/semantic_search.html:152 templates/user/user-problems.html:56
 #: templates/user/user-problems.html:98
@@ -215,7 +215,7 @@ msgstr "Chi tiết"
 
 #: judge/admin/contest.py:228 judge/forms.py:564
 #: templates/contest/macros.html:90 templates/contest/macros.html:100
-#: templates/problem/import.html:26
+#: templates/problem/import.html:27
 msgid "Format"
 msgstr "Thể thức"
 
@@ -539,7 +539,7 @@ msgstr "Các bài này không cho phép sử dụng ngôn ngữ này"
 #: judge/admin/runtime.py:116 judge/models/quiz.py:241
 #: templates/problem/attachments.html:138
 #: templates/problem/attachments.html:151
-#: templates/problem/attachments.html:165 templates/problem/import.html:32
+#: templates/problem/attachments.html:165 templates/problem/import.html:33
 #: templates/problem/list.html:155
 msgid "Description"
 msgstr "Mô tả"
@@ -4457,7 +4457,7 @@ msgid "All artifacts uploaded."
 msgstr "Tất cả artifact đã được tải lên."
 
 #: judge/review/checks/checker_correctness.py:18
-#: templates/problem/import.html:39
+#: templates/problem/import.html:40
 msgid "Checker"
 msgstr "Trình chấm"
 
@@ -4534,7 +4534,7 @@ msgid "No similar public problem above threshold %(threshold).2f."
 msgstr "Không có đề công khai nào tương tự vượt ngưỡng %(threshold).2f."
 
 #: judge/review/checks/solutions_rubric.py:29
-#: templates/problem/edit_base.html:18 templates/problem/import.html:30
+#: templates/problem/edit_base.html:18 templates/problem/import.html:31
 msgid "Solutions"
 msgstr "Bài giải"
 
@@ -4626,16 +4626,16 @@ msgstr "Validator đã được cấu hình."
 msgid "Per-problem reviews"
 msgstr "Đánh giá từng bài"
 
-#: judge/review/contest_checks/problems_reviewed.py:145
+#: judge/review/contest_checks/problems_reviewed.py:143
 msgid "Contest has only quizzes; no problems to review."
 msgstr "Kỳ thi chỉ có câu hỏi lý thuyết; không có bài tập nào để đánh giá."
 
-#: judge/review/contest_checks/problems_reviewed.py:150
-#: judge/review/contest_checks/submission_leak_check.py:127
+#: judge/review/contest_checks/problems_reviewed.py:148
+#: judge/review/contest_checks/submission_leak_check.py:133
 msgid "Contest has no problems."
 msgstr "Kỳ thi không có bài nào."
 
-#: judge/review/contest_checks/problems_reviewed.py:224
+#: judge/review/contest_checks/problems_reviewed.py:222
 #, python-format
 msgid ""
 "**[System]** Review auto-triggered by [user:%(user)s] for contest "
@@ -4644,7 +4644,7 @@ msgstr ""
 "**[Hệ thống]** Đánh giá tự động được kích hoạt bởi [user:%(user)s] cho kỳ "
 "thi [%(contest_name)s](%(contest_url)s)."
 
-#: judge/review/contest_checks/problems_reviewed.py:300
+#: judge/review/contest_checks/problems_reviewed.py:298
 #, python-format
 msgid ""
 "Contest contains %(n)d already-public problem(s) (%(codes)s). Rated contests "
@@ -4652,59 +4652,59 @@ msgid ""
 "requesting public again."
 msgstr ""
 
-#: judge/review/contest_checks/problems_reviewed.py:317
+#: judge/review/contest_checks/problems_reviewed.py:315
 #, python-format
 msgid "All %(n)d problems passed review."
 msgstr "Tất cả %(n)d bài đều đã đạt đánh giá."
 
-#: judge/review/contest_checks/problems_reviewed.py:324
+#: judge/review/contest_checks/problems_reviewed.py:322
 #, python-format
 msgid "%(passed)d/%(total)d problems passed review."
 msgstr "%(passed)d/%(total)d bài đạt đánh giá."
 
-#: judge/review/contest_checks/quiz_leak_check.py:84
+#: judge/review/contest_checks/quiz_leak_check.py:94
 msgid "Quiz leak"
 msgstr "Lộ câu hỏi lý thuyết"
 
-#: judge/review/contest_checks/quiz_leak_check.py:96
+#: judge/review/contest_checks/quiz_leak_check.py:106
 msgid "Contest has no quizzes."
 msgstr "Kỳ thi không có câu hỏi lý thuyết nào."
 
-#: judge/review/contest_checks/quiz_leak_check.py:145
-#: judge/review/contest_checks/submission_leak_check.py:165
+#: judge/review/contest_checks/quiz_leak_check.py:155
+#: judge/review/contest_checks/submission_leak_check.py:171
 msgid "No leak signals found."
 msgstr "Không phát hiện dấu hiệu lộ bài."
 
-#: judge/review/contest_checks/quiz_leak_check.py:151
+#: judge/review/contest_checks/quiz_leak_check.py:161
 #, python-format
 msgid "%(n)d quiz-attempt leak(s)"
 msgstr "%(n)d lộ câu hỏi lý thuyết qua lượt làm"
 
-#: judge/review/contest_checks/quiz_leak_check.py:154
+#: judge/review/contest_checks/quiz_leak_check.py:163
 #, python-format
 msgid "%(n)d quiz role-access leak(s)"
 msgstr "%(n)d lộ câu hỏi lý thuyết qua quyền truy cập"
 
-#: judge/review/contest_checks/quiz_leak_check.py:156
+#: judge/review/contest_checks/quiz_leak_check.py:164
 #, python-format
 msgid "Quiz leak detected: %(detail)s."
 msgstr "Phát hiện lộ câu hỏi lý thuyết: %(detail)s."
 
-#: judge/review/contest_checks/submission_leak_check.py:120
+#: judge/review/contest_checks/submission_leak_check.py:126
 msgid "Problem leak"
 msgstr "Lộ bài"
 
-#: judge/review/contest_checks/submission_leak_check.py:175
+#: judge/review/contest_checks/submission_leak_check.py:181
 #, python-format
 msgid "%(n)d submission leak(s)"
 msgstr "%(n)d lộ bài qua bài nộp"
 
-#: judge/review/contest_checks/submission_leak_check.py:177
+#: judge/review/contest_checks/submission_leak_check.py:183
 #, python-format
 msgid "%(n)d role-access leak(s)"
 msgstr "%(n)d lộ bài qua quyền truy cập"
 
-#: judge/review/contest_checks/submission_leak_check.py:178
+#: judge/review/contest_checks/submission_leak_check.py:184
 #, python-format
 msgid "Problem leak detected: %(detail)s."
 msgstr "Phát hiện lộ bài: %(detail)s."
@@ -6445,15 +6445,28 @@ msgstr "Nhật ký kiểm duyệt - %s"
 msgid "Courses in %s"
 msgstr "Khóa học trong %s"
 
-#: judge/views/package_import.py:96
+#: judge/views/package_import.py:98
 #, python-brace-format
 msgid "Import Package - {0}"
 msgstr "Nhập gói bài - {0}"
 
-#: judge/views/package_import.py:121
+#: judge/views/package_import.py:123
 #, python-format
 msgid "Import Package for %s"
 msgstr "Nhập gói bài cho %s"
+
+#: judge/views/package_import.py:163
+#, python-format
+msgid ""
+"Package too large (%(size)s MB, maximum %(max)s MB). Large packages usually "
+"exceed the limit because of the test-data folder. Remove it, re-zip the rest "
+"(statement, checker, solutions) and import that, then upload the test data "
+"on the Problem Data page."
+msgstr ""
+"Gói quá lớn (%(size)s MB, tối đa %(max)s MB). Các gói lớn thường vượt giới "
+"hạn do thư mục dữ liệu test. Hãy bỏ thư mục đó ra, nén lại phần còn lại (đề "
+"bài, checker, lời giải) rồi import gói đó, sau đó tải dữ liệu test lên ở "
+"trang Problem Data."
 
 #: judge/views/pagevote.py:37
 msgid "Invalid value for delta. It must be 1, 0, or -1."
@@ -8443,7 +8456,7 @@ msgid "Users"
 msgstr "Người nộp"
 
 #: templates/contest/contest-quiz-table.html:10
-#: templates/contest/problemset.html:34 templates/problem/import.html:36
+#: templates/contest/problemset.html:34 templates/problem/import.html:37
 #: templates/quiz/edit.html:493
 msgid "Time Limit"
 msgstr "Thời gian:"
@@ -8874,7 +8887,7 @@ msgid "#"
 msgstr "#"
 
 #: templates/contest/problemset.html:35 templates/problem/add.html:235
-#: templates/problem/edit.html:569 templates/problem/import.html:37
+#: templates/problem/edit.html:569 templates/problem/import.html:38
 #: templates/problem/language_limits.html:65
 #: templates/problem/language_limits.html:170
 msgid "Memory Limit"
@@ -9759,7 +9772,7 @@ msgid "System"
 msgstr "Hệ thống"
 
 #: templates/history/log_entries.html:30 templates/problem/edit_base.html:13
-#: templates/problem/import.html:38
+#: templates/problem/import.html:39
 msgid "Test Data"
 msgstr "Dữ liệu Test"
 
@@ -10972,7 +10985,7 @@ msgstr "Đổi tên thất bại"
 msgid "Rename to"
 msgstr "Đổi tên thành"
 
-#: templates/problem/attachments.html:142 templates/problem/import.html:66
+#: templates/problem/attachments.html:142 templates/problem/import.html:68
 #: templates/quiz/import.html:83 templates/user_upload/upload.html:138
 #: templates/user_upload/upload.html:185 templates/user_upload/upload.html:195
 #: templates/user_upload/upload.html:411
@@ -11184,7 +11197,7 @@ msgstr ""
 msgid "Or use custom JSON"
 msgstr "Hoặc dùng JSON tùy chỉnh"
 
-#: templates/problem/data.html:1596 templates/problem/import.html:41
+#: templates/problem/data.html:1596 templates/problem/import.html:42
 msgid "Generator Script"
 msgstr "Script sinh test"
 
@@ -11491,55 +11504,69 @@ msgstr "Mất kết nối với máy chủ"
 msgid "File too large"
 msgstr "Tệp quá lớn"
 
-#: templates/problem/import.html:28
+#: templates/problem/import.html:26
+msgid ""
+"Large packages usually exceed the limit because of the test-data folder. "
+"Remove it, re-zip the rest (statement, checker, solutions) and import that, "
+"then upload the test data on the Problem Data page."
+msgstr ""
+"Các gói lớn thường vượt giới hạn do thư mục dữ liệu test. Hãy bỏ thư mục đó "
+"ra, nén lại phần còn lại (đề bài, checker, lời giải) rồi import gói đó, sau "
+"đó tải dữ liệu test lên ở trang Problem Data."
+
+#: templates/problem/import.html:29
 msgid "Tests"
 msgstr "Tests"
 
-#: templates/problem/import.html:29
+#: templates/problem/import.html:30
 msgid "samples"
 msgstr "mẫu"
 
-#: templates/problem/import.html:31
+#: templates/problem/import.html:32
 msgid "found"
 msgstr "tìm thấy"
 
-#: templates/problem/import.html:33
+#: templates/problem/import.html:34
 msgid "images"
 msgstr "ảnh"
 
-#: templates/problem/import.html:34
+#: templates/problem/import.html:35
 msgid "image"
 msgstr "ảnh"
 
-#: templates/problem/import.html:35
+#: templates/problem/import.html:36
 msgid "Images included"
 msgstr "Ảnh đính kèm"
 
-#: templates/problem/import.html:40
+#: templates/problem/import.html:41
 msgid "Generator"
 msgstr "Trình sinh test"
 
-#: templates/problem/import.html:42
+#: templates/problem/import.html:43
 msgid "Interactive Judge"
 msgstr "Trình chấm tương tác"
 
-#: templates/problem/import.html:43
+#: templates/problem/import.html:44
+msgid "Subtasks"
+msgstr "Subtasks"
+
+#: templates/problem/import.html:45
 msgid "capped from"
 msgstr "giới hạn từ"
 
-#: templates/problem/import.html:57
+#: templates/problem/import.html:59
 msgid ""
 "Upload a problem package (zip) to import test data, checker, description, "
 "and more."
 msgstr ""
 "Tải lên gói bài (zip) để nhập dữ liệu test, checker, đề bài và nhiều hơn nữa."
 
-#: templates/problem/import.html:59
+#: templates/problem/import.html:61
 msgid "Supports: Polygon, Kattis/ICPC, USACO, and other formats. Max 50 MB."
 msgstr ""
 "Hỗ trợ: Polygon, Kattis/ICPC, USACO và các định dạng khác. Tối đa 50 MB."
 
-#: templates/problem/import.html:63
+#: templates/problem/import.html:65
 msgid ""
 "Optional notes for the AI (e.g. \"Kaggle-like, train/test 80/20, RMSE on "
 "column y\")"
@@ -11547,11 +11574,11 @@ msgstr ""
 "Ghi chú tuỳ chọn cho AI (ví dụ \"Kaggle-like, train/test 80/20, RMSE trên "
 "cột y\")"
 
-#: templates/problem/import.html:71
+#: templates/problem/import.html:73
 msgid "Or bootstrap a Kaggle-style problem from a single labeled CSV"
 msgstr "Hoặc tạo nhanh bài Kaggle từ một file CSV có nhãn"
 
-#: templates/problem/import.html:74
+#: templates/problem/import.html:76
 msgid ""
 "Upload a labeled CSV (id, features, label). The system splits it into train/"
 "test by hashed id, generates train.csv + test_input.csv + sample_submission."
@@ -11561,19 +11588,19 @@ msgstr ""
 "theo hash của id, sinh train.csv + test_input.csv + sample_submission.csv "
 "làm tệp đính kèm, cùng testdata.zip chứa đáp án ẩn."
 
-#: templates/problem/import.html:78
+#: templates/problem/import.html:80
 msgid "Metric"
 msgstr "Chỉ số"
 
-#: templates/problem/import.html:88
+#: templates/problem/import.html:90
 msgid "Train ratio"
 msgstr "Tỉ lệ train"
 
-#: templates/problem/import.html:94
+#: templates/problem/import.html:96
 msgid "Bootstrap"
 msgstr "Tạo nhanh"
 
-#: templates/problem/import.html:102 templates/quiz/import.html:90
+#: templates/problem/import.html:104 templates/quiz/import.html:90
 msgid ""
 "AI-generated results may be incomplete or inaccurate. Please review each "
 "field carefully before applying."

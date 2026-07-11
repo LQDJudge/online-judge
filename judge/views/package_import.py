@@ -24,6 +24,7 @@ from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
 from judge.models import (
+    CHECKERS,
     CSV_CHECKER_KEYS,
     Language,
     Problem,
@@ -33,8 +34,9 @@ from judge.models import (
     ProblemTestCase,
 )
 from judge.package_import.kaggle_bootstrap import bootstrap as kaggle_bootstrap
+from judge.package_import.test_structure import materialize_test_structure
 from judge.tasks.package_import import package_import_task
-from judge.utils.problem_data import ProblemDataCompiler
+from judge.utils.problem_data import ProblemDataCompiler, ProblemDataError
 from judge.utils.permissions import can_use_ai_features
 from judge.views.problem import ProblemMixin, TitleMixin
 
@@ -154,8 +156,18 @@ class PackageImportUploadView(View):
             return JsonResponse({"error": "No file uploaded"}, status=400)
         if upload.size > MAX_UPLOAD_SIZE:
             size_mb = upload.size // (1024 * 1024)
+            max_mb = MAX_UPLOAD_SIZE // (1024 * 1024)
             return JsonResponse(
-                {"error": f"File too large ({size_mb} MB). Maximum is 50 MB."},
+                {
+                    "error": _(
+                        "Package too large (%(size)s MB, maximum %(max)s MB). "
+                        "Large packages usually exceed the limit because of the "
+                        "test-data folder. Remove it, re-zip the rest (statement, "
+                        "checker, solutions) and import that, then upload the test "
+                        "data on the Problem Data page."
+                    )
+                    % {"size": size_mb, "max": max_mb}
+                },
                 status=400,
             )
 
@@ -343,7 +355,7 @@ class PackageImportApplyView(View):
         elif field == "interactive":
             return self._apply_interactive(problem, save_dir)
         elif field == "output_only":
-            return self._apply_output_only(problem, post_data)
+            return self._apply_output_only(problem, post_data, save_dir)
         elif field == "csv_checker":
             return self._apply_csv_checker(problem, post_data)
         elif field.startswith("attachment_"):
@@ -352,6 +364,17 @@ class PackageImportApplyView(View):
             return self._apply_solution(problem, save_dir, field, post_data)
         else:
             raise ValueError(f"Unknown field: {field}")
+
+    def _read_summary(self, save_dir):
+        """Read the parsed summary.json from the import temp dir (or {} if absent)."""
+        summary_path = os.path.join(save_dir, "summary.json")
+        if not os.path.exists(summary_path):
+            return {}
+        try:
+            with open(summary_path, encoding="utf-8") as f:
+                return json.load(f) or {}
+        except (OSError, ValueError):
+            return {}
 
     def _apply_description(self, problem, save_dir, user=None):
         path = _validate_path_in_dir(save_dir, "description.md")
@@ -453,21 +476,31 @@ class PackageImportApplyView(View):
             data.zipfile.save("testdata.zip", ContentFile(f.read()))
         data.save()
 
-        # If this came from the Kaggle bootstrap, also create the test case row
-        # and regenerate init.yml so the judge can actually grade. Detected by
-        # summary.json with format=kaggle_bootstrap in save_dir.
-        summary_path = os.path.join(save_dir, "summary.json")
-        if os.path.exists(summary_path):
-            try:
-                with open(summary_path, encoding="utf-8") as f:
-                    summary = json.load(f)
-            except (OSError, ValueError):
-                summary = {}
-            if summary.get("format") == "kaggle_bootstrap":
-                self._setup_kaggle_test_case(problem, summary)
-                return "Test data uploaded; test case created and init.yml regenerated."
+        summary = self._read_summary(save_dir)
 
-        return "Test data zip uploaded"
+        # If this came from the Kaggle bootstrap, create the single output-only
+        # test case row and regenerate init.yml (dedicated path).
+        if summary.get("format") == "kaggle_bootstrap":
+            self._setup_kaggle_test_case(problem, summary)
+            return "Test data uploaded; test case created and init.yml regenerated."
+
+        # Otherwise materialize the AI-detected test structure (flat cases or
+        # subtask batches) into ProblemTestCase rows and regenerate init.yml so
+        # the problem is immediately gradable. `path` is the local zip copy.
+        try:
+            return materialize_test_structure(
+                problem, summary.get("test_structure"), path
+            )
+        except ProblemDataError as e:
+            logger.warning(
+                "Test structure materialization failed for %s: %s",
+                problem.code,
+                e.message,
+            )
+            return (
+                "Test data uploaded, but automatic test-case setup failed (%s). "
+                "Please configure test cases on the problem data page." % e.message
+            )
 
     def _setup_kaggle_test_case(self, problem, summary):
         problem.cases.all().delete()
@@ -488,16 +521,74 @@ class PackageImportApplyView(View):
             ["1.in", "test_answer.csv"],
         )
 
+    # Checker keys that ship a C++ source stored on `custom_checker_cpp`.
+    _CPP_CHECKER_KEYS = ("customcpp", "testlib", "testlibcms")
+
     def _apply_checker(self, problem, save_dir):
-        path = _validate_path_in_dir(save_dir, "checker.cpp")
-        if not os.path.exists(path):
-            raise FileNotFoundError("checker.cpp not found")
+        """Apply the checker chosen by the AI import.
+
+        Reads `summary.json`'s `checker` block to decide the checker type:
+        a built-in (standard/floats/...) needs no file; testlib/testlibcms/customcpp
+        ship a checker.cpp; custom ships a checker.py. Falls back to the legacy
+        behavior (treat checker.cpp as customcpp) when no key is given.
+        """
+        summary = self._read_summary(save_dir)
+        checker = summary.get("checker") or {}
+        key = checker.get("key")
+        valid_keys = dict(CHECKERS)
+
+        # Legacy fallback: older imports emitted only a checker.cpp file.
+        if not key:
+            key = "customcpp"
+        if key not in valid_keys:
+            raise ValueError(f"Unknown checker key: {key}")
+
         data, _ = ProblemData.objects.get_or_create(problem=problem)
-        with open(path, "rb") as f:
-            data.custom_checker_cpp.save("checker.cpp", ContentFile(f.read()))
-        data.checker = "customcpp"
-        data.save()
-        return "Checker uploaded (type: customcpp)"
+
+        if key in self._CPP_CHECKER_KEYS:
+            path = _validate_path_in_dir(save_dir, "checker.cpp")
+            if not os.path.exists(path):
+                raise FileNotFoundError("checker.cpp not found")
+            with open(path, "rb") as f:
+                data.custom_checker_cpp.save("checker.cpp", ContentFile(f.read()))
+            data.checker = key
+            data.checker_args = ""
+            data.save()
+            return f"Checker uploaded (type: {key})"
+
+        if key == "custom":
+            path = _validate_path_in_dir(save_dir, "checker.py")
+            if not os.path.exists(path):
+                raise FileNotFoundError("checker.py not found")
+            with open(path, "rb") as f:
+                data.custom_checker.save("checker.py", ContentFile(f.read()))
+            data.checker = "custom"
+            data.checker_args = ""
+            data.save()
+            return "Python checker uploaded (type: custom)"
+
+        if key in ("interact", "interacttl"):
+            # Interactive judges are also exposed via the dedicated `interactive`
+            # field; honor it here too if the checker block names one.
+            path = _validate_path_in_dir(save_dir, "interactive.cpp")
+            if not os.path.exists(path):
+                raise FileNotFoundError("interactive.cpp not found")
+            with open(path, "rb") as f:
+                data.interactive_judge.save("interactive.cpp", ContentFile(f.read()))
+            data.checker = key
+            data.checker_args = ""
+            data.save()
+            return f"Interactive judge uploaded (type: {key})"
+
+        # Built-in checker — no file, optional args (e.g. float precision).
+        args = checker.get("args") or {}
+        data.checker = key
+        data.checker_args = json.dumps(args) if args else ""
+        data.save(update_fields=["checker", "checker_args"])
+        msg = f"Checker set to {key}"
+        if args:
+            msg += f" with args {args}"
+        return msg
 
     def _apply_generator(self, problem, save_dir):
         path = _validate_path_in_dir(save_dir, "generator.cpp")
@@ -530,7 +621,7 @@ class PackageImportApplyView(View):
         data.save()
         return "Interactive judge uploaded (type: interact)"
 
-    def _apply_output_only(self, problem, post_data):
+    def _apply_output_only(self, problem, post_data, save_dir=None):
         flag = (post_data.get("value", "true") or "true").lower() not in (
             "false",
             "0",
@@ -538,8 +629,30 @@ class PackageImportApplyView(View):
         )
         data, _ = ProblemData.objects.get_or_create(problem=problem)
         data.output_only = bool(flag)
-        data.save(update_fields=["output_only"])
-        return f"output_only set to {bool(flag)}"
+        update_fields = ["output_only"]
+        extras = []
+
+        # Pull binary_data / output_zip_size_mb from summary.json when present.
+        # These are correctness-critical for output-only problems: binary_data
+        # stops the judge normalizing newlines in .npz/.npy/image answers, and
+        # output_zip_size_mb lifts the 1 MB submission-size cap (max 20 MB).
+        summary = self._read_summary(save_dir) if save_dir else {}
+        if summary.get("binary_data") is True:
+            data.binary_data = True
+            update_fields.append("binary_data")
+            extras.append("binary_data=True")
+        oz = summary.get("output_zip_size_mb")
+        # Accept int or float (LLM may emit 15 or 15.0); reject bool (int subclass).
+        if isinstance(oz, (int, float)) and not isinstance(oz, bool) and oz > 0:
+            data.output_zip_size_mb = min(int(oz), 20)
+            update_fields.append("output_zip_size_mb")
+            extras.append(f"output_zip_size_mb={data.output_zip_size_mb}")
+
+        data.save(update_fields=update_fields)
+        msg = f"output_only set to {bool(flag)}"
+        if extras:
+            msg += " (" + ", ".join(extras) + ")"
+        return msg
 
     def _apply_csv_checker(self, problem, post_data):
         metric = (post_data.get("metric") or "").strip()
@@ -616,10 +729,15 @@ class PackageImportApplyView(View):
         lang_key = lang_map.get(ext, "CPP17")
         language = Language.objects.filter(key=lang_key).first()
 
-        # Determine expected result from filename (sol_ac_name.cpp → AC)
+        # Determine expected result from filename (sol_ac_name.cpp → AC).
+        # Note: there is no PARTIAL verdict on the site — a partially-correct
+        # solution earns partial points but its status is a failing verdict,
+        # usually WA (or TLE if slow). So map "partial" to WA, never AC.
         expected_result = "AC"
         name_lower = filename.lower()
         if "_wa_" in name_lower or name_lower.startswith("sol_wa"):
+            expected_result = "WA"
+        elif "_partial_" in name_lower or name_lower.startswith("sol_partial"):
             expected_result = "WA"
         elif "_tle_" in name_lower or name_lower.startswith("sol_tle"):
             expected_result = "TLE"
