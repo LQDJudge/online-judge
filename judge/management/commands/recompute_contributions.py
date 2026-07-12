@@ -6,6 +6,8 @@ from judge.utils.contribution import (
     bulk_compute_contributions,
     compute_contribution,
     detect_abusive_downvoters,
+    detect_targeted_downvote_brigades,
+    purge_brigade_downvotes,
     purge_downvotes_from,
 )
 
@@ -44,6 +46,14 @@ class Command(BaseCommand):
             action="store_true",
             help="Skip downvoter detection and purge (just recompute)",
         )
+        parser.add_argument(
+            "--skip-brigade-purge",
+            action="store_true",
+            help=(
+                "Detect and report brigades but do NOT purge them "
+                "(default: brigades are surgically purged)"
+            ),
+        )
 
     def handle(self, *args, **options):
         username = options.get("user")
@@ -72,6 +82,7 @@ class Command(BaseCommand):
         max_ratio = options["max_up_ratio"]
         dry_run = options["dry_run"]
         skip_purge = options["skip_purge"]
+        skip_brigade_purge = options["skip_brigade_purge"]
 
         if not skip_purge:
             self.stdout.write(
@@ -84,14 +95,22 @@ class Command(BaseCommand):
             )
             self._print_flagged_report(flagged)
 
+            # Targeted downvote-brigade detection (per author). Purged
+            # surgically by default (only the votes against each targeted
+            # author); pass --skip-brigade-purge to report without purging.
+            self.stdout.write("Detecting targeted downvote brigades...")
+            brigades = detect_targeted_downvote_brigades()
+            self._print_brigade_report(brigades)
+
             if dry_run:
                 self.stdout.write(
                     self.style.WARNING("Dry run: no deletions performed.")
                 )
                 return
 
+            # Abusive downvoters: global purge (they are globally abusive).
             if flagged:
-                self.stdout.write("Purging downvotes...")
+                self.stdout.write("Purging abusive downvoters...")
                 stats = purge_downvotes_from(set(flagged))
                 self.stdout.write(
                     f"  Deleted {stats['pagevote_deleted']} PageVoteVoter rows, "
@@ -100,6 +119,25 @@ class Command(BaseCommand):
                 self.stdout.write(
                     f"  Rescored {stats['pagevotes_rescored']} PageVotes, "
                     f"{stats['comments_rescored']} Comments."
+                )
+
+            # Brigades: surgical purge (only votes against each target author).
+            if brigades and not skip_brigade_purge:
+                self.stdout.write("Purging brigade downvotes (surgical)...")
+                bstats = purge_brigade_downvotes(brigades)
+                self.stdout.write(
+                    f"  Deleted {bstats['pagevote_deleted']} PageVoteVoter rows, "
+                    f"{bstats['commentvote_deleted']} CommentVote rows."
+                )
+                self.stdout.write(
+                    f"  Rescored {bstats['pagevotes_rescored']} PageVotes, "
+                    f"{bstats['comments_rescored']} Comments."
+                )
+            elif brigades:
+                self.stdout.write(
+                    self.style.WARNING(
+                        "  --skip-brigade-purge: brigades reported but not purged."
+                    )
                 )
         elif dry_run:
             self.stdout.write(
@@ -184,4 +222,37 @@ class Command(BaseCommand):
                 f"  {name:<30} {data['down']:>6} {data['up']:>6} "
                 f"{ratio_pct:>5.0f}% {data['popular']:>8}  {signals}"
             )
+        self.stdout.write("")
+
+    def _print_brigade_report(self, brigades):
+        """
+        Print authors under a targeted downvote brigade and the flagged voters.
+        `brigades` is the dict returned by detect_targeted_downvote_brigades:
+        {author_id: {voter_id: {"here", "signals", ...}}}.
+        """
+        voter_ids = {v for voters in brigades.values() for v in voters}
+        self.stdout.write(
+            f"  Flagged {len(brigades)} author(s) under brigade, "
+            f"{len(voter_ids)} distinct voter(s)."
+        )
+        if not brigades:
+            return
+
+        names = dict(
+            Profile.objects.filter(id__in=set(brigades) | voter_ids).values_list(
+                "id", "user__username"
+            )
+        )
+        # Authors with the most flagged voters first.
+        for author_id, voters in sorted(brigades.items(), key=lambda kv: -len(kv[1])):
+            author_name = names.get(author_id, f"<profile {author_id}>")
+            self.stdout.write(f"  author {author_name}: {len(voters)} flagged voter(s)")
+            for voter_id, data in sorted(voters.items(), key=lambda kv: -kv[1]["here"]):
+                vname = names.get(voter_id, f"<profile {voter_id}>")
+                signals = ",".join(data["signals"])
+                self.stdout.write(
+                    f"    {vname:<28} down={data['here']:>3} "
+                    f"conc={data['concentration']:.2f} "
+                    f"covote={data['covote']:.2f}  {signals}"
+                )
         self.stdout.write("")
