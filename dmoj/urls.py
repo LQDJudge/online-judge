@@ -1825,6 +1825,7 @@ urlpatterns = [
                 re_path(r"^delete/$", chat.delete_message, name="delete_chat_message"),
                 re_path(r"^mute/$", chat.mute_message, name="mute_chat_message"),
                 re_path(r"^post/$", chat.post_message, name="post_chat_message"),
+                re_path(r"^react/$", chat.react_message, name="chat_react"),
                 re_path(r"^ajax$", chat.chat_message_ajax, name="chat_message_ajax"),
                 re_path(
                     r"^online_status/ajax$",

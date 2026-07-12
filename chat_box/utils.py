@@ -3,8 +3,9 @@ import hmac
 import hashlib
 
 from django.conf import settings
+from django.db.models import Count
 
-from chat_box.models import Ignore, UserRoom
+from chat_box.models import Ignore, MessageReaction, UserRoom
 
 from judge.caching import cache_wrapper
 
@@ -47,3 +48,38 @@ def get_unread_boxes(profile):
     )
 
     return unread_boxes
+
+
+def get_reactions_summary(message_ids, user):
+    """Batched reaction summary for a set of messages.
+
+    Returns {message_id: {"counts": {code: n}, "total": N, "my_reaction": code|None}}.
+    Uses a constant number of queries (one grouped count + one for the viewer's own
+    reactions) regardless of how many messages are passed -- avoids N+1 on the
+    message list.
+    """
+    message_ids = list(message_ids)
+    result = {
+        mid: {"counts": {}, "total": 0, "my_reaction": None} for mid in message_ids
+    }
+    if not message_ids:
+        return result
+
+    rows = (
+        MessageReaction.objects.filter(message_id__in=message_ids)
+        .values("message_id", "reaction")
+        .annotate(c=Count("id"))
+    )
+    for row in rows:
+        entry = result[row["message_id"]]
+        entry["counts"][row["reaction"]] = row["c"]
+        entry["total"] += row["c"]
+
+    if user is not None and getattr(user, "id", None):
+        mine = MessageReaction.objects.filter(
+            message_id__in=message_ids, user=user
+        ).values_list("message_id", "reaction")
+        for mid, reaction in mine:
+            result[mid]["my_reaction"] = reaction
+
+    return result

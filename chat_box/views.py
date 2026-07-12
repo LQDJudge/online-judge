@@ -1,8 +1,10 @@
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseForbidden,
     HttpResponseRedirect,
     JsonResponse,
 )
@@ -22,14 +24,25 @@ from chat_box.models import (
     ChatModerationLog,
     Ignore,
     Message,
+    MessageReaction,
     Profile,
     Room,
     UserRoom,
+    CHAT_REACTIONS,
+    CHAT_REACTION_CODES,
+    CHAT_REACTION_EMOJI,
+    CHAT_REACTION_LABELS,
     get_first_msg_id,
     get_ignored_user_ids,
     get_user_room_list,
 )
-from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes
+from chat_box.utils import (
+    encrypt_url,
+    decrypt_url,
+    encrypt_channel,
+    get_reactions_summary,
+    get_unread_boxes,
+)
 
 CHAT_TEMP_MUTE_CAP_DAYS = 30
 
@@ -146,6 +159,7 @@ class ChatView(ListView):
             {
                 "object_list": self.messages,
                 "has_next": self.has_next(),
+                **reaction_render_context(self.messages, request.profile),
             },
         )
 
@@ -169,6 +183,7 @@ class ChatView(ListView):
             "chat_" + str(self.request.profile.id)
         )
         context["chat_lobby_channel"] = encrypt_channel("chat_lobby")
+        context.update(reaction_render_context(self.messages, self.request.profile))
         if self.room:
             other_user = self.room.other_user(self.request.profile)
             if other_user:
@@ -491,6 +506,99 @@ def post_message(request):
     return JsonResponse(ret)
 
 
+@login_required
+def react_message(request):
+    """Add / change / remove the requesting user's single reaction on a message.
+
+    Messenger-style: at most one reaction per user per message. Sending the same
+    code again removes it (toggle off); a different code replaces the old one.
+    Returns the fresh reaction summary for the message.
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+
+    try:
+        message = (
+            Message.objects.filter(hidden=False)
+            .select_related("room")
+            .get(id=int(request.POST["message"]))
+        )
+    except (KeyError, ValueError, Message.DoesNotExist):
+        return HttpResponseBadRequest()
+
+    reaction = request.POST.get("reaction")
+    if reaction not in CHAT_REACTION_CODES:
+        return HttpResponseBadRequest()
+
+    room = message.room
+    if not can_access_room(request, room):
+        return HttpResponseForbidden()
+
+    # A muted user is silenced from chat interaction, reactions included.
+    if is_chat_muted(request.profile):
+        return HttpResponseForbidden()
+
+    profile = request.profile
+    existing = MessageReaction.objects.filter(message=message, user=profile).first()
+    if existing is None:
+        try:
+            # Savepoint so a lost insert race doesn't poison an outer transaction.
+            with transaction.atomic():
+                MessageReaction.objects.create(
+                    message=message, user=profile, reaction=reaction
+                )
+        except IntegrityError:
+            # Lost a race with a concurrent request from the same user -> update.
+            MessageReaction.objects.filter(message=message, user=profile).update(
+                reaction=reaction
+            )
+    elif existing.reaction == reaction:
+        existing.delete()
+    else:
+        existing.reaction = reaction
+        existing.save(update_fields=["reaction", "created"])
+
+    summary = get_reactions_summary([message.id], profile)[message.id]
+    broadcast_reaction(request, message, room, summary)
+    return JsonResponse(summary)
+
+
+def broadcast_reaction(request, message, room, summary):
+    """Push a reaction update over the event daemon.
+
+    Mirrors post_message: lobby reactions go to the shared "chat_lobby" channel,
+    room reactions fan out to each member's personal channel.
+    """
+    payload = {
+        "type": "reaction",
+        "message": message.id,
+        "counts": summary["counts"],
+        "total": summary["total"],
+        "user_id": request.profile.id,
+    }
+    if not room:
+        payload["room"] = "None"
+        event.post(encrypt_channel("chat_lobby"), payload)
+    else:
+        payload["room"] = room.id
+        for user in room.get_users():
+            event.post(encrypt_channel("chat_" + str(user.id)), payload)
+
+
+def reaction_render_context(messages, profile):
+    """Context vars needed to render reaction pills/pickers for a set of messages.
+
+    Bundles the batched per-message summary with the (constant) emoji mappings so
+    every message-render path can drop them in with a single ``**`` spread.
+    """
+    return {
+        "reactions": get_reactions_summary([m.id for m in messages], profile),
+        "chat_reactions": CHAT_REACTIONS,
+        "chat_reaction_emoji": CHAT_REACTION_EMOJI,
+        "chat_reaction_labels": CHAT_REACTION_LABELS,
+    }
+
+
 def can_access_room(request, room):
     return not room or room.contain(request.profile)
 
@@ -517,6 +625,7 @@ def chat_message_ajax(request):
         "chat/message.html",
         {
             "message": message,
+            **reaction_render_context([message], request.profile),
         },
     )
 
