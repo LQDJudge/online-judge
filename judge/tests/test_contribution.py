@@ -899,7 +899,10 @@ class DetectTargetedBrigadeTest(ContributionTestCase):
         result = detect_targeted_downvote_brigades()
         self.assertNotIn(v.id, result.get(self.author_profile.id, {}))
 
-    def test_lockstep_covoters_flagged(self):
+    def test_covote_only_not_flagged(self):
+        # High co-vote overlap but low concentration, distinct IPs, established
+        # accounts -> co-vote alone must NOT trigger a flag (it inflates on
+        # authors with few downvoted items; prolific downvoters overlap).
         target = [self._problem_for(self.author_profile) for _ in range(5)]
         a = self._make_voter("lockA", ip="10.0.0.2")
         b = self._make_voter("lockB", ip="10.0.0.3")
@@ -910,11 +913,26 @@ class DetectTargetedBrigadeTest(ContributionTestCase):
         self._dilute(b, 5)
 
         result = detect_targeted_downvote_brigades()
+        self.assertNotIn(a.id, result.get(self.author_profile.id, {}))
+        self.assertNotIn(b.id, result.get(self.author_profile.id, {}))
+
+    def test_covote_corroborates_shared_ip(self):
+        # Same lockstep pair, but now sharing an IP -> flagged, with covote
+        # recorded alongside the strong ip_shared signal.
+        target = [self._problem_for(self.author_profile) for _ in range(5)]
+        a = self._make_voter("lockA", ip="10.4.4.4")
+        b = self._make_voter("lockB", ip="10.4.4.4")
+        for p in target:
+            self._downvote(p, a)
+            self._downvote(p, b)
+        self._dilute(a, 5)
+        self._dilute(b, 5)
+
+        result = detect_targeted_downvote_brigades()
         flagged = result[self.author_profile.id]
         self.assertIn(a.id, flagged)
-        self.assertIn(b.id, flagged)
+        self.assertIn("ip_shared", flagged[a.id]["signals"])
         self.assertIn("covote", flagged[a.id]["signals"])
-        self.assertNotIn("concentration", flagged[a.id]["signals"])
 
     def test_shared_ip_cluster_flagged(self):
         # a and b share an IP but downvote DISJOINT problem sets (covote 0).

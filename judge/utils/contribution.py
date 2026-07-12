@@ -747,7 +747,12 @@ def detect_targeted_downvote_brigades(
             if fresh_low:
                 signals.append("fresh_low")
 
-            if signals:
+            # co-vote overlap only CORROBORATES; it cannot trigger a flag on its
+            # own. On authors with few downvoted items any two prolific
+            # downvoters overlap heavily, so covote-alone is dominated by false
+            # positives. A flag requires at least one strong signal.
+            strong_signals = {"concentration", "ip_shared", "fresh_low"}
+            if signals and strong_signals.intersection(signals):
                 flagged[v] = {
                     "here": here,
                     "concentration": round(concentration, 3),
