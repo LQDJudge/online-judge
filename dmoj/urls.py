@@ -66,6 +66,7 @@ from judge.views import (
 )
 from judge.views import package_import
 from judge.views import quiz_import
+from judge.views import document_library
 from judge.views import review as problem_review
 from judge.views import contest_review
 from judge.views.problem_attachment import (
@@ -2024,6 +2025,59 @@ urlpatterns = [
         r"^upload/api/confirm/$",
         custom_file_upload.user_file_upload_confirm,
         name="user_file_upload_confirm",
+    ),
+    # Document library (public read; superuser management added later)
+    re_path(
+        r"^library/raw/(?P<path>.+)$",
+        document_library.library_raw,
+        name="library_raw",
+    ),
+    re_path(
+        r"^library/doc/(?P<path>.+)$",
+        document_library.library_document,
+        name="library_document",
+    ),
+    re_path(
+        r"^library/download/(?P<path>.+)$",
+        document_library.library_download,
+        name="library_download",
+    ),
+    re_path(
+        r"^library/browse/(?P<path>.*)$",
+        document_library.library_browse,
+        name="library_browse",
+    ),
+    re_path(r"^library/$", document_library.library_catalog, name="library_root"),
+    re_path(
+        r"^library/api/list/$",
+        document_library.library_api_list,
+        name="library_api_list",
+    ),
+    # Superuser management API (distinct prefix; listed before the manage page)
+    re_path(
+        r"^library/api/manage/create-folder/$",
+        document_library.library_manage_create_folder,
+        name="library_manage_create_folder",
+    ),
+    re_path(
+        r"^library/api/manage/upload/$",
+        document_library.library_manage_upload,
+        name="library_manage_upload",
+    ),
+    re_path(
+        r"^library/api/manage/rename/$",
+        document_library.library_manage_rename,
+        name="library_manage_rename",
+    ),
+    re_path(
+        r"^library/api/manage/move/$",
+        document_library.library_manage_move,
+        name="library_manage_move",
+    ),
+    re_path(
+        r"^library/api/manage/delete/$",
+        document_library.library_manage_delete,
+        name="library_manage_delete",
     ),
     # Direct upload API endpoints (for presigned URL uploads)
     re_path(

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title_row %}{% endblock %}
+{% block title_ruler %}{% endblock %}
+
+{% block js_media %}
+  {% if can_edit %}
+    <script src="{{ static('library_manage.js') }}"></script>
+  {% endif %}
+{% endblock %}
+
+{% block body %}
+  <div class="library-browse{% if can_edit %} library-manage{% endif %}"
+       data-current-path="{{ current_path }}"
+       {% if can_edit %}
+         data-url-create="{{ url('library_manage_create_folder') }}"
+         data-url-upload="{{ url('library_manage_upload') }}"
+         data-url-rename="{{ url('library_manage_rename') }}"
+         data-url-move="{{ url('library_manage_move') }}"
+         data-url-delete="{{ url('library_manage_delete') }}"
+       {% endif %}>
+
+    <div class="library-topbar">
+      {% if can_edit %}
+        <div class="library-toolbar">
+          <button type="button" class="action-btn" id="lib-new-folder">
+            <i class="fa fa-folder-plus"></i> {{ _("New folder") }}
+          </button>
+          <label class="action-btn" for="lib-upload-input">
+            <i class="fa fa-upload"></i> {{ _("Upload PDF") }}
+          </label>
+          <input type="file" id="lib-upload-input" accept="application/pdf,.pdf" hidden>
+        </div>
+      {% endif %}
+      <a class="action-btn library-topbar-right" href="{{ url('library_root') }}">
+        <i class="fa fa-stream"></i> {{ _("Catalog view") }}
+      </a>
+    </div>
+
+    <nav class="library-breadcrumbs">
+      {% for crumb in breadcrumbs %}
+        {% if not loop.last %}
+          <a href="{{ url('library_browse', crumb.path) }}">{{ crumb.name }}</a>
+          <span class="sep">/</span>
+        {% else %}
+          <span class="current">{{ crumb.name }}</span>
+        {% endif %}
+      {% endfor %}
+    </nav>
+
+    {% if not folders and not files %}
+      <div class="library-empty">
+        <i class="fa fa-folder-open fa-3x"></i>
+        <p>{{ _("This folder is empty.") }}</p>
+      </div>
+    {% else %}
+      <div class="library-grid">
+        {% for folder in folders %}
+          <div class="library-item library-folder"
+               data-path="{{ folder.path }}" data-kind="folder"
+               data-share-url="{{ url('library_browse', folder.path) }}">
+            <a class="library-item-link" href="{{ url('library_browse', folder.path) }}">
+              <i class="fa fa-folder fa-2x"></i>
+              <span class="library-item-name" title="{{ folder.name }}">{{ folder.name }}</span>
+            </a>
+            {% if can_edit %}
+              <div class="library-item-actions">
+                <button type="button" class="btn-action lib-copylink" title="{{ _('Copy link') }}"><i class="fa fa-link"></i></button>
+                <button type="button" class="btn-action lib-rename" title="{{ _('Rename') }}"><i class="fa fa-edit"></i></button>
+                <button type="button" class="btn-action btn-danger lib-delete" title="{{ _('Delete') }}"><i class="fa fa-trash"></i></button>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+        {% for file in files %}
+          <div class="library-item library-file"
+               data-path="{{ file.path }}" data-kind="file"
+               data-share-url="{% if file.is_pdf %}{{ url('library_document', file.path) }}{% else %}{{ url('library_download', file.path) }}{% endif %}">
+            <a class="library-item-link"
+               href="{% if file.is_pdf %}{{ url('library_document', file.path) }}{% else %}{{ url('library_download', file.path) }}{% endif %}"
+               {% if file.is_pdf %}target="_blank"{% endif %}>
+              <i class="fa {% if file.is_pdf %}fa-file-pdf{% else %}fa-file{% endif %} fa-2x"></i>
+              <span class="library-item-name" title="{{ file.name }}">{{ file.name }}</span>
+            </a>
+            {% if can_edit %}
+              <div class="library-item-actions">
+                <a class="btn-action lib-download" href="{{ url('library_download', file.path) }}" title="{{ _('Download') }}"><i class="fa fa-download"></i></a>
+                <button type="button" class="btn-action lib-copylink" title="{{ _('Copy link') }}"><i class="fa fa-link"></i></button>
+                <button type="button" class="btn-action lib-rename" title="{{ _('Rename') }}"><i class="fa fa-edit"></i></button>
+                <button type="button" class="btn-action btn-danger lib-delete" title="{{ _('Delete') }}"><i class="fa fa-trash"></i></button>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

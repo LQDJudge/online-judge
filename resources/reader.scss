@@ -1,0 +1,173 @@
+@charset "UTF-8";
+@use "vars" as *;
+
+#doc-reader {
+    display: flex;
+    height: calc(100vh - 68px);
+    border-top: 1px solid $border_gray;
+
+    .doc-reader-outline {
+        width: 300px;
+        min-width: 200px;
+        max-width: 40%;
+        overflow-y: auto;
+        border-right: 1px solid $border_gray;
+        background: $background_light_gray;
+        display: flex;
+        flex-direction: column;
+
+        .doc-reader-outline-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 10px;
+            border-bottom: 1px solid $border_gray;
+            position: sticky;
+            top: 0;
+            z-index: 2;  // paint above scrolling tree nodes (avoids double copy icon)
+            background: $background_light_gray;
+        }
+
+        .doc-reader-outline-title {
+            flex: 1;
+            font-weight: bold;
+            color: $widget_black;
+        }
+
+        .doc-reader-outline-empty {
+            padding: 12px;
+            color: $widget_black;
+            opacity: 0.7;
+        }
+    }
+
+    .doc-reader-icon-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: $widget_black;
+        padding: 4px 6px;
+        border-radius: 4px;
+
+        &:hover {
+            background: $background_gray;
+        }
+    }
+
+    .doc-reader-tree {
+        list-style: none;
+        margin: 0;
+        padding: 6px 0;
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding-left: 14px;
+        }
+
+        li > .doc-reader-node {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            color: $widget_black;
+            border-radius: 4px;
+
+            &:hover {
+                background: $background_gray;
+            }
+        }
+
+        li.active > .doc-reader-node {
+            background: $theme_color;
+            color: #fff;
+        }
+
+        .doc-reader-toggle {
+            width: 14px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .doc-reader-label {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .doc-reader-node-copy {
+            margin-left: auto;
+            opacity: 0;
+        }
+
+        li > .doc-reader-node:hover .doc-reader-node-copy {
+            opacity: 0.6;
+        }
+    }
+
+    .doc-reader-main {
+        flex: 1;
+        min-width: 0;
+        position: relative;
+    }
+
+    .doc-reader-frame {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+    }
+
+    .doc-reader-reopen {
+        display: none;
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        z-index: 5;
+        background: $theme_color;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 10px;
+        cursor: pointer;
+    }
+
+    &.outline-collapsed .doc-reader-outline {
+        display: none;
+    }
+
+    &.outline-collapsed .doc-reader-reopen {
+        display: block;
+    }
+}
+
+@media (max-width: 799px) {
+    #doc-reader {
+        flex-direction: column;
+        height: auto;
+    }
+
+    #doc-reader .doc-reader-outline {
+        width: 100%;
+        max-width: none;
+        max-height: 220px;
+    }
+
+    #doc-reader .doc-reader-frame {
+        height: 70vh;
+    }
+}
+
+.doc-reader-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: $theme_color;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    z-index: 9999;
+}

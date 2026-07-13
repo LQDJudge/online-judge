@@ -1,0 +1,240 @@
+@charset "UTF-8";
+@use "vars" as *;
+
+// Shared breadcrumbs
+.library-browse,
+.library-catalog {
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 0 16px;
+}
+
+.library-breadcrumbs {
+    margin-bottom: 16px;
+    font-size: 1.05em;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+
+    a {
+        color: $theme_color;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    .sep {
+        color: $widget_black;
+        opacity: 0.5;
+        margin: 0 6px;
+    }
+
+    .current {
+        color: $widget_black;
+        font-weight: bold;
+    }
+}
+
+.library-topbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+
+    .library-heading {
+        margin: 0;
+        font-size: 1.6em;
+        font-weight: bold;
+        color: $widget_black;
+    }
+
+    .library-topbar-right {
+        margin-left: auto;
+    }
+}
+
+.library-hr {
+    margin: 0 0 16px;
+    border: none;
+    border-top: 1px solid $border_gray;
+}
+
+.library-empty {
+    text-align: center;
+    color: $widget_black;
+    opacity: 0.7;
+    padding: 48px 0;
+}
+
+// ---- Drive-style grid (unified browse; edit controls only when can_edit) ----
+.library-toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.library-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.library-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 10px;
+    border: 1px solid $border_gray;
+    border-radius: 8px;
+    background: $background_light_gray;
+    text-align: center;
+
+    &:hover {
+        border-color: $theme_color;
+    }
+
+    .library-item-link {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        color: $widget_black;
+        text-decoration: none;
+    }
+
+    .library-item-name {
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.92em;
+    }
+
+    .fa-folder {
+        color: $theme_color;
+    }
+
+    .library-item-actions {
+        display: flex;
+        gap: 5px;
+        margin-top: 10px;
+    }
+
+    // Mirror /upload/'s colored action buttons
+    .btn-action {
+        padding: 5px 9px;
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        background: $background_light_gray;
+        color: $widget_black;
+        cursor: pointer;
+        text-decoration: none;
+
+        &:hover {
+            background: $background_gray;
+        }
+
+        &.lib-download,
+        &.lib-rename {
+            color: #007bff;
+
+            &:hover {
+                border-color: #007bff;
+            }
+        }
+
+        &.lib-copylink {
+            color: #28a745;
+
+            &:hover {
+                border-color: #28a745;
+            }
+        }
+
+        &.btn-danger {
+            color: $announcement_red;
+
+            &:hover {
+                border-color: $announcement_red;
+            }
+        }
+    }
+}
+
+// ---- Codeforces-style catalog tree ----
+.library-catalog {
+    .library-catalog-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+
+        h3 {
+            margin: 0;
+            color: $widget_black;
+        }
+    }
+
+    .catalog-tree,
+    .catalog-children {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .catalog-children {
+        padding-left: 22px;
+    }
+
+    .catalog-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 6px;
+        border-radius: 4px;
+        font-size: 1.12em;
+
+        .fa-folder {
+            color: $theme_color;
+        }
+    }
+
+    .catalog-toggle {
+        cursor: pointer;
+    }
+
+    .catalog-toggle:hover {
+        background: $background_gray;
+    }
+
+    .catalog-chevron {
+        width: 12px;
+        font-size: 0.8em;
+        color: $widget_black;
+        opacity: 0.7;
+    }
+
+    .catalog-chevron-spacer {
+        display: inline-block;
+        width: 12px;
+    }
+
+    .catalog-name {
+        color: $widget_black;
+        text-decoration: none;
+    }
+
+    a.catalog-name {
+        color: $theme_color;
+    }
+
+    a.catalog-name:hover {
+        text-decoration: underline;
+    }
+}

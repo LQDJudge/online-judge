@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title_row %}{% endblock %}
+{% block title_ruler %}{% endblock %}
+
+{% block js_media %}
+  <script src="{{ static('reader.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+  <div id="doc-reader"
+       data-viewer-url="{{ static('libs/pdfjs/web/viewer.html') }}"
+       data-raw-url="{{ raw_url }}">
+    <aside class="doc-reader-outline">
+      <div class="doc-reader-outline-header">
+        <button type="button" id="doc-reader-toggle-outline" class="doc-reader-icon-btn"
+                title="{{ _('Hide contents') }}">
+          <i class="fa fa-angles-left"></i>
+        </button>
+        <span class="doc-reader-outline-title">{{ _("Contents") }}</span>
+        <button type="button" id="doc-reader-copylink" class="doc-reader-icon-btn"
+                title="{{ _('Copy link to here') }}">
+          <i class="fa fa-link"></i>
+        </button>
+      </div>
+      <ul class="doc-reader-tree" id="doc-reader-tree"></ul>
+      <div class="doc-reader-outline-empty" id="doc-reader-outline-empty" hidden>
+        {{ _("No sections in this document") }}
+      </div>
+    </aside>
+    <main class="doc-reader-main">
+      <button type="button" id="doc-reader-reopen" class="doc-reader-reopen"
+              title="{{ _('Show contents') }}">
+        <i class="fa fa-bars"></i>
+      </button>
+      <iframe id="doc-reader-frame" class="doc-reader-frame" title="{{ title }}"></iframe>
+    </main>
+  </div>
+{% endblock %}
