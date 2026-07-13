@@ -24,30 +24,32 @@
     <div class="show-more"> {{_("...More")}} </div>
   </div>
 {% endif %}
-{% with contest_problems=contest.contest_problems.select_related('problem').order_by('order') %}
-  {% if contest_problems %}
-    <table class="table striped feed-problem-table">
-      <thead>
-        <tr>
-          <th>{{ _('Problem') }}</th>
-          <th>{{ _('Points') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for cp in contest_problems %}
-          {% if cp.problem %}
-            <tr>
-              <td>
-                <a href="{{ url('problem_detail', cp.problem.code) }}">{{ cp.problem.translated_name(LANGUAGE_CODE) }}</a>
-              </td>
-              <td>{{ cp.points|floatformat }}</td>
-            </tr>
-          {% endif %}
-        {% endfor %}
-      </tbody>
-    </table>
-  {% endif %}
-{% endwith %}
+{% if contest.can_see_problems(request.user) %}
+  {% with contest_problems=contest.contest_problems.select_related('problem').order_by('order') %}
+    {% if contest_problems %}
+      <table class="table striped feed-problem-table">
+        <thead>
+          <tr>
+            <th>{{ _('Problem') }}</th>
+            <th>{{ _('Points') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cp in contest_problems %}
+            {% if cp.problem %}
+              <tr>
+                <td>
+                  <a href="{{ url('problem_detail', cp.problem.code) }}">{{ cp.problem.translated_name(LANGUAGE_CODE) }}</a>
+                </td>
+                <td>{{ cp.points|floatformat }}</td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  {% endwith %}
+{% endif %}
 <div class="actionbar-box">
   {% set pagevote = contest.get_or_create_pagevote() %}
   {% set bookmark = contest.get_or_create_bookmark() %}
