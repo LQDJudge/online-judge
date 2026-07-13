@@ -251,7 +251,11 @@ def library_manage_create_folder(request):
     if storage_file_exists(default_storage, key):
         return JsonResponse({"error": _("Folder already exists")}, status=400)
     default_storage.save(key, ContentFile(b""))
-    _dirty_listing((request.POST.get("path") or "").strip("/"))
+    parent_rel = (request.POST.get("path") or "").strip("/")
+    new_rel = f"{parent_rel}/{name}".strip("/")
+    # dirty the parent (so it lists the new folder) AND the new folder's own
+    # path (a prior browse of the not-yet-existing path may have cached empty).
+    _dirty_listing(parent_rel, new_rel)
     return JsonResponse({"success": True})
 
 
@@ -365,5 +369,13 @@ def library_manage_delete(request):
     if not storage_file_exists(default_storage, full):
         return JsonResponse({"error": _("File not found")}, status=404)
     storage_delete_file(default_storage, full)
-    _dirty_listing(_parent_path(rel))
+    # Keep the (now-empty) folder alive so it doesn't vanish (Drive-like); the
+    # user removes an empty folder explicitly via delete-folder.
+    parent = _parent_path(rel)
+    parent_full = _full(parent)
+    if parent_full != LIBRARY_ROOT:
+        dirs, files = storage_listdir(default_storage, parent_full)
+        if not dirs and not files:
+            default_storage.save(f"{parent_full}/.keep", ContentFile(b""))
+    _dirty_listing(parent)
     return JsonResponse({"success": True})

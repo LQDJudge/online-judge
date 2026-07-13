@@ -9,10 +9,17 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+import mimetypes
 import os
 import tempfile
 
 from django.utils.translation import gettext_lazy as _
+
+# ES modules (.mjs, e.g. the vendored PDF.js viewer) must be served with a
+# JavaScript MIME type or browsers reject them ("Strict MIME type checking").
+# This covers Django-served static (runserver/whitenoise); when nginx serves
+# /static/ directly, add `application/javascript mjs;` to its mime.types too.
+mimetypes.add_type("text/javascript", ".mjs", True)
 from django_jinja.builtins import DEFAULT_EXTENSIONS
 from jinja2 import select_autoescape
 

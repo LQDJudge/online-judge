@@ -330,3 +330,23 @@ class LibraryManageTestCase(TestCase):
                 {"path": "test", "dest": "Books", "kind": "folder"},
             )
         self.assertEqual(resp.status_code, 500)
+
+    def test_delete_last_file_persists_empty_folder(self):
+        # Deleting the last file must leave a .keep so the folder doesn't vanish.
+        self.client.login(username="lib_admin", password="pw")
+        with patch(
+            "judge.views.document_library.storage_file_exists", return_value=True
+        ), patch(
+            "judge.views.document_library.storage_delete_file", return_value=True
+        ), patch(
+            "judge.views.document_library.storage_listdir", return_value=([], [])
+        ), patch(
+            "judge.views.document_library.default_storage"
+        ) as mock_storage:
+            resp = self.client.post(
+                reverse("library_manage_delete"),
+                {"path": "Algorithms/last.pdf", "kind": "file"},
+            )
+        self.assertEqual(resp.status_code, 200)
+        saved = [c.args[0] for c in mock_storage.save.call_args_list]
+        self.assertIn("library/Algorithms/.keep", saved)
