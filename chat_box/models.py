@@ -23,6 +23,7 @@ CHAT_REACTIONS = [
     ("wow", "😮"),
     ("sad", "😢"),
     ("angry", "😠"),
+    ("siuuu", "🐐"),
 ]
 CHAT_REACTION_CODES = [code for code, _emoji in CHAT_REACTIONS]
 CHAT_REACTION_EMOJI = dict(CHAT_REACTIONS)
@@ -34,6 +35,7 @@ CHAT_REACTION_LABELS = {
     "wow": _("Wow"),
     "sad": _("Sad"),
     "angry": _("Angry"),
+    "siuuu": _("Siuuu"),
 }
 
 
