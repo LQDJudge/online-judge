@@ -1,0 +1,19 @@
+{
+  "name": "lqdoj-websocket",
+  "version": "1.0.0",
+  "description": "WebSocket / event daemon for LQDOJ real-time features",
+  "private": true,
+  "main": "daemon.js",
+  "scripts": {
+    "start": "node daemon.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "qu": "^0.1.0",
+    "simplesets": "^1.2.0",
+    "websocket": "^1.0.35",
+    "ws": "^8.18.3"
+  }
+}
