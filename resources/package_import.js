@@ -23,7 +23,9 @@ $(document).ready(function () {
     var file = $kaggleFile[0].files[0];
     if (!file) return;
     if (file.size > config.maxUploadSize) {
-      showStatus('error', (t.fileTooLarge || 'File too large') + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)');
+      var maxMB = Math.round(config.maxUploadSize / 1024 / 1024);
+      var sizeMB = (file.size / 1024 / 1024).toFixed(1);
+      showStatus('error', (t.fileTooLarge || 'File too large') + ' (' + sizeMB + ' MB, max ' + maxMB + ' MB). ' + (t.fileTooLargeHelp || ''));
       return;
     }
     $kaggleBtn.prop('disabled', true);
@@ -68,7 +70,9 @@ $(document).ready(function () {
     if (!file) return;
 
     if (file.size > config.maxUploadSize) {
-      showStatus('error', (t.fileTooLarge || 'File too large') + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)');
+      var maxMB = Math.round(config.maxUploadSize / 1024 / 1024);
+      var sizeMB = (file.size / 1024 / 1024).toFixed(1);
+      showStatus('error', (t.fileTooLarge || 'File too large') + ' (' + sizeMB + ' MB, max ' + maxMB + ' MB). ' + (t.fileTooLargeHelp || ''));
       return;
     }
 
@@ -168,6 +172,19 @@ $(document).ready(function () {
       summaryHtml += '<span class="import-summary-value">' + summary.solutions.length + ' ' + (t.found || 'found') + '</span>';
       summaryHtml += '</div>';
     }
+    var ts = summary.test_structure || {};
+    if (ts.kind === 'batched' && ts.subtasks && ts.subtasks.length) {
+      summaryHtml += '<div class="import-summary-row">';
+      summaryHtml += '<span class="import-summary-label">' + (t.subtasks || 'Subtasks') + ':</span> ';
+      summaryHtml += '<span class="import-summary-value">' + ts.subtasks.length + '</span>';
+      summaryHtml += '</div>';
+    }
+    if (summary.checker && summary.checker.key) {
+      summaryHtml += '<div class="import-summary-row">';
+      summaryHtml += '<span class="import-summary-label">' + (t.checker || 'Checker') + ':</span> ';
+      summaryHtml += '<span class="import-summary-value">' + escapeHtml(summary.checker.key) + '</span>';
+      summaryHtml += '</div>';
+    }
     // No notes — removed as requested
     summaryHtml += '</div>';
     $summary.html(summaryHtml);
@@ -220,8 +237,23 @@ $(document).ready(function () {
       });
     }
 
+    // Checker. A file-bearing checker (customcpp/testlib/testlibcms/custom) shows
+    // a source preview; a built-in checker (standard/floats/...) has no file, so
+    // render its key + args so it can still be applied. interact/interacttl are
+    // handled by the dedicated Interactive field below.
+    var checkerSpec = summary.checker || {};
+    var checkerKey = checkerSpec.key || '';
+    var isInteractiveKey = checkerKey === 'interact' || checkerKey === 'interacttl';
     if (files.checker) {
-      addField('checker', 'fa-check-circle', t.checker || 'Checker', files.checker, saveDir, true);
+      var cLabel = t.checker || 'Checker';
+      if (checkerKey) cLabel += ' (' + checkerKey + ')';
+      addField('checker', 'fa-check-circle', cLabel, files.checker, saveDir, true);
+    } else if (checkerKey && !isInteractiveKey) {
+      var cDisplay = checkerKey;
+      if (checkerSpec.args && Object.keys(checkerSpec.args).length) {
+        cDisplay += ' ' + JSON.stringify(checkerSpec.args);
+      }
+      addValueField('checker', 'fa-check-circle', t.checker || 'Checker', cDisplay, checkerKey, saveDir);
     }
 
     if (files.generator) {
@@ -243,9 +275,14 @@ $(document).ready(function () {
       })(i, solutions[i]);
     }
 
-    // Output-only flag
+    // Output-only flag (also applies binary_data / output_zip_size_mb server-side)
     if (summary.output_only === true) {
-      addValueField('output_only', 'fa-file-export', 'output_only', 'true', 'true', saveDir);
+      var ooLabel = 'true';
+      var ooBits = [];
+      if (summary.binary_data === true) ooBits.push('binary_data');
+      if (summary.output_zip_size_mb) ooBits.push('max ' + summary.output_zip_size_mb + ' MB');
+      if (ooBits.length) ooLabel += ' (+ ' + ooBits.join(', ') + ')';
+      addValueField('output_only', 'fa-file-export', 'output_only', ooLabel, 'true', saveDir);
     }
 
     // CSV checker

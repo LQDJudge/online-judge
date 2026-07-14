@@ -8,5 +8,6 @@
     {{ make_tab_item('stats', 'fa fa-pie-chart', url('quiz_statistics', quiz.code), _('Statistics')) }}
     {{ make_tab_item('analysis', 'fa fa-bar-chart', url('quiz_question_analysis', quiz.code), _('Analysis')) }}
     {{ make_tab_item('edit', 'fa fa-edit', url('quiz_edit', quiz.code), _('Edit')) }}
+    {{ make_tab_item('log', 'fa fa-history', url('quiz_log', quiz.code), _('History')) }}
   {% endif %}
 </div>

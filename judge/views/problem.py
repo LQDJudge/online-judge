@@ -1,15 +1,15 @@
-import difflib
-import json
 import logging
 import os
+from collections import defaultdict
 from copy import deepcopy
 from operator import itemgetter
 from random import randrange
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -65,7 +65,7 @@ from judge.models import (
     Contest,
     BestSubmission,
 )
-from judge.models.problem_data import ProblemSolutionCode
+from judge.models.problem_data import ProblemSolutionCode, ProblemTestCase
 from judge.models.problem_review import (
     ProblemReviewCheckResult,
     ProblemReviewRun,
@@ -110,7 +110,6 @@ from judge.models.problem import (
 from judge.models.runtime import get_all_languages
 
 import reversion
-from django.apps import apps
 from reversion.models import Version
 
 from judge.tasks import rescore_problem
@@ -119,6 +118,7 @@ from judge.tasks.llm import (
     improve_markdown_task,
     tag_problem_task,
 )
+from judge.utils.history import RevisionDiffMixin
 
 
 def get_contest_problem(problem, profile):
@@ -1512,10 +1512,41 @@ class ProblemEdit(
         return context
 
 
-class ProblemLog(TitleMixin, ListView):
+class ProblemLog(LoginRequiredMixin, RevisionDiffMixin, TitleMixin, ListView):
     template_name = "problem/log.html"
-    context_object_name = "versions"
+    context_object_name = None
     paginate_by = 50
+    text_diff_fields = {
+        "description",
+        "summary",
+        "content",
+        "generator_script",
+        "source_code",
+    }
+    id_fields = {
+        "authors": ("judge.Profile", "user__username"),
+        "curators": ("judge.Profile", "user__username"),
+        "testers": ("judge.Profile", "user__username"),
+        "banned_users": ("judge.Profile", "user__username"),
+        "types": ("judge.ProblemType", "name"),
+        "allowed_languages": ("judge.Language", "name"),
+        "organizations": ("judge.Organization", "name"),
+        "group": ("judge.ProblemGroup", "name"),
+        "license": ("judge.License", "name"),
+        "language": ("judge.Language", "name"),
+    }
+    profile_fields = {"authors", "curators", "testers", "banned_users"}
+    skip_fields = {"id", "ac_rate", "user_count", "problem"}
+    test_case_fields = (
+        "order",
+        "type",
+        "input_file",
+        "output_file",
+        "generator_args",
+        "points",
+        "is_pretest",
+        "batch_scoring",
+    )
 
     def get_title(self):
         return _("Edit history for %s") % self.problem.name
@@ -1545,14 +1576,10 @@ class ProblemLog(TitleMixin, ListView):
         )
 
         # Solution versions
-        solutions = Solution.objects.filter(problem=self.problem)
-        solution_versions = []
-        for sol in solutions:
-            solution_versions.extend(
-                Version.objects.get_for_object(sol)
-                .select_related("revision__user__profile")
-                .order_by("-revision__date_created")
-            )
+        solution_ids = list(
+            Solution.objects.filter(problem=self.problem).values_list("id", flat=True)
+        )
+        solution_versions = self._get_versions_for_objects(Solution, solution_ids)
 
         # Use raw serialized_data instead of field_dict, because field_dict
         # deserializes through the live model and can mask actual changes
@@ -1564,21 +1591,19 @@ class ProblemLog(TitleMixin, ListView):
             version.object_type = "problem"
             if i < len(problem_versions) - 1:
                 version.changes = self._compute_changes(
-                    raw_fields[i + 1], raw_fields[i]
+                    raw_fields[i + 1], raw_fields[i], model=Problem
                 )
             else:
                 version.changes = []
 
         # Process solution versions
         sol_raw = [self._get_raw_fields(v) for v in solution_versions]
+        previous_solution_raw = self._previous_raw_by_version_id(
+            solution_versions, sol_raw
+        )
         for i, version in enumerate(solution_versions):
             version.object_type = "solution"
-            # Find previous version of the same solution object
-            prev_raw = None
-            for j in range(i + 1, len(solution_versions)):
-                if solution_versions[j].object_id == version.object_id:
-                    prev_raw = sol_raw[j]
-                    break
+            prev_raw = previous_solution_raw.get(version.id)
             if prev_raw is not None:
                 version.changes = self._compute_changes(
                     prev_raw, sol_raw[i], model=Solution
@@ -1604,176 +1629,247 @@ class ProblemLog(TitleMixin, ListView):
                 else:
                     version.changes = []
 
-        # ProblemSolutionCode versions (grouped by revision)
-        solution_code_versions = []
-        sol_codes = ProblemSolutionCode.objects.filter(problem=self.problem)
-        seen_revisions = set()
-        for sc in sol_codes:
-            for version in (
-                Version.objects.get_for_object(sc)
-                .select_related("revision__user__profile")
-                .order_by("-revision__date_created")
-            ):
-                if version.revision_id not in seen_revisions:
-                    seen_revisions.add(version.revision_id)
-                    version.object_type = "solution_code"
-                    version.changes = []
-                    solution_code_versions.append(version)
-        solution_code_versions.sort(key=lambda v: v.revision.date_created, reverse=True)
+        test_case_versions = self._get_test_case_history_entries(test_data_versions)
+        test_case_revision_ids = {version.revision_id for version in test_case_versions}
+        test_data_versions = [
+            version
+            for version in test_data_versions
+            if version.changes or version.revision_id not in test_case_revision_ids
+        ]
+
+        # ProblemSolutionCode versions
+        solution_code_ids = list(
+            ProblemSolutionCode.objects.filter(problem=self.problem).values_list(
+                "id", flat=True
+            )
+        )
+        solution_code_versions = self._get_versions_for_objects(
+            ProblemSolutionCode, solution_code_ids
+        )
+        solution_code_raw = [self._get_raw_fields(v) for v in solution_code_versions]
+        solution_code_name_cache = self._build_name_cache(solution_code_raw)
+        previous_solution_code_raw = self._previous_raw_by_version_id(
+            solution_code_versions, solution_code_raw
+        )
+        for i, version in enumerate(solution_code_versions):
+            version.object_type = "solution_code"
+            prev_raw = previous_solution_code_raw.get(version.id)
+            if prev_raw is not None:
+                version.changes = self._compute_changes(
+                    prev_raw,
+                    solution_code_raw[i],
+                    model=ProblemSolutionCode,
+                    name_cache=solution_code_name_cache,
+                )
+            else:
+                version.changes = []
 
         # Merge and sort by date
         all_versions = (
             problem_versions
             + solution_versions
             + test_data_versions
+            + test_case_versions
             + solution_code_versions
         )
         all_versions.sort(key=lambda v: v.revision.date_created, reverse=True)
 
         return all_versions
 
-    @staticmethod
-    def _get_raw_fields(version):
-        try:
-            data = json.loads(version.serialized_data)
-            if data:
-                return data[0].get("fields", {})
-        except (json.JSONDecodeError, IndexError, KeyError):
-            pass
-        return {}
+    def _get_versions_for_objects(self, model, object_ids):
+        if not object_ids:
+            return []
+        content_type = ContentType.objects.get_for_model(model)
+        return list(
+            Version.objects.filter(
+                content_type=content_type,
+                db=self.problem._state.db,
+                object_id__in=[str(object_id) for object_id in object_ids],
+            )
+            .select_related("revision__user__profile")
+            .order_by("-id")
+        )
 
-    _TEXT_DIFF_FIELDS = {"description", "summary", "content", "generator_script"}
+    def _previous_raw_by_version_id(self, versions, raw_fields):
+        previous_raw = {}
+        latest_raw_by_object = {}
+        for version, raw in reversed(list(zip(versions, raw_fields))):
+            previous_raw[version.id] = latest_raw_by_object.get(version.object_id)
+            latest_raw_by_object[version.object_id] = raw
+        return previous_raw
 
-    def _compute_changes(self, old_dict, new_dict, model=None):
-        if model is None:
-            model = Problem
-
-        changes = []
-        all_keys = set(old_dict.keys()) | set(new_dict.keys())
-        skip_fields = {"id", "ac_rate", "user_count", "problem"}
-
-        for key in sorted(all_keys):
-            if key in skip_fields:
-                continue
-            old_val = old_dict.get(key)
-            new_val = new_dict.get(key)
-            if old_val != new_val:
-                try:
-                    field = model._meta.get_field(key)
-                    label = str(field.verbose_name)
-                except Exception:
-                    label = key
-
-                change = {
-                    "field": label,
-                    "old": self._format_value(key, old_val),
-                    "new": self._format_value(key, new_val),
-                }
-
-                if key in self._TEXT_DIFF_FIELDS:
-                    old_text = str(old_val) if old_val else ""
-                    new_text = str(new_val) if new_val else ""
-                    change["old"] = old_text
-                    change["new"] = new_text
-                    old_lines = old_text.splitlines()
-                    new_lines = new_text.splitlines()
-                    diff_lines = list(
-                        difflib.unified_diff(old_lines, new_lines, lineterm="", n=2)
-                    )
-                    # Skip the --- / +++ / @@ headers
-                    change["diff_lines"] = [
-                        l
-                        for l in diff_lines
-                        if not l.startswith("---") and not l.startswith("+++")
-                    ]
-
-                changes.append(change)
-        return changes
-
-    # Map of field name -> (Model, display_field) for resolving IDs to names
-    _ID_FIELDS = {
-        "authors": ("judge.Profile", "user__username"),
-        "curators": ("judge.Profile", "user__username"),
-        "testers": ("judge.Profile", "user__username"),
-        "banned_users": ("judge.Profile", "user__username"),
-        "types": ("judge.ProblemType", "name"),
-        "allowed_languages": ("judge.Language", "name"),
-        "organizations": ("judge.Organization", "name"),
-        "group": ("judge.ProblemGroup", "name"),
-        "license": ("judge.License", "name"),
-    }
-
-    _PROFILE_FIELDS = {"authors", "curators", "testers", "banned_users"}
-
-    def _build_name_cache(self, raw_fields_list):
-        """Collect all IDs per field across all versions and resolve in bulk."""
-        # Collect all IDs per resolver key
-        ids_by_key = {}
-        for fields in raw_fields_list:
-            for key in self._ID_FIELDS:
-                val = fields.get(key)
-                if val is None:
-                    continue
-                if key not in ids_by_key:
-                    ids_by_key[key] = set()
-                if isinstance(val, list):
-                    ids_by_key[key].update(val)
-                else:
-                    ids_by_key[key].add(val)
-
-        # Resolve profile fields via cache (0 DB queries)
-        all_profile_ids = set()
-        for key in self._PROFILE_FIELDS:
-            all_profile_ids.update(ids_by_key.get(key, set()))
-
-        profile_name_map = {}
-        if all_profile_ids:
-            profiles = Profile.get_cached_instances(*all_profile_ids)
-            profile_name_map = {p.id: p.username for p in profiles}
-
-        cache = {}
-        for key, ids in ids_by_key.items():
-            if not ids:
-                continue
-            if key in self._PROFILE_FIELDS:
-                cache[key] = profile_name_map
-            else:
-                model_path, display_field = self._ID_FIELDS[key]
-                app, model_name = model_path.split(".")
-                Model = apps.get_model(app, model_name)
-                cache[key] = dict(
-                    Model.objects.filter(id__in=ids).values_list("id", display_field)
-                )
-        return cache
-
-    def _format_value(self, key, val):
-        if val is None:
-            return ""
-
-        name_map = self._name_cache.get(key)
-
-        if isinstance(val, list):
-            if name_map:
-                return ", ".join(name_map.get(i, str(i)) for i in val)
-            return ", ".join(str(v) for v in val)
-
-        if name_map and val:
-            return name_map.get(val, str(val))
-
+    def _format_value(self, key, val, name_cache=None):
         if key == "memory_limit" and val:
             val = int(val)
             if val % 1024 == 0:
                 return "%d MB" % (val // 1024)
             return "%d KB" % val
+        return super()._format_value(key, val, name_cache=name_cache)
 
-        val_str = str(val)
-        if len(val_str) > 300:
-            return val_str[:300] + "..."
-        return val_str
+    def _get_test_case_history_entries(self, test_data_versions):
+        revision_ids = {version.revision_id for version in test_data_versions}
+        if not revision_ids:
+            return []
+
+        case_content_type = ContentType.objects.get_for_model(ProblemTestCase)
+        candidate_versions = list(
+            Version.objects.filter(
+                content_type=case_content_type,
+                db=self.problem._state.db,
+                revision_id__in=revision_ids,
+            )
+            .select_related("revision__user__profile")
+            .order_by("-id")
+        )
+        case_versions = []
+        for version in candidate_versions:
+            raw_fields = self._get_raw_fields(version)
+            if raw_fields.get("dataset") == self.problem.id:
+                version._raw_fields = raw_fields
+                case_versions.append(version)
+
+        if not case_versions:
+            return []
+
+        object_ids = {version.object_id for version in case_versions}
+        all_case_versions = []
+        for version in Version.objects.filter(
+            content_type=case_content_type,
+            db=self.problem._state.db,
+            object_id__in=object_ids,
+        ).order_by("id"):
+            raw_fields = self._get_raw_fields(version)
+            if raw_fields.get("dataset") == self.problem.id:
+                all_case_versions.append((version, raw_fields))
+
+        versions_by_object = defaultdict(list)
+        latest_version_ids = {}
+        for version, raw_fields in all_case_versions:
+            versions_by_object[version.object_id].append((version, raw_fields))
+            latest_version_ids[version.object_id] = version.id
+
+        current_case_ids = set(
+            str(case_id)
+            for case_id in ProblemTestCase.objects.filter(
+                dataset=self.problem
+            ).values_list("id", flat=True)
+        )
+        entries_by_revision = {}
+        for version in case_versions:
+            changes = self._summarize_test_case_version(
+                version,
+                version._raw_fields,
+                versions_by_object.get(version.object_id, []),
+                current_case_ids,
+                latest_version_ids,
+            )
+            if not changes:
+                continue
+            entry = entries_by_revision.setdefault(version.revision_id, version)
+            entry.object_type = "test_case"
+            entry.object_label = _("Test Cases")
+            entry.object_label_class = "log-type-test-data"
+            if entry is version:
+                entry.changes = []
+            entry.changes.extend(changes)
+
+        return list(entries_by_revision.values())
+
+    def _summarize_test_case_version(
+        self, version, raw_fields, object_versions, current_case_ids, latest_version_ids
+    ):
+        previous_raw = None
+        for other_version, other_raw_fields in object_versions:
+            if other_version.id == version.id:
+                break
+            previous_raw = other_raw_fields
+
+        if (
+            version.object_id not in current_case_ids
+            and latest_version_ids.get(version.object_id) == version.id
+        ):
+            return [
+                {
+                    "field": _("Removed test case"),
+                    "old": self._format_test_case(raw_fields),
+                    "new": "",
+                }
+            ]
+
+        if previous_raw is None:
+            return [
+                {
+                    "field": _("Added test case"),
+                    "old": "",
+                    "new": self._format_test_case(raw_fields),
+                }
+            ]
+
+        changed_fields = [
+            self._test_case_field_label(field)
+            for field in self.test_case_fields
+            if previous_raw.get(field) != raw_fields.get(field)
+        ]
+        if not changed_fields:
+            return []
+
+        return [
+            {
+                "field": _("Changed test case (%(fields)s)")
+                % {"fields": ", ".join(changed_fields)},
+                "old": self._format_test_case(previous_raw),
+                "new": self._format_test_case(raw_fields),
+            }
+        ]
+
+    def _test_case_field_label(self, field):
+        try:
+            return str(ProblemTestCase._meta.get_field(field).verbose_name)
+        except Exception:
+            return field
+
+    def _format_test_case(self, fields):
+        order = fields.get("order") or "?"
+        parts = [_("case #%(order)s") % {"order": order}]
+        type_label = self._format_test_case_type(fields.get("type"))
+        if type_label:
+            parts.append(_("type=%(type)s") % {"type": type_label})
+        input_file = fields.get("input_file")
+        if input_file:
+            parts.append(_("input=%(input)s") % {"input": input_file})
+        output_file = fields.get("output_file")
+        if output_file:
+            parts.append(_("output=%(output)s") % {"output": output_file})
+        generator_args = fields.get("generator_args")
+        if generator_args:
+            parts.append(_("generator=%(generator)s") % {"generator": generator_args})
+        points = fields.get("points")
+        if points not in (None, ""):
+            parts.append(_("points=%(points)s") % {"points": points})
+        if fields.get("is_pretest") is not None:
+            parts.append(
+                _("pretest=%(pretest)s")
+                % {"pretest": self._format_history_bool(fields.get("is_pretest"))}
+            )
+        batch_scoring = fields.get("batch_scoring")
+        if batch_scoring:
+            parts.append(_("batch=%(batch)s") % {"batch": batch_scoring})
+        return "\n".join(parts)
+
+    def _format_test_case_type(self, value):
+        return {
+            "C": _("normal"),
+            "S": _("batch start"),
+            "E": _("batch end"),
+        }.get(value, value or "")
+
+    def _format_history_bool(self, value):
+        return _("yes") if value in (True, "True", "true", "1", 1) else _("no")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["problem"] = self.problem
+        context["history_entries"] = context.get("object_list", self.object_list)
         context["page_prefix"] = "?page="
         context["first_page_href"] = reverse("problem_log", args=[self.problem.code])
         return context

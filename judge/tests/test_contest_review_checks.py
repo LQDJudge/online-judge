@@ -25,8 +25,10 @@ from judge.models import (
 from judge.models.contest import ContestProblem
 from judge.models.contest_review import ContestReviewCheckResult, ContestReviewRun
 from judge.models.problem_review import ProblemReviewCheckResult, ProblemReviewRun
+from judge.models.quiz import Quiz, QuizAttempt
 from judge.review.contest_checks.problems_reviewed import ProblemsReviewedCheck
 from judge.review.contest_checks.submission_leak_check import SubmissionLeakCheck
+from judge.review.contest_checks.quiz_leak_check import QuizLeakCheck
 from judge.review.contest_hashing import compute_contest_input_hash
 from judge.review.hashing import compute_input_hash
 
@@ -97,6 +99,17 @@ def _make_passing_problem_review(problem, author):
         input_hash=compute_input_hash(problem),
         status=ProblemReviewRun.DONE,
         finished_at=timezone.now(),
+    )
+
+
+def _make_quiz(code, title="Quiz"):
+    return Quiz.objects.create(code=code, title=title)
+
+
+def _attach_quiz(contest, quiz, order, points=0):
+    """Add a quiz slot (problem null) to a contest."""
+    return ContestProblem.objects.create(
+        contest=contest, quiz=quiz, points=points, order=order
     )
 
 
@@ -269,6 +282,23 @@ class ProblemsReviewedCheckTest(TestCase):
         self.assertTrue(per_problem["prp1"]["triggered_inline"])
         self.assertFalse(per_problem["prp2"]["triggered_inline"])
 
+    def test_skipped_when_quiz_only_contest(self):
+        # A contest with no problems but at least one quiz is a quiz-only
+        # contest: per-problem review doesn't apply, so SKIP (non-blocking)
+        # rather than FAIL — the contest stays publishable.
+        contest = _make_contest("prqonly", self.profile, [])
+        _attach_quiz(contest, _make_quiz("prqz1"), order=1)
+        run = _make_run(contest, self.profile)
+        result = ProblemsReviewedCheck().run(contest, run)
+        self.assertEqual(result.status, ContestReviewCheckResult.SKIPPED)
+
+    def test_fail_when_contest_has_no_problems_and_no_quizzes(self):
+        # A truly empty contest is a genuine error → FAIL.
+        contest = _make_contest("prempty", self.profile, [])
+        run = _make_run(contest, self.profile)
+        result = ProblemsReviewedCheck().run(contest, run)
+        self.assertEqual(result.status, ContestReviewCheckResult.FAIL)
+
 
 class SubmissionLeakCheckTest(TestCase):
     @classmethod
@@ -369,3 +399,98 @@ class SubmissionLeakCheckTest(TestCase):
         self.assertEqual(result.status, ContestReviewCheckResult.FAIL)
         self.assertEqual(result.details["leakers_total"], 1)
         self.assertEqual(result.details["role_leakers_total"], 1)
+
+    def test_skip_when_contest_has_no_problems(self):
+        # Problem leak is problem-only: a contest with no problems (even if it
+        # has quizzes) skips this check. Quiz leaks are the sibling check's job.
+        quiz_only = _make_contest("slqonly", self.author, [])
+        _attach_quiz(quiz_only, _make_quiz("slqzskip"), order=1)
+        run = _make_run(quiz_only, self.author)
+        result = SubmissionLeakCheck().run(quiz_only, run)
+        self.assertEqual(result.status, ContestReviewCheckResult.SKIPPED)
+
+
+class QuizLeakCheckTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.language = _make_language()
+        cls.group, _ = ProblemGroup.objects.get_or_create(
+            name="TG", defaults={"full_name": "Test Group"}
+        )
+        u = User.objects.create_user("ql", "ql@x.com", "pw")
+        cls.author, _ = Profile.objects.get_or_create(
+            user=u, defaults={"language": cls.language}
+        )
+        # A contest with one quiz slot and no problems (quiz-only) — the common
+        # case this check exists for. Problems are irrelevant to it.
+        cls.contest = _make_contest("qlc", cls.author, [])
+        cls.quiz = _make_quiz("qlqz", "Sample Quiz")
+        _attach_quiz(cls.contest, cls.quiz, order=1)
+        cls.review_run = _make_run(cls.contest, cls.author)
+
+    def _make_user(self, username, is_superuser=False):
+        u = (
+            User.objects.create_superuser(username, f"{username}@x.com", "pw")
+            if is_superuser
+            else User.objects.create_user(username, f"{username}@x.com", "pw")
+        )
+        p, _ = Profile.objects.get_or_create(
+            user=u, defaults={"language": self.language}
+        )
+        return p
+
+    def _attempt_quiz(self, profile, quiz):
+        return QuizAttempt.objects.create(user=profile, quiz=quiz)
+
+    def test_skip_when_contest_has_no_quizzes(self):
+        p = _make_problem("qlp1", self.language, self.group, self.author)
+        problem_only = _make_contest("qlnoquiz", self.author, [(p, 100)])
+        run = _make_run(problem_only, self.author)
+        result = QuizLeakCheck().run(problem_only, run)
+        self.assertEqual(result.status, ContestReviewCheckResult.SKIPPED)
+
+    def test_pass_when_no_attempts_at_all(self):
+        result = QuizLeakCheck().run(self.contest, self.review_run)
+        self.assertEqual(result.status, ContestReviewCheckResult.SUCCESS)
+
+    def test_pass_when_only_trusted_users_attempted(self):
+        admin = self._make_user("qladm", is_superuser=True)
+        self._attempt_quiz(self.author, self.quiz)  # contest author = trusted
+        self._attempt_quiz(admin, self.quiz)  # superuser = trusted
+        result = QuizLeakCheck().run(self.contest, self.review_run)
+        self.assertEqual(result.status, ContestReviewCheckResult.SUCCESS)
+        self.assertEqual(result.details["quiz_leakers_total"], 0)
+
+    def test_fail_when_non_trusted_user_attempted(self):
+        leaker = self._make_user("quizrandy")
+        self._attempt_quiz(leaker, self.quiz)
+        result = QuizLeakCheck().run(self.contest, self.review_run)
+        self.assertEqual(result.status, ContestReviewCheckResult.FAIL)
+        self.assertEqual(result.details["quiz_leakers_total"], 1)
+        row = result.details["quiz_leakers"][0]
+        self.assertEqual(row["username"], "quizrandy")
+        self.assertEqual(row["quiz_code"], "qlqz")
+        self.assertEqual(row["attempt_count"], 1)
+
+    def test_role_leak_flagged_even_without_attempt(self):
+        role_holder = self._make_user("quizauthor")
+        self.quiz.curators.add(role_holder)
+        # No attempt from role_holder.
+        result = QuizLeakCheck().run(self.contest, self.review_run)
+        self.assertEqual(result.status, ContestReviewCheckResult.FAIL)
+        self.assertEqual(result.details["quiz_leakers_total"], 0)
+        self.assertEqual(result.details["quiz_role_leakers_total"], 1)
+        row = result.details["quiz_role_leakers"][0]
+        self.assertEqual(row["username"], "quizauthor")
+        self.assertEqual(row["quiz_code"], "qlqz")
+        self.assertEqual(row["roles"], ["curator"])
+
+    def test_attempt_and_role_signals_both_reported(self):
+        attempt_leaker = self._make_user("qlattempt")
+        role_leaker = self._make_user("qlrole")
+        self._attempt_quiz(attempt_leaker, self.quiz)
+        self.quiz.testers.add(role_leaker)
+        result = QuizLeakCheck().run(self.contest, self.review_run)
+        self.assertEqual(result.status, ContestReviewCheckResult.FAIL)
+        self.assertEqual(result.details["quiz_leakers_total"], 1)
+        self.assertEqual(result.details["quiz_role_leakers_total"], 1)

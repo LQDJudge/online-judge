@@ -2004,8 +2004,8 @@ body:not(.problem-raw) {
 
     .change-field {
         font-weight: 500;
-        white-space: nowrap;
-        width: 120px;
+        white-space: normal;
+        width: 160px;
     }
 
     .change-diff {
@@ -2061,10 +2061,14 @@ body:not(.problem-raw) {
 
     .change-old {
         color: $announcement_red;
+        white-space: pre-line;
+        line-height: 1.5;
     }
 
     .change-new {
         color: $color-success;
+        white-space: pre-line;
+        line-height: 1.5;
     }
 
     .no-logs {

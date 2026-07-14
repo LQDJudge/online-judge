@@ -35,8 +35,13 @@ def compute_contest_input_hash(contest: Contest) -> str:
     # Including the problem's hash means any contained-problem change (statement,
     # solution codes, test data) dirties the contest hash, which is what powers
     # the "skip if nothing changed since last review" optimisation in the runner.
+    #
+    # `problem__isnull=False`: ContestProblem.problem is nullable (quiz slots
+    # have no problem). Null slots aren't reviewed — the problems_reviewed check
+    # filters them out the same way — so they must be excluded here too, else
+    # `cp.problem.code` below raises AttributeError and 500s the request.
     contest_problems = (
-        ContestProblem.objects.filter(contest=contest)
+        ContestProblem.objects.filter(contest=contest, problem__isnull=False)
         .select_related("problem")
         .order_by("order", "id")
     )
@@ -48,6 +53,27 @@ def compute_contest_input_hash(contest: Contest) -> str:
             "input_hash": compute_input_hash(cp.problem),
         }
         for cp in contest_problems
+    ]
+
+    # Quiz slots (ContestProblem.quiz set, problem null). Only the quiz's
+    # identity/placement is hashed — NOT its content — so adding, removing,
+    # reordering or repointing a quiz dirties the contest hash (letting the
+    # author re-request review, e.g. to re-run the quiz-leak check), while a
+    # quiz *content* edit does not. Content-level quiz review is a deferred
+    # feature; when it lands, mix a quiz input_hash in here the same way
+    # problems do above.
+    quiz_slots = (
+        ContestProblem.objects.filter(contest=contest, quiz__isnull=False)
+        .select_related("quiz")
+        .order_by("order", "id")
+    )
+    payload["quizzes"] = [
+        {
+            "code": cp.quiz.code,
+            "order": cp.order,
+            "points": int(cp.points) if cp.points is not None else 0,
+        }
+        for cp in quiz_slots
     ]
 
     # Trusted user set — drives the leak-check verdict. Sorted for determinism.

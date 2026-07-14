@@ -333,9 +333,9 @@
                 </tr>
               {% endif %}
               {# Expanded role-leak + submission-leak listings under
-                 submission_leak_check. Each non-trusted user appears with
-                 either a sub_count column (they submitted) or a role badge
-                 list (they hold a per-problem role). #}
+                 submission_leak_check (problems only). Each non-trusted user
+                 appears with either a sub_count column (they submitted) or a
+                 role badge list (they hold a per-problem role). #}
               {% if cr.check_id == 'submission_leak_check' and cr.details_json and cr.status == 'F' %}
                 <tr class="review-check-row review-check-subrow">
                   <td></td>
@@ -390,6 +390,68 @@
                                   <td><a href="{{ url('user_page', sl.username) }}">{{ sl.username }}</a></td>
                                   <td><a href="{{ url('problem_detail', sl.problem_code) }}">{{ sl.problem_name }}</a></td>
                                   <td>{{ sl.submission_count }}</td>
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+              {% endif %}
+              {# Expanded role-leak + attempt-leak listings under
+                 quiz_leak_check (quizzes only) — mirrors the problem block
+                 above so quiz leaks live under their own "Quiz leak" check. #}
+              {% if cr.check_id == 'quiz_leak_check' and cr.details_json and cr.status == 'F' %}
+                <tr class="review-check-row review-check-subrow">
+                  <td></td>
+                  <td colspan="3">
+                    <div style="display: flex; gap: 1.5em; flex-wrap: wrap;">
+                      {% if cr.details_json.quiz_role_leakers %}
+                        <div style="flex: 1 1 320px; min-width: 0;">
+                          <h4 style="margin: 0.5em 0;">{{ _("Role-access leaks") }}</h4>
+                          <table class="review-checks-subtable">
+                            <thead>
+                              <tr>
+                                <th>{{ _("User") }}</th>
+                                <th>{{ _("Quiz") }}</th>
+                                <th>{{ _("Roles") }}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for ql in cr.details_json.quiz_role_leakers %}
+                                <tr>
+                                  <td><a href="{{ url('user_page', ql.username) }}">{{ ql.username }}</a></td>
+                                  <td><a href="{{ url('quiz_detail', ql.quiz_code) }}">{{ ql.quiz_title }}</a></td>
+                                  <td>
+                                    {% for r in ql.roles %}
+                                      <span class="review-status-badge orange">{{ r }}</span>
+                                    {% endfor %}
+                                  </td>
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      {% endif %}
+                      {% if cr.details_json.quiz_leakers %}
+                        <div style="flex: 1 1 320px; min-width: 0;">
+                          <h4 style="margin: 0.5em 0;">{{ _("Quiz-attempt leaks") }}</h4>
+                          <table class="review-checks-subtable">
+                            <thead>
+                              <tr>
+                                <th>{{ _("User") }}</th>
+                                <th>{{ _("Quiz") }}</th>
+                                <th>{{ _("Attempts") }}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for ql in cr.details_json.quiz_leakers %}
+                                <tr>
+                                  <td><a href="{{ url('user_page', ql.username) }}">{{ ql.username }}</a></td>
+                                  <td><a href="{{ url('quiz_detail', ql.quiz_code) }}">{{ ql.quiz_title }}</a></td>
+                                  <td>{{ ql.attempt_count }}</td>
                                 </tr>
                               {% endfor %}
                             </tbody>

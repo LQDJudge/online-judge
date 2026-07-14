@@ -1298,15 +1298,13 @@ body:has(.chat-page) {
       max-height: none;
     }
 
-    // When chat area is shown on mobile
-    .chat-area[style*="display: flex"],
+    // When chat area is shown on mobile (toggled via class from chat.js)
     .chat-area.mobile-visible {
       display: flex !important;
       height: 100%;
     }
 
-    // When sidebar is hidden on mobile
-    .chat-sidebar[style*="display: none"],
+    // When sidebar is hidden on mobile (toggled via class from chat.js)
     .chat-sidebar.mobile-hidden {
       display: none !important;
     }
@@ -1435,6 +1433,11 @@ body:has(.chat-page) {
 
     .message-actions-menu {
       min-width: 110px;
+      // Open to the LEFT of the toggle on mobile. The default (right of the
+      // toggle) runs off-screen for right-aligned own messages and long
+      // messages, where body overflow-x:hidden then clips Delete/Mute.
+      left: auto;
+      right: calc(100% + 4px);
     }
 
     .message-header a {

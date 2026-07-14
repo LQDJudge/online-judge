@@ -11,8 +11,10 @@ because the dashboard renders results as they land.)
 
 from judge.review.contest_checks.problems_reviewed import ProblemsReviewedCheck
 from judge.review.contest_checks.submission_leak_check import SubmissionLeakCheck
+from judge.review.contest_checks.quiz_leak_check import QuizLeakCheck
 
 CONTEST_CHECKS = [
     ProblemsReviewedCheck(),  # DB-only, depends on per-problem reviews
-    SubmissionLeakCheck(),  # DB-only, aggregation query
+    SubmissionLeakCheck(),  # DB-only, aggregation query (problems)
+    QuizLeakCheck(),  # DB-only, aggregation query (quizzes)
 ]

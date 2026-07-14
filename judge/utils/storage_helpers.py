@@ -153,7 +153,20 @@ def storage_rename_file(storage, old_path, new_path):
     Returns:
         Boolean indicating if rename was successful
     """
+    if old_path == new_path:
+        return True
     try:
+        if hasattr(storage, "bucket"):
+            # S3/R2: server-side copy — bytes never round-trip through the app
+            # (much faster for large files / folder moves).
+            location = (getattr(storage, "location", "") or "").strip("/")
+            src_key = f"{location}/{old_path}" if location else old_path
+            dst_key = f"{location}/{new_path}" if location else new_path
+            storage.bucket.copy(
+                {"Bucket": storage.bucket.name, "Key": src_key}, dst_key
+            )
+            storage.delete(old_path)
+            return True
         with storage.open(old_path, "rb") as f:
             content = f.read()
         storage.save(new_path, ContentFile(content))

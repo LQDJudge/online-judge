@@ -15,10 +15,16 @@ admin Rerun should mean.
 
 Triggered runs do NOT create a `PublicRequest`. They're contest-context
 reviews — running them shouldn't make a contest-only problem appear in the
-admin's public-request queue.
+admin's public-request queue. For the same reason they're triggered with
+`emit_notifications=False`: the contest review emits its own contest-level
+notifications, so the per-problem "new public request"/"review done"
+notifications would be duplicate spam linking to a queue the problem isn't in.
 
 The check's verdict:
   - FAIL if any per-problem review fails OR errors.
+  - FAIL if the contest has no problems AND no quizzes (empty contest).
+  - SKIPPED if the contest has no problems but DOES have quizzes (quiz-only
+    contest — per-problem review doesn't apply; quiz-content review is deferred).
   - SUCCESS otherwise.
 
 details_json shape for the dashboard:
@@ -123,6 +129,20 @@ class ProblemsReviewedCheck(ContestReviewCheck):
             .order_by("order")
         ]
         if not problems:
+            # No reviewable problems. A contest that still has quiz slots is a
+            # quiz-only contest — the per-problem review simply doesn't apply
+            # yet (quiz-content review is a deferred feature), so SKIP rather
+            # than FAIL. SKIPPED is non-blocking in the verdict aggregation
+            # (judge/review/verdict.py: only FAIL rows block), so a quiz-only
+            # contest stays publishable. Only a contest with neither problems
+            # NOR quizzes is a genuine "empty contest" error → FAIL.
+            has_quizzes = contest.contest_problems.filter(quiz__isnull=False).exists()
+            if has_quizzes:
+                return CheckResultData(
+                    status=ContestReviewCheckResult.SKIPPED,
+                    reason=_("Contest has only quizzes; no problems to review."),
+                    details={"per_problem": [], "summary": {"total": 0}},
+                )
             return CheckResultData(
                 status=ContestReviewCheckResult.FAIL,
                 reason=_("Contest has no problems."),
@@ -172,7 +192,15 @@ class ProblemsReviewedCheck(ContestReviewCheck):
                 # duration of the per-problem review (~5-15s typical).
                 try:
                     with transaction.atomic():
-                        trigger_problem_review_for(p, triggerer, dispatch="sync")
+                        # emit_notifications=False: the contest review emits its
+                        # own contest-level notifications. Per-problem "new public
+                        # request"/"review done" notifications here would be
+                        # duplicate spam pointing at a public queue the problem was
+                        # never added to (contest-triggered runs create no
+                        # PublicRequest).
+                        trigger_problem_review_for(
+                            p, triggerer, dispatch="sync", emit_notifications=False
+                        )
                     triggered_inline = True
                     latest = _latest_matching_run(p)
                     # Audit trail: post a system comment on the per-problem

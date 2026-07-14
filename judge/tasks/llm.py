@@ -315,7 +315,7 @@ def generate_solution_codes_task(
     try:
         problem = _resolve_problem_for_ai_task(problem_id, problem_code)
         config = get_config()
-        bot_name = model_id or config.get_bot_name()
+        bot_name = model_id or config.get_bot_name_for_solution()
 
         generator = SolutionCodeGenerator(
             api_key=config.api_key,

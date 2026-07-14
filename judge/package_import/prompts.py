@@ -1,13 +1,18 @@
 """
 Prompt templates for the AI-powered problem package import feature.
 Sent to Claude Code on Poe to analyze and convert problem packages.
+
+The prompt is deliberately kept aligned with the `create-problem` skill
+(.claude/commands/create-problem.md), which is the ground-truth spec for how
+LQDOJ problems actually work (checker types, subtask batching, output-only
+knobs). When that skill changes, this prompt should be revisited.
 """
 
 DESCRIPTION_TEMPLATE = """\
 Given four natural numbers $a_1, b_1, a_2, b_2$ where $(a_1, b_1)$ are the side lengths of the first rectangle and $(a_2, b_2)$ are the side lengths of the second rectangle. Find the area of the smallest square that can contain both rectangles without overlapping or extending outside.
 
 ####Input
-- Input consists of four lines, each containing a natural number $a_1, b_1, a_2, b_2 (0 < a_1, b_1, a_2, b_2\\leq 10^6)$.
+- A single line containing four natural numbers $a_1, b_1, a_2, b_2$ $(0 < a_1, b_1, a_2, b_2 \\le 10^6)$.
 
 ####Output
 - Print a single number — the area of the smallest square satisfying the problem requirements.
@@ -17,23 +22,19 @@ Given four natural numbers $a_1, b_1, a_2, b_2$ where $(a_1, b_1)$ are the side 
 !!! question "Test 1"
     ???+ "Input"
         ```sample
-        4
-        2 3
-        2 4
+        2 3 2 4
         ```
     ???+ success "Output"
         ```sample
         16
         ```
     ??? warning "Note"
-        The two rectangles have dimensions $2\\cdot 3$ and $2\\cdot 4$. They fit inside a smallest square of size $4\\cdot 4$. So the answer is $16$.
+        The two rectangles have dimensions $2 \\cdot 3$ and $2 \\cdot 4$. They fit inside a smallest square of side $4$, so the answer is $16$.
 
 !!! question "Test 2"
     ???+ "Input"
         ```sample
-        4
-        4 5
-        4 5
+        4 5 4 5
         ```
     ???+ success "Output"
         ```sample
@@ -41,9 +42,8 @@ Given four natural numbers $a_1, b_1, a_2, b_2$ where $(a_1, b_1)$ are the side 
         ```
 
 #### Scoring
- + Subtask $1$ ($20\\%$ points): $n, k, x, |A_i|$ $\\le 10^3$
- + Subtask $2$ ($20\\%$ points): $n, k \\le 2 \\cdot 10^5, |A_i|, x \\le 10^9$
- + Subtask $3$ ($60\\%$ points): no additional constraints.\
+ + Subtask $1$ ($40\\%$ points): $a_1, b_1, a_2, b_2 \\le 10^3$.
+ + Subtask $2$ ($60\\%$ points): no additional constraints.\
 """
 
 CHECKER_TEMPLATE = """\
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     }
 
     // For partial scoring:
-    // cerr << 0.5;  // score between 0.0 and 1.0
+    // cerr << 0.5;  // score fraction between 0.0 and 1.0
     // return 2;     // PARTIAL
 }\
 """
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
     return 1;  // WA
 
     // For partial scoring:
-    // cerr << 0.5;  // score between 0.0 and 1.0
+    // cerr << 0.5;  // score fraction between 0.0 and 1.0
     // return 2;     // PARTIAL
 }\
 """
@@ -188,12 +188,45 @@ HERE IS A COMPLETE EXAMPLE of the target format:
 
 {description_template}
 
-=== LQDOJ CHECKER FORMAT (C++) ===
-Takes 3 file arguments: input_file, output_file, ans_file
-Open them with ifstream. Return exit code: 0=AC, 1=WA, 2=partial.
-For partial: print a score (0.0 to 1.0) to stderr, return 2.
+=== LQDOJ CHECKER SELECTION ===
+LQDOJ has built-in checkers. ALWAYS PREFER a built-in checker over writing a
+custom one — a built-in is more robust and needs no compilation. In summary.json,
+report the choice as a `checker` object: {{"key": <one below>, "args": {{...}}, "source_file": <file or omit>}}.
+
+Available checker keys:
+  - standard   : token match, ignores surrounding whitespace. Default for most problems. No file.
+  - floats     : floating-point compare with tolerance. args {{"precision": N}} (N decimal places). No file.
+  - floatsabs  : floats, absolute error only. args {{"precision": N}}. No file.
+  - floatsrel  : floats, relative error only. args {{"precision": N}}. No file.
+  - identical  : byte-identical output. No file.
+  - rstripped  : token match ignoring trailing spaces. No file.
+  - sorted     : compare as an unordered multiset of tokens/lines. No file.
+  - linecount  : line-by-line comparison. No file.
+  - testlib    : KEEP an existing testlib.h checker AS-IS. Return it unchanged as checker.cpp, source_file="checker.cpp".
+  - testlibcms : a testlib checker using CMS/IOI-style scoring (registerTestlibCmd + quitp, or prints score to stdout). Return checker.cpp, source_file="checker.cpp".
+  - customcpp  : a bespoke C++ checker with NO testlib dependency (see template). Return checker.cpp, source_file="checker.cpp".
+  - custom     : a Python checker (checker.py). Return checker.py, source_file="checker.py".
+  - interact   : interactive judge, plain protocol (see below). Return interactive.cpp, source_file="interactive.cpp".
+  - interacttl : interactive judge that uses testlib. Return interactive.cpp, source_file="interactive.cpp".
+
+Polygon / Codeforces checker name → LQDOJ key mapping:
+  wcmp, lcmp, yesno, nyesno            → standard
+  ncmp, rcmp4, rcmp6, rcmp9, rcmpXX    → floats  (set "precision" to match the checker)
+  fcmp                                 → identical
+  Any testlib checker that calls quitp / reports partial scores → testlibcms
+  Any OTHER testlib checker            → testlib   (keep the source AS-IS)
+  A non-testlib custom comparator      → customcpp (rewrite to plain ifstream) or custom (Python)
+
+CRITICAL: Do NOT rewrite a testlib checker into ifstream. LQDOJ compiles testlib
+checkers natively (testlib.h is installed on the judge), and rewriting silently
+loses robust tokenizing and partial-scoring semantics. Only produce a customcpp
+or custom checker when the original genuinely does NOT use testlib.
+
+=== LQDOJ CUSTOM CHECKER FORMAT (C++, key=customcpp) ===
+Only when the checker does not use testlib. Takes 3 file arguments: input_file, output_file, ans_file.
+Open them with ifstream. Exit code: 0=AC, 1=WA, 2=partial.
+For partial: print a score fraction (0.0 to 1.0) to stderr, return 2.
 Print feedback to stdout (shown to submitter).
-Do NOT use testlib.h — use plain ifstream.
 
 Template:
 ```cpp
@@ -212,7 +245,7 @@ Template:
 {generator_template}
 ```
 
-=== LQDOJ INTERACTIVE JUDGE FORMAT (C++) ===
+=== LQDOJ INTERACTIVE JUDGE FORMAT (C++, key=interact) ===
 Takes 2 file arguments: input_file, answer_file
 Communicate with contestant via stdin (read from contestant) / stdout (write to contestant).
 Return exit code: 0=AC, 1=WA, 2=partial.
@@ -222,6 +255,50 @@ Template:
 ```cpp
 {interactive_template}
 ```
+
+=== TEST STRUCTURE (subtasks / scoring) ===
+Describe how the tests are organized in summary.json's `test_structure` so LQDOJ
+can create the graded test cases and regenerate init.yml. Use EXACT file basenames
+as they appear inside testdata.zip.
+
+"test_structure": {{
+  "kind": "flat",              // "flat" (independent cases) OR "batched" (subtasks)
+
+  // kind=flat — a simple list of independent test cases:
+  "cases": [
+    {{"input": "01.in", "output": "01.out", "points": 10, "is_pretest": false}}
+  ],
+
+  // kind=batched — one entry per subtask/group (each graded as a batch):
+  "subtasks": [
+    {{
+      "points": 40,
+      "scoring": "each_test",  // "each_test" OR "all_or_nothing"
+      "cases": [ {{"input": "1-01.in", "output": "1-01.out"}} ]
+    }}
+  ]
+}}
+
+Rules:
+- Use "batched" when the package defines subtasks/groups (Polygon <group>, IOI
+  subtasks, problem.yaml `grading`/`limits`). Otherwise use "flat".
+- Per-subtask `scoring`: DERIVE from the package when stated:
+    * Polygon problem.xml points_policy: "complete-group" → "all_or_nothing";
+      "each-test" → "each_test".
+    * Kattis testdata.yaml grader_flags: "min" or "first_error" → "all_or_nothing";
+      "sum" / "avg" / "accept_if_any_accepted" → "each_test".
+  When the policy is unknown, use "each_test".
+- `points`: use the package's per-subtask (batched) or per-case (flat) points when
+  available. For Kattis subtasks, take the subtask points from testdata.yaml
+  `accept_score`, or the upper bound of `range` (e.g. "range: 0 50" → 50). If not
+  stated, omit points and LQDOJ will distribute them evenly.
+- `is_pretest`: mark sample/example cases as pretests (flat only; batched pretests
+  are uncommon).
+- EVERY referenced input/output MUST be a file present in testdata.zip. Do not
+  invent names. If a case has no separate output file (interactive/output-only),
+  set "output" to "" or the answer file name.
+- For output-only / single-answer problems, use kind=flat with one case whose
+  `output` is the answer file's name.
 
 === INSTRUCTIONS ===
 
@@ -241,12 +318,13 @@ Template:
       Do NOT use Python's zipfile module to read and re-write files.
       Do NOT rename or modify any test files.
       LQDOJ supports these extensions: .in, .inp, .out, .ans, .a, and extensionless files.
-      Just zip the test folder as-is.
+      Just zip the test folder as-is. The exact basenames you put here must match
+      the names you list in test_structure.
 
-   c) checker.cpp — Convert the checker to LQDOJ format (see template above).
-      Rewrite using ifstream(argv[1/2/3]) instead of testlib.h.
-      Preserve the exact comparison logic from the original.
-      If no custom checker exists, do not create this file.
+   c) checker.cpp / checker.py — ONLY when checker.key needs a file (customcpp,
+      custom, testlib, testlibcms). For testlib/testlibcms, return the ORIGINAL
+      source unchanged. For customcpp, rewrite to plain ifstream (see template).
+      For a built-in checker (standard/floats/etc.) do NOT create this file.
 
    d) generator.cpp — Convert to LQDOJ format (see template above).
       Must print input to stdout AND answer to stderr.
@@ -259,7 +337,8 @@ Template:
       Skip manual/sample tests. If no generator commands found, do not create this file.
 
    f) interactive.cpp — If this is an interactive problem, convert the interactor
-      to LQDOJ format (see template above). If not interactive, do not create this file.
+      to LQDOJ format (see template above), and set checker.key to "interact" (plain)
+      or "interacttl" (testlib). If not interactive, do not create this file.
 
    g) If the problem statement references images (e.g., diagrams, figures),
       find those image files in the package and send them back as attachments too.
@@ -276,13 +355,20 @@ Template:
         "problem_name": "name or null",
         "time_limit_seconds": number or null,
         "memory_limit_mb": number or null,
-        "checker_type": "standard|custom|interactive|csv|null",
+        "checker": {{
+            "key": "standard|floats|floatsabs|floatsrel|identical|rstripped|sorted|linecount|customcpp|custom|testlib|testlibcms|interact|interacttl",
+            "args": {{}} or {{"precision": 6}},
+            "source_file": "checker.cpp" (only for file-bearing keys; omit otherwise)
+        }},
         "test_count": total number of test input files,
         "sample_count": number of sample/example tests,
         "has_generator": true/false,
         "has_checker": true/false,
         "has_interactive": true/false,
         "output_only": true/false,
+        "binary_data": true/false,
+        "output_zip_size_mb": null OR integer (max 20),
+        "test_structure": {{ ...see TEST STRUCTURE section above... }},
         "csv_checker": null OR {{
             "metric": "csv_accuracy|csv_rmse|csv_mae|csv_f1|csv_auc|csv_logloss",
             "id_column": "name or empty string",
@@ -312,8 +398,14 @@ Set `output_only: true` when ANY of these hold:
 - The package contains expected output files but no required submission program
 - The problem statement says "submit the output / predictions / answer file"
 
-For output-only problems with traditional file-by-file scoring (IOI-style),
-keep `csv_checker: null` and let the existing `Standard`/`Floats`/custom checker apply.
+For output-only problems:
+- Set `binary_data: true` when the expected answer files are BINARY (.npz, .npy,
+  images, serialized tensors). Otherwise the judge normalizes newlines/EOF and
+  corrupts them (np.load raises "negative seek value").
+- Set `output_zip_size_mb` to an integer (max 20) when a contestant's submitted
+  output can exceed 1 MB; otherwise leave it null.
+- With traditional file-by-file scoring (IOI-style), keep `csv_checker: null` and
+  let the chosen built-in / custom checker apply.
 
 === KAGGLE-STYLE CSV DETECTION ===
 Set `csv_checker` (and `output_only: true`) when the problem expects a CSV
@@ -329,12 +421,13 @@ sample_submission.csv columns when available; if the file has only one column
 3. IMPORTANT — SEND ALL FILES BACK:
    After creating all files, you MUST attach/send every output file back to me.
    Send each file as an attachment. This is critical — I cannot access your filesystem.
-   Files to send: description.md, testdata.zip, checker.cpp, generator.cpp,
-   generator_script.txt, interactive.cpp, summary.json, and all sol_*.* files.
-   Only send files that you actually created (skip ones that don't exist).
+   Files to send: description.md, testdata.zip, checker.cpp (or checker.py),
+   generator.cpp, generator_script.txt, interactive.cpp, summary.json, and all
+   sol_*.* files. Only send files that you actually created (skip ones that don't exist).
 
 4. VERIFY before sending:
    - testdata.zip contains test files (check file count)
+   - every input/output listed in test_structure exists inside testdata.zip
    - checker.cpp compiles if created (try: g++ -o /dev/null checker.cpp 2>&1)
    - description.md uses correct admonition format for examples\
 """

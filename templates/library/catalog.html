@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title_row %}{% endblock %}
+{% block title_ruler %}{% endblock %}
+
+{% block js_media %}
+  <script src="{{ static('catalog.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+  <div class="library-catalog">
+    <div class="library-topbar">
+      <h2 class="library-heading">{{ _("Catalog") }}</h2>
+      <a class="action-btn library-topbar-right" href="{{ url('library_browse', '') }}">
+        <i class="fa fa-th"></i> {{ _("Folder view") }}
+      </a>
+    </div>
+    <hr class="library-hr">
+
+    {% if not folders and not files %}
+      <div class="library-empty">
+        <i class="fa fa-folder-open fa-3x"></i>
+        <p>{{ _("The library is empty.") }}</p>
+      </div>
+    {% else %}
+      <ul class="catalog-tree" data-api-url="{{ url('library_api_list') }}">
+        {% for folder in folders %}
+          <li class="catalog-folder" data-path="{{ folder.path }}" data-loaded="0">
+            <div class="catalog-row catalog-toggle">
+              <i class="catalog-chevron fa fa-chevron-right"></i>
+              <i class="fa fa-folder"></i>
+              <span class="catalog-name">{{ folder.name }}</span>
+            </div>
+            <ul class="catalog-children" hidden></ul>
+          </li>
+        {% endfor %}
+        {% for file in files %}
+          <li class="catalog-file">
+            <div class="catalog-row">
+              <i class="catalog-chevron-spacer"></i>
+              <i class="fa fa-file-pdf"></i>
+              {% if file.is_pdf %}
+                <a class="catalog-name" href="{{ url('library_document', file.path) }}">{{ file.name }}</a>
+              {% else %}
+                <a class="catalog-name" href="{{ url('library_download', file.path) }}">{{ file.name }}</a>
+              {% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endblock %}

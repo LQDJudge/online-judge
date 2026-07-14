@@ -15,15 +15,20 @@ from judge.models import (
     ProblemGroup,
     Solution,
     Contest,
+    Submission,
 )
 from judge.models.pagevote import PageVote, PageVoteVoter, VoteService
 from judge.models.comment import Comment, CommentVote
 from judge.models.profile import get_contribution_rank
 from judge.utils.contribution import (
+    bulk_compute_contributions,
     compute_contribution,
     detect_abusive_downvoters,
-    is_content_public,
+    detect_targeted_downvote_brigades,
+    purge_brigade_downvotes,
     purge_downvotes_from,
+    is_content_public,
+    trust_weight,
 )
 from judge.views.comment.actions import _update_contribution_for_comment_vote
 
@@ -61,6 +66,12 @@ class ContributionTestCase(TestCase):
         self.voter_profile, _ = Profile.objects.get_or_create(
             user=self.voter_user, defaults={"language": self.language}
         )
+        # Make the shared voter fully trusted (trust_weight == 1.0) so raw
+        # vote scores map 1:1 to contribution in the non-weighting tests.
+        Profile.objects.filter(id=self.voter_profile.id).update(
+            problem_count=100, points=200000
+        )
+        self.voter_profile.refresh_from_db()
 
         self.admin_user = User.objects.create_user(
             username="admin", password="password123"
@@ -131,6 +142,16 @@ class ContributionTestCase(TestCase):
         pagevote.score = score
         pagevote.save()
 
+    def _trusted_voter(self, username):
+        """A voter with trust_weight == 1.0 (established solver)."""
+        u = User.objects.create_user(username=username, password="x")
+        p, _ = Profile.objects.get_or_create(
+            user=u, defaults={"language": self.language}
+        )
+        Profile.objects.filter(id=p.id).update(problem_count=100, points=200000)
+        p.refresh_from_db()
+        return p
+
     def _add_comment(self, obj, author_profile, score=0):
         ct = ContentType.objects.get_for_model(obj)
         comment = Comment.objects.create(
@@ -140,6 +161,15 @@ class ContributionTestCase(TestCase):
             body="Test comment",
             score=score,
         )
+        # Realize the score with real CommentVote rows from fully-trusted
+        # voters, so trust-weighted contribution equals the raw score.
+        direction = 1 if score >= 0 else -1
+        for i in range(abs(score)):
+            CommentVote.objects.create(
+                voter=self._trusted_voter(f"cmv_{comment.id}_{i}"),
+                comment=comment,
+                score=direction,
+            )
         return comment
 
 
@@ -786,3 +816,386 @@ class RecomputeCommandPurgeIntegrationTest(ContributionTestCase):
             CommentVote.objects.filter(voter=heavy, score=-1).count(),
             20,
         )
+
+
+class DetectTargetedBrigadeTest(ContributionTestCase):
+    """Entity-aware detector for coordinated downvote brigades targeting a
+    single author's public content. Complements detect_abusive_downvoters
+    (which is per-voter and global) by looking at the (voter, author) axis."""
+
+    def setUp(self):
+        super().setUp()
+        # A second author whose content absorbs "dilution" downvotes so a
+        # voter's downvotes are not all concentrated on the target author.
+        u = User.objects.create_user(username="other_author", password="x")
+        self.other_author, _ = Profile.objects.get_or_create(
+            user=u, defaults={"language": self.language}
+        )
+        self._prob_seq = 0
+
+    def _make_voter(self, username, ip="10.0.0.1", days_old=500, submissions=0):
+        u = User.objects.create_user(username=username, password="x")
+        User.objects.filter(id=u.id).update(
+            date_joined=timezone.now() - timezone.timedelta(days=days_old)
+        )
+        p, _ = Profile.objects.get_or_create(
+            user=u, defaults={"language": self.language}
+        )
+        Profile.objects.filter(id=p.id).update(ip=ip)
+        p.refresh_from_db()
+        if submissions:
+            sub_problem = self._problem_for(self.other_author, prefix="SUBP")
+            Submission.objects.bulk_create(
+                [
+                    Submission(user=p, problem=sub_problem, language=self.language)
+                    for _ in range(submissions)
+                ]
+            )
+        return p
+
+    def _problem_for(self, author, prefix="P"):
+        self._prob_seq += 1
+        problem = Problem.objects.create(
+            code=f"{prefix}{self._prob_seq}",
+            name="P",
+            group=self.problem_group,
+            time_limit=1.0,
+            memory_limit=262144,
+            points=10.0,
+            is_public=True,
+            is_organization_private=False,
+        )
+        problem.authors.add(author)
+        problem.allowed_languages.set(Language.objects.all())
+        return problem
+
+    def _downvote(self, obj, voter):
+        ct = ContentType.objects.get_for_model(obj)
+        pv, _ = PageVote.objects.get_or_create(content_type=ct, object_id=obj.pk)
+        PageVoteVoter.objects.create(pagevote=pv, voter=voter, score=-1)
+
+    def _dilute(self, voter, n):
+        """Give the voter n downvotes on distinct other-author problems."""
+        for _ in range(n):
+            self._downvote(self._problem_for(self.other_author, prefix="DIL"), voter)
+
+    def test_flags_concentrated_downvoter(self):
+        probs = [self._problem_for(self.author_profile) for _ in range(5)]
+        v = self._make_voter("concentrated")
+        for p in probs:
+            self._downvote(p, v)
+
+        result = detect_targeted_downvote_brigades()
+        self.assertIn(self.author_profile.id, result)
+        self.assertIn(v.id, result[self.author_profile.id])
+        self.assertIn("concentration", result[self.author_profile.id][v.id]["signals"])
+
+    def test_below_volume_gate_not_flagged(self):
+        probs = [self._problem_for(self.author_profile) for _ in range(4)]
+        v = self._make_voter("under_gate")
+        for p in probs:
+            self._downvote(p, v)
+
+        result = detect_targeted_downvote_brigades()
+        self.assertNotIn(v.id, result.get(self.author_profile.id, {}))
+
+    def test_covote_only_not_flagged(self):
+        # High co-vote overlap but low concentration, distinct IPs, established
+        # accounts -> co-vote alone must NOT trigger a flag (it inflates on
+        # authors with few downvoted items; prolific downvoters overlap).
+        target = [self._problem_for(self.author_profile) for _ in range(5)]
+        a = self._make_voter("lockA", ip="10.0.0.2")
+        b = self._make_voter("lockB", ip="10.0.0.3")
+        for p in target:  # identical target set -> covote jaccard 1.0
+            self._downvote(p, a)
+            self._downvote(p, b)
+        self._dilute(a, 5)  # concentration -> 5/10 = 0.5 (below threshold)
+        self._dilute(b, 5)
+
+        result = detect_targeted_downvote_brigades()
+        self.assertNotIn(a.id, result.get(self.author_profile.id, {}))
+        self.assertNotIn(b.id, result.get(self.author_profile.id, {}))
+
+    def test_covote_corroborates_shared_ip(self):
+        # Same lockstep pair, but now sharing an IP -> flagged, with covote
+        # recorded alongside the strong ip_shared signal.
+        target = [self._problem_for(self.author_profile) for _ in range(5)]
+        a = self._make_voter("lockA", ip="10.4.4.4")
+        b = self._make_voter("lockB", ip="10.4.4.4")
+        for p in target:
+            self._downvote(p, a)
+            self._downvote(p, b)
+        self._dilute(a, 5)
+        self._dilute(b, 5)
+
+        result = detect_targeted_downvote_brigades()
+        flagged = result[self.author_profile.id]
+        self.assertIn(a.id, flagged)
+        self.assertIn("ip_shared", flagged[a.id]["signals"])
+        self.assertIn("covote", flagged[a.id]["signals"])
+
+    def test_shared_ip_cluster_flagged(self):
+        # a and b share an IP but downvote DISJOINT problem sets (covote 0).
+        ta = [self._problem_for(self.author_profile) for _ in range(5)]
+        tb = [self._problem_for(self.author_profile) for _ in range(5)]
+        a = self._make_voter("ipA", ip="10.9.9.9")
+        b = self._make_voter("ipB", ip="10.9.9.9")
+        for p in ta:
+            self._downvote(p, a)
+        for p in tb:
+            self._downvote(p, b)
+        self._dilute(a, 5)
+        self._dilute(b, 5)
+
+        result = detect_targeted_downvote_brigades()
+        flagged = result[self.author_profile.id]
+        self.assertIn(a.id, flagged)
+        self.assertIn(b.id, flagged)
+        self.assertIn("ip_shared", flagged[a.id]["signals"])
+        self.assertNotIn("covote", flagged[a.id]["signals"])
+        self.assertNotIn("concentration", flagged[a.id]["signals"])
+
+    def test_fresh_low_activity_flagged(self):
+        target = [self._problem_for(self.author_profile) for _ in range(5)]
+        v = self._make_voter("freshie", ip="10.5.5.5", days_old=1, submissions=0)
+        for p in target:
+            self._downvote(p, v)
+        self._dilute(v, 5)  # concentration 0.5
+
+        result = detect_targeted_downvote_brigades()
+        flagged = result[self.author_profile.id]
+        self.assertIn(v.id, flagged)
+        self.assertIn("fresh_low", flagged[v.id]["signals"])
+        self.assertNotIn("concentration", flagged[v.id]["signals"])
+
+    def test_fresh_but_active_not_fresh_low(self):
+        target = [self._problem_for(self.author_profile) for _ in range(5)]
+        v = self._make_voter("fresh_active", ip="10.6.6.6", days_old=1, submissions=10)
+        for p in target:
+            self._downvote(p, v)
+        self._dilute(v, 5)  # concentration 0.5, no other signal
+
+        result = detect_targeted_downvote_brigades()
+        self.assertNotIn(v.id, result.get(self.author_profile.id, {}))
+
+    def test_established_scattered_voter_not_flagged(self):
+        target = [self._problem_for(self.author_profile) for _ in range(6)]
+        v = self._make_voter("established", ip="10.7.7.7", days_old=1000)
+        for p in target:
+            self._downvote(p, v)
+        self._dilute(v, 100)  # concentration 6/106 ~ 0.06
+
+        result = detect_targeted_downvote_brigades()
+        self.assertNotIn(v.id, result.get(self.author_profile.id, {}))
+
+    def test_downvotes_on_author_comments_count(self):
+        blog = self._create_public_blog()
+        ct = ContentType.objects.get_for_model(BlogPost)
+        v = self._make_voter("cmt_brigade")
+        for i in range(5):
+            c = Comment.objects.create(
+                author=self.author_profile,
+                content_type=ct,
+                object_id=blog.id,
+                body=f"c{i}",
+            )
+            CommentVote.objects.create(voter=v, comment=c, score=-1)
+
+        result = detect_targeted_downvote_brigades()
+        self.assertIn(self.author_profile.id, result)
+        self.assertIn(v.id, result[self.author_profile.id])
+
+
+class TrustWeightTest(TestCase):
+    """Pure trust_weight function: discount-only, capped at 1.0, no age."""
+
+    def test_fresh_low_activity_near_zero(self):
+        self.assertLess(trust_weight(problem_count=1, points=800, rating=None), 0.1)
+
+    def test_established_solver_full(self):
+        self.assertEqual(
+            trust_weight(problem_count=500, points=400000, rating=1600), 1.0
+        )
+
+    def test_capped_at_one(self):
+        self.assertLessEqual(
+            trust_weight(problem_count=99999, points=10**9, rating=5000), 1.0
+        )
+
+    def test_rating_alone_can_grant_trust(self):
+        # Unrated-elsewhere account but high rating -> full trust.
+        self.assertEqual(trust_weight(problem_count=0, points=0, rating=1700), 1.0)
+
+    def test_unrated_solver_not_penalized(self):
+        # Never entered a contest (rating None) but solved plenty -> full trust.
+        self.assertEqual(trust_weight(problem_count=50, points=0, rating=None), 1.0)
+
+    def test_monotonic_in_solved(self):
+        self.assertLess(
+            trust_weight(problem_count=5, points=0, rating=None),
+            trust_weight(problem_count=40, points=0, rating=None),
+        )
+
+
+class TrustWeightedContributionTest(ContributionTestCase):
+    """compute_contribution / bulk_compute_contributions scale each vote by the
+    voter's trust weight and round the total."""
+
+    def _voter(self, username, solved=0, points=0, rating=None):
+        u = User.objects.create_user(username=username, password="x")
+        p, _ = Profile.objects.get_or_create(
+            user=u, defaults={"language": self.language}
+        )
+        Profile.objects.filter(id=p.id).update(
+            problem_count=solved, points=points, rating=rating
+        )
+        p.refresh_from_db()
+        return p
+
+    def _pv_vote(self, obj, voter, score):
+        ct = ContentType.objects.get_for_model(obj)
+        pv, _ = PageVote.objects.get_or_create(content_type=ct, object_id=obj.pk)
+        PageVoteVoter.objects.create(pagevote=pv, voter=voter, score=score)
+        # keep the cached aggregate consistent with the voter rows
+        pv.score = sum(
+            PageVoteVoter.objects.filter(pagevote=pv).values_list("score", flat=True)
+        )
+        pv.save()
+
+    def test_low_trust_upvote_discounted(self):
+        problem = self._create_public_problem(code="W1")
+        sock = self._voter("sock1", solved=1, points=800)  # weight ~0.02
+        self._pv_vote(problem, sock, 1)
+        self.assertEqual(compute_contribution(self.author_profile), 0)
+
+    def test_trusted_upvote_counts_full(self):
+        problem = self._create_public_problem(code="W2")
+        trusted = self._voter("trust1", solved=100, points=200000, rating=1600)
+        self._pv_vote(problem, trusted, 1)
+        self.assertEqual(compute_contribution(self.author_profile), 1)
+
+    def test_mixed_votes_rounded(self):
+        problem = self._create_public_problem(code="W3")
+        for i in range(3):  # 3 trusted upvotes -> +3
+            self._pv_vote(problem, self._voter(f"t{i}", solved=100, points=200000), 1)
+        for i in range(5):  # 5 sockpuppet downvotes -> ~ -0.1
+            self._pv_vote(problem, self._voter(f"s{i}", solved=1, points=800), -1)
+        # raw would be -2; weighted ~ 2.9 -> rounds to 3
+        self.assertEqual(compute_contribution(self.author_profile), 3)
+
+    def test_comment_downvote_from_sockpuppet_discounted(self):
+        blog = self._create_public_blog()
+        ct = ContentType.objects.get_for_model(BlogPost)
+        comment = Comment.objects.create(
+            author=self.author_profile,
+            content_type=ct,
+            object_id=blog.id,
+            body="c",
+        )
+        sock = self._voter("csock", solved=1, points=800)
+        CommentVote.objects.create(voter=sock, comment=comment, score=-1)
+        self.assertEqual(compute_contribution(self.author_profile), 0)
+
+    def test_bulk_matches_single(self):
+        problem = self._create_public_problem(code="W4")
+        self._pv_vote(problem, self._voter("bt", solved=100, points=200000), 1)
+        self._pv_vote(problem, self._voter("bs", solved=1, points=800), 1)
+        single = compute_contribution(self.author_profile)
+        bulk = bulk_compute_contributions().get(self.author_profile.id, 0)
+        self.assertEqual(single, 1)
+        self.assertEqual(single, bulk)
+
+
+class RecomputeBrigadeIntegrationTest(ContributionTestCase):
+    """The recompute command runs brigade detection in bulk mode (reporting by
+    default; purging only with --purge-brigades)."""
+
+    def _brigade_voter(self, username, ip="7.7.7.7"):
+        # Fresh account (date_joined=now, 0 submissions) -> fresh_low signal.
+        u = User.objects.create_user(username=username, password="x")
+        p, _ = Profile.objects.get_or_create(
+            user=u, defaults={"language": self.language}
+        )
+        Profile.objects.filter(id=p.id).update(ip=ip)
+        p.refresh_from_db()
+        return p
+
+    def _setup_brigade(self):
+        ct = ContentType.objects.get_for_model(Problem)
+        sock = self._brigade_voter("brigadier")
+        for i in range(5):
+            problem = self._create_public_problem(code=f"BR{i}")
+            pv, _ = PageVote.objects.get_or_create(
+                content_type=ct, object_id=problem.id
+            )
+            PageVoteVoter.objects.create(pagevote=pv, voter=sock, score=-1)
+        return sock
+
+    def test_bulk_purges_brigade_by_default(self):
+        sock = self._setup_brigade()
+        out = StringIO()
+        call_command("recompute_contributions", stdout=out)
+        # Reported AND surgically purged by default.
+        self.assertIn("brigade", out.getvalue().lower())
+        self.assertEqual(PageVoteVoter.objects.filter(voter=sock, score=-1).count(), 0)
+
+    def test_skip_brigade_purge_keeps_downvotes(self):
+        sock = self._setup_brigade()
+        out = StringIO()
+        call_command("recompute_contributions", "--skip-brigade-purge", stdout=out)
+        self.assertIn("brigade", out.getvalue().lower())
+        self.assertEqual(PageVoteVoter.objects.filter(voter=sock, score=-1).count(), 5)
+
+    def test_dry_run_does_not_purge_brigades(self):
+        sock = self._setup_brigade()
+        out = StringIO()
+        call_command("recompute_contributions", "--dry-run", stdout=out)
+        self.assertIn("brigade", out.getvalue().lower())
+        self.assertEqual(PageVoteVoter.objects.filter(voter=sock, score=-1).count(), 5)
+
+    def test_surgical_purge_leaves_other_authors_votes(self):
+        ct = ContentType.objects.get_for_model(Problem)
+        sock = self._brigade_voter("surgical_sock")
+        # 5 downvotes on the target author's problems...
+        target_pv_ids = []
+        for i in range(5):
+            problem = self._create_public_problem(code=f"SG{i}")
+            pv, _ = PageVote.objects.get_or_create(
+                content_type=ct, object_id=problem.id
+            )
+            PageVoteVoter.objects.create(pagevote=pv, voter=sock, score=-1)
+            target_pv_ids.append(pv.id)
+        # ...and 1 downvote on ANOTHER author's problem.
+        other_user = User.objects.create_user(username="otherauth", password="x")
+        other = Profile.objects.get_or_create(
+            user=other_user, defaults={"language": self.language}
+        )[0]
+        op = Problem.objects.create(
+            code="OTHP",
+            name="Other",
+            group=self.problem_group,
+            time_limit=1.0,
+            memory_limit=262144,
+            points=10.0,
+            is_public=True,
+            is_organization_private=False,
+        )
+        op.authors.add(other)
+        op.allowed_languages.set(Language.objects.all())
+        opv, _ = PageVote.objects.get_or_create(content_type=ct, object_id=op.id)
+        PageVoteVoter.objects.create(pagevote=opv, voter=sock, score=-1)
+
+        brigades = {
+            self.author_profile.id: {sock.id: {"here": 5, "signals": ["concentration"]}}
+        }
+        purge_brigade_downvotes(brigades)
+
+        # Votes against the target author are gone...
+        self.assertEqual(
+            PageVoteVoter.objects.filter(
+                voter=sock, pagevote_id__in=target_pv_ids
+            ).count(),
+            0,
+        )
+        # ...but the vote on the other author's problem survives.
+        self.assertTrue(PageVoteVoter.objects.filter(voter=sock, pagevote=opv).exists())

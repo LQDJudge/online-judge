@@ -27,13 +27,17 @@ Two leak signals reported in one check (cheap to compute together):
 Either signal flags FAIL. Both are listed in details_json so the organizer
 sees who, how (sub/role), and on which problem.
 
+Quizzes are handled by the sibling `quiz_leak_check` — a contest quiz is a
+distinct surface, so it gets its own check row/verdict rather than being
+folded in here.
+
 DB-only check — no LLM call, fast even on contests with many problems.
 """
 
-from django.db.models import Count, Max
+from django.db.models import Count, Max, Prefetch
 from django.utils.translation import gettext as _, gettext_lazy
 
-from judge.models import Submission
+from judge.models import Profile, Submission
 from judge.models.contest_review import ContestReviewCheckResult
 from judge.review.base import CheckResultData
 from judge.review.contest_base import ContestReviewCheck
@@ -53,6 +57,9 @@ def _trusted_profile_ids(contest):
     Superusers are filtered separately in the query (via `user__is_superuser=True`)
     rather than enumerated here, so we don't have to round-trip all admin
     Profile ids into Python and back.
+
+    Shared with `quiz_leak_check` (imported there) so both leak checks agree on
+    exactly who counts as trusted for THIS contest.
     """
     trusted = set()
     trusted.update(contest.authors.values_list("id", flat=True))
@@ -72,20 +79,26 @@ def _collect_role_leaks(contest, trusted_ids):
     them as role leakers here would falsely flag an admin who's the original
     author of a reused problem.
 
-    Each role queryset is `.select_related("user")` so profile.user.username
-    doesn't trigger a per-profile query (the naive form is O(roles × profiles)
-    user fetches; with select_related it's a single JOIN).
+    Prefetch the three role M2Ms (each with select_related("user") baked into
+    the Prefetch queryset, so profile.user.username costs no extra query) — this
+    is a CONSTANT 4 queries (1 for problems + 3 prefetch) regardless of how many
+    problems the contest has, instead of O(3 × problems). NOTE: the loop below
+    must use plain `.all()` on each relation — appending `.select_related(...)`
+    there would build a new queryset that ignores the prefetch cache and re-hits
+    the DB per problem, defeating the point.
     """
     rows = []
-    for p in contest.problems.select_related().all():
-        # Pull each role separately so we can label them in the output.
-        # Three small queries per problem is fine for v1; if a contest has
-        # 30 problems we're still under 100 queries total.
+    problems = contest.problems.prefetch_related(
+        Prefetch("authors", queryset=Profile.objects.select_related("user")),
+        Prefetch("curators", queryset=Profile.objects.select_related("user")),
+        Prefetch("testers", queryset=Profile.objects.select_related("user")),
+    )
+    for p in problems:
         per_user_roles = {}
         for role, qs in (
-            ("author", p.authors.select_related("user").all()),
-            ("curator", p.curators.select_related("user").all()),
-            ("tester", p.testers.select_related("user").all()),
+            ("author", p.authors.all()),
+            ("curator", p.curators.all()),
+            ("tester", p.testers.all()),
         ):
             for profile in qs:
                 if profile.id in trusted_ids:
