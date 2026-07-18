@@ -1,4 +1,3 @@
-# coding=utf-8
 import re
 
 from django import forms
@@ -20,20 +19,20 @@ from registration.forms import RegistrationForm
 from judge.models import Language, Profile, TIMEZONE
 from judge.utils.recaptcha import ReCaptchaField, ReCaptchaWidget
 from judge.utils.turnstile import TurnstileField, is_turnstile_configured
+from judge.validators import (
+    USERNAME_ALLOWED_MESSAGE,
+    clean_username as clean_username_value,
+)
 from judge.widgets import Select2Widget
 
-valid_id = re.compile(r"^\w+$")
 bad_mail_regex = list(map(re.compile, settings.BAD_MAIL_PROVIDER_REGEX))
 
 
 class CustomRegistrationForm(RegistrationForm):
-    username = forms.RegexField(
-        regex=r"^\w+$",
+    username = forms.CharField(
         max_length=30,
         label=_("Username"),
-        error_messages={
-            "invalid": _("A username must contain letters, " "numbers, or underscores")
-        },
+        help_text=USERNAME_ALLOWED_MESSAGE,
     )
     timezone = ChoiceField(
         label=_("Timezone"),
@@ -51,6 +50,14 @@ class CustomRegistrationForm(RegistrationForm):
         captcha = TurnstileField()
     elif ReCaptchaField is not None:
         captcha = ReCaptchaField(widget=ReCaptchaWidget())
+
+    def clean_username(self):
+        username = clean_username_value(self.cleaned_data["username"])
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError(
+                User._meta.get_field("username").error_messages["unique"]
+            )
+        return username
 
     def clean_email(self):
         if User.objects.filter(email=self.cleaned_data["email"]).exists():

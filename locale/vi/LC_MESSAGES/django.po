@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-13 15:57+0700\n"
+"POT-Creation-Date: 2026-07-18 14:33+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -120,11 +120,11 @@ msgstr "Gần đây"
 msgid "Admin"
 msgstr "Admin"
 
-#: dmoj/settings.py:421
+#: dmoj/settings.py:428
 msgid "Vietnamese"
 msgstr "Tiếng Việt"
 
-#: dmoj/settings.py:422
+#: dmoj/settings.py:429
 msgid "English"
 msgstr "English"
 
@@ -182,7 +182,7 @@ msgstr "Các kỳ thi bao gồm"
 #: judge/admin/contest.py:98 judge/models/notification.py:25
 #: templates/contest/contest-problem-table.html:9
 #: templates/contest/edit.html:89 templates/contest/edit.html:90
-#: templates/contest/feed/item.html:32 templates/contest/moss.html:41
+#: templates/contest/feed/item.html:33 templates/contest/moss.html:41
 #: templates/contest/problems.html:36 templates/contest/problemset.html:32
 #: templates/contest/review.html:236 templates/contest/review.html:315
 #: templates/contest/review.html:356 templates/contest/review.html:383
@@ -315,7 +315,7 @@ msgid "diff"
 msgstr "khác biệt"
 
 #: judge/admin/organization.py:65 judge/admin/problem.py:295
-#: judge/admin/profile.py:133 judge/admin/quiz.py:316
+#: judge/admin/profile.py:134 judge/admin/quiz.py:316
 msgid "View on site"
 msgstr "Xem trên trang"
 
@@ -344,7 +344,7 @@ msgstr "Phân loại"
 #: templates/contest/contest-problem-table.html:11
 #: templates/contest/contest-quiz-table.html:8
 #: templates/contest/contests_summary.html:42
-#: templates/contest/feed/item.html:33 templates/contest/problems.html:37
+#: templates/contest/feed/item.html:34 templates/contest/problems.html:37
 #: templates/contest/problemset.html:33 templates/course/contest_list.html:142
 #: templates/internal/problem_duplicate_detail.html:202
 #: templates/internal/problem_queue.html:857 templates/problem/add.html:197
@@ -431,11 +431,11 @@ msgstr "Tổng điểm"
 msgid "Vote"
 msgstr "Bình chọn"
 
-#: judge/admin/profile.py:46
+#: judge/admin/profile.py:47
 msgid "timezone"
 msgstr "múi giờ"
 
-#: judge/admin/profile.py:142 judge/admin/quiz.py:455
+#: judge/admin/profile.py:143 judge/admin/quiz.py:455
 #: judge/admin/submission.py:329 judge/views/course.py:2524
 #: templates/contest/review.html:355 templates/contest/review.html:382
 #: templates/contest/review.html:417 templates/contest/review.html:444
@@ -448,34 +448,30 @@ msgstr "múi giờ"
 msgid "User"
 msgstr "Thành viên"
 
-#: judge/admin/profile.py:148 templates/registration/registration_form.html:40
+#: judge/admin/profile.py:149 templates/registration/registration_form.html:40
 #: templates/user/edit-profile.html:123 templates/user/import/table_csv.html:8
 msgid "Email"
 msgstr "Email"
 
-#: judge/admin/profile.py:154 judge/views/register.py:39
+#: judge/admin/profile.py:155 judge/views/register.py:38
 #: templates/registration/registration_form.html:68
 #: templates/user/edit-profile.html:155
 msgid "Timezone"
 msgstr "Múi giờ"
 
-#: judge/admin/profile.py:160
+#: judge/admin/profile.py:161
 msgid "date joined"
 msgstr "ngày tham gia"
 
-#: judge/admin/profile.py:170
+#: judge/admin/profile.py:171
 #, python-format
 msgid "%d user have scores recalculated."
 msgid_plural "%d users have scores recalculated."
 msgstr[0] "%d người dùng đã được tính điểm lại."
 
-#: judge/admin/profile.py:177
+#: judge/admin/profile.py:178
 msgid "Recalculate scores"
 msgstr "Tính điểm lại"
-
-#: judge/admin/profile.py:184 judge/admin/profile.py:191
-msgid "Username can only contain letters, digits, and underscores."
-msgstr "Tên đăng nhập phải chứa ký tự, chữ số, hoặc dấu gạch dưới"
 
 #: judge/admin/quiz.py:73 judge/admin/quiz.py:244
 msgid "Basic Information"
@@ -4719,19 +4715,15 @@ msgstr "**[Hệ thống]** Đánh giá đã được %(name)s chấp nhận."
 msgid "**[System]** Review rejected by %(name)s."
 msgstr "**[Hệ thống]** Đánh giá đã bị %(name)s từ chối."
 
-#: judge/social_auth.py:69 judge/views/register.py:35
-msgid "A username must contain letters, numbers, or underscores"
-msgstr "Tên đăng nhập phải chứa ký tự, chữ số, hoặc dấu gạch dưới"
-
-#: judge/social_auth.py:75
+#: judge/social_auth.py:81
 msgid "Sorry, the username is taken."
 msgstr "Xin lỗi, tên đăng nhập đã bị trùng."
 
-#: judge/social_auth.py:93
+#: judge/social_auth.py:99
 msgid "Choose a username"
 msgstr "Chọn tên đăng nhập"
 
-#: judge/social_auth.py:122
+#: judge/social_auth.py:128
 msgid "Create your profile"
 msgstr "Khởi tạo thông tin"
 
@@ -4938,6 +4930,9 @@ msgstr "Xác minh captcha thất bại. Vui lòng thử lại."
 msgid "M j, Y"
 msgstr "j M, Y"
 
+msgid "Username can only contain Latin letters, digits, and underscores."
+msgstr "Tên đăng nhập chỉ được chứa chữ cái Latin, chữ số hoặc dấu gạch dưới."
+
 #: judge/views/about.py:12 templates/course/course.html:35
 #: templates/home.html:42 templates/organization/home.html:112
 #: templates/organization/org-right-sidebar.html:117
@@ -4970,7 +4965,7 @@ msgstr "Bài đăng này thuộc riêng một nhóm. Hãy chỉnh sửa qua tran
 #: judge/views/contests.py:2506 judge/views/contests.py:2742
 #: judge/views/custom_file_upload.py:416 judge/views/custom_file_upload.py:496
 #: judge/views/direct_upload.py:156 judge/views/direct_upload.py:252
-#: judge/views/document_library.py:210 judge/views/organization.py:1603
+#: judge/views/document_library.py:209 judge/views/organization.py:1603
 #: judge/views/organization.py:1610 judge/views/organization.py:1644
 #: judge/views/organization.py:1659 judge/views/organization.py:1686
 #: judge/views/organization.py:1858 judge/views/quiz_import.py:68
@@ -5209,7 +5204,7 @@ msgstr "%s Bảng điểm"
 msgid "Rank"
 msgstr "Rank"
 
-#: judge/views/contests.py:1615 judge/views/register.py:33
+#: judge/views/contests.py:1615 judge/views/register.py:34
 #: templates/notification/list.html:98
 #: templates/registration/registration_form.html:34
 #: templates/user/base-users-table.html:5
@@ -5818,7 +5813,7 @@ msgstr "Lời giải đã xóa thành công"
 
 #: judge/views/custom_file_upload.py:265 judge/views/custom_file_upload.py:267
 #: judge/views/custom_file_upload.py:398 judge/views/custom_file_upload.py:400
-#: judge/views/document_library.py:366
+#: judge/views/document_library.py:370
 msgid "File not found"
 msgstr "Thành viên không tìm thấy"
 
@@ -5826,7 +5821,7 @@ msgstr "Thành viên không tìm thấy"
 msgid "New filename cannot be empty"
 msgstr "Tên tệp mới không được để trống"
 
-#: judge/views/custom_file_upload.py:358 judge/views/document_library.py:277
+#: judge/views/custom_file_upload.py:358 judge/views/document_library.py:280
 msgid "A file with this name already exists"
 msgstr "Mã bài đã tồn tại."
 
@@ -5897,7 +5892,7 @@ msgstr "Thiếu tên file"
 msgid "Invalid or expired token"
 msgstr "Token không hợp lệ hoặc đã hết hạn"
 
-#: judge/views/direct_upload.py:104 judge/views/document_library.py:270
+#: judge/views/direct_upload.py:104 judge/views/document_library.py:273
 msgid "No file provided"
 msgstr "Không có file nào được chọn"
 
@@ -5960,72 +5955,72 @@ msgstr ""
 msgid "Test Data Instructions"
 msgstr "Hướng dẫn Test Data"
 
-#: judge/views/document_library.py:111 judge/views/document_library.py:155
+#: judge/views/document_library.py:109 judge/views/document_library.py:153
 msgid "Library"
 msgstr "Thư viện"
 
-#: judge/views/document_library.py:164 judge/views/document_library.py:248
-#: judge/views/document_library.py:267 judge/views/document_library.py:295
-#: judge/views/document_library.py:330 judge/views/document_library.py:355
+#: judge/views/document_library.py:162 judge/views/document_library.py:247
+#: judge/views/document_library.py:270 judge/views/document_library.py:298
+#: judge/views/document_library.py:334 judge/views/document_library.py:359
 #, fuzzy
 #| msgid "Invalid file path"
 msgid "Invalid path"
 msgstr "Đường dẫn file không hợp lệ"
 
-#: judge/views/document_library.py:218
+#: judge/views/document_library.py:217
 msgid "Cannot move a folder into itself"
 msgstr "Không thể di chuyển thư mục vào chính nó"
 
-#: judge/views/document_library.py:222
+#: judge/views/document_library.py:221
 #, fuzzy
 #| msgid "File not found"
 msgid "Folder not found"
 msgstr "Thành viên không tìm thấy"
 
-#: judge/views/document_library.py:231
+#: judge/views/document_library.py:230
 #, python-format
 msgid "Some files could not be moved: %(files)s"
 msgstr "Một số tệp không thể di chuyển: %(files)s"
 
-#: judge/views/document_library.py:250
+#: judge/views/document_library.py:249
 #, fuzzy
 #| msgid "Invalid model"
 msgid "Invalid folder name"
 msgstr "Model không hợp lệ"
 
-#: judge/views/document_library.py:253
+#: judge/views/document_library.py:252
 msgid "Folder already exists"
 msgstr "Thư mục đã tồn tại"
 
-#: judge/views/document_library.py:273
+#: judge/views/document_library.py:276
 msgid "Only PDF files are allowed"
 msgstr "Chỉ chấp nhận tệp PDF"
 
-#: judge/views/document_library.py:297
+#: judge/views/document_library.py:300
 #, fuzzy
 #| msgid "Invalid model"
 msgid "Invalid name"
 msgstr "Model không hợp lệ"
 
-#: judge/views/document_library.py:307 judge/views/document_library.py:338
+#: judge/views/document_library.py:311 judge/views/document_library.py:342
 #, fuzzy
 #| msgid "This code already exists"
 msgid "Target already exists"
 msgstr "Mã này đã tồn tại"
 
-#: judge/views/document_library.py:309 templates/problem/attachments.html:98
+#: judge/views/document_library.py:313 templates/problem/attachments.html:98
 #: templates/problem/attachments.html:104 templates/user_upload/upload.html:346
 #: templates/user_upload/upload.html:350
 msgid "Rename failed"
 msgstr "Đổi tên thất bại"
 
-#: judge/views/document_library.py:340
+#: judge/views/document_library.py:344
 #, fuzzy
 #| msgid "Rename failed"
 msgid "Move failed"
 msgstr "Đổi tên thất bại"
 
-#: judge/views/document_library.py:360
+#: judge/views/document_library.py:364
 msgid "Folder is not empty"
 msgstr "Thư mục không trống"
 
@@ -7418,11 +7413,11 @@ msgstr "Các bài nộp tốt nhất cho %(problem)s trong %(contest)s"
 msgid "Best solutions for problem %(number)s in %(contest)s"
 msgstr "Các bài nộp tốt nhất cho bài %(number)s trong %(contest)s"
 
-#: judge/views/register.py:45 templates/user/edit-profile.html:159
+#: judge/views/register.py:44 templates/user/edit-profile.html:159
 msgid "Preferred language"
 msgstr "Ngôn ngữ ưa thích"
 
-#: judge/views/register.py:59
+#: judge/views/register.py:66
 #, python-format
 msgid ""
 "The email address \"%s\" is already taken. Only one registration is allowed "
@@ -7430,7 +7425,7 @@ msgid ""
 msgstr ""
 "Email \"%s\" đã được sử dụng. Mỗi email chỉ có thể đăng ký một tài khoản."
 
-#: judge/views/register.py:71
+#: judge/views/register.py:78
 msgid ""
 "Your email provider is not allowed due to history of abuse. Please use a "
 "reputable email provider."
@@ -7438,11 +7433,11 @@ msgstr ""
 "Your email provider is not allowed due to history of abuse. Please use a "
 "reputable email provider."
 
-#: judge/views/register.py:79 judge/views/register.py:145
+#: judge/views/register.py:86 judge/views/register.py:152
 msgid "Registration"
 msgstr "Đăng ký"
 
-#: judge/views/register.py:159
+#: judge/views/register.py:166
 msgid "Authentication failure"
 msgstr "Xác thực thất bại"
 
@@ -14457,6 +14452,9 @@ msgstr "Chọn tất cả"
 #: templates/widgets/sortable_formset.html:21
 msgid "No items yet."
 msgstr "Chưa có mục nào."
+
+#~ msgid "A username must contain letters, numbers, or underscores"
+#~ msgstr "Tên đăng nhập phải chứa ký tự, chữ số, hoặc dấu gạch dưới"
 
 #~ msgid "Quiz role-access leaks"
 #~ msgstr "Lộ câu hỏi lý thuyết qua quyền truy cập"

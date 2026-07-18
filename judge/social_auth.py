@@ -1,5 +1,4 @@
 import logging
-import re
 from operator import itemgetter
 from urllib.parse import quote
 
@@ -21,6 +20,12 @@ from social_django.middleware import (
 
 from judge.forms import ProfileForm
 from judge.models import Language, Profile
+from judge.validators import (
+    USERNAME_ALLOWED_MESSAGE,
+    clean_username as clean_username_value,
+    is_allowed_username_char,
+    normalize_username,
+)
 
 logger = logging.getLogger("judge.social_auth")
 
@@ -51,8 +56,11 @@ class GitHubSecureEmailOAuth2(GithubOAuth2):
         return data
 
 
-def slugify_username(username, renotword=re.compile(r"[^\w]")):
-    return renotword.sub("", username.replace("-", "_"))
+def slugify_username(username):
+    username = normalize_username(username)
+    return "".join(
+        char for char in username.replace("-", "_") if is_allowed_username_char(char)
+    )
 
 
 def verify_email(backend, details, *args, **kwargs):
@@ -61,19 +69,17 @@ def verify_email(backend, details, *args, **kwargs):
 
 
 class UsernameForm(forms.Form):
-    username = forms.RegexField(
-        regex=r"^\w+$",
+    username = forms.CharField(
         max_length=30,
         label="Username",
-        error_messages={
-            "invalid": _("A username must contain letters, numbers, or underscores")
-        },
+        help_text=USERNAME_ALLOWED_MESSAGE,
     )
 
     def clean_username(self):
-        if User.objects.filter(username=self.cleaned_data["username"]).exists():
+        username = clean_username_value(self.cleaned_data["username"])
+        if User.objects.filter(username=username).exists():
             raise forms.ValidationError(_("Sorry, the username is taken."))
-        return self.cleaned_data["username"]
+        return username
 
 
 @partial
