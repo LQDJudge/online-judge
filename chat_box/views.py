@@ -644,15 +644,26 @@ def reaction_list(request):
     if not can_access_room(request, message.room):
         return HttpResponseForbidden()
 
+    reaction_filter = request.GET.get("reaction") or None
+    if reaction_filter is not None and reaction_filter not in CHAT_REACTION_CODES:
+        return HttpResponseBadRequest()
+
+    reaction_qs = MessageReaction.objects.filter(message=message)
+    if reaction_filter is not None:
+        reaction_qs = reaction_qs.filter(reaction=reaction_filter)
     counts = dict(
-        MessageReaction.objects.filter(message=message)
-        .values("reaction")
+        reaction_qs.values("reaction")
         .annotate(total=Count("id"))
         .values_list("reaction", "total")
     )
+    visible_reactions = (
+        [(reaction_filter, CHAT_REACTION_EMOJI[reaction_filter])]
+        if reaction_filter is not None
+        else CHAT_REACTIONS
+    )
     reaction_sections = []
     displayed_user_ids = []
-    for code, emoji in CHAT_REACTIONS:
+    for code, emoji in visible_reactions:
         total = counts.get(code, 0)
         if not total:
             continue

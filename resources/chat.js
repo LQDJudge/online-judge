@@ -214,8 +214,12 @@
       });
     },
 
-    getReactionList: function(messageId) {
-      return $.get(ChatConfig.urls.reactionList, { message: messageId });
+    getReactionList: function(messageId, reaction) {
+      var data = { message: messageId };
+      if (reaction) {
+        data.reaction = reaction;
+      }
+      return $.get(ChatConfig.urls.reactionList, data);
     },
 
     muteMessage: function(messageId, muteType, reason) {
@@ -266,30 +270,34 @@
 
       // If a who-reacted popup was open, refresh it after the rebuild instead of
       // letting the innerHTML replacement below make it silently vanish.
-      var listWasOpen = $container.find('.reaction-list-popup').length > 0;
+      var $openList = $container.find('.reaction-list-popup');
+      var listWasOpen = $openList.length > 0;
+      var listReaction = listWasOpen ? ($openList.data('reaction') || '') : '';
 
       var myReaction = summary.my_reaction || '';
       var counts = summary.counts || {};
       $container.attr('data-my-reaction', myReaction);
 
       if (summary.total && summary.total > 0) {
-        var emojis = '';
+        var html = '';
         var images = ChatConfig.reactionImages || {};
         (ChatConfig.reactions || []).forEach(function(pair) {
           var code = pair[0];
           if (counts[code]) {
+            var emojis = '';
             if (images[code]) {
               emojis += '<img class="reaction-img" src="' + images[code] + '">';
             } else {
               emojis += '<span class="reaction-emoji">' + pair[1] + '</span>';
             }
+            var mineClass = myReaction === code ? ' reaction-pill-mine' : '';
+            html += '<button type="button" class="reaction-pill' + mineClass +
+              '" data-id="' + messageId + '" data-reaction="' + code +
+              '" title="' + (ChatConfig.i18n.whoReacted || '') + '">' +
+              '<span class="reaction-pill-emojis">' + emojis + '</span>' +
+              '<span class="reaction-pill-count">' + counts[code] + '</span></button>';
           }
         });
-        var mineClass = myReaction ? ' reaction-pill-mine' : '';
-        var html = '<button type="button" class="reaction-pill' + mineClass +
-          '" data-id="' + messageId + '" title="' + (ChatConfig.i18n.whoReacted || '') + '">' +
-          '<span class="reaction-pill-emojis">' + emojis + '</span>' +
-          '<span class="reaction-pill-count">' + summary.total + '</span></button>';
         $container.removeClass('is-empty').html(html);
       } else {
         $container.addClass('is-empty').empty();
@@ -303,8 +311,8 @@
         );
       });
 
-      if (listWasOpen && summary.total && summary.total > 0) {
-        ChatEvents.openReactionList(messageId);
+      if (listWasOpen && summary.total && summary.total > 0 && (!listReaction || counts[listReaction])) {
+        ChatEvents.openReactionList(messageId, listReaction);
       }
     },
 
@@ -1069,13 +1077,14 @@
       $('.reaction-list-popup').remove();
     },
 
-    openReactionList: function(messageId) {
+    openReactionList: function(messageId, reaction) {
       var $reactions = $('#message-reactions-' + messageId);
       if (!$reactions.length) return;
       ChatEvents.closeReactionLists();
       var $popup = $('<div class="reaction-list-popup"></div>');
+      $popup.data('reaction', reaction || '');
       $reactions.append($popup);
-      ChatAPI.getReactionList(messageId)
+      ChatAPI.getReactionList(messageId, reaction)
         .done(function(html) { $popup.html(html); })
         .fail(function() { ChatEvents.closeReactionLists(); });
     },
@@ -1096,12 +1105,14 @@
       $(document).on('click', '.reaction-pill', function(e) {
         e.stopPropagation();
         var messageId = $(this).data('id');
-        var alreadyOpen = $('#message-reactions-' + messageId)
-          .find('.reaction-list-popup').length > 0;
+        var reaction = $(this).data('reaction') || '';
+        var $existingPopup = $('#message-reactions-' + messageId).find('.reaction-list-popup');
+        var alreadyOpen = $existingPopup.length > 0;
+        var sameReactionOpen = alreadyOpen && ($existingPopup.data('reaction') || '') === reaction;
         ChatEvents.closeReactionPickers();
         ChatEvents.closeReactionLists();
-        if (alreadyOpen) return;               // second click closes it
-        ChatEvents.openReactionList(messageId);
+        if (sameReactionOpen) return;          // second click closes it
+        ChatEvents.openReactionList(messageId, reaction);
       });
 
       // Clicks inside the popup (e.g. a user link) shouldn't close it via the

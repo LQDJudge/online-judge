@@ -224,6 +224,26 @@ class ReactionListTest(TestCase):
         self.assertIn("❤️", html)
         self.assertIn('class="reaction-list-heading-count">1</span>', html)
 
+    def test_can_filter_reactors_by_reaction_type(self):
+        MessageReaction.objects.create(message=self.msg, user=self.u1, reaction="like")
+        MessageReaction.objects.create(message=self.msg, user=self.u2, reaction="love")
+
+        resp = self.client.get(self.url, {"message": self.msg.id, "reaction": "like"})
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn("rl_u1", html)
+        self.assertNotIn("rl_u2", html)
+        self.assertIn("👍", html)
+        self.assertNotIn("❤️", html)
+
+    def test_bad_reaction_filter_is_400(self):
+        self.assertEqual(
+            self.client.get(
+                self.url, {"message": self.msg.id, "reaction": "bogus"}
+            ).status_code,
+            400,
+        )
+
     def test_reactor_list_is_capped_per_reaction_type(self):
         for i in range(12):
             p = self._profile(f"rl_like_{i}")
@@ -276,3 +296,44 @@ class ReactionListTest(TestCase):
 
         # Query count must not grow with the number of reactors.
         self.assertEqual(query_count(2, 0), query_count(12, 100))
+
+
+class ReactionMessageRenderTest(TestCase):
+    """Message HTML should show each reaction type with its own count."""
+
+    fixtures = ["language_small"]
+
+    def setUp(self):
+        cache.clear()
+        self.lang = Language.objects.first()
+        self.viewer = self._profile("rm_viewer")
+        self.author = self._profile("rm_author")
+        self.msg = Message.objects.create(author=self.author, body="hi", room=None)
+        self.url = reverse("chat_message_ajax")
+        self.client.login(username="rm_viewer", password="pw")
+
+    def tearDown(self):
+        cache.clear()
+
+    def _profile(self, name):
+        user = User.objects.create_user(name, f"{name}@x.com", "pw")
+        p, _ = Profile.objects.get_or_create(
+            user=user, defaults={"language": self.lang}
+        )
+        return p
+
+    def test_reaction_summary_counts_each_type_separately(self):
+        for i in range(2):
+            p = self._profile(f"rm_like_{i}")
+            MessageReaction.objects.create(message=self.msg, user=p, reaction="like")
+        for i in range(3):
+            p = self._profile(f"rm_love_{i}")
+            MessageReaction.objects.create(message=self.msg, user=p, reaction="love")
+
+        resp = self.client.get(self.url, {"message": self.msg.id})
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertEqual(html.count('class="reaction-pill-count"'), 2)
+        self.assertIn('class="reaction-pill-count">2</span>', html)
+        self.assertIn('class="reaction-pill-count">3</span>', html)
+        self.assertNotIn('class="reaction-pill-count">5</span>', html)

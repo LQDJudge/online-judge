@@ -788,6 +788,9 @@ body:has(.chat-page) {
   }
 
   .message-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
     margin-top: 2px;
     position: relative; // anchor for the who-reacted popup
 
