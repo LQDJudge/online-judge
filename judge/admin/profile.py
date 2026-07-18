@@ -3,16 +3,17 @@ from django.forms import ModelForm
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ngettext
 from django.contrib.auth.admin import UserAdmin as OldUserAdmin
-from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import UserChangeForm
 
 
 from judge.models import Profile, ProfileInfo
+from judge.validators import (
+    USERNAME_ALLOWED_MESSAGE,
+    clean_username as clean_username_value,
+)
 from judge.widgets import AdminPagedownWidget, AdminSelect2Widget
 
 from reversion.admin import VersionAdmin
-
-import re
 
 
 class ProfileForm(ModelForm):
@@ -180,17 +181,13 @@ class ProfileAdmin(VersionAdmin):
 class UserForm(UserChangeForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["username"].help_text = _(
-            "Username can only contain letters, digits, and underscores."
-        )
+        self.fields["username"].help_text = USERNAME_ALLOWED_MESSAGE
 
     def clean_username(self):
         username = self.cleaned_data.get("username")
-        if not re.match(r"^\w+$", username):
-            raise ValidationError(
-                _("Username can only contain letters, digits, and underscores.")
-            )
-        return username
+        if self.instance.pk and username == self.instance.username:
+            return username
+        return clean_username_value(username)
 
 
 class UserAdmin(OldUserAdmin):

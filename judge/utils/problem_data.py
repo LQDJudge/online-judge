@@ -430,7 +430,10 @@ def get_visible_content(data):
     data = data or b""
     data = data.replace(b"\r\n", b"\r").replace(b"\r", b"\n")
 
-    data = data.decode("utf-8")
+    try:
+        data = data.decode("utf-8")
+    except UnicodeDecodeError as e:
+        data = data[: e.start].decode("utf-8")
 
     if len(data) > settings.TESTCASE_VISIBLE_LENGTH:
         data = data[: settings.TESTCASE_VISIBLE_LENGTH]
@@ -480,19 +483,6 @@ def get_problem_case(problem, files):
     for file in uncached_files:
         with archive.open(file) as f:
             s = f.read(settings.TESTCASE_VISIBLE_LENGTH + 3)
-            # add this so there are no characters left behind (ex, 'á' = 2 utf-8 chars)
-            while True:
-                try:
-                    s.decode("utf-8")
-                    break
-                except UnicodeDecodeError:
-                    next_char = f.read(1)
-                    if next_char:
-                        s += next_char
-                    else:
-                        s = f"File {file} is not able to decode in utf-8"
-                        s = s.encode("utf-8")
-                        break
             qs = get_visible_content(s)
         to_set[file_to_key[file]] = qs
         result[file] = qs

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-15 22:44+0700\n"
+"POT-Creation-Date: 2026-07-18 14:33+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -348,7 +348,7 @@ msgid "diff"
 msgstr "khác biệt"
 
 #: judge/admin/organization.py:65 judge/admin/problem.py:295
-#: judge/admin/profile.py:133 judge/admin/quiz.py:316
+#: judge/admin/profile.py:134 judge/admin/quiz.py:316
 msgid "View on site"
 msgstr "Xem trên trang"
 
@@ -464,11 +464,11 @@ msgstr "Tổng điểm"
 msgid "Vote"
 msgstr "Bình chọn"
 
-#: judge/admin/profile.py:46
+#: judge/admin/profile.py:47
 msgid "timezone"
 msgstr "múi giờ"
 
-#: judge/admin/profile.py:142 judge/admin/quiz.py:455
+#: judge/admin/profile.py:143 judge/admin/quiz.py:455
 #: judge/admin/submission.py:329 judge/views/course.py:2524
 #: templates/contest/review.html:355 templates/contest/review.html:382
 #: templates/contest/review.html:417 templates/contest/review.html:444
@@ -481,34 +481,30 @@ msgstr "múi giờ"
 msgid "User"
 msgstr "Thành viên"
 
-#: judge/admin/profile.py:148 templates/registration/registration_form.html:40
+#: judge/admin/profile.py:149 templates/registration/registration_form.html:40
 #: templates/user/edit-profile.html:123 templates/user/import/table_csv.html:8
 msgid "Email"
 msgstr "Email"
 
-#: judge/admin/profile.py:154 judge/views/register.py:39
+#: judge/admin/profile.py:155 judge/views/register.py:38
 #: templates/registration/registration_form.html:68
 #: templates/user/edit-profile.html:155
 msgid "Timezone"
 msgstr "Múi giờ"
 
-#: judge/admin/profile.py:160
+#: judge/admin/profile.py:161
 msgid "date joined"
 msgstr "ngày tham gia"
 
-#: judge/admin/profile.py:170
+#: judge/admin/profile.py:171
 #, python-format
 msgid "%d user have scores recalculated."
 msgid_plural "%d users have scores recalculated."
 msgstr[0] "%d người dùng đã được tính điểm lại."
 
-#: judge/admin/profile.py:177
+#: judge/admin/profile.py:178
 msgid "Recalculate scores"
 msgstr "Tính điểm lại"
-
-#: judge/admin/profile.py:184 judge/admin/profile.py:191
-msgid "Username can only contain letters, digits, and underscores."
-msgstr "Tên đăng nhập phải chứa ký tự, chữ số, hoặc dấu gạch dưới"
 
 #: judge/admin/quiz.py:73 judge/admin/quiz.py:244
 msgid "Basic Information"
@@ -4752,19 +4748,15 @@ msgstr "**[Hệ thống]** Đánh giá đã được %(name)s chấp nhận."
 msgid "**[System]** Review rejected by %(name)s."
 msgstr "**[Hệ thống]** Đánh giá đã bị %(name)s từ chối."
 
-#: judge/social_auth.py:69 judge/views/register.py:35
-msgid "A username must contain letters, numbers, or underscores"
-msgstr "Tên đăng nhập phải chứa ký tự, chữ số, hoặc dấu gạch dưới"
-
-#: judge/social_auth.py:75
+#: judge/social_auth.py:81
 msgid "Sorry, the username is taken."
 msgstr "Xin lỗi, tên đăng nhập đã bị trùng."
 
-#: judge/social_auth.py:93
+#: judge/social_auth.py:99
 msgid "Choose a username"
 msgstr "Chọn tên đăng nhập"
 
-#: judge/social_auth.py:122
+#: judge/social_auth.py:128
 msgid "Create your profile"
 msgstr "Khởi tạo thông tin"
 
@@ -4970,6 +4962,9 @@ msgstr "Xác minh captcha thất bại. Vui lòng thử lại."
 #: judge/utils/users.py:44
 msgid "M j, Y"
 msgstr "j M, Y"
+
+msgid "Username can only contain Latin letters, digits, and underscores."
+msgstr "Tên đăng nhập chỉ được chứa chữ cái Latin, chữ số hoặc dấu gạch dưới."
 
 #: judge/views/about.py:12 templates/course/course.html:35
 #: templates/home.html:42 templates/organization/home.html:112
@@ -5242,7 +5237,7 @@ msgstr "%s Bảng điểm"
 msgid "Rank"
 msgstr "Rank"
 
-#: judge/views/contests.py:1615 judge/views/register.py:33
+#: judge/views/contests.py:1615 judge/views/register.py:34
 #: templates/notification/list.html:98
 #: templates/registration/registration_form.html:34
 #: templates/user/base-users-table.html:5
@@ -7451,11 +7446,11 @@ msgstr "Các bài nộp tốt nhất cho %(problem)s trong %(contest)s"
 msgid "Best solutions for problem %(number)s in %(contest)s"
 msgstr "Các bài nộp tốt nhất cho bài %(number)s trong %(contest)s"
 
-#: judge/views/register.py:45 templates/user/edit-profile.html:159
+#: judge/views/register.py:44 templates/user/edit-profile.html:159
 msgid "Preferred language"
 msgstr "Ngôn ngữ ưa thích"
 
-#: judge/views/register.py:59
+#: judge/views/register.py:66
 #, python-format
 msgid ""
 "The email address \"%s\" is already taken. Only one registration is allowed "
@@ -7463,7 +7458,7 @@ msgid ""
 msgstr ""
 "Email \"%s\" đã được sử dụng. Mỗi email chỉ có thể đăng ký một tài khoản."
 
-#: judge/views/register.py:71
+#: judge/views/register.py:78
 msgid ""
 "Your email provider is not allowed due to history of abuse. Please use a "
 "reputable email provider."
@@ -7471,11 +7466,11 @@ msgstr ""
 "Your email provider is not allowed due to history of abuse. Please use a "
 "reputable email provider."
 
-#: judge/views/register.py:79 judge/views/register.py:145
+#: judge/views/register.py:86 judge/views/register.py:152
 msgid "Registration"
 msgstr "Đăng ký"
 
-#: judge/views/register.py:159
+#: judge/views/register.py:166
 msgid "Authentication failure"
 msgstr "Xác thực thất bại"
 
@@ -14499,6 +14494,9 @@ msgstr "Chọn tất cả"
 #: templates/widgets/sortable_formset.html:21
 msgid "No items yet."
 msgstr "Chưa có mục nào."
+
+#~ msgid "A username must contain letters, numbers, or underscores"
+#~ msgstr "Tên đăng nhập phải chứa ký tự, chữ số, hoặc dấu gạch dưới"
 
 #~ msgid "Quiz role-access leaks"
 #~ msgstr "Lộ câu hỏi lý thuyết qua quyền truy cập"

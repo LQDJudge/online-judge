@@ -27,7 +27,6 @@ from judge.sitemap import (
 from judge.views import (
     TitledTemplateView,
     about,
-    api,
     blog,
     chatbot,
     comment,
@@ -1463,20 +1462,6 @@ urlpatterns = [
     re_path(r"^runtimes/$", language.LanguageList.as_view(), name="runtime_list"),
     re_path(r"^runtimes/matrix/$", status.version_matrix, name="version_matrix"),
     re_path(r"^status/$", status.status_all, name="status_all"),
-    re_path(
-        r"^api/",
-        include(
-            [
-                re_path(r"^contest/list$", api.api_v1_contest_list),
-                re_path(r"^contest/info/(\w+)$", api.api_v1_contest_detail),
-                re_path(r"^problem/list$", api.api_v1_problem_list),
-                re_path(r"^problem/info/(\w+)$", api.api_v1_problem_info),
-                re_path(r"^user/list$", api.api_v1_user_list),
-                re_path(r"^user/info/(\w+)$", api.api_v1_user_info),
-                re_path(r"^user/submissions/(\w+)$", api.api_v1_user_submissions),
-            ]
-        ),
-    ),
     re_path(r"^blog/", blog.PostList.as_view(), name="blog_post_list"),
     # Must come BEFORE blog_post: blog_post's slug regex (.*)$ is greedy and
     # would otherwise swallow `/edit`.
