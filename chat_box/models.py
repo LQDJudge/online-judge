@@ -27,6 +27,11 @@ CHAT_REACTIONS = [
 ]
 CHAT_REACTION_CODES = [code for code, _emoji in CHAT_REACTIONS]
 CHAT_REACTION_EMOJI = dict(CHAT_REACTIONS)
+# Reactions whose glyph is a static image instead of the text emoji above.
+# Maps reaction code -> static path; the display layers render an <img> for these.
+CHAT_REACTION_IMAGES = {
+    "siuuu": "chat/siuuu-reaction.jpg",
+}
 # Translatable human labels (for screen-reader aria-labels / tooltips).
 CHAT_REACTION_LABELS = {
     "like": _("Like"),

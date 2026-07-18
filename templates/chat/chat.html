@@ -15,6 +15,7 @@
         chat: "{{ url('chat', '') }}",
         postMessage: "{{ url('post_chat_message') }}",
         react: "{{ url('chat_react') }}",
+        reactionList: "{{ url('chat_reaction_list') }}",
         deleteMessage: "{{ url('delete_chat_message') }}",
         muteMessage: "{{ url('mute_chat_message') }}",
         messageAjax: "{{ url('chat_message_ajax') }}",
@@ -42,8 +43,10 @@
         chatChannel: "{{ chat_channel }}"
       },
       reactions: {{ chat_reactions|tojson }},
+      reactionImages: {{ chat_reaction_image_urls|tojson }},
       i18n: {
         react: "{{ _('React') }}",
+        whoReacted: "{{ _('See who reacted') }}",
         newMessages: "{{ _('New message(s)') }}",
         newMessage: "{{ _('New message') }}",
         chatBox: "{{ _('Chat Box') }}",

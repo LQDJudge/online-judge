@@ -735,6 +735,21 @@ body:has(.chat-page) {
     }
   }
 
+  // Image-based reaction glyph (e.g. the "siuuu" icon) rendered in place of a
+  // text emoji. Sized to match the emoji in each context; shown as a round chip.
+  .reaction-img {
+    display: inline-block;
+    width: 1.25em;
+    height: 1.25em;
+    // Override the global `img { max-width: 100% }`: inside a shrink-to-fit
+    // picker button that rule creates a circular width and collapses it to 0.
+    max-width: none;
+    flex-shrink: 0;
+    border-radius: 50%;
+    object-fit: cover;
+    vertical-align: middle;
+  }
+
   .reaction-picker {
     display: none;
     position: absolute;
@@ -774,9 +789,68 @@ body:has(.chat-page) {
 
   .message-reactions {
     margin-top: 2px;
+    position: relative; // anchor for the who-reacted popup
 
     &.is-empty {
       display: none;
+    }
+  }
+
+  // "Who reacted" popup (opened by clicking the pill)
+  .reaction-list-popup {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 6px);
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 280px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 6px;
+    background: $surface-primary;
+    border: 1px solid $border_gray;
+    border-radius: 10px;
+    box-shadow: $shadow-md;
+
+    .reaction-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .reaction-list-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 6px;
+      white-space: nowrap;
+    }
+
+    .reaction-list-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .reaction-list-user {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .reaction-list-emoji {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .reaction-list-empty {
+      margin: 0;
+      padding: 6px 8px;
+      color: $text-muted;
+      font-size: 0.85rem;
     }
   }
 

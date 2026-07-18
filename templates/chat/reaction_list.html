@@ -1,0 +1,17 @@
+{% if reactors %}
+  <ul class="reaction-list">
+    {% for r in reactors %}
+      <li class="reaction-list-item">
+        <img loading="lazy" src="{{ gravatar(r.profile_id, 40) }}" class="reaction-list-avatar user-img">
+        <span class="reaction-list-user">{{ link_user(r.profile_id) }}</span>
+        {% if chat_reaction_image_urls and r.code in chat_reaction_image_urls %}
+          <img class="reaction-img reaction-list-emoji" src="{{ chat_reaction_image_urls[r.code] }}" alt="{{ r.code }}">
+        {% else %}
+          <span class="reaction-list-emoji">{{ r.emoji }}</span>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="reaction-list-empty">{{ _('No reactions yet.') }}</p>
+{% endif %}

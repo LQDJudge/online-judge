@@ -27,7 +27,7 @@
           </button>
           <div class="reaction-picker" role="menu">
             {% for code, emoji in chat_reactions %}
-              <button type="button" class="reaction-option{% if message_reaction and message_reaction.my_reaction == code %} reaction-option-active{% endif %}" data-id="{{ message.id }}" data-reaction="{{ code }}" aria-label="{{ chat_reaction_labels[code] }}" title="{{ chat_reaction_labels[code] }}" role="menuitem">{{ emoji }}</button>
+              <button type="button" class="reaction-option{% if message_reaction and message_reaction.my_reaction == code %} reaction-option-active{% endif %}" data-id="{{ message.id }}" data-reaction="{{ code }}" aria-label="{{ chat_reaction_labels[code] }}" title="{{ chat_reaction_labels[code] }}" role="menuitem">{% if chat_reaction_image_urls and code in chat_reaction_image_urls %}<img class="reaction-img" src="{{ chat_reaction_image_urls[code] }}" alt="{{ chat_reaction_labels[code] }}">{% else %}{{ emoji }}{% endif %}</button>
             {% endfor %}
           </div>
         </div>
@@ -51,10 +51,10 @@
     </div>
     <div class="message-reactions{% if not (message_reaction and message_reaction.total) %} is-empty{% endif %}" id="message-reactions-{{ message.id }}" data-id="{{ message.id }}" data-my-reaction="{{ message_reaction.my_reaction if message_reaction and message_reaction.my_reaction else '' }}">
       {% if message_reaction and message_reaction.total and chat_reactions is defined %}
-        <button type="button" class="reaction-pill{% if message_reaction.my_reaction %} reaction-pill-mine{% endif %}" data-id="{{ message.id }}" title="{{ _('React') }}">
+        <button type="button" class="reaction-pill{% if message_reaction.my_reaction %} reaction-pill-mine{% endif %}" data-id="{{ message.id }}" title="{{ _('See who reacted') }}">
           <span class="reaction-pill-emojis">
             {% for code, emoji in chat_reactions %}
-              {%- if message_reaction.counts.get(code) -%}<span class="reaction-emoji">{{ emoji }}</span>{%- endif -%}
+              {%- if message_reaction.counts.get(code) -%}{% if chat_reaction_image_urls and code in chat_reaction_image_urls %}<img class="reaction-img" src="{{ chat_reaction_image_urls[code] }}" alt="{{ chat_reaction_labels[code] }}">{% else %}<span class="reaction-emoji">{{ emoji }}</span>{% endif %}{%- endif -%}
             {% endfor %}
           </span>
           <span class="reaction-pill-count">{{ message_reaction.total }}</span>

@@ -50,13 +50,17 @@ def get_unread_boxes(profile):
     return unread_boxes
 
 
-def get_reactions_summary(message_ids, user):
+def get_reactions_summary(message_ids, user, include_my_reaction=True):
     """Batched reaction summary for a set of messages.
 
     Returns {message_id: {"counts": {code: n}, "total": N, "my_reaction": code|None}}.
     Uses a constant number of queries (one grouped count + one for the viewer's own
     reactions) regardless of how many messages are passed -- avoids N+1 on the
     message list.
+
+    ``include_my_reaction=False`` skips the second query and leaves my_reaction as
+    None -- for callers (e.g. react_message) that already know the viewer's
+    resulting reaction and will fill it in themselves.
     """
     message_ids = list(message_ids)
     result = {
@@ -75,7 +79,7 @@ def get_reactions_summary(message_ids, user):
         entry["counts"][row["reaction"]] = row["c"]
         entry["total"] += row["c"]
 
-    if user is not None and getattr(user, "id", None):
+    if include_my_reaction and user is not None and getattr(user, "id", None):
         mine = MessageReaction.objects.filter(
             message_id__in=message_ids, user=user
         ).values_list("message_id", "reaction")
