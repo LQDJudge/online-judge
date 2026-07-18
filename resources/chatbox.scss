@@ -1501,7 +1501,9 @@ body:has(.chat-page) {
       font-size: 0.9rem;
     }
 
-    .message-actions {
+    // No hover on touch devices, so the hover-revealed controls must be shown.
+    .message-actions,
+    .message-react {
       opacity: 1;
     }
 
