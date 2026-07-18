@@ -8177,7 +8177,12 @@ msgstr "Bạn"
 msgid "Ignore"
 msgstr "Tắt thông báo"
 
-#: templates/chat/reaction_list.html:12
+#: templates/chat/reaction_list.html:24
+#, python-format
+msgid "Showing first %(limit)s of %(total)s."
+msgstr "Đang hiển thị %(limit)s đầu tiên trong %(total)s."
+
+#: templates/chat/reaction_list.html:31
 msgid "No reactions yet."
 msgstr "Chưa có cảm xúc nào."
 

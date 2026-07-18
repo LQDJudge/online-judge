@@ -222,6 +222,26 @@ class ReactionListTest(TestCase):
         self.assertIn("rl_u2", html)
         self.assertIn("👍", html)
         self.assertIn("❤️", html)
+        self.assertIn('class="reaction-list-heading-count">1</span>', html)
+
+    def test_reactor_list_is_capped_per_reaction_type(self):
+        for i in range(12):
+            p = self._profile(f"rl_like_{i}")
+            MessageReaction.objects.create(message=self.msg, user=p, reaction="like")
+        for i in range(3):
+            p = self._profile(f"rl_love_{i}")
+            MessageReaction.objects.create(message=self.msg, user=p, reaction="love")
+
+        resp = self._get(self.msg)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn("rl_like_0", html)
+        self.assertIn("rl_like_9", html)
+        self.assertNotIn("rl_like_10", html)
+        self.assertNotIn("rl_like_11", html)
+        self.assertIn("rl_love_0", html)
+        self.assertIn("rl_love_2", html)
+        self.assertIn("Showing first 10 of 12.", html)
 
     def test_empty_when_no_reactions(self):
         resp = self._get(self.msg)

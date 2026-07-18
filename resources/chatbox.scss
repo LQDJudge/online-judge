@@ -813,6 +813,48 @@ body:has(.chat-page) {
     box-shadow: $shadow-md;
 
     .reaction-list {
+      margin: 0;
+      padding: 0;
+    }
+
+    .reaction-list-section {
+      padding: 4px 0;
+
+      + .reaction-list-section {
+        border-top: 1px solid $border_gray;
+      }
+    }
+
+    .reaction-list-heading {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      padding: 5px 6px;
+      color: $text-muted;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .reaction-list-heading-emoji {
+      width: 1.2em;
+      height: 1.2em;
+      flex-shrink: 0;
+    }
+
+    .reaction-list-heading-label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .reaction-list-heading-count {
+      flex-shrink: 0;
+      color: $text-primary;
+    }
+
+    .reaction-list-users {
       list-style: none;
       margin: 0;
       padding: 0;
@@ -844,6 +886,13 @@ body:has(.chat-page) {
     .reaction-list-emoji {
       font-size: 1rem;
       flex-shrink: 0;
+    }
+
+    .reaction-list-more {
+      margin: 0;
+      padding: 3px 6px 5px 42px;
+      color: $text-muted;
+      font-size: 0.75rem;
     }
 
     .reaction-list-empty {

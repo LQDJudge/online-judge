@@ -1,17 +1,32 @@
-{% if reactors %}
-  <ul class="reaction-list">
-    {% for r in reactors %}
-      <li class="reaction-list-item">
-        <img loading="lazy" src="{{ gravatar(r.profile_id, 40) }}" class="reaction-list-avatar user-img">
-        <span class="reaction-list-user">{{ link_user(r.profile_id) }}</span>
-        {% if chat_reaction_image_urls and r.code in chat_reaction_image_urls %}
-          <img class="reaction-img reaction-list-emoji" src="{{ chat_reaction_image_urls[r.code] }}" alt="{{ r.code }}">
-        {% else %}
-          <span class="reaction-list-emoji">{{ r.emoji }}</span>
+{% if reaction_sections %}
+  <div class="reaction-list">
+    {% for section in reaction_sections %}
+      <section class="reaction-list-section">
+        <h4 class="reaction-list-heading">
+          {% if chat_reaction_image_urls and section.code in chat_reaction_image_urls %}
+            <img class="reaction-img reaction-list-heading-emoji" src="{{ chat_reaction_image_urls[section.code] }}" alt="{{ section.label }}">
+          {% else %}
+            <span class="reaction-list-heading-emoji">{{ section.emoji }}</span>
+          {% endif %}
+          <span class="reaction-list-heading-label">{{ section.label }}</span>
+          <span class="reaction-list-heading-count">{{ section.total }}</span>
+        </h4>
+        <ul class="reaction-list-users">
+          {% for profile_id in section.users %}
+            <li class="reaction-list-item">
+              <img loading="lazy" src="{{ gravatar(profile_id, 40) }}" class="reaction-list-avatar user-img">
+              <span class="reaction-list-user">{{ link_user(profile_id) }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+        {% if section.has_more %}
+          <p class="reaction-list-more">
+            {{ _("Showing first %(limit)s of %(total)s.", limit=section.displayed_count, total=section.total) }}
+          </p>
         {% endif %}
-      </li>
+      </section>
     {% endfor %}
-  </ul>
+  </div>
 {% else %}
   <p class="reaction-list-empty">{{ _('No reactions yet.') }}</p>
 {% endif %}

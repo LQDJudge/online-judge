@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.db.models import F
+from django.db.models import Count, F
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -47,6 +47,7 @@ from chat_box.utils import (
 )
 
 CHAT_TEMP_MUTE_CAP_DAYS = 30
+REACTION_LIST_PER_TYPE_LIMIT = 10
 
 
 def can_mute_chat_temporarily(user):
@@ -621,10 +622,12 @@ def get_reaction_image_urls():
 
 @login_required
 def reaction_list(request):
-    """Render the list of users who reacted to a message (who-reacted popup).
+    """Render the capped list of users who reacted to a message.
 
-    Batches the Profile lookup so link_user/gravatar in the template read from
-    cache instead of hitting the DB once per reactor (avoids N+1).
+    Public lobby messages can receive many reactions, so this groups by reaction
+    type and shows only the first few users per type. Batches the Profile lookup
+    so link_user/gravatar in the template read from cache instead of hitting the
+    DB once per displayed reactor.
     """
     if request.method != "GET":
         return HttpResponseBadRequest()
@@ -641,29 +644,45 @@ def reaction_list(request):
     if not can_access_room(request, message.room):
         return HttpResponseForbidden()
 
-    rows = list(
+    counts = dict(
         MessageReaction.objects.filter(message=message)
-        .order_by("id")
-        .values_list("user_id", "reaction")
+        .values("reaction")
+        .annotate(total=Count("id"))
+        .values_list("reaction", "total")
     )
-    user_ids = [uid for uid, _reaction in rows]
-    if user_ids:
-        # Warm the Profile cache once for all reactors.
-        Profile.get_cached_instances(*user_ids)
+    reaction_sections = []
+    displayed_user_ids = []
+    for code, emoji in CHAT_REACTIONS:
+        total = counts.get(code, 0)
+        if not total:
+            continue
+        user_ids = list(
+            MessageReaction.objects.filter(message=message, reaction=code)
+            .order_by("id")
+            .values_list("user_id", flat=True)[:REACTION_LIST_PER_TYPE_LIMIT]
+        )
+        displayed_user_ids.extend(user_ids)
+        reaction_sections.append(
+            {
+                "code": code,
+                "emoji": emoji,
+                "label": CHAT_REACTION_LABELS[code],
+                "total": total,
+                "displayed_count": len(user_ids),
+                "has_more": total > len(user_ids),
+                "users": user_ids,
+            }
+        )
 
-    reactors = [
-        {
-            "profile_id": uid,
-            "code": code,
-            "emoji": CHAT_REACTION_EMOJI.get(code, ""),
-        }
-        for uid, code in rows
-    ]
+    if displayed_user_ids:
+        # Warm the Profile cache once for all displayed reactors.
+        Profile.get_cached_instances(*displayed_user_ids)
+
     return render(
         request,
         "chat/reaction_list.html",
         {
-            "reactors": reactors,
+            "reaction_sections": reaction_sections,
             "chat_reaction_image_urls": get_reaction_image_urls(),
         },
     )
