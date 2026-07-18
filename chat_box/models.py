@@ -6,7 +6,42 @@ from django.utils import timezone
 from judge.models.profile import Profile
 from judge.caching import cache_wrapper, CacheableModel
 
-__all__ = ["Message", "Room", "UserRoom", "Ignore", "ChatModerationLog"]
+__all__ = [
+    "Message",
+    "MessageReaction",
+    "Room",
+    "UserRoom",
+    "Ignore",
+    "ChatModerationLog",
+]
+
+# Facebook-Messenger-style reactions. Store the CODE; the emoji is presentation only.
+CHAT_REACTIONS = [
+    ("like", "👍"),
+    ("love", "❤️"),
+    ("haha", "😆"),
+    ("wow", "😮"),
+    ("sad", "😢"),
+    ("angry", "😠"),
+    ("siuuu", "🐐"),
+]
+CHAT_REACTION_CODES = [code for code, _emoji in CHAT_REACTIONS]
+CHAT_REACTION_EMOJI = dict(CHAT_REACTIONS)
+# Reactions whose glyph is a static image instead of the text emoji above.
+# Maps reaction code -> static path; the display layers render an <img> for these.
+CHAT_REACTION_IMAGES = {
+    "siuuu": "chat/siuuu-reaction.jpg",
+}
+# Translatable human labels (for screen-reader aria-labels / tooltips).
+CHAT_REACTION_LABELS = {
+    "like": _("Like"),
+    "love": _("Love"),
+    "haha": _("Haha"),
+    "wow": _("Wow"),
+    "sad": _("Sad"),
+    "angry": _("Angry"),
+    "siuuu": _("Siuuu"),
+}
 
 
 class Room(CacheableModel):
@@ -182,6 +217,26 @@ class Message(models.Model):
         indexes = [
             models.Index(fields=["hidden", "room", "-id"]),
         ]
+        app_label = "chat_box"
+
+
+class MessageReaction(models.Model):
+    """One emoji reaction by one user on one message (Messenger-style).
+
+    unique_together(message, user) enforces "at most one reaction per user per
+    message"; re-reacting updates the row, so a user never has two reactions.
+    """
+
+    message = models.ForeignKey(
+        Message, verbose_name=_("message"), on_delete=CASCADE, related_name="reactions"
+    )
+    user = models.ForeignKey(Profile, verbose_name=_("user"), on_delete=CASCADE)
+    reaction = models.CharField(max_length=10, choices=CHAT_REACTIONS)
+    created = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # (message, user) unique also indexes lookups by message (leading column).
+        unique_together = ("message", "user")
         app_label = "chat_box"
 
 

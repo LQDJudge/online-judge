@@ -205,6 +205,19 @@
       });
     },
 
+    reactMessage: function(messageId, reaction) {
+      return $.ajax({
+        url: ChatConfig.urls.react,
+        type: 'post',
+        data: { message: messageId, reaction: reaction },
+        dataType: 'json'
+      });
+    },
+
+    getReactionList: function(messageId) {
+      return $.get(ChatConfig.urls.reactionList, { message: messageId });
+    },
+
     muteMessage: function(messageId, muteType, reason) {
       return $.ajax({
         url: ChatConfig.urls.muteMessage,
@@ -244,6 +257,56 @@
   // ============================================
   var ChatUI = {
     newMessageCount: 0,
+
+    // Rebuild a message's reaction pill + picker-active state from a summary
+    // ({counts, total, my_reaction}). Used by both the POST response and live events.
+    renderReactions: function(messageId, summary) {
+      var $container = $('#message-reactions-' + messageId);
+      if (!$container.length) return;
+
+      // If a who-reacted popup was open, refresh it after the rebuild instead of
+      // letting the innerHTML replacement below make it silently vanish.
+      var listWasOpen = $container.find('.reaction-list-popup').length > 0;
+
+      var myReaction = summary.my_reaction || '';
+      var counts = summary.counts || {};
+      $container.attr('data-my-reaction', myReaction);
+
+      if (summary.total && summary.total > 0) {
+        var emojis = '';
+        var images = ChatConfig.reactionImages || {};
+        (ChatConfig.reactions || []).forEach(function(pair) {
+          var code = pair[0];
+          if (counts[code]) {
+            if (images[code]) {
+              emojis += '<img class="reaction-img" src="' + images[code] + '">';
+            } else {
+              emojis += '<span class="reaction-emoji">' + pair[1] + '</span>';
+            }
+          }
+        });
+        var mineClass = myReaction ? ' reaction-pill-mine' : '';
+        var html = '<button type="button" class="reaction-pill' + mineClass +
+          '" data-id="' + messageId + '" title="' + (ChatConfig.i18n.whoReacted || '') + '">' +
+          '<span class="reaction-pill-emojis">' + emojis + '</span>' +
+          '<span class="reaction-pill-count">' + summary.total + '</span></button>';
+        $container.removeClass('is-empty').html(html);
+      } else {
+        $container.addClass('is-empty').empty();
+      }
+
+      var $picker = $('#message-' + messageId).find('.reaction-picker');
+      $picker.find('.reaction-option').each(function() {
+        $(this).toggleClass(
+          'reaction-option-active',
+          String($(this).data('reaction')) === myReaction
+        );
+      });
+
+      if (listWasOpen && summary.total && summary.total > 0) {
+        ChatEvents.openReactionList(messageId);
+      }
+    },
 
     scrollToBottom: function() {
       ChatElements.chatBox.scrollTop(ChatElements.chatBox[0].scrollHeight);
@@ -545,6 +608,27 @@
   // Message Handling
   // ============================================
   var ChatMessages = {
+    // Apply a reaction event. The broadcast carries the group counts (shared by
+    // everyone) but my_reaction is per-viewer. If this event is the current user's
+    // OWN reaction echoed from another tab/device, adopt the actor's reaction so
+    // this tab's highlight stays in sync; otherwise keep our own DOM state.
+    // If the message isn't in the current view, there's nothing to do.
+    applyReaction: function(message) {
+      var $container = $('#message-reactions-' + message.message);
+      if (!$container.length) return;
+      var myReaction;
+      if (message.user_id === ChatConfig.user.id) {
+        myReaction = message.actor_reaction || null;
+      } else {
+        myReaction = $container.attr('data-my-reaction') || null;
+      }
+      ChatUI.renderReactions(message.message, {
+        counts: message.counts || {},
+        total: message.total || 0,
+        my_reaction: myReaction
+      });
+    },
+
     addFromTemplate: function(body, tmpId) {
       if (ChatState.roomId) {
         $('#last_msg-' + ChatState.roomId).html(body);
@@ -745,6 +829,7 @@
       this.bindScrollLoad();
       this.bindMessageActionMenus();
       this.bindMessageActions();
+      this.bindReactions();
       this.bindRoomSelection();
       this.bindEmojiPicker();
       this.bindVisibilityChange();
@@ -972,6 +1057,78 @@
         if (e.target === this) {
           ChatEvents.closeMuteModal();
         }
+      });
+    },
+
+    closeReactionPickers: function($except) {
+      $('.message-react.is-open').not($except || []).removeClass('is-open')
+        .find('.message-react-toggle').attr('aria-expanded', 'false');
+    },
+
+    closeReactionLists: function() {
+      $('.reaction-list-popup').remove();
+    },
+
+    openReactionList: function(messageId) {
+      var $reactions = $('#message-reactions-' + messageId);
+      if (!$reactions.length) return;
+      ChatEvents.closeReactionLists();
+      var $popup = $('<div class="reaction-list-popup"></div>');
+      $reactions.append($popup);
+      ChatAPI.getReactionList(messageId)
+        .done(function(html) { $popup.html(html); })
+        .fail(function() { ChatEvents.closeReactionLists(); });
+    },
+
+    bindReactions: function() {
+      // Open/close the emoji picker from the smiley toggle.
+      $(document).on('click', '.message-react-toggle', function(e) {
+        e.stopPropagation();
+        ChatEvents.closeReactionLists();
+        var $react = $(this).closest('.message-react');
+        var wasOpen = $react.hasClass('is-open');
+        ChatEvents.closeReactionPickers($react);
+        $react.toggleClass('is-open', !wasOpen);
+        $(this).attr('aria-expanded', wasOpen ? 'false' : 'true');
+      });
+
+      // Clicking the pill shows WHO reacted (Messenger-style), not the picker.
+      $(document).on('click', '.reaction-pill', function(e) {
+        e.stopPropagation();
+        var messageId = $(this).data('id');
+        var alreadyOpen = $('#message-reactions-' + messageId)
+          .find('.reaction-list-popup').length > 0;
+        ChatEvents.closeReactionPickers();
+        ChatEvents.closeReactionLists();
+        if (alreadyOpen) return;               // second click closes it
+        ChatEvents.openReactionList(messageId);
+      });
+
+      // Clicks inside the popup (e.g. a user link) shouldn't close it via the
+      // document handler -- but the link's own navigation still works.
+      $(document).on('click', '.reaction-list-popup', function(e) {
+        e.stopPropagation();
+      });
+
+      // Pick a reaction -> POST, then render the authoritative summary.
+      $(document).on('click', '.reaction-option', function(e) {
+        e.stopPropagation();
+        var messageId = $(this).data('id');
+        var reaction = $(this).data('reaction');
+        ChatEvents.closeReactionPickers();
+        ChatAPI.reactMessage(messageId, reaction)
+          .done(function(summary) {
+            ChatUI.renderReactions(messageId, summary);
+          })
+          .fail(function() {
+            console.log('Could not react to message');
+          });
+      });
+
+      // Any outside click closes open pickers and who-reacted popups.
+      $(document).on('click', function() {
+        ChatEvents.closeReactionPickers();
+        ChatEvents.closeReactionLists();
       });
     },
 
@@ -1308,6 +1465,13 @@
 
       if (message.type === 'chat_unmuted') {
         ChatUI.setMutedState(false);
+        return;
+      }
+
+      // Reactions reuse the message id, so handle them before the new-message
+      // dedup (which would otherwise swallow a reaction on an already-seen message).
+      if (message.type === 'reaction') {
+        ChatMessages.applyReaction(message);
         return;
       }
 

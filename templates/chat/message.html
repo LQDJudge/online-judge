@@ -3,6 +3,7 @@
 {% set can_mute_perm_message = request.user.is_superuser and request.profile.id != message.author_id and not message.room_id %}
 {% set can_mute_message = can_mute_temp_message or can_mute_perm_message %}
 {% set mute_reason_required = not request.user.is_superuser %}
+{% set message_reaction = reactions.get(message.id) if reactions is defined and reactions else None %}
 <li class="message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}" data-time="{{ message.time.timestamp()|int }}">
   <div class="message-avatar">
     <img loading="lazy" src="{{ gravatar(message.author_id, 135) }}" class="profile-pic user-img">
@@ -18,6 +19,19 @@
       <div class="message-text message-bubble {% if request.profile.id != message.author_id %}message-text-other message-bubble-other{% else %}message-text-myself message-bubble-self{% endif %}" id="message-text-{{ message.id }}">
         {{message.body|markdown(lazy_load=False)|reference|str|safe }}
       </div>
+      {% if request.profile and chat_reactions is defined and not (is_message_template is defined and is_message_template) %}
+        <div class="message-react">
+          <button type="button" class="message-react-toggle" data-id="{{ message.id }}" aria-haspopup="true" aria-expanded="false" title="{{ _('React') }}">
+            <i class="far fa-face-smile" aria-hidden="true"></i>
+            <span class="sr-only">{{ _('React') }}</span>
+          </button>
+          <div class="reaction-picker" role="menu">
+            {% for code, emoji in chat_reactions %}
+              <button type="button" class="reaction-option{% if message_reaction and message_reaction.my_reaction == code %} reaction-option-active{% endif %}" data-id="{{ message.id }}" data-reaction="{{ code }}" aria-label="{{ chat_reaction_labels[code] }}" title="{{ chat_reaction_labels[code] }}" role="menuitem">{% if chat_reaction_image_urls and code in chat_reaction_image_urls %}<img class="reaction-img" src="{{ chat_reaction_image_urls[code] }}" alt="{{ chat_reaction_labels[code] }}">{% else %}{{ emoji }}{% endif %}</button>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
       {% if can_delete_message or can_mute_message %}
         <div class="message-actions">
           <button type="button" class="message-actions-toggle" aria-haspopup="true" aria-expanded="false" title="{{ _('Message options') }}">
@@ -33,6 +47,18 @@
             {% endif %}
           </div>
         </div>
+      {% endif %}
+    </div>
+    <div class="message-reactions{% if not (message_reaction and message_reaction.total) %} is-empty{% endif %}" id="message-reactions-{{ message.id }}" data-id="{{ message.id }}" data-my-reaction="{{ message_reaction.my_reaction if message_reaction and message_reaction.my_reaction else '' }}">
+      {% if message_reaction and message_reaction.total and chat_reactions is defined %}
+        <button type="button" class="reaction-pill{% if message_reaction.my_reaction %} reaction-pill-mine{% endif %}" data-id="{{ message.id }}" title="{{ _('See who reacted') }}">
+          <span class="reaction-pill-emojis">
+            {% for code, emoji in chat_reactions %}
+              {%- if message_reaction.counts.get(code) -%}{% if chat_reaction_image_urls and code in chat_reaction_image_urls %}<img class="reaction-img" src="{{ chat_reaction_image_urls[code] }}" alt="{{ chat_reaction_labels[code] }}">{% else %}<span class="reaction-emoji">{{ emoji }}</span>{% endif %}{%- endif -%}
+            {% endfor %}
+          </span>
+          <span class="reaction-pill-count">{{ message_reaction.total }}</span>
+        </button>
       {% endif %}
     </div>
   </div>

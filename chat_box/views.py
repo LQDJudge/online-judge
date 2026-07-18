@@ -1,12 +1,15 @@
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseForbidden,
     HttpResponseRedirect,
     JsonResponse,
 )
 from django.shortcuts import render
+from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -22,14 +25,26 @@ from chat_box.models import (
     ChatModerationLog,
     Ignore,
     Message,
+    MessageReaction,
     Profile,
     Room,
     UserRoom,
+    CHAT_REACTIONS,
+    CHAT_REACTION_CODES,
+    CHAT_REACTION_EMOJI,
+    CHAT_REACTION_IMAGES,
+    CHAT_REACTION_LABELS,
     get_first_msg_id,
     get_ignored_user_ids,
     get_user_room_list,
 )
-from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes
+from chat_box.utils import (
+    encrypt_url,
+    decrypt_url,
+    encrypt_channel,
+    get_reactions_summary,
+    get_unread_boxes,
+)
 
 CHAT_TEMP_MUTE_CAP_DAYS = 30
 
@@ -146,6 +161,7 @@ class ChatView(ListView):
             {
                 "object_list": self.messages,
                 "has_next": self.has_next(),
+                **reaction_render_context(self.messages, request.profile),
             },
         )
 
@@ -169,6 +185,7 @@ class ChatView(ListView):
             "chat_" + str(self.request.profile.id)
         )
         context["chat_lobby_channel"] = encrypt_channel("chat_lobby")
+        context.update(reaction_render_context(self.messages, self.request.profile))
         if self.room:
             other_user = self.room.other_user(self.request.profile)
             if other_user:
@@ -491,6 +508,167 @@ def post_message(request):
     return JsonResponse(ret)
 
 
+@login_required
+def react_message(request):
+    """Add / change / remove the requesting user's single reaction on a message.
+
+    Messenger-style: at most one reaction per user per message. Sending the same
+    code again removes it (toggle off); a different code replaces the old one.
+    Returns the fresh reaction summary for the message.
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+
+    try:
+        message = (
+            Message.objects.filter(hidden=False)
+            .select_related("room")
+            .get(id=int(request.POST["message"]))
+        )
+    except (KeyError, ValueError, Message.DoesNotExist):
+        return HttpResponseBadRequest()
+
+    reaction = request.POST.get("reaction")
+    if reaction not in CHAT_REACTION_CODES:
+        return HttpResponseBadRequest()
+
+    room = message.room
+    if not can_access_room(request, room):
+        return HttpResponseForbidden()
+
+    # A muted user is silenced from chat interaction, reactions included.
+    if is_chat_muted(request.profile):
+        return HttpResponseForbidden()
+
+    profile = request.profile
+    existing = MessageReaction.objects.filter(message=message, user=profile).first()
+    if existing is None:
+        try:
+            # Savepoint so a lost insert race doesn't poison an outer transaction.
+            with transaction.atomic():
+                MessageReaction.objects.create(
+                    message=message, user=profile, reaction=reaction
+                )
+        except IntegrityError:
+            # Lost a race with a concurrent request from the same user -> update.
+            MessageReaction.objects.filter(message=message, user=profile).update(
+                reaction=reaction
+            )
+        my_reaction = reaction
+    elif existing.reaction == reaction:
+        existing.delete()
+        my_reaction = None  # toggled off
+    else:
+        existing.reaction = reaction
+        existing.save(update_fields=["reaction", "created"])
+        my_reaction = reaction
+
+    # We already know the viewer's resulting reaction, so skip re-querying it.
+    summary = get_reactions_summary([message.id], profile, include_my_reaction=False)[
+        message.id
+    ]
+    summary["my_reaction"] = my_reaction
+    broadcast_reaction(request, message, room, summary)
+    return JsonResponse(summary)
+
+
+def broadcast_reaction(request, message, room, summary):
+    """Push a reaction update over the event daemon.
+
+    Mirrors post_message: lobby reactions go to the shared "chat_lobby" channel,
+    room reactions fan out to each member's personal channel.
+    """
+    payload = {
+        "type": "reaction",
+        "message": message.id,
+        "counts": summary["counts"],
+        "total": summary["total"],
+        "user_id": request.profile.id,
+        # The reactor's resulting reaction (code, or None if toggled off) so their
+        # OTHER tabs/devices can update their own highlight without a reload.
+        # Already public via counts/the who-reacted list, so no new info is leaked.
+        "actor_reaction": summary.get("my_reaction"),
+    }
+    if not room:
+        payload["room"] = "None"
+        event.post(encrypt_channel("chat_lobby"), payload)
+    else:
+        payload["room"] = room.id
+        # Only ids are needed here; get_user_ids() avoids materializing profiles.
+        for user_id in room.get_user_ids():
+            event.post(encrypt_channel("chat_" + str(user_id)), payload)
+
+
+def reaction_render_context(messages, profile):
+    """Context vars needed to render reaction pills/pickers for a set of messages.
+
+    Bundles the batched per-message summary with the (constant) emoji mappings so
+    every message-render path can drop them in with a single ``**`` spread.
+    """
+    return {
+        "reactions": get_reactions_summary([m.id for m in messages], profile),
+        "chat_reactions": CHAT_REACTIONS,
+        "chat_reaction_emoji": CHAT_REACTION_EMOJI,
+        "chat_reaction_labels": CHAT_REACTION_LABELS,
+        "chat_reaction_image_urls": get_reaction_image_urls(),
+    }
+
+
+def get_reaction_image_urls():
+    """code -> static URL for reactions rendered as an image instead of an emoji."""
+    return {code: static(path) for code, path in CHAT_REACTION_IMAGES.items()}
+
+
+@login_required
+def reaction_list(request):
+    """Render the list of users who reacted to a message (who-reacted popup).
+
+    Batches the Profile lookup so link_user/gravatar in the template read from
+    cache instead of hitting the DB once per reactor (avoids N+1).
+    """
+    if request.method != "GET":
+        return HttpResponseBadRequest()
+
+    try:
+        message = (
+            Message.objects.filter(hidden=False)
+            .select_related("room")
+            .get(id=int(request.GET["message"]))
+        )
+    except (KeyError, ValueError, Message.DoesNotExist):
+        return HttpResponseBadRequest()
+
+    if not can_access_room(request, message.room):
+        return HttpResponseForbidden()
+
+    rows = list(
+        MessageReaction.objects.filter(message=message)
+        .order_by("id")
+        .values_list("user_id", "reaction")
+    )
+    user_ids = [uid for uid, _reaction in rows]
+    if user_ids:
+        # Warm the Profile cache once for all reactors.
+        Profile.get_cached_instances(*user_ids)
+
+    reactors = [
+        {
+            "profile_id": uid,
+            "code": code,
+            "emoji": CHAT_REACTION_EMOJI.get(code, ""),
+        }
+        for uid, code in rows
+    ]
+    return render(
+        request,
+        "chat/reaction_list.html",
+        {
+            "reactors": reactors,
+            "chat_reaction_image_urls": get_reaction_image_urls(),
+        },
+    )
+
+
 def can_access_room(request, room):
     return not room or room.contain(request.profile)
 
@@ -501,22 +679,20 @@ def chat_message_ajax(request):
         return HttpResponseBadRequest()
 
     try:
-        message_id = request.GET["message"]
-    except KeyError:
-        return HttpResponseBadRequest()
-
-    try:
-        message = Message.objects.filter(hidden=False).get(id=message_id)
+        message = Message.objects.filter(hidden=False).get(
+            id=int(request.GET["message"])
+        )
         room = message.room
         if not can_access_room(request, room):
             return HttpResponse("Unauthorized", status=401)
-    except Message.DoesNotExist:
+    except (KeyError, ValueError, Message.DoesNotExist):
         return HttpResponseBadRequest()
     return render(
         request,
         "chat/message.html",
         {
             "message": message,
+            **reaction_render_context([message], request.profile),
         },
     )
 
