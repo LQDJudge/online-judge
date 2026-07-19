@@ -1568,6 +1568,15 @@ body:has(.chat-page) {
       right: calc(100% + 4px);
     }
 
+    .reaction-picker {
+      width: 260px;
+      max-width: 260px;
+      box-sizing: border-box;
+      flex-wrap: wrap;
+      justify-content: center;
+      white-space: normal;
+    }
+
     .message-header a {
       font-size: 0.85rem;
     }

@@ -45,6 +45,18 @@ msgid "Angry"
 msgstr "Phẫn nộ"
 
 #: chat_box/models.py:38
+msgid "Argentina"
+msgstr "Argentina"
+
+#: chat_box/models.py:39
+msgid "Spain"
+msgstr "Tây Ban Nha"
+
+#: chat_box/models.py:40
+msgid "GOAT"
+msgstr "GOAT"
+
+#: chat_box/models.py:41
 msgid "Siuuu"
 msgstr "Siuuu"
 

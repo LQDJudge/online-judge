@@ -261,7 +261,7 @@ class ReactionListTest(TestCase):
         self.assertNotIn("rl_like_11", html)
         self.assertIn("rl_love_0", html)
         self.assertIn("rl_love_2", html)
-        self.assertIn("Showing first 10 of 12.", html)
+        self.assertIn('class="reaction-list-more"', html)
 
     def test_empty_when_no_reactions(self):
         resp = self._get(self.msg)
