@@ -29,6 +29,8 @@
     }
   };
 
+  var HISTORY_LOAD_THRESHOLD = 120;
+
   // ============================================
   // Cached DOM Elements
   // ============================================
@@ -353,11 +355,56 @@
     },
 
     showLoader: function() {
-      ChatElements.loader.show();
+      ChatElements.loader
+        .css('top', (ChatElements.chatBox.scrollTop() + 12) + 'px')
+        .show();
     },
 
     hideLoader: function() {
       ChatElements.loader.hide();
+    },
+
+    getFirstVisibleMessage: function() {
+      var chatBoxTop = ChatElements.chatBox[0].getBoundingClientRect().top;
+      var $fallback = ChatElements.chatLog.children('.message').first();
+      var $visible = $fallback;
+
+      ChatElements.chatLog.children('.message').each(function() {
+        if (this.getBoundingClientRect().bottom > chatBoxTop) {
+          $visible = $(this);
+          return false;
+        }
+      });
+
+      return $visible;
+    },
+
+    restoreMessageAnchor: function($anchor, anchorTop) {
+      if (!$anchor || !$anchor.length || !$.contains(document, $anchor[0])) return;
+
+      var currentTop = $anchor[0].getBoundingClientRect().top;
+      ChatElements.chatBox.scrollTop(
+        ChatElements.chatBox.scrollTop() + currentTop - anchorTop
+      );
+    },
+
+    keepAnchorWhileImagesLoad: function($nodes, $anchor, anchorTop) {
+      if (!$anchor || !$anchor.length) return;
+
+      var expectedScrollTop = ChatElements.chatBox.scrollTop();
+
+      $nodes.find('img').each(function() {
+        if (this.complete) return;
+
+        $(this).one('load error', function() {
+          if (Math.abs(ChatElements.chatBox.scrollTop() - expectedScrollTop) > 2) {
+            return;
+          }
+
+          ChatUI.restoreMessageAnchor($anchor, anchorTop);
+          expectedScrollTop = ChatElements.chatBox.scrollTop();
+        });
+      });
     },
 
     showRightPanel: function() {
@@ -453,18 +500,17 @@
     },
 
     prependMessages: function(html) {
-      var chatBox = ChatElements.chatBox[0];
-      var scrollHeightBefore = chatBox.scrollHeight;
-      var scrollTopBefore = chatBox.scrollTop;
+      var $anchor = this.getFirstVisibleMessage();
+      var anchorTop = $anchor.length ? $anchor[0].getBoundingClientRect().top : 0;
       var $nextMessage = ChatElements.chatLog.children('.message').first();
       var $nodes = $(html);
       var $messages = $nodes.filter('.message').add($nodes.find('.message'));
+      $messages.addClass('message-history');
       ChatElements.chatLog.prepend($nodes);
       ChatUtils.postProcessMessages($nodes, 'none');
       ChatUtils.mergeConsecutiveMessagesFor($messages.add($nextMessage));
-      ChatElements.chatBox.scrollTop(
-        scrollTopBefore + chatBox.scrollHeight - scrollHeightBefore
-      );
+      this.restoreMessageAnchor($anchor, anchorTop);
+      this.keepAnchorWhileImagesLoad($nodes, $anchor, anchorTop);
     },
 
     clearMessages: function() {
@@ -888,8 +934,9 @@
           ChatUI.hideNewMessagesBubble();
         }
 
-        // Trigger load when at top
-        if (ChatElements.chatBox.scrollTop() === 0 &&
+        // Trigger slightly before the hard top so history is often ready when
+        // the user reaches it.
+        if (ChatElements.chatBox.scrollTop() <= HISTORY_LOAD_THRESHOLD &&
             !ChatState.isLocked &&
             ChatState.hasNext) {
           ChatState.isLocked = true;
