@@ -6,8 +6,67 @@
     return;
   }
 
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+
   if (!window.DYNAMIC_EFFECT || window.DYNAMIC_EFFECT === 'none') {
     return;
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function getPerformanceProfile() {
+    var ratio = 1;
+    var cores = navigator.hardwareConcurrency;
+    var memory = navigator.deviceMemory;
+    var dpr = window.devicePixelRatio || 1;
+    var viewportArea = (window.innerWidth * window.innerHeight) / 1000000;
+
+    if (cores && cores <= 2) {
+      ratio *= 0.55;
+    } else if (cores && cores <= 4) {
+      ratio *= 0.75;
+    }
+
+    if (memory && memory <= 2) {
+      ratio *= 0.65;
+    } else if (memory && memory <= 4) {
+      ratio *= 0.8;
+    }
+
+    if (dpr >= 2.5) {
+      ratio *= 0.75;
+    } else if (dpr >= 2) {
+      ratio *= 0.85;
+    }
+
+    if (viewportArea >= 2.5) {
+      ratio *= 0.8;
+    } else if (viewportArea >= 1.5) {
+      ratio *= 0.9;
+    }
+
+    return {
+      particleRatio: clamp(ratio, 0.45, 1),
+      fpsLimit: ratio < 0.65 ? 24 : 30
+    };
+  }
+
+  var performanceProfile = getPerformanceProfile();
+
+  function scaleParticleCount(value, minimum) {
+    return Math.max(minimum, Math.round(value * performanceProfile.particleRatio));
+  }
+
+  function mergeParticleOptions(options) {
+    options.fpsLimit = performanceProfile.fpsLimit;
+    options.detectRetina = false;
+    options.pauseOnBlur = true;
+    options.pauseOnOutsideViewport = true;
+    return options;
   }
 
   // Create container for effects
@@ -24,10 +83,19 @@
 
   // Load tsParticles for effects
   function loadTsParticles(callback) {
+    if (typeof tsParticles !== 'undefined') {
+      callback();
+      return;
+    }
+
     var script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js';
     script.onload = callback;
     document.head.appendChild(script);
+  }
+
+  function loadParticleEffect(containerId, options) {
+    return tsParticles.load(containerId, mergeParticleOptions(options));
   }
 
   // Snowflakes effect using tsParticles (blue snowflakes, gentle floating like blossoms)
@@ -35,9 +103,9 @@
     loadTsParticles(function() {
       if (typeof tsParticles !== 'undefined') {
         createContainer();
-        tsParticles.load('dynamic-effects-container', {
+        loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: 25, density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(25, 12), density: { enable: true, area: 800 } },
             color: { value: ['#87CEEB', '#B0E0E6', '#ADD8E6', '#E0FFFF'] },
             shape: {
               type: 'char',
@@ -76,9 +144,9 @@
     loadTsParticles(function() {
       if (typeof tsParticles !== 'undefined') {
         createContainer();
-        tsParticles.load('dynamic-effects-container', {
+        loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: 60, density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(60, 28), density: { enable: true, area: 800 } },
             color: { value: '#ffffff' },
             shape: { type: 'circle' },
             opacity: { value: { min: 0.3, max: 0.8 } },
@@ -109,9 +177,9 @@
     loadTsParticles(function() {
       if (typeof tsParticles !== 'undefined') {
         createContainer();
-        tsParticles.load('dynamic-effects-container', {
+        loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: 20, density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(20, 10), density: { enable: true, area: 800 } },
             color: { value: ['#ffb7c5', '#ffc0cb', '#ff69b4', '#ffaec9'] },
             shape: {
               type: 'char',
@@ -217,11 +285,14 @@
       container.appendChild(item);
     }
 
-    for (var i = 0; i < 20; i++) {
-      addFallingItem('poinciana-flower', flowerSvg, i, 20, 18, 30, 24, 34);
+    var flowerCount = scaleParticleCount(20, 10);
+    var petalCount = scaleParticleCount(14, 7);
+
+    for (var i = 0; i < flowerCount; i++) {
+      addFallingItem('poinciana-flower', flowerSvg, i, flowerCount, 18, 30, 24, 34);
     }
-    for (var j = 0; j < 14; j++) {
-      addFallingItem('poinciana-petal', petalSvg, j, 14, 7, 13, 24, 34);
+    for (var j = 0; j < petalCount; j++) {
+      addFallingItem('poinciana-petal', petalSvg, j, petalCount, 7, 13, 24, 34);
     }
   }
 
@@ -230,9 +301,9 @@
     loadTsParticles(function() {
       if (typeof tsParticles !== 'undefined') {
         createContainer();
-        tsParticles.load('dynamic-effects-container', {
+        loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: 150, density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(150, 65), density: { enable: true, area: 800 } },
             color: { value: ['#87CEEB', '#B0E0E6', '#ADD8E6', '#6eb5ff'] },
             shape: {
               type: 'char',
@@ -266,9 +337,9 @@
     loadTsParticles(function() {
       if (typeof tsParticles !== 'undefined') {
         createContainer();
-        tsParticles.load('dynamic-effects-container', {
+        loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: 40, density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(40, 18), density: { enable: true, area: 800 } },
             color: { value: ['#ffff66', '#ffd700', '#ffa500', '#ffb347', '#ffe135'] },
             shape: { type: 'circle' },
             opacity: {
@@ -286,7 +357,7 @@
             shadow: {
               enable: true,
               color: '#ffa500',
-              blur: 15
+              blur: Math.max(8, Math.round(15 * performanceProfile.particleRatio))
             }
           },
           interactivity: { events: { onClick: { enable: false }, onHover: { enable: false } } },
@@ -304,9 +375,9 @@
         createContainer();
         // Create multiple particle systems for different behaviors
         // Main falling particles (envelopes, blossoms, coins)
-        tsParticles.load('dynamic-effects-container', {
+        loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: 30, density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(30, 14), density: { enable: true, area: 800 } },
             color: { value: ['#ff0000', '#ffd700', '#ffcc00', '#ff4500'] },
             shape: {
               type: 'char',
@@ -351,9 +422,9 @@
           lanternContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998;';
           document.body.appendChild(lanternContainer);
         }
-        tsParticles.load('lantern-effects-container', {
+        loadParticleEffect('lantern-effects-container', {
           particles: {
-            number: { value: 5, density: { enable: true, area: 1000 } },
+            number: { value: scaleParticleCount(5, 3), density: { enable: true, area: 1000 } },
             color: { value: ['#ff4500', '#ff6600', '#ff0000'] },
             shape: {
               type: 'char',
@@ -392,9 +463,9 @@
           sparkleContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9997;';
           document.body.appendChild(sparkleContainer);
         }
-        tsParticles.load('sparkle-effects-container', {
+        loadParticleEffect('sparkle-effects-container', {
           particles: {
-            number: { value: 20, density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(20, 8), density: { enable: true, area: 800 } },
             color: { value: ['#ffd700', '#ffff00', '#fff68f', '#fffacd'] },
             shape: {
               type: 'char',
