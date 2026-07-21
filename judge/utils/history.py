@@ -53,6 +53,15 @@ class RevisionDiffMixin:
                 "new": self._format_value(key, new_val, name_cache),
             }
 
+            if (
+                key in self.id_fields
+                and isinstance(old_val, list)
+                and isinstance(new_val, list)
+            ):
+                change["list_diff"] = self._format_list_diff(
+                    key, old_val, new_val, name_cache
+                )
+
             if key in self.text_diff_fields:
                 old_text = str(old_val) if old_val else ""
                 new_text = str(new_val) if new_val else ""
@@ -71,6 +80,26 @@ class RevisionDiffMixin:
 
             changes.append(change)
         return changes
+
+    def _format_list_diff(self, key, old_val, new_val, name_cache=None):
+        old_set = set(old_val)
+        new_set = set(new_val)
+        added = new_set - old_set
+        removed = old_set - new_set
+
+        def build_items(values, changed_set, changed_status):
+            return [
+                {
+                    "label": self._format_list_item(key, item, name_cache),
+                    "status": changed_status if item in changed_set else "same",
+                }
+                for item in values
+            ]
+
+        return {
+            "old_items": build_items(old_val, removed, "removed"),
+            "new_items": build_items(new_val, added, "added"),
+        }
 
     def _build_name_cache(self, raw_fields_list, id_fields=None, profile_fields=None):
         id_fields = id_fields if id_fields is not None else self.id_fields
@@ -136,6 +165,15 @@ class RevisionDiffMixin:
         if len(val_str) > 300:
             return val_str[:300] + "..."
         return val_str
+
+    def _format_list_item(self, key, item, name_cache=None):
+        name_cache = (
+            name_cache if name_cache is not None else getattr(self, "_name_cache", {})
+        )
+        name_map = name_cache.get(key)
+        if name_map:
+            return name_map.get(item, str(item))
+        return str(item)
 
     def _format_history_bool(self, value):
         return _("yes") if value in (True, "True", "true", "1", 1) else _("no")

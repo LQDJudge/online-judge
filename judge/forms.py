@@ -428,6 +428,9 @@ class AddOrganizationContestForm(ModelForm):
         }
 
 
+CONTEST_ROLE_FIELDS = ("authors", "curators", "testers")
+
+
 class ContestEditForm(ModelForm):
     """
     Unified contest edit form. Serves all three contest types (public,
@@ -440,6 +443,11 @@ class ContestEditForm(ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+        self.can_edit_roles = self._can_edit_roles()
+
+        if not self.can_edit_roles:
+            for field_name in CONTEST_ROLE_FIELDS:
+                self.fields[field_name].disabled = True
 
         if not (self.user and self.user.is_superuser):
             self.fields["organizations"].disabled = True
@@ -458,6 +466,15 @@ class ContestEditForm(ModelForm):
 
         if self.user and hasattr(self.user, "profile"):
             self.fields["format_config"].widget.theme = self.user.profile.ace_theme
+
+    def _can_edit_roles(self):
+        if not (self.user and self.user.is_authenticated):
+            return False
+        if self.user.is_superuser:
+            return True
+        if not (self.instance and self.instance.pk and hasattr(self.user, "profile")):
+            return False
+        return self.user.profile.id in self.instance.author_ids
 
     def clean(self):
         cleaned_data = super().clean()
@@ -492,6 +509,17 @@ class ContestEditForm(ModelForm):
                         "Only administrators can publish a public contest. "
                         "Add it to an organization or course first."
                     )
+                )
+
+        if not self.can_edit_roles:
+            changed_role_fields = [
+                field_name
+                for field_name in CONTEST_ROLE_FIELDS
+                if field_name in self.changed_data
+            ]
+            if changed_role_fields:
+                raise ValidationError(
+                    _("Only contest authors can change authors, curators, or testers.")
                 )
 
         return cleaned_data

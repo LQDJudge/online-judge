@@ -76,8 +76,33 @@
                     {% else %}
                       <tr>
                         <td class="change-field">{{ change.field }}</td>
-                        <td class="change-old">{% if change.old is not none and change.old != '' %}{{ change.old }}{% else %}-{% endif %}</td>
-                        <td class="change-new">{% if change.new is not none and change.new != '' %}{{ change.new }}{% else %}-{% endif %}</td>
+                        {% if change.list_diff is defined %}
+                          <td class="change-old">
+                            {% if change.list_diff.old_items %}
+                              {% for item in change.list_diff.old_items %}
+                                <div class="{% if item.status == 'removed' %}diff-del{% else %}gray{% endif %}">
+                                  {% if item.status == 'removed' %}- {% endif %}{{ item.label }}
+                                </div>
+                              {% endfor %}
+                            {% else %}
+                              -
+                            {% endif %}
+                          </td>
+                          <td class="change-new">
+                            {% if change.list_diff.new_items %}
+                              {% for item in change.list_diff.new_items %}
+                                <div class="{% if item.status == 'added' %}diff-add{% else %}gray{% endif %}">
+                                  {% if item.status == 'added' %}+ {% endif %}{{ item.label }}
+                                </div>
+                              {% endfor %}
+                            {% else %}
+                              -
+                            {% endif %}
+                          </td>
+                        {% else %}
+                          <td class="change-old">{% if change.old is not none and change.old != '' %}{{ change.old }}{% else %}-{% endif %}</td>
+                          <td class="change-new">{% if change.new is not none and change.new != '' %}{{ change.new }}{% else %}-{% endif %}</td>
+                        {% endif %}
                       </tr>
                     {% endif %}
                   {% endfor %}

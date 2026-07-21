@@ -19,6 +19,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone, translation
 
+from judge.forms import ContestEditForm
 from judge.models import (
     Contest,
     ContestParticipation,
@@ -216,6 +217,29 @@ class ContestEditTestBase(TestCase):
                 post[f"{prefix}-DELETE"] = "on"
         return post
 
+    def _contest_edit_form(self, contest, user, **post_overrides):
+        post = {
+            "key": contest.key,
+            "name": contest.name,
+            "authors": [str(p.id) for p in contest.authors.all()],
+            "curators": [],
+            "testers": [],
+            "start_time": contest.start_time.isoformat(),
+            "end_time": contest.end_time.isoformat(),
+            "format_name": contest.format_name,
+            "format_config": "{}",
+            "is_visible": "on" if contest.is_visible else "",
+            "scoreboard_visibility": contest.scoreboard_visibility,
+            "points_precision": str(contest.points_precision),
+            "description": contest.description or "",
+            "organizations": [str(o.id) for o in contest.organizations.all()],
+            "private_contestants": [],
+            "view_contest_scoreboard": [],
+            "banned_users": [],
+        }
+        post.update(post_overrides)
+        return ContestEditForm(data=post, instance=contest, user=user)
+
 
 class ContestEditPermissionTests(ContestEditTestBase):
     def test_anonymous_redirected_to_login(self):
@@ -276,29 +300,7 @@ class ContestEditFormVisibilityTests(ContestEditTestBase):
     """is_visible scoped/unscoped rule from ContestEditForm."""
 
     def _form(self, contest, user, **post_overrides):
-        from judge.forms import ContestEditForm
-
-        post = {
-            "key": contest.key,
-            "name": contest.name,
-            "authors": [str(p.id) for p in contest.authors.all()],
-            "curators": [],
-            "testers": [],
-            "start_time": contest.start_time.isoformat(),
-            "end_time": contest.end_time.isoformat(),
-            "format_name": contest.format_name,
-            "format_config": "{}",
-            "is_visible": "on" if contest.is_visible else "",
-            "scoreboard_visibility": contest.scoreboard_visibility,
-            "points_precision": str(contest.points_precision),
-            "description": contest.description or "",
-            "organizations": [str(o.id) for o in contest.organizations.all()],
-            "private_contestants": [],
-            "view_contest_scoreboard": [],
-            "banned_users": [],
-        }
-        post.update(post_overrides)
-        return ContestEditForm(data=post, instance=contest, user=user)
+        return self._contest_edit_form(contest, user, **post_overrides)
 
     def test_visibility_disabled_for_unscoped_hidden_non_superuser(self):
         self.public_contest.is_visible = False
@@ -344,6 +346,70 @@ class ContestEditFormVisibilityTests(ContestEditTestBase):
     def test_organizations_editable_for_superuser(self):
         form = self._form(self.org_contest, self.superuser)
         self.assertFalse(form.fields["organizations"].disabled)
+
+
+class ContestEditRoleFieldTests(ContestEditTestBase):
+    """Contest authors own role management; curators can edit content only."""
+
+    def test_author_can_edit_role_fields(self):
+        form = self._contest_edit_form(self.public_contest, self.author)
+        self.assertFalse(form.fields["authors"].disabled)
+        self.assertFalse(form.fields["curators"].disabled)
+        self.assertFalse(form.fields["testers"].disabled)
+
+    def test_curator_cannot_edit_role_fields(self):
+        self.public_contest.curators.add(self.curator.profile)
+        self._refresh_contest(self.public_contest)
+
+        form = self._contest_edit_form(self.public_contest, self.curator)
+
+        self.assertTrue(form.fields["authors"].disabled)
+        self.assertTrue(form.fields["curators"].disabled)
+        self.assertTrue(form.fields["testers"].disabled)
+
+    def test_curator_forged_role_post_preserves_existing_roles(self):
+        self.public_contest.curators.add(self.curator.profile)
+        self._refresh_contest(self.public_contest)
+        self.client.force_login(self.curator)
+
+        post = self._contest_edit_post_data(self.public_contest, [])
+        post["name"] = "Curator Content Edit"
+        post["authors"] = [str(self.outsider.profile.id)]
+        post["curators"] = []
+        post["testers"] = [str(self.outsider.profile.id)]
+
+        resp = self.client.post(
+            reverse("contest_edit", args=[self.public_contest.key]), post
+        )
+
+        self.assertEqual(resp.status_code, 302)
+        self.public_contest.refresh_from_db()
+        self.assertEqual(self.public_contest.name, "Curator Content Edit")
+        self.assertQuerySetEqual(
+            self.public_contest.authors.order_by("id"),
+            [self.author.profile],
+            transform=lambda profile: profile,
+        )
+        self.assertQuerySetEqual(
+            self.public_contest.curators.order_by("id"),
+            [self.curator.profile],
+            transform=lambda profile: profile,
+        )
+        self.assertFalse(self.public_contest.testers.exists())
+
+    def test_force_enabled_curator_role_change_is_rejected(self):
+        self.public_contest.curators.add(self.curator.profile)
+        self._refresh_contest(self.public_contest)
+
+        with translation.override("en"):
+            form = self._contest_edit_form(
+                self.public_contest,
+                self.curator,
+                authors=[str(self.outsider.profile.id)],
+            )
+            form.fields["authors"].disabled = False
+            self.assertFalse(form.is_valid())
+            self.assertIn("Only contest authors", str(form.errors))
 
 
 class ContestEditAtomicityTests(ContestEditTestBase):

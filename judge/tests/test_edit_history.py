@@ -313,6 +313,124 @@ class EditHistoryViewTests(TestCase):
             any(entry.revision.comment == "Rated this contest." for entry in entries)
         )
 
+    def test_contest_history_diffs_profile_list_fields(self):
+        now = timezone.now()
+        contest = Contest.objects.create(
+            key="histcontestprofiles",
+            name="History Contest Profiles",
+            start_time=now,
+            end_time=now + timezone.timedelta(hours=2),
+        )
+        removed_user = User.objects.create_user("history_removed")
+        added_user = User.objects.create_user("history_added")
+        removed_profile, _ = Profile.objects.get_or_create(
+            user=removed_user, defaults={"language": self.language}
+        )
+        added_profile, _ = Profile.objects.get_or_create(
+            user=added_user, defaults={"language": self.language}
+        )
+
+        with revisions.create_revision():
+            contest.authors.add(self.profile)
+            contest.testers.add(self.profile, removed_profile)
+            revisions.add_to_revision(contest)
+            revisions.set_user(self.user)
+            revisions.set_comment("Initial contest staff")
+
+        with revisions.create_revision():
+            contest.testers.remove(removed_profile)
+            contest.testers.add(added_profile)
+            revisions.add_to_revision(contest)
+            revisions.set_user(self.user)
+            revisions.set_comment("Changed contest testers")
+
+        view = ContestLog()
+        view.object = contest
+        with override("en"):
+            entries = list(view.get_queryset())
+        tester_change = next(
+            change
+            for entry in entries
+            for change in entry.changes
+            if change["field"] == "testers"
+        )
+
+        self.assertEqual(
+            tester_change["list_diff"]["old_items"],
+            [
+                {"label": "history_user", "status": "same"},
+                {"label": "history_removed", "status": "removed"},
+            ],
+        )
+        self.assertEqual(
+            tester_change["list_diff"]["new_items"],
+            [
+                {"label": "history_user", "status": "same"},
+                {"label": "history_added", "status": "added"},
+            ],
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("contest_log", args=[contest.key]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "+ history_added")
+        self.assertContains(response, "- history_removed")
+
+    def test_problem_history_diffs_many_to_many_list_fields(self):
+        problem = self.make_problem("histproblemlists")
+        removed_user = User.objects.create_user("history_problem_removed")
+        added_user = User.objects.create_user("history_problem_added")
+        removed_profile, _ = Profile.objects.get_or_create(
+            user=removed_user, defaults={"language": self.language}
+        )
+        added_profile, _ = Profile.objects.get_or_create(
+            user=added_user, defaults={"language": self.language}
+        )
+
+        with revisions.create_revision():
+            problem.authors.add(self.profile)
+            problem.curators.add(self.profile, removed_profile)
+            revisions.add_to_revision(problem)
+            revisions.set_user(self.user)
+            revisions.set_comment("Initial problem curators")
+
+        with revisions.create_revision():
+            problem.curators.remove(removed_profile)
+            problem.curators.add(added_profile)
+            revisions.add_to_revision(problem)
+            revisions.set_user(self.user)
+            revisions.set_comment("Changed problem curators")
+
+        view = ProblemLog()
+        view.problem = problem
+        with override("en"):
+            entries = list(view.get_queryset())
+        curator_change = next(
+            change
+            for entry in entries
+            for change in entry.changes
+            if change["field"] == "curators"
+        )
+
+        self.assertEqual(
+            curator_change["list_diff"]["old_items"],
+            [
+                {"label": "history_user", "status": "same"},
+                {"label": "history_problem_removed", "status": "removed"},
+            ],
+        )
+        self.assertEqual(
+            curator_change["list_diff"]["new_items"],
+            [
+                {"label": "history_user", "status": "same"},
+                {"label": "history_problem_added", "status": "added"},
+            ],
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("problem_log", args=[problem.code]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "+ history_problem_added")
+        self.assertContains(response, "- history_problem_removed")
+
     def test_quiz_history_summarizes_assignment_changes(self):
         quiz = Quiz.objects.create(code="histquiz", title="History Quiz")
         quiz.authors.add(self.profile)
