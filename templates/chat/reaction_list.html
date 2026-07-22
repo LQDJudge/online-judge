@@ -14,7 +14,7 @@
         <ul class="reaction-list-users">
           {% for profile_id in section.users %}
             <li class="reaction-list-item">
-              <img loading="lazy" src="{{ gravatar(profile_id, 40) }}" class="reaction-list-avatar user-img">
+              <img loading="lazy" src="{{ public_gravatar(profile_id, request.user, 40) }}" class="reaction-list-avatar user-img">
               <span class="reaction-list-user">{{ link_user(profile_id) }}</span>
             </li>
           {% endfor %}

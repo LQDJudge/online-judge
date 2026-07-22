@@ -3,7 +3,7 @@
 </div>
 {% if other_user %}
   <div class="status-container chat-header-avatar">
-    <img src="{{ gravatar(other_user.id, 135) }}" class="info-pic user-img">
+    <img src="{{ public_gravatar(other_user, request.user, 135) }}" class="info-pic user-img">
     <span class="info-circle {{ 'online' if other_online else 'offline' }}"></span>
   </div>
 {% else %}

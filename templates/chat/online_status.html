@@ -21,12 +21,12 @@
       {% for user_dict in section.user_list %}
         <li class="click_space status-row" id="click_space_{{user_dict.user.id}}" value="{{user_dict.url}}" data-user-id="{{user_dict.user.id}}" data-room="{{user_dict.room or ''}}" data-is-self="{{ '1' if user_dict.is_self else '0' }}">
           <div class="status-container">
-            <img loading="lazy" src="{{ gravatar(user_dict.user.id, 135) }}" class="status-pic user-img">
+            <img loading="lazy" src="{{ public_gravatar(user_dict.user, request.user, 135) }}" class="status-pic user-img">
             <span class="status-circle {{ 'online' if user_dict.is_online else 'offline' }}"></span>
           </div>
           <div class="status-user">
             <span class="username {{ user_dict.user.css_class }} wrapline">
-              {{ user_dict.user.username }}
+              {{ user_dict.user.get_public_username(request.user) }}
               {% if user_dict.is_self %}
                 <span class="gray">&nbsp;({{ _('You') }})</span>
               {% endif %}

@@ -8,3 +8,4 @@ from judge.tasks.quiz_import import *
 from judge.tasks.semantic_search import *
 from judge.tasks.review import *
 from judge.tasks.contest_review import *
+from judge.tasks.username_moderation import *

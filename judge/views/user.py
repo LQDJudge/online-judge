@@ -116,11 +116,11 @@ class UserPage(TitleMixin, UserMixin, DetailView):
         return (
             _("My account")
             if self.request.profile == self.object
-            else _("User %s") % self.object.username
+            else _("User %s") % self.object.get_public_username(self.request.user)
         )
 
     def get_content_title(self):
-        username = self.object.username
+        username = self.object.get_public_username(self.request.user)
         css_class = self.object.css_class
         return mark_safe(f'<span class="{css_class}">{username}</span>')
 
@@ -156,6 +156,16 @@ class UserPage(TitleMixin, UserMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(UserPage, self).get_context_data(**kwargs)
+        is_staff_viewer = self.request.user.is_authenticated and (
+            self.request.user.is_staff or self.request.user.is_superuser
+        )
+        hide_public_identity = self.object.should_hide_public_identity(
+            self.request.user
+        )
+        context["hide_public_identity"] = hide_public_identity
+        context["show_disabled_profile_only"] = self.object.is_disabled() and not (
+            is_staff_viewer
+        )
 
         context["followed"] = self.object.is_followed_by(self.request.profile)
         context["hide_solved"] = int(self.hide_solved)
@@ -516,8 +526,10 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
 
     def get_context_data(self, **kwargs):
         context = super(UserList, self).get_context_data(**kwargs)
-        Profile.get_cached_instances(*[u.id for u in context["users"]])
-        Profile.prefetch_cache_about(*[u.id for u in context["users"]])
+        user_ids = [u.id for u in context["users"]]
+        Profile.get_cached_instances(*user_ids)
+        Profile.prefetch_cache_about(*user_ids)
+        Profile.prefetch_cache_public_identity(*user_ids)
         page_ids = {u.id for u in context["users"]}
         if page_ids:
             full_rows = self.object_list.values_list("id", "points")

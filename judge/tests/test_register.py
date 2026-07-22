@@ -3,12 +3,15 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.test import RequestFactory
 from django.test import SimpleTestCase, TestCase, override_settings
+from registration.models import RegistrationProfile
 
 from judge.admin.profile import UserForm
+from judge.models import UsernameModerationCase
 from judge.social_auth import UsernameForm, slugify_username
 from judge.validators import clean_username
-from judge.views.register import OldRegistrationView, RegistrationView
+from judge.views.register import ActivationView, OldRegistrationView, RegistrationView
 from judge.views.register import CustomRegistrationForm
 
 
@@ -38,6 +41,16 @@ class UsernameValidatorTest(SimpleTestCase):
             with self.subTest(username=username):
                 with self.assertRaises(ValidationError):
                     clean_username(username)
+
+    def test_allows_policy_sensitive_words_for_ai_moderation(self):
+        usernames = [
+            "toponlinecasino",
+            "kubet88",
+            "taixiu24h",
+        ]
+        for username in usernames:
+            with self.subTest(username=username):
+                self.assertEqual(clean_username(username), username)
 
 
 @override_settings(LANGUAGE_CODE="en")
@@ -101,7 +114,7 @@ class RegistrationViewIntegrityErrorTest(SimpleTestCase):
         form = MagicMock()
         expected_response = object()
         error = IntegrityError(
-            1062, "Duplicate entry 'iwin68clubitcom' for key 'username'"
+            1062, "Duplicate entry 'duplicateuser' for key 'username'"
         )
 
         with patch.object(OldRegistrationView, "form_valid", side_effect=error):
@@ -127,3 +140,40 @@ class RegistrationViewIntegrityErrorTest(SimpleTestCase):
                 view.form_valid(form)
 
         form.add_error.assert_not_called()
+
+
+@override_settings(LANGUAGE_CODE="en")
+class ActivationUsernameModerationTest(TestCase):
+    def test_blocked_username_moderation_case_prevents_activation(self):
+        user = User.objects.create_user(username="blocked_activation", is_active=False)
+        registration_profile = RegistrationProfile.objects.create_profile(user)
+        UsernameModerationCase.objects.create(
+            user=user,
+            username=user.username,
+            decision=UsernameModerationCase.DECISION_BLOCK,
+            status=UsernameModerationCase.STATUS_REVIEWED,
+            public_identity_hidden=True,
+        )
+        view = ActivationView()
+        view.request = RequestFactory().get("/")
+
+        activated_user = view.activate(
+            activation_key=registration_profile.activation_key
+        )
+
+        user.refresh_from_db()
+        registration_profile.refresh_from_db()
+        self.assertFalse(activated_user)
+        self.assertFalse(user.is_active)
+        self.assertFalse(registration_profile.activated)
+
+        response = self.client.get(
+            "/accounts/activate/%s/" % registration_profile.activation_key
+        )
+
+        self.assertContains(
+            response,
+            "This registration cannot be activated because the username violates "
+            "our account policy.",
+        )
+        self.assertNotContains(response, "is an invalid activation key")

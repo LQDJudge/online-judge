@@ -3,18 +3,20 @@ Django management command for auto-moderating community organizations using LLM
 Usage: python manage.py auto_moderate [options]
 """
 
-import sys
-import os
 import json
+import os
 import re
-from django.core.management.base import BaseCommand
+import sys
+
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 # Add llm_service to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../..", ".."))
 
+from llm_service.config import get_config
 from llm_service.llm_api import LLMService
 from judge.models import (
     Organization,
@@ -59,20 +61,22 @@ POST_USER_PROMPT = """Community: {about}
 Posts to review:
 {posts}"""
 
-CHAT_SYSTEM_PROMPT = """You are a chat lobby moderator. Review messages and decide the action for each.
+CHAT_SYSTEM_PROMPT = """You are a chat lobby moderator for an educational programming site. Review messages and decide the action for each.
 
 Respond ONLY with valid JSON array: [{"id": <message_id>, "action": "hide" or "mute_temp" or "mute_perm" or "keep", "reason": "<short reason>"}]
 
 Actions:
-- "hide": Hide this single message. Use for: spam, off-topic advertising, mildly inappropriate content.
-- "mute_temp": Hide ALL lobby messages from this user and temporarily mute them. Use for: repeated spam, insults, disruptive behavior, or moderate harassment.
-- "mute_perm": Hide ALL lobby messages from this user and permanently mute them. Use for: severe harassment, hate speech, threats, doxxing, explicit sexual content, or dangerous abuse.
+- "hide": Hide this single message. Use for clear spam, off-topic advertising, targeted insults, harassment, obscene content, or other isolated violations.
+- "mute_temp": Hide ALL lobby messages from this user and temporarily mute them. Use for repeated spam, repeated insults, disruptive behavior, or moderate harassment.
+- "mute_perm": Hide ALL lobby messages from this user and permanently mute them. Use for severe harassment, hate speech, threats, doxxing, explicit sexual content, grooming, or dangerous abuse.
 - "keep": Message is acceptable. Keep it visible.
 
-Include a concise reason for every hide or mute action. HIDE single messages for isolated violations. Use temporary mute for moderate repeated abuse. Use permanent mute only for severe abuse.
+Be strict for harmful, abusive, obscene, threatening, doxxing, discriminatory, scam, gambling, or other clearly unsafe content, in any language including Vietnamese, English, slang, and leetspeak.
+Be tolerant of obvious jokes, memes, sarcasm, playful banter, mild profanity without a target, and ambiguous context. Do not punish a user for a single unclear message.
+Include a concise reason for every hide or mute action. HIDE single messages for isolated clear violations. Use temporary mute for moderate repeated abuse. Use permanent mute only for severe abuse.
 When in doubt, KEEP the message.
 
-IMAGES: Messages containing images (shown as [imageN] with an attached file) are normal in this community — users share screenshots, problem images, memes, etc. KEEP image messages unless the image is clearly harmful (nudity, gore, hate symbols). If you cannot see an image or it failed to load, always KEEP the message."""
+IMAGES: Messages containing images (shown as [imageN] with an attached file) are normal in this community: users share screenshots, problem images, memes, and jokes. KEEP image messages unless the image is clearly harmful (nudity, gore, hate symbols, harassment, doxxing, scams, or illegal content). If you cannot see an image or it failed to load, always KEEP the message."""
 
 CHAT_USER_PROMPT = """Chat lobby messages to review:
 {messages}"""
@@ -124,9 +128,16 @@ class Command(BaseCommand):
         bot_name = getattr(settings, "POE_BOT_NAME", "Gemini-3-Flash")
 
         try:
+            config = get_config()
             self.llm_service = LLMService(
                 api_key=api_key,
                 bot_name=bot_name,
+            )
+            self.chat_llm_service = LLMService(
+                api_key=config.api_key,
+                bot_name=config.get_bot_name_for_moderation(),
+                sleep_time=config.sleep_time,
+                timeout=config.timeout,
             )
         except Exception as e:
             self.stderr.write(
@@ -609,7 +620,7 @@ class Command(BaseCommand):
         )
 
         try:
-            response = self.llm_service.call_llm(
+            response = self.chat_llm_service.call_llm(
                 user_prompt,
                 system_prompt=CHAT_SYSTEM_PROMPT,
                 attachments=attachments,

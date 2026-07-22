@@ -6,7 +6,7 @@
 {% set message_reaction = reactions.get(message.id) if reactions is defined and reactions else None %}
 <li class="message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}" data-time="{{ message.time.timestamp()|int }}">
   <div class="message-avatar">
-    <img loading="lazy" src="{{ gravatar(message.author_id, 135) }}" class="profile-pic user-img">
+    <img loading="lazy" src="{{ public_gravatar(message.author_id, request.user, 135) }}" class="profile-pic user-img">
   </div>
   <div class="message-content-wrapper">
     <div class="message-header user-time">

@@ -4,7 +4,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import get_default_password_validators
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.forms import ChoiceField, ModelChoiceField
 from django.shortcuts import render
 from django.utils.translation import gettext, gettext_lazy as _
@@ -13,10 +13,11 @@ from registration.backends.default.views import (
     ActivationView as OldActivationView,
     RegistrationView as OldRegistrationView,
 )
-from registration.models import RegistrationProfile
 from registration.forms import RegistrationForm
+from registration.models import RegistrationProfile
 
-from judge.models import Language, Profile, TIMEZONE
+from judge.models import Language, Profile, TIMEZONE, UsernameModerationCase
+from judge.tasks.username_moderation import moderate_username_task
 from judge.utils.recaptcha import ReCaptchaField, ReCaptchaWidget
 from judge.utils.turnstile import TurnstileField, is_turnstile_configured
 from judge.validators import (
@@ -132,8 +133,21 @@ class RegistrationView(OldRegistrationView):
         profile.language = cleaned_data["language"]
         profile.save()
 
+        moderation_case = UsernameModerationCase.objects.create(
+            user=user,
+            username=user.username,
+            normalized_username=user.username.casefold(),
+            source=UsernameModerationCase.SOURCE_REGISTRATION,
+        )
+        transaction.on_commit(
+            lambda: self.enqueue_username_moderation(moderation_case.id)
+        )
+
         self.send_activation_email(user.id)
         return user
+
+    def enqueue_username_moderation(self, case_id):
+        moderate_username_task.delay(case_id)
 
     def send_activation_email(self, user_id):
         site = get_current_site(self.request)
@@ -152,9 +166,30 @@ class ActivationView(OldActivationView):
     title = _("Registration")
     template_name = "registration/activate.html"
 
+    def activate(self, *args, **kwargs):
+        activation_key = kwargs.get("activation_key", "")
+        registration_profile = (
+            RegistrationProfile.objects.select_related("user")
+            .filter(activation_key=activation_key, activated=False)
+            .first()
+        )
+        if (
+            registration_profile
+            and UsernameModerationCase.objects.filter(
+                user=registration_profile.user,
+                decision=UsernameModerationCase.DECISION_BLOCK,
+            ).exists()
+        ):
+            self.blocked_by_username_moderation = True
+            return False
+        return super(ActivationView, self).activate(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         if "title" not in kwargs:
             kwargs["title"] = self.title
+        kwargs["blocked_by_username_moderation"] = getattr(
+            self, "blocked_by_username_moderation", False
+        )
         return super(ActivationView, self).get_context_data(**kwargs)
 
 

@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block after_rank %}
-  <td><img loading="lazy" style="max-width: none;" class="user-img" src="{{ gravatar(user.id, 40) }}" height="40px" width="40px"></td>
+  <td><img loading="lazy" style="max-width: none;" class="user-img" src="{{ public_gravatar(user, request.user, 40) }}" height="40px" width="40px"></td>
 {% endblock %}
 
 {% block user_footer %}
@@ -50,7 +50,7 @@
   <td class="user-contribution">{{ user.contribution_points }}</td>
   <td>
     <div class="about-td">
-      {% if user.about %}{{ user.about|markdown(lazy_load=True)|reference|str|safe }}{% endif %}
+      {% if user.about and not user.should_hide_public_identity(request.user) %}{{ user.about|markdown(lazy_load=True)|reference|str|safe }}{% endif %}
     </div>
   </td>
 {% endblock %}

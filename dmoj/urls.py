@@ -1913,6 +1913,11 @@ urlpatterns = [
                     name="internal_chat_moderation",
                 ),
                 re_path(
+                    r"^username_moderation$",
+                    internal.InternalUsernameModeration.as_view(),
+                    name="internal_username_moderation",
+                ),
+                re_path(
                     r"^unmute_user$",
                     internal.unmute_user,
                     name="internal_unmute_user",

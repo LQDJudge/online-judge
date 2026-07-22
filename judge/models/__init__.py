@@ -52,6 +52,7 @@ from judge.models.profile import (
     OrganizationProfile,
     ProfileInfo,
     OrganizationModerationLog,
+    UsernameModerationCase,
     DYNAMIC_EFFECT_CHOICES,
 )
 from judge.models.runtime import Judge, Language, RuntimeVersion

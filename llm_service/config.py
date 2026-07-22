@@ -8,6 +8,7 @@ from typing import Optional
 
 # Default configuration values
 DEFAULT_BOT_NAME = "Claude-Sonnet-4.6"
+DEFAULT_MODERATION_BOT_NAME = "gpt-5-nano"
 DEFAULT_SLEEP_TIME = 2.5
 DEFAULT_TIMEOUT = 300
 DEFAULT_MAX_RETRIES = 1
@@ -66,6 +67,7 @@ class LLMConfig:
         self.bot_name_solution: Optional[str] = None
         self.bot_name_chatbot: Optional[str] = None
         self.bot_name_review: Optional[str] = None
+        self.bot_name_moderation: Optional[str] = None
 
         # Try to load from Django settings first, then environment
         self._load_config()
@@ -89,6 +91,9 @@ class LLMConfig:
             self.bot_name_solution = getattr(settings, "POE_BOT_NAME_SOLUTION", None)
             self.bot_name_chatbot = getattr(settings, "POE_BOT_NAME_CHATBOT", None)
             self.bot_name_review = getattr(settings, "POE_BOT_NAME_REVIEW", None)
+            self.bot_name_moderation = getattr(
+                settings, "POE_BOT_NAME_MODERATION", None
+            )
         except ImportError:
             # Django not available, use environment variables
             pass
@@ -152,6 +157,10 @@ class LLMConfig:
         """Get bot name for auto-review pipeline (falls back to default bot_name)"""
         return self.bot_name_review or self.bot_name
 
+    def get_bot_name_for_moderation(self) -> str:
+        """Get bot name for lightweight moderation tasks."""
+        return self.bot_name_moderation or DEFAULT_MODERATION_BOT_NAME
+
     def get_chatbot_supported_models(self) -> list:
         """Get list of supported models for chatbot"""
         return CHATBOT_SUPPORTED_MODELS
@@ -184,6 +193,7 @@ class LLMConfig:
             "bot_name_solution": self.get_bot_name_for_solution(),
             "bot_name_chatbot": self.get_bot_name_for_chatbot(),
             "bot_name_review": self.get_bot_name_for_review(),
+            "bot_name_moderation": self.get_bot_name_for_moderation(),
             "sleep_time": self.sleep_time,
             "timeout": self.timeout,
             "max_retries": self.max_retries,

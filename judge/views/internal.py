@@ -1,6 +1,7 @@
 import difflib
 import json
 import logging
+import os
 import uuid
 from datetime import timedelta
 
@@ -9,8 +10,13 @@ from django.contrib import messages
 from django.contrib.auth.views import redirect_to_login
 from django.db import transaction
 from django.db.models import Q
-from django.http import Http404, HttpResponseForbidden, JsonResponse
-from django.shortcuts import redirect
+from django.http import (
+    Http404,
+    HttpResponseForbidden,
+    HttpResponseRedirect,
+    JsonResponse,
+)
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _, get_language
@@ -36,7 +42,13 @@ from judge.ml.problem_duplicates import (
 from judge.ml.semantic_search import (
     SemanticSearchUnavailable,
 )
-from judge.models import Problem, ProblemType, Profile, Submission
+from judge.models import (
+    Problem,
+    ProblemType,
+    Profile,
+    Submission,
+    UsernameModerationCase,
+)
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.problem import get_distinct_problem_points
 from judge.models.public_request import PublicRequest
@@ -1189,9 +1201,21 @@ def problem_tag(request):
 
 
 class RequestTimeMixin(object):
-    def get_requests_data(self):
+    log_sort_fields = ()
+
+    def get_log_filename(self):
         logger = logging.getLogger(self.log_name)
-        log_filename = logger.handlers[0].baseFilename
+        for handler in logger.handlers:
+            log_filename = getattr(handler, "baseFilename", None)
+            if log_filename:
+                return log_filename
+        return None
+
+    def get_requests_data(self):
+        log_filename = self.get_log_filename()
+        if not log_filename or not os.path.exists(log_filename):
+            return []
+
         requests = []
 
         with open(log_filename, "r") as f:
@@ -1211,6 +1235,7 @@ class InternalRequestTime(InternalView, ListView, RequestTimeMixin):
     log_name = "judge.request_time"
     detail_url_name = "internal_request_time_detail"
     page_type = "request_time"
+    log_sort_fields = ("time", "count")
 
     def get_queryset(self):
         requests = self.get_requests_data()
@@ -1229,6 +1254,8 @@ class InternalRequestTime(InternalView, ListView, RequestTimeMixin):
                 url_name
             ]["count"]
         order = self.request.GET.get("order", "time")
+        if order not in self.log_sort_fields:
+            order = "time"
         return sorted(table.values(), key=lambda x: x[order], reverse=True)
 
     def get_context_data(self, **kwargs):
@@ -1243,6 +1270,7 @@ class InternalRequestTime(InternalView, ListView, RequestTimeMixin):
 class InternalRequestTimeDetail(InternalRequestTime):
     template_name = "internal/request_time_detail.html"
     context_object_name = "requests"
+    log_sort_fields = ("response_time",)
 
     def get_queryset(self):
         url_name = self.request.GET.get("url_name", None)
@@ -1254,6 +1282,8 @@ class InternalRequestTimeDetail(InternalRequestTime):
         requests = self.get_requests_data()
         filtered_requests = [r for r in requests if r["url_name"] == url_name]
         order = self.request.GET.get("order", "response_time")
+        if order not in self.log_sort_fields:
+            order = "response_time"
         return sorted(filtered_requests, key=lambda x: x[order], reverse=True)[:200]
 
     def get_context_data(self, **kwargs):
@@ -1328,6 +1358,102 @@ class InternalChatModeration(InternalView, ListView):
             context["page_prefix"] = self.request.path + "?page="
             context["first_page_href"] = self.request.path
 
+        return context
+
+
+class InternalUsernameModeration(InternalView, ListView):
+    model = UsernameModerationCase
+    title = _("Username Moderation")
+    template_name = "internal/username_moderation.html"
+    paginate_by = 50
+    context_object_name = "cases"
+
+    def get_paginator(
+        self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
+    ):
+        return DiggPaginator(
+            queryset,
+            per_page,
+            body=6,
+            padding=2,
+            orphans=orphans,
+            allow_empty_first_page=allow_empty_first_page,
+            **kwargs,
+        )
+
+    def get_queryset(self):
+        queryset = UsernameModerationCase.objects.select_related(
+            "user", "user__profile", "moderator__user"
+        )
+
+        status_filter = self.request.GET.get("status", "")
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        decision_filter = self.request.GET.get("decision", "")
+        if decision_filter:
+            queryset = queryset.filter(decision=decision_filter)
+        else:
+            queryset = queryset.exclude(decision=UsernameModerationCase.DECISION_ALLOW)
+
+        category_filter = self.request.GET.get("category", "")
+        if category_filter:
+            queryset = queryset.filter(category=category_filter)
+
+        search = self.request.GET.get("search", "").strip()
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search) | Q(user__username__icontains=search)
+            )
+
+        return queryset.order_by("-created_at")
+
+    def post(self, request, *args, **kwargs):
+        case = get_object_or_404(UsernameModerationCase, id=request.POST.get("case"))
+        action = request.POST.get("action")
+        moderator = request.profile
+
+        if action == "allow":
+            case.allow(moderator=moderator)
+            messages.success(request, _("Username moderation case allowed."))
+        elif action == "disable":
+            case.disable_user(moderator=moderator, hide_identity=True)
+            messages.success(request, _("User disabled and public identity hidden."))
+        elif action == "hide":
+            case.hide_public_identity(moderator=moderator)
+            messages.success(request, _("Public identity hidden."))
+        elif action == "unhide":
+            case.unhide_public_identity(moderator=moderator)
+            messages.success(request, _("Public identity restored."))
+        else:
+            messages.error(request, _("Unknown moderation action."))
+
+        return HttpResponseRedirect(
+            request.META.get("HTTP_REFERER", reverse("internal_username_moderation"))
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_type"] = "username_moderation"
+        context["title"] = self.title
+        context["status_filter"] = self.request.GET.get("status", "")
+        context["decision_filter"] = self.request.GET.get("decision", "")
+        context["category_filter"] = self.request.GET.get("category", "")
+        context["search_query"] = self.request.GET.get("search", "")
+        context["status_choices"] = UsernameModerationCase.STATUS_CHOICES
+        context["decision_choices"] = UsernameModerationCase.DECISION_CHOICES
+        context["category_choices"] = UsernameModerationCase.CATEGORY_CHOICES
+
+        query_params = self.request.GET.copy()
+        if "page" in query_params:
+            del query_params["page"]
+        if query_params:
+            query_string = query_params.urlencode()
+            context["page_prefix"] = self.request.path + "?" + query_string + "&page="
+            context["first_page_href"] = self.request.path + "?" + query_string
+        else:
+            context["page_prefix"] = self.request.path + "?page="
+            context["first_page_href"] = self.request.path
         return context
 
 

@@ -23,9 +23,13 @@ def get_user(username, data):
         element.text = username
         return element
 
-    element = Element("span", {"class": Profile.get_user_css_class(*data)})
+    display_username = data["public_username"]
+    element = Element(
+        "span",
+        {"class": Profile.get_user_css_class(data["display_rank"], data["rating"])},
+    )
     link = Element("a", {"href": reverse("user_page", args=[username])})
-    link.text = username
+    link.text = display_username
     element.append(link)
     return element
 
@@ -36,7 +40,8 @@ def get_user_rating(username, data):
         element.text = username
         return element
 
-    rating = data[1]
+    display_username = data["public_username"]
+    rating = data["rating"]
     element = Element(
         "a", {"class": "rate-group", "href": reverse("user_page", args=[username])}
     )
@@ -47,11 +52,11 @@ def get_user_rating(username, data):
             Element("span", {"style": "height: %3.fem" % rating_progress(rating)})
         )
         user = Element("span", {"class": "rating " + rating_css})
-        user.text = username
+        user.text = display_username
         element.append(rate_box)
         element.append(user)
     else:
-        element.text = username
+        element.text = display_username
     return element
 
 
@@ -59,7 +64,15 @@ def get_user_info(usernames):
     ids = get_profile_id_from_username.batch([(username,) for username in usernames])
     ids = [i for i in ids if i is not None]
     profiles = Profile.get_cached_instances(*ids)
-    return {p.username: (p.display_rank, p.rating) for p in profiles}
+    Profile.prefetch_cache_public_identity(*ids)
+    return {
+        p.username: {
+            "display_rank": p.display_rank,
+            "rating": p.rating,
+            "public_username": p.get_public_username(),
+        }
+        for p in profiles
+    }
 
 
 def get_user_from_text(text):

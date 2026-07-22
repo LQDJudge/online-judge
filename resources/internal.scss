@@ -25,7 +25,8 @@
     }
 }
 
-.internal-chat-moderation-page {
+.internal-chat-moderation-page,
+.internal-username-moderation-page {
     max-width: 100%;
     min-width: 0;
 
@@ -59,8 +60,38 @@
         }
     }
 
+    .username-moderation-table {
+        min-width: 44em;
+
+        .username-time-column {
+            width: 6.5em;
+        }
+
+        .username-name-column {
+            width: 9em;
+        }
+
+        .username-result-column {
+            width: 8em;
+        }
+
+        .username-state-column,
+        .username-source-column {
+            width: 6em;
+        }
+
+        .username-action-column {
+            width: 7.5em;
+        }
+    }
+
     .chat-pagination {
         margin-top: $space-md;
+    }
+
+    .username-moderation-action-form {
+        display: inline-block;
+        margin: 0 $space-xs $space-xs 0;
     }
 }
 

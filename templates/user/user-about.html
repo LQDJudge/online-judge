@@ -9,518 +9,529 @@
 
 {% block user_content %}
   <div class="user-profile-content">
+    {% if show_disabled_profile_only %}
+      <div class="user-about-section">
+        <div class="no-about-text">
+          <i class="fa fa-ban"></i>
+          {{ _('This user is disabled.') }}
+        </div>
+      </div>
+    {% else %}
     {# Stats Cards Section #}
-    <div class="user-stats-grid">
-      <div class="user-stat-card primary">
-        <div class="stat-icon {{user.css_class}}"><i class="fa fa-star"></i></div>
-        <div class="stat-content">
-          <div class="stat-value {{user.css_class}}">{{user.rating if user.rating else '-'}}</div>
-          <div class="stat-label">{{_('Rating')}}</div>
+      <div class="user-stats-grid">
+        <div class="user-stat-card primary">
+          <div class="stat-icon {{user.css_class}}"><i class="fa fa-star"></i></div>
+          <div class="stat-content">
+            <div class="stat-value {{user.css_class}}">{{user.rating if user.rating else '-'}}</div>
+            <div class="stat-label">{{_('Rating')}}</div>
+          </div>
+        </div>
+        <div class="user-stat-card">
+          <div class="stat-icon green"><i class="icofont-tick-mark"></i></div>
+          <div class="stat-content">
+            <div class="stat-value">{{user.problem_count}}</div>
+            <div class="stat-label" title="{%- trans trimmed counter=user.problem_count %}{{ counter }} problem solved{% pluralize %}{{ counter }} problems solved{% endtrans -%}">{{_('Problems Solved')}}</div>
+          </div>
+        </div>
+        <div class="user-stat-card">
+          <div class="stat-icon darkcyan"><i class="fa fa-trophy"></i></div>
+          <div class="stat-content">
+            <div class="stat-value" title="{{ user.performance_points|floatformat(2) }}">{{ user.performance_points|floatformat(0) }}</div>
+            <div class="stat-label">{{_('Total Points')}}</div>
+          </div>
+        </div>
+        <div class="user-stat-card">
+          <div class="stat-icon peru"><i class="fa fa-globe"></i></div>
+          <div class="stat-content">
+            <div class="stat-value">{{rating_rank if rating_rank else '-'}}</div>
+            <div class="stat-label" title="{{_('Rank by rating')}}">{{_('Rating Rank')}}</div>
+          </div>
+        </div>
+        <div class="user-stat-card">
+          <div class="stat-icon blue"><i class="fa fa-globe"></i></div>
+          <div class="stat-content">
+            <div class="stat-value">{{points_rank if points_rank else '-'}}</div>
+            <div class="stat-label" title="{{_('Rank by points')}}">{{_('Points Rank')}}</div>
+          </div>
+        </div>
+        <div class="user-stat-card">
+          <div class="stat-icon green"><i class="fa fa-pen"></i></div>
+          <div class="stat-content">
+            <div class="stat-value" title="{{_('Contribution Points')}}">{{ user.contribution_points if user.contribution_points else 0 }}</div>
+            <div class="stat-label">{{_('Contribution')}}</div>
+          </div>
         </div>
       </div>
-      <div class="user-stat-card">
-        <div class="stat-icon green"><i class="icofont-tick-mark"></i></div>
-        <div class="stat-content">
-          <div class="stat-value">{{user.problem_count}}</div>
-          <div class="stat-label" title="{%- trans trimmed counter=user.problem_count %}{{ counter }} problem solved{% pluralize %}{{ counter }} problems solved{% endtrans -%}">{{_('Problems Solved')}}</div>
+      {% if user.first_name and not hide_public_identity %}
+        <div class="user-fullname">
+          {{user.first_name}}{% if user.last_name %} ({{user.last_name}}){% endif %}
         </div>
-      </div>
-      <div class="user-stat-card">
-        <div class="stat-icon darkcyan"><i class="fa fa-trophy"></i></div>
-        <div class="stat-content">
-          <div class="stat-value" title="{{ user.performance_points|floatformat(2) }}">{{ user.performance_points|floatformat(0) }}</div>
-          <div class="stat-label">{{_('Total Points')}}</div>
-        </div>
-      </div>
-      <div class="user-stat-card">
-        <div class="stat-icon peru"><i class="fa fa-globe"></i></div>
-        <div class="stat-content">
-          <div class="stat-value">{{rating_rank if rating_rank else '-'}}</div>
-          <div class="stat-label" title="{{_('Rank by rating')}}">{{_('Rating Rank')}}</div>
-        </div>
-      </div>
-      <div class="user-stat-card">
-        <div class="stat-icon blue"><i class="fa fa-globe"></i></div>
-        <div class="stat-content">
-          <div class="stat-value">{{points_rank if points_rank else '-'}}</div>
-          <div class="stat-label" title="{{_('Rank by points')}}">{{_('Points Rank')}}</div>
-        </div>
-      </div>
-      <div class="user-stat-card">
-        <div class="stat-icon green"><i class="fa fa-pen"></i></div>
-        <div class="stat-content">
-          <div class="stat-value" title="{{_('Contribution Points')}}">{{ user.contribution_points if user.contribution_points else 0 }}</div>
-          <div class="stat-label">{{_('Contribution')}}</div>
-        </div>
-      </div>
-    </div>
-    {% if user.first_name %}
-      <div class="user-fullname">
-        {{user.first_name}}{% if user.last_name %} ({{user.last_name}}){% endif %}
-      </div>
-    {% endif %}
+      {% endif %}
 
     {# About Section #}
-    <div class="user-about-section">
-      {% if perms.judge.change_profile %}
-        {% with notes=user.notes %}
-          {% if notes %}
-            <div class="admin-notes">
-              <i class="fa fa-lock"></i> <b>{{ _('Admin Notes') }}:</b> {{ notes }}
-            </div>
-          {% endif %}
-        {% endwith %}
-      {% endif %}
-      {% if user.about %}
-        <div class="about-content content-description">
-          {{ user.about|markdown(lazy_load=True)|reference|str|safe }}
-        </div>
-      {% else %}
-        <div class="no-about-text">
-          <i class="fa fa-info-circle"></i>
-          {% if user.user == request.user %}
-            {{ _('You have not shared any information.') }}
-          {% else %}
-            {{ _('This user has not shared any information.') }}
-          {% endif %}
-        </div>
-      {% endif %}
-    </div>
-
-    {% if awards %}
-      <div class="user-section awards-section">
-        <h4 class="section-title"><i class="fa fa-medal"></i> {{_('Awards')}}</h4>
-        <div class="awards-grid">
-          {% for medal in awards %}
-            {% if medal.ranking == 1 %}
-              {% set medal_url = static('awards/gold-medal.png') %}
-            {% elif medal.ranking == 2%}
-              {% set medal_url = static('awards/silver-medal.png') %}
-            {% else %}
-              {% set medal_url = static('awards/bronze-medal.png') %}
+      <div class="user-about-section">
+        {% if perms.judge.change_profile %}
+          {% with notes=user.notes %}
+            {% if notes %}
+              <div class="admin-notes">
+                <i class="fa fa-lock"></i> <b>{{ _('Admin Notes') }}:</b> {{ notes }}
+              </div>
             {% endif %}
-            <a href={{medal.link}} class="award-item">
-              <img src="{{medal_url}}" title="{% trans label=medal.label, date=medal.date%}{{label}} ({{date}}){% endtrans %}">
-            </a>
-          {% endfor%}
-        </div>
-      </div>
-    {% endif %}
-
-    {# Submission Activity Section #}
-    <div class="user-section activity-section">
-      <h4 class="section-title" id="submission-activity-header"><i class="fa fa-calendar-check"></i></h4>
-      <div id="submission-activity" style="display: none;">
-        <div id="submission-activity-actions">
-          <a href="javascript:void(0)" id="prev-year-action">&laquo;</a>
-          &nbsp;<span id="year"></span>&nbsp;
-          <a href="javascript:void(0)" id="next-year-action">&raquo;</a>
-        </div>
-        <div id="submission-activity-display">
-          <table id="submission-activity-table">
-            <tr id="submission-0">
-              <th class="submission-date-col info-text">
-                {{ _('Mon') }}
-              </th>
-            </tr>
-            <tr id="submission-1">
-              <th class="submission-date-col info-text">
-                {{ _('Tues') }}
-              </th>
-            </tr>
-            <tr id="submission-2">
-              <th class="submission-date-col info-text">
-                {{ _('Wed') }}
-              </th>
-            </tr>
-            <tr id="submission-3">
-              <th class="submission-date-col info-text">
-                {{ _('Thurs') }}
-              </th>
-            </tr>
-            <tr id="submission-4">
-              <th class="submission-date-col info-text">
-                {{ _('Fri') }}
-              </th>
-            </tr>
-            <tr id="submission-5">
-              <th class="submission-date-col info-text">
-                {{ _('Sat') }}
-              </th>
-            </tr>
-            <tr id="submission-6">
-              <th class="submission-date-col info-text">
-                {{ _('Sun') }}
-              </th>
-            </tr>
-          </table>
-          <div class="info-bar">
-            <span id="submission-total-count" class="info-text">
-            </span>
-            <table class="info-table">
-              <tr>
-                <th class="info-table-text info-text">{{ _('Less') }}</th>
-                <td class="activity-0"><div></div></td>
-                <td class="activity-1"><div></div></td>
-                <td class="activity-2"><div></div></td>
-                <td class="activity-3"><div></div></td>
-                <td class="activity-4"><div></div></td>
-                <th class="info-table-text info-text">{{ _('More') }}</th>
-                <tr>
-                </table>
-              </div>
-            </div>
+          {% endwith %}
+        {% endif %}
+        {% if user.about and not hide_public_identity %}
+          <div class="about-content content-description">
+            {{ user.about|markdown(lazy_load=True)|reference|str|safe }}
           </div>
-
-        </div>
-
-    {# Rating History Section #}
-        {% if user.rating %}
-          <div class="user-section rating-section">
-            <h4 class="section-title"><i class="fa fa-chart-line"></i> {{_('Rating History')}}</h4>
-            <div id="rating-chart">
-              <canvas></canvas>
-            </div>
-            <div id="rating-tooltip">
-              <div class="contest"></div>
-              <div class="date"></div>
-              <div class="rate-group">
-                <span class="rate-box"><span></span></span>
-                <span class="rating"></span>, #<span class="rank"></span>
-              </div>
-            </div>
+        {% else %}
+          <div class="no-about-text">
+            <i class="fa fa-info-circle"></i>
+            {% if user.user == request.user %}
+              {{ _('You have not shared any information.') }}
+            {% else %}
+              {{ _('This user has not shared any information.') }}
+            {% endif %}
           </div>
         {% endif %}
       </div>
+
+      {% if awards %}
+        <div class="user-section awards-section">
+          <h4 class="section-title"><i class="fa fa-medal"></i> {{_('Awards')}}</h4>
+          <div class="awards-grid">
+            {% for medal in awards %}
+              {% if medal.ranking == 1 %}
+                {% set medal_url = static('awards/gold-medal.png') %}
+              {% elif medal.ranking == 2%}
+                {% set medal_url = static('awards/silver-medal.png') %}
+              {% else %}
+                {% set medal_url = static('awards/bronze-medal.png') %}
+              {% endif %}
+              <a href={{medal.link}} class="award-item">
+                <img src="{{medal_url}}" title="{% trans label=medal.label, date=medal.date%}{{label}} ({{date}}){% endtrans %}">
+              </a>
+            {% endfor%}
+          </div>
+        </div>
+      {% endif %}
+
+    {# Submission Activity Section #}
+      <div class="user-section activity-section">
+        <h4 class="section-title" id="submission-activity-header"><i class="fa fa-calendar-check"></i></h4>
+        <div id="submission-activity" style="display: none;">
+          <div id="submission-activity-actions">
+            <a href="javascript:void(0)" id="prev-year-action">&laquo;</a>
+            &nbsp;<span id="year"></span>&nbsp;
+            <a href="javascript:void(0)" id="next-year-action">&raquo;</a>
+          </div>
+          <div id="submission-activity-display">
+            <table id="submission-activity-table">
+              <tr id="submission-0">
+                <th class="submission-date-col info-text">
+                  {{ _('Mon') }}
+                </th>
+              </tr>
+              <tr id="submission-1">
+                <th class="submission-date-col info-text">
+                  {{ _('Tues') }}
+                </th>
+              </tr>
+              <tr id="submission-2">
+                <th class="submission-date-col info-text">
+                  {{ _('Wed') }}
+                </th>
+              </tr>
+              <tr id="submission-3">
+                <th class="submission-date-col info-text">
+                  {{ _('Thurs') }}
+                </th>
+              </tr>
+              <tr id="submission-4">
+                <th class="submission-date-col info-text">
+                  {{ _('Fri') }}
+                </th>
+              </tr>
+              <tr id="submission-5">
+                <th class="submission-date-col info-text">
+                  {{ _('Sat') }}
+                </th>
+              </tr>
+              <tr id="submission-6">
+                <th class="submission-date-col info-text">
+                  {{ _('Sun') }}
+                </th>
+              </tr>
+            </table>
+            <div class="info-bar">
+              <span id="submission-total-count" class="info-text">
+              </span>
+              <table class="info-table">
+                <tr>
+                  <th class="info-table-text info-text">{{ _('Less') }}</th>
+                  <td class="activity-0"><div></div></td>
+                  <td class="activity-1"><div></div></td>
+                  <td class="activity-2"><div></div></td>
+                  <td class="activity-3"><div></div></td>
+                  <td class="activity-4"><div></div></td>
+                  <th class="info-table-text info-text">{{ _('More') }}</th>
+                  <tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+    {# Rating History Section #}
+          {% if user.rating %}
+            <div class="user-section rating-section">
+              <h4 class="section-title"><i class="fa fa-chart-line"></i> {{_('Rating History')}}</h4>
+              <div id="rating-chart">
+                <canvas></canvas>
+              </div>
+              <div id="rating-tooltip">
+                <div class="contest"></div>
+                <div class="date"></div>
+                <div class="rate-group">
+                  <span class="rate-box"><span></span></span>
+                  <span class="rating"></span>, #<span class="rank"></span>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block bodyend %}
-  {{ submission_data_script }}
-  {{ submission_metadata_script }}
-  <script type="text/javascript">
-    function readJsonData(id) {
-      return JSON.parse(document.getElementById(id).textContent);
-    }
-
-    var submission_activity = readJsonData('submission-activity-data');
-    var metadata = readJsonData('submission-metadata-data');
-    const activity_levels = 5; // 5 levels of activity
-
-    $(function () {
-      var active_tooltip = null;
-
-      function display_tooltip(where) {
-        if (active_tooltip !== null) {
-          active_tooltip.removeClass(['tooltipped', 'tooltipped-e', 'tooltipped-w']).removeAttr('aria-label');
-        }
-        if (where !== null) {
-          var day_num = parseInt(where.attr('data-day'));
-          var tooltip_direction = day_num < 183 ? 'tooltipped-e' : 'tooltipped-w';
-          where.addClass(['tooltipped', tooltip_direction])
-            .attr('aria-label', where.attr('data-submission-activity'));
-        }
-        active_tooltip = where;
+  {% if not show_disabled_profile_only %}
+    {{ submission_data_script }}
+    {{ submission_metadata_script }}
+    <script type="text/javascript">
+      function readJsonData(id) {
+        return JSON.parse(document.getElementById(id).textContent);
       }
 
-      function install_tooltips () {
-        display_tooltip(null);
-        $('.activity-label').each(function () {
-          var link = $(this);
-          link.hover(
-            function(e) {
-              display_tooltip(link);
-            },
-            function(e) {
-              display_tooltip(null);
-            }
-          );
-        });
-      }
+      var submission_activity = readJsonData('submission-activity-data');
+      var metadata = readJsonData('submission-metadata-data');
+      const activity_levels = 5; // 5 levels of activity
 
-      var current_year = new Date().getFullYear();
-      var $div = $('#submission-activity');
+      $(function () {
+        var active_tooltip = null;
 
-      function draw_contribution(year) {
-        $div.find('#submission-activity-table td').remove();
-        $div.find('#year').attr('data-year', year);
-        $div.find('#prev-year-action').css('display', year > metadata.min_year ? '' : 'none');
-        $div.find('#next-year-action').css('display', year < current_year ? '' : 'none');
-        var current_weekday = 0;
-        var start_day = new Date(year, 0, 1)
-        var end_day = new Date(year + 1, 0, 0);
-        if (year == current_year) {
-          end_day = new Date();
-          start_day = new Date(end_day.getFullYear() - 1, end_day.getMonth(), end_day.getDate() + 1);
-          $div.find('#year').text("{{ _('past year') }}");
-        } else {
-          $div.find('#year').text(year);
+        function display_tooltip(where) {
+          if (active_tooltip !== null) {
+            active_tooltip.removeClass(['tooltipped', 'tooltipped-e', 'tooltipped-w']).removeAttr('aria-label');
+          }
+          if (where !== null) {
+            var day_num = parseInt(where.attr('data-day'));
+            var tooltip_direction = day_num < 183 ? 'tooltipped-e' : 'tooltipped-w';
+            where.addClass(['tooltipped', tooltip_direction])
+              .attr('aria-label', where.attr('data-submission-activity'));
+          }
+          active_tooltip = where;
         }
-        var days = [];
-        for (var day = start_day, day_num = 1; day <= end_day; day.setDate(day.getDate() + 1), day_num++) {
-          var isodate = day.toISOString().split('T')[0];
-          days.push({
-            date: new Date(day),
-            weekday: (day.getDay() + 6) % 7,
-            day_num: day_num,
-            activity: submission_activity[isodate] || 0,
+
+        function install_tooltips () {
+          display_tooltip(null);
+          $('.activity-label').each(function () {
+            var link = $(this);
+            link.hover(
+              function(e) {
+                display_tooltip(link);
+              },
+              function(e) {
+                display_tooltip(null);
+              }
+            );
           });
         }
 
-        var sum_activity = days.map(obj => obj.activity).reduce((a, b) => a + b, 0);
-        $div.find('#submission-total-count').text(
-          sum_activity + " " + "{{_('total submission(s)')}}"
-        )
-        if (year == current_year) {
-          $('#submission-activity-header').text(
-            sum_activity + " " + "{{_('submissions in the last year')}}"
-          )
-        }
+        var current_year = new Date().getFullYear();
+        var $div = $('#submission-activity');
 
-        var max_activity = Math.max.apply(null, days.map(obj => obj.activity));
-        var diff = max_activity / (activity_levels - 1);
-        var activity_breakdown = [...Array(activity_levels).keys()].map(x => diff * x);
-
-        for (; current_weekday < days[0].weekday; current_weekday++) {
-          $div.find('#submission-' + current_weekday)
-            .append($('<td>').addClass('activity-blank').append('<div>'));
-        }
-        days.forEach(obj => {
-          var level = activity_breakdown.findIndex(x => x >= obj.activity);
-          var text =
-            ngettext("%(cnt)d submission on %(date)s", "%(cnt)d submissions on %(date)s", obj.activity)
-            .replace('%(cnt)d', obj.activity)
-            .replace(
-              '%(date)s',
-              obj.date.toLocaleDateString(
-                "{{ LANGUAGE_CODE }}",
-                {month: 'short', year: 'numeric', day: 'numeric'}
-              )
-            )
-
-          $div.find('#submission-' + obj.weekday)
-            .append(
-              $('<td>').addClass(['activity-label', 'activity-' + level])
-                .attr('data-submission-activity', text)
-                .attr('data-day', obj.day_num)
-                .append('<div>')
-            );
-        });
-
-        install_tooltips();
-      }
-
-      $('#prev-year-action').click(function () {
-        draw_contribution(parseInt($div.find('#year').attr('data-year')) - 1);
-      });
-      $('#next-year-action').click(function () {
-        draw_contribution(parseInt($div.find('#year').attr('data-year')) + 1);
-      });
-
-      draw_contribution(current_year);
-      $('#submission-activity').css('display', '');
-    });
-  </script>
-
-
-  {% if rating_data_script %}
-    {{ rating_data_script }}
-    <script type="text/javascript" src="{{ static('libs/chart.js/Chart.js') }}"></script>
-    <script type="text/javascript">
-      var rating_history = readJsonData('rating-history-data');
-
-      $.each(rating_history, function (index, item) {
-        item.x = new Date(item.timestamp);
-        item.y = item.rating;
-      });
-
-      $(function () {
-        var $canvas = $('#rating-chart').find('canvas');
-        var ctx = $canvas.get(0).getContext('2d');
-
-        var getItem = function (index) {
-          return rating_history[index];
-        };
-
-        var originalDraw = Chart.controllers.scatter.prototype.draw;
-        Chart.helpers.extend(Chart.controllers.scatter.prototype, {
-          draw: function () {
-            var chart = this.chart;
-            var yHighlight = chart.config.options.yHighlight;
-
-            if (yHighlight != null) {
-              var ctx = chart.chart.ctx;
-              var xaxis = chart.scales['x-axis-1'];
-              var yaxis = chart.scales['y-axis-1'];
-
-              ctx.save();
-              yHighlight.forEach(range => {
-                var yRangeBeginPixel = yaxis.getPixelForValue(range.begin);
-                var yRangeEndPixel = yaxis.getPixelForValue(range.end);
-
-                if (range.begin >= yaxis.end || range.end <= yaxis.begin) {
-                  return;
-                }
-
-                yRangeEndPixel = Math.max(yaxis.top + 1, yRangeEndPixel);
-                yRangeBeginPixel = Math.min(yaxis.bottom - 1, yRangeBeginPixel);
-
-                if (yRangeBeginPixel < yRangeEndPixel) {
-                  return;
-                }
-
-                ctx.fillStyle = range.color;
-                ctx.fillRect(
-                  xaxis.left + 1,
-                  yRangeEndPixel,
-                  xaxis.right - xaxis.left,
-                  yRangeBeginPixel - yRangeEndPixel,
-                );
-              });
-              ctx.restore();
-            }
-            originalDraw.apply(this, arguments);
-          }
-        });
-
-
-        window.rating_chart = new Chart(ctx, {
-          type: 'scatter',
-          data: {
-            datasets: [{
-              label: 'rating',
-              backgroundColor: 'rgb(0,0,0,0)',
-              borderColor: '#A31515',
-              pointBackgroundColor: '#FFF',
-              pointHoverBackgroundColor: '#A31515',
-              pointRadius: 5,
-              pointHoverRadius: 5,
-              showLine: true,
-              data: rating_history,
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            elements: {
-              line: {
-                tension: 0,
-              },
-            },
-            legend: {
-              display: false,
-            },
-            layout: {
-              padding: {
-                right: 10,
-              },
-            },
-            scales: {
-              xAxes: [{
-                type: 'time',
-                distribution: 'linear',
-              }],
-              yAxes: [{
-                ticks: {
-                  precision: 0,
-                },
-              }],
-            },
-            tooltips: {
-              enabled: false,
-              custom: function (tooltipModel) {
-                var $tooltip = $('#rating-tooltip');
-
-                if (tooltipModel.opacity == 0) {
-                  $tooltip.hide();
-                  return;
-                }
-
-                var element = tooltipModel.dataPoints[0]
-                var item = getItem(element.index);
-
-                $tooltip.find('.contest').text(item.label);
-                $tooltip.find('.date').text(item.date);
-                $tooltip.find('.rate-box').attr('class', 'rate-box ' + item.class)
-                  .find('span').css('height', item.height);
-                $tooltip.find('.rating').text(item.rating).attr('class', 'rating ' + item.class);
-                $tooltip.find('.rank').text(item.ranking);
-
-                $tooltip.removeClass('above below');
-                $tooltip.addClass(element.y < $tooltip.height() ? 'below' : 'above');
-
-                var position = $canvas.offset();
-                var container = $('#page-container').offset();
-                $tooltip.css({
-                  left: position.left - container.left + element.x + $tooltip.width() / 2,
-                  top: position.top - container.top + element.y - $tooltip.height() - 13,
-                  fontFamily: tooltipModel._bodyFontFamily,
-                  fontSize: tooltipModel._bodyFontSize,
-                  fontStyle: tooltipModel._bodyFontStyle,
-                }).show();
-              },
-            },
-            yHighlight: [
-              {
-                begin: 0,
-                end: 1000,
-                color: 'rgb(153, 153, 153, 0.43)'
-              },
-              {
-                begin: 1000,
-                end: 1400,
-                color: 'rgb(0, 169, 0, 0.4)'
-              },
-              {
-                begin: 1400,
-                end: 1700,
-                color: 'rgb(3, 168, 158, 0.4)'
-              },
-              {
-                begin: 1700,
-                end: 1900,
-                color: 'rgb(0, 0, 255, 0.4)'
-              },
-              {
-                begin: 1900,
-                end: 2100,
-                color: 'rgb(128, 0, 128, 0.37)'
-              },
-              {
-                begin: 2100,
-                end: 2400,
-                color: 'rgb(255, 177, 0, 0.4)'
-              },
-              {
-                begin: 2400,
-                end: 3000,
-                color: 'rgb(238, 0, 0, 0.4)'
-              },
-              {
-                begin: 3000,
-                end: 4000,
-                color: 'rgb(160, 0, 0, 0.6)'
-              }
-            ],
-          }
-        });
-
-        $canvas.click(function (evt) {
-          var elements = window.rating_chart.getElementsAtEvent(evt);
-          if (elements.length > 0) {
-            var item = getItem(elements[0]._index);
-            window.location.href = item.link;
-          }
-        });
-
-        $canvas.mousemove(function (evt) {
-          var elements = window.rating_chart.getElementsAtEvent(evt);
-          if (elements.length > 0) {
-            $canvas.css('cursor', 'pointer');
+        function draw_contribution(year) {
+          $div.find('#submission-activity-table td').remove();
+          $div.find('#year').attr('data-year', year);
+          $div.find('#prev-year-action').css('display', year > metadata.min_year ? '' : 'none');
+          $div.find('#next-year-action').css('display', year < current_year ? '' : 'none');
+          var current_weekday = 0;
+          var start_day = new Date(year, 0, 1)
+          var end_day = new Date(year + 1, 0, 0);
+          if (year == current_year) {
+            end_day = new Date();
+            start_day = new Date(end_day.getFullYear() - 1, end_day.getMonth(), end_day.getDate() + 1);
+            $div.find('#year').text("{{ _('past year') }}");
           } else {
-            $canvas.css('cursor', '');
+            $div.find('#year').text(year);
           }
+          var days = [];
+          for (var day = start_day, day_num = 1; day <= end_day; day.setDate(day.getDate() + 1), day_num++) {
+            var isodate = day.toISOString().split('T')[0];
+            days.push({
+              date: new Date(day),
+              weekday: (day.getDay() + 6) % 7,
+              day_num: day_num,
+              activity: submission_activity[isodate] || 0,
+            });
+          }
+
+          var sum_activity = days.map(obj => obj.activity).reduce((a, b) => a + b, 0);
+          $div.find('#submission-total-count').text(
+            sum_activity + " " + "{{_('total submission(s)')}}"
+          )
+          if (year == current_year) {
+            $('#submission-activity-header').text(
+              sum_activity + " " + "{{_('submissions in the last year')}}"
+            )
+          }
+
+          var max_activity = Math.max.apply(null, days.map(obj => obj.activity));
+          var diff = max_activity / (activity_levels - 1);
+          var activity_breakdown = [...Array(activity_levels).keys()].map(x => diff * x);
+
+          for (; current_weekday < days[0].weekday; current_weekday++) {
+            $div.find('#submission-' + current_weekday)
+              .append($('<td>').addClass('activity-blank').append('<div>'));
+          }
+          days.forEach(obj => {
+            var level = activity_breakdown.findIndex(x => x >= obj.activity);
+            var text =
+              ngettext("%(cnt)d submission on %(date)s", "%(cnt)d submissions on %(date)s", obj.activity)
+              .replace('%(cnt)d', obj.activity)
+              .replace(
+                '%(date)s',
+                obj.date.toLocaleDateString(
+                  "{{ LANGUAGE_CODE }}",
+                  {month: 'short', year: 'numeric', day: 'numeric'}
+                )
+              )
+
+            $div.find('#submission-' + obj.weekday)
+              .append(
+                $('<td>').addClass(['activity-label', 'activity-' + level])
+                  .attr('data-submission-activity', text)
+                  .attr('data-day', obj.day_num)
+                  .append('<div>')
+              );
+          });
+
+          install_tooltips();
+        }
+
+        $('#prev-year-action').click(function () {
+          draw_contribution(parseInt($div.find('#year').attr('data-year')) - 1);
         });
+        $('#next-year-action').click(function () {
+          draw_contribution(parseInt($div.find('#year').attr('data-year')) + 1);
+        });
+
+        draw_contribution(current_year);
+        $('#submission-activity').css('display', '');
       });
     </script>
+
+
+    {% if rating_data_script %}
+      {{ rating_data_script }}
+      <script type="text/javascript" src="{{ static('libs/chart.js/Chart.js') }}"></script>
+      <script type="text/javascript">
+        var rating_history = readJsonData('rating-history-data');
+
+        $.each(rating_history, function (index, item) {
+          item.x = new Date(item.timestamp);
+          item.y = item.rating;
+        });
+
+        $(function () {
+          var $canvas = $('#rating-chart').find('canvas');
+          var ctx = $canvas.get(0).getContext('2d');
+
+          var getItem = function (index) {
+            return rating_history[index];
+          };
+
+          var originalDraw = Chart.controllers.scatter.prototype.draw;
+          Chart.helpers.extend(Chart.controllers.scatter.prototype, {
+            draw: function () {
+              var chart = this.chart;
+              var yHighlight = chart.config.options.yHighlight;
+
+              if (yHighlight != null) {
+                var ctx = chart.chart.ctx;
+                var xaxis = chart.scales['x-axis-1'];
+                var yaxis = chart.scales['y-axis-1'];
+
+                ctx.save();
+                yHighlight.forEach(range => {
+                  var yRangeBeginPixel = yaxis.getPixelForValue(range.begin);
+                  var yRangeEndPixel = yaxis.getPixelForValue(range.end);
+
+                  if (range.begin >= yaxis.end || range.end <= yaxis.begin) {
+                    return;
+                  }
+
+                  yRangeEndPixel = Math.max(yaxis.top + 1, yRangeEndPixel);
+                  yRangeBeginPixel = Math.min(yaxis.bottom - 1, yRangeBeginPixel);
+
+                  if (yRangeBeginPixel < yRangeEndPixel) {
+                    return;
+                  }
+
+                  ctx.fillStyle = range.color;
+                  ctx.fillRect(
+                    xaxis.left + 1,
+                    yRangeEndPixel,
+                    xaxis.right - xaxis.left,
+                    yRangeBeginPixel - yRangeEndPixel,
+                  );
+                });
+                ctx.restore();
+              }
+              originalDraw.apply(this, arguments);
+            }
+          });
+
+
+          window.rating_chart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+              datasets: [{
+                label: 'rating',
+                backgroundColor: 'rgb(0,0,0,0)',
+                borderColor: '#A31515',
+                pointBackgroundColor: '#FFF',
+                pointHoverBackgroundColor: '#A31515',
+                pointRadius: 5,
+                pointHoverRadius: 5,
+                showLine: true,
+                data: rating_history,
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              elements: {
+                line: {
+                  tension: 0,
+                },
+              },
+              legend: {
+                display: false,
+              },
+              layout: {
+                padding: {
+                  right: 10,
+                },
+              },
+              scales: {
+                xAxes: [{
+                  type: 'time',
+                  distribution: 'linear',
+                }],
+                yAxes: [{
+                  ticks: {
+                    precision: 0,
+                  },
+                }],
+              },
+              tooltips: {
+                enabled: false,
+                custom: function (tooltipModel) {
+                  var $tooltip = $('#rating-tooltip');
+
+                  if (tooltipModel.opacity == 0) {
+                    $tooltip.hide();
+                    return;
+                  }
+
+                  var element = tooltipModel.dataPoints[0]
+                  var item = getItem(element.index);
+
+                  $tooltip.find('.contest').text(item.label);
+                  $tooltip.find('.date').text(item.date);
+                  $tooltip.find('.rate-box').attr('class', 'rate-box ' + item.class)
+                    .find('span').css('height', item.height);
+                  $tooltip.find('.rating').text(item.rating).attr('class', 'rating ' + item.class);
+                  $tooltip.find('.rank').text(item.ranking);
+
+                  $tooltip.removeClass('above below');
+                  $tooltip.addClass(element.y < $tooltip.height() ? 'below' : 'above');
+
+                  var position = $canvas.offset();
+                  var container = $('#page-container').offset();
+                  $tooltip.css({
+                    left: position.left - container.left + element.x + $tooltip.width() / 2,
+                    top: position.top - container.top + element.y - $tooltip.height() - 13,
+                    fontFamily: tooltipModel._bodyFontFamily,
+                    fontSize: tooltipModel._bodyFontSize,
+                    fontStyle: tooltipModel._bodyFontStyle,
+                  }).show();
+                },
+              },
+              yHighlight: [
+                {
+                  begin: 0,
+                  end: 1000,
+                  color: 'rgb(153, 153, 153, 0.43)'
+                },
+                {
+                  begin: 1000,
+                  end: 1400,
+                  color: 'rgb(0, 169, 0, 0.4)'
+                },
+                {
+                  begin: 1400,
+                  end: 1700,
+                  color: 'rgb(3, 168, 158, 0.4)'
+                },
+                {
+                  begin: 1700,
+                  end: 1900,
+                  color: 'rgb(0, 0, 255, 0.4)'
+                },
+                {
+                  begin: 1900,
+                  end: 2100,
+                  color: 'rgb(128, 0, 128, 0.37)'
+                },
+                {
+                  begin: 2100,
+                  end: 2400,
+                  color: 'rgb(255, 177, 0, 0.4)'
+                },
+                {
+                  begin: 2400,
+                  end: 3000,
+                  color: 'rgb(238, 0, 0, 0.4)'
+                },
+                {
+                  begin: 3000,
+                  end: 4000,
+                  color: 'rgb(160, 0, 0, 0.6)'
+                }
+              ],
+            }
+          });
+
+          $canvas.click(function (evt) {
+            var elements = window.rating_chart.getElementsAtEvent(evt);
+            if (elements.length > 0) {
+              var item = getItem(elements[0]._index);
+              window.location.href = item.link;
+            }
+          });
+
+          $canvas.mousemove(function (evt) {
+            var elements = window.rating_chart.getElementsAtEvent(evt);
+            if (elements.length > 0) {
+              $canvas.css('cursor', 'pointer');
+            } else {
+              $canvas.css('cursor', '');
+            }
+          });
+        });
+      </script>
+    {% endif %}
   {% endif %}
 {% endblock %}

@@ -3,7 +3,7 @@ from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 
 from judge.models import Profile, Organization
-from judge.models.profile import _get_profile
+from judge.models.profile import _get_profile, get_profile_public_identity
 
 
 @receiver(post_save, sender=User)
@@ -11,6 +11,7 @@ def on_user_save(sender, instance, **kwargs):
     try:
         profile = instance.profile
         _get_profile.dirty(profile.id)
+        get_profile_public_identity.dirty(profile.id)
     except:
         pass
 

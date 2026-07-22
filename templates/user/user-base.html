@@ -27,9 +27,9 @@
   <div class="user-info-page">
     <div class="user-sidebar">
       <div class="sidebar-avatar-wrapper">
-        <img class="user-img user-profile-img" src="{{ gravatar(user.id, 145) }}">
+        <img class="user-img user-profile-img" src="{{ public_gravatar(user, request.user, 145) }}">
       </div>
-      {% if request.user.is_authenticated and request.profile != user %}
+      {% if request.user.is_authenticated and request.profile != user and not show_disabled_profile_only and not hide_public_identity %}
         <div class="sidebar-actions">
           <form method="post" action="{{ url('user_toggle_follow', user.username) }}">
             {% csrf_token %}

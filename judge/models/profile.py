@@ -8,7 +8,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Max, CASCADE
+from django.db.models import Exists, Max, OuterRef, CASCADE
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
@@ -31,6 +31,7 @@ __all__ = [
     "OrganizationRequest",
     "Friend",
     "OrganizationModerationLog",
+    "UsernameModerationCase",
     "DYNAMIC_EFFECT_CHOICES",
 ]
 
@@ -442,6 +443,11 @@ class Profile(CacheableModel):
         _get_about.batch([(id,) for id in ids])
 
     @classmethod
+    def prefetch_cache_public_identity(cls, *ids):
+        """Prefetch public identity flags for multiple profiles"""
+        get_profile_public_identity.batch([(id,) for id in ids])
+
+    @classmethod
     def prefetch_cache_last_access(cls, *ids):
         get_profile_last_access.batch([(id,) for id in ids])
 
@@ -485,6 +491,21 @@ class Profile(CacheableModel):
 
     def get_email(self):
         return self.get_cached_value("email")
+
+    def get_public_username(self, viewer=None):
+        if self.should_hide_public_identity(viewer):
+            return _("Disabled user")
+        return self.get_username()
+
+    def should_hide_public_identity(self, viewer=None):
+        if viewer is not None and getattr(viewer, "is_authenticated", False):
+            if viewer.is_staff or viewer.is_superuser:
+                return False
+        identity = get_profile_public_identity(self.id)
+        return identity.get("public_identity_hidden", False)
+
+    def is_disabled(self):
+        return not get_profile_public_identity(self.id).get("is_active", True)
 
     def get_mute(self):
         return self.get_cached_value("mute")
@@ -848,7 +869,17 @@ def _get_profile_batch(args_list):
     profile_ids = [args[0] for args in args_list]
 
     profiles = (
-        Profile.objects.filter(id__in=profile_ids).select_related("user").defer("about")
+        Profile.objects.filter(id__in=profile_ids)
+        .select_related("user")
+        .defer("about")
+        .annotate(
+            public_identity_hidden_cached=Exists(
+                UsernameModerationCase.objects.filter(
+                    user_id=OuterRef("user_id"),
+                    public_identity_hidden=True,
+                )
+            )
+        )
     )
 
     profile_dict = {}
@@ -857,6 +888,8 @@ def _get_profile_batch(args_list):
         profile_dict[profile_id] = {
             "email": profile.user.email,
             "username": profile.user.username,
+            "is_active": profile.user.is_active,
+            "public_identity_hidden": profile.public_identity_hidden_cached,
             "mute": profile.mute,
             "first_name": profile.user.first_name or None,
             "last_name": profile.user.last_name or None,
@@ -1072,6 +1105,44 @@ def get_profile_id_from_username(username):
     return results[0]
 
 
+def _get_profile_public_identity_batch(args_list):
+    profile_ids = [args[0] for args in args_list]
+    profiles = _get_profile.batch([(profile_id,) for profile_id in profile_ids])
+    return [
+        (
+            {
+                "is_active": profile.get("is_active", False),
+                "public_identity_hidden": profile.get("public_identity_hidden", False),
+            }
+            if profile is not None
+            else {"is_active": False, "public_identity_hidden": False}
+        )
+        for profile in profiles
+    ]
+
+
+@cache_wrapper(
+    prefix="Ppubid",
+    expected_type=dict,
+    batch_fn=_get_profile_public_identity_batch,
+)
+def get_profile_public_identity(profile_id):
+    data = _get_profile_public_identity_batch([(profile_id,)])[0]
+    return {
+        "is_active": data["is_active"],
+        "public_identity_hidden": data["public_identity_hidden"],
+    }
+
+
+def dirty_profile_public_identity_for_user(user_id):
+    profile_id = (
+        Profile.objects.filter(user_id=user_id).values_list("id", flat=True).first()
+    )
+    if profile_id is not None:
+        get_profile_public_identity.dirty(profile_id)
+        Profile.dirty_cache(profile_id)
+
+
 @cache_wrapper(prefix="Pgfids", expected_type=list)
 def _get_follower_ids(profile_id):
     """Get a list of profile IDs that follow the given profile"""
@@ -1238,3 +1309,196 @@ class OrganizationModerationLog(models.Model):
                 html_link=html_link,
                 author=author,
             )
+
+
+class UsernameModerationCase(models.Model):
+    STATUS_PENDING = "P"
+    STATUS_REVIEWED = "R"
+    STATUS_CHOICES = (
+        (STATUS_PENDING, _("Pending")),
+        (STATUS_REVIEWED, _("Reviewed")),
+    )
+
+    DECISION_PENDING = "pending"
+    DECISION_ALLOW = "allow"
+    DECISION_REVIEW = "review"
+    DECISION_BLOCK = "block"
+    DECISION_CHOICES = (
+        (DECISION_PENDING, _("Pending")),
+        (DECISION_ALLOW, _("Allow")),
+        (DECISION_REVIEW, _("Needs review")),
+        (DECISION_BLOCK, _("Block")),
+    )
+
+    CATEGORY_SAFE = "safe"
+    CATEGORY_GAMBLING = "gambling"
+    CATEGORY_OFFENSIVE = "offensive"
+    CATEGORY_OBSCENE = "obscene"
+    CATEGORY_IMPERSONATION = "impersonation"
+    CATEGORY_SPAM = "spam"
+    CATEGORY_OTHER = "other"
+    CATEGORY_CHOICES = (
+        (CATEGORY_SAFE, _("Safe")),
+        (CATEGORY_GAMBLING, _("Gambling")),
+        (CATEGORY_OFFENSIVE, _("Offensive")),
+        (CATEGORY_OBSCENE, _("Obscene")),
+        (CATEGORY_IMPERSONATION, _("Impersonation")),
+        (CATEGORY_SPAM, _("Spam")),
+        (CATEGORY_OTHER, _("Other")),
+    )
+
+    SOURCE_REGISTRATION = "registration"
+    SOURCE_AUDIT = "audit"
+    SOURCE_MANUAL = "manual"
+    SOURCE_CHOICES = (
+        (SOURCE_REGISTRATION, _("Registration")),
+        (SOURCE_AUDIT, _("Audit")),
+        (SOURCE_MANUAL, _("Manual")),
+    )
+
+    user = models.ForeignKey(
+        User,
+        verbose_name=_("user"),
+        related_name="username_moderation_cases",
+        on_delete=CASCADE,
+    )
+    username = models.CharField(max_length=150, verbose_name=_("username"))
+    normalized_username = models.CharField(
+        max_length=150, blank=True, verbose_name=_("normalized username")
+    )
+    status = models.CharField(
+        max_length=1,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        db_index=True,
+        verbose_name=_("status"),
+    )
+    decision = models.CharField(
+        max_length=20,
+        choices=DECISION_CHOICES,
+        default=DECISION_PENDING,
+        db_index=True,
+        verbose_name=_("decision"),
+    )
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default=CATEGORY_OTHER,
+        db_index=True,
+        verbose_name=_("category"),
+    )
+    confidence = models.FloatField(null=True, blank=True, verbose_name=_("confidence"))
+    reason = models.TextField(blank=True, verbose_name=_("reason"))
+    raw_response = models.JSONField(
+        null=True, blank=True, verbose_name=_("raw response")
+    )
+    source = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES,
+        default=SOURCE_REGISTRATION,
+        db_index=True,
+        verbose_name=_("source"),
+    )
+    public_identity_hidden = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name=_("public identity hidden"),
+        help_text=_("Show this account as Disabled user to normal visitors."),
+    )
+    is_automated = models.BooleanField(default=False, verbose_name=_("automated"))
+    moderator = models.ForeignKey(
+        Profile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="username_moderation_actions",
+        verbose_name=_("moderator"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("updated at"))
+    decided_at = models.DateTimeField(
+        null=True, blank=True, verbose_name=_("decided at")
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "decision", "created_at"]),
+            models.Index(fields=["user", "created_at"]),
+            models.Index(fields=["category", "created_at"]),
+        ]
+        verbose_name = _("username moderation case")
+        verbose_name_plural = _("username moderation cases")
+
+    def __str__(self):
+        return f"{self.username} - {self.get_decision_display()}"
+
+    def save(self, *args, **kwargs):
+        if not self.normalized_username:
+            self.normalized_username = self.username.casefold()
+        super().save(*args, **kwargs)
+        dirty_profile_public_identity_for_user(self.user_id)
+
+    def delete(self, *args, **kwargs):
+        user_id = self.user_id
+        super().delete(*args, **kwargs)
+        dirty_profile_public_identity_for_user(user_id)
+
+    def allow(self, moderator=None):
+        self.status = self.STATUS_REVIEWED
+        self.decision = self.DECISION_ALLOW
+        self.category = self.CATEGORY_SAFE
+        self.public_identity_hidden = False
+        self.moderator = moderator
+        self.decided_at = now()
+        self.save(
+            update_fields=[
+                "status",
+                "decision",
+                "category",
+                "confidence",
+                "reason",
+                "raw_response",
+                "public_identity_hidden",
+                "is_automated",
+                "moderator",
+                "decided_at",
+                "updated_at",
+            ]
+        )
+
+    def disable_user(self, moderator=None, hide_identity=True, reason=None):
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+        if reason is not None:
+            self.reason = reason
+        self.status = self.STATUS_REVIEWED
+        self.decision = self.DECISION_BLOCK
+        self.public_identity_hidden = hide_identity
+        self.moderator = moderator
+        self.decided_at = now()
+        self.save(
+            update_fields=[
+                "status",
+                "decision",
+                "category",
+                "confidence",
+                "reason",
+                "raw_response",
+                "public_identity_hidden",
+                "is_automated",
+                "moderator",
+                "decided_at",
+                "updated_at",
+            ]
+        )
+
+    def hide_public_identity(self, moderator=None):
+        self.public_identity_hidden = True
+        self.moderator = moderator or self.moderator
+        self.save(update_fields=["public_identity_hidden", "moderator", "updated_at"])
+
+    def unhide_public_identity(self, moderator=None):
+        self.public_identity_hidden = False
+        self.moderator = moderator or self.moderator
+        self.save(update_fields=["public_identity_hidden", "moderator", "updated_at"])

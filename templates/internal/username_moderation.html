@@ -1,0 +1,144 @@
+{% extends "two-column-content.html" %}
+
+{% block left_sidebar %}
+  {% include "internal/left-sidebar.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  <div class="internal-username-moderation-page">
+    <h2>{{ _("Username Moderation") }}</h2>
+
+    <div class="chat-moderation-controls">
+      <a class="action-btn small {% if not status_filter and not decision_filter and not category_filter %}background-gray{% endif %}"
+         href="{{ url('internal_username_moderation') }}{% if search_query %}?search={{ search_query }}{% endif %}">
+        {{ _("All") }}
+      </a>
+      <a class="action-btn small {% if decision_filter == 'pending' %}background-gray{% endif %}"
+         href="{{ url('internal_username_moderation') }}?decision=pending{% if search_query %}&search={{ search_query }}{% endif %}">
+        {{ _("Queued") }}
+      </a>
+      <a class="action-btn small {% if decision_filter == 'review' %}background-gray{% endif %}"
+         href="{{ url('internal_username_moderation') }}?decision=review{% if search_query %}&search={{ search_query }}{% endif %}">
+        {{ _("Needs review") }}
+      </a>
+      <a class="action-btn small {% if decision_filter == 'block' %}background-gray{% endif %}"
+         href="{{ url('internal_username_moderation') }}?decision=block{% if search_query %}&search={{ search_query }}{% endif %}">
+        {{ _("Blocked accounts") }}
+      </a>
+      <form method="get">
+        {% if status_filter %}
+          <input type="hidden" name="status" value="{{ status_filter }}">
+        {% endif %}
+        {% if decision_filter %}
+          <input type="hidden" name="decision" value="{{ decision_filter }}">
+        {% endif %}
+        {% if category_filter %}
+          <input type="hidden" name="category" value="{{ category_filter }}">
+        {% endif %}
+        <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search username...') }}">
+        <button type="submit" class="action-btn small">{{ _("Search") }}</button>
+      </form>
+    </div>
+
+    {% if page_obj.num_pages > 1 %}
+      <div class="chat-pagination">{% include "list-pages.html" %}</div>
+    {% endif %}
+
+    <div class="internal-table-scroll">
+      <table class="table chat-moderation-table username-moderation-table">
+        <thead>
+          <tr>
+            <th class="username-time-column">{{ _("Time") }}</th>
+            <th class="username-name-column">{{ _("Username") }}</th>
+            <th class="username-result-column">{{ _("Result") }}</th>
+            <th class="username-state-column">{{ _("State") }}</th>
+            <th class="username-source-column">{{ _("Source") }}</th>
+            <th class="username-action-column">{{ _("Actions") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for case in cases %}
+            <tr>
+              <td><span class="gray">{{ case.created_at | date(_("N j, Y, g:i a")) }}</span></td>
+              <td>
+                <a href="{{ url('user_page', case.user.username) }}">{{ case.username }}</a>
+              </td>
+              <td title="{{ case.reason }}">
+                {% if case.decision == 'block' %}
+                  <span class="red">{{ case.get_decision_display() }}</span>
+                {% elif case.decision == 'allow' %}
+                  <span class="green">{{ case.get_decision_display() }}</span>
+                {% elif case.decision == 'review' %}
+                  <span class="blue">{{ case.get_decision_display() }}</span>
+                {% else %}
+                  <span class="gray">{{ _("Queued") }}</span>
+                {% endif %}
+                <br>
+                <span class="gray">
+                  {{ case.get_category_display() }}
+                  {% if case.confidence is not none %}
+                    &middot; {{ (case.confidence * 100)|floatformat(0) }}%
+                  {% endif %}
+                </span>
+              </td>
+              <td>
+                {% if case.user.is_active %}
+                  <span class="green">{{ _("Active") }}</span>
+                {% else %}
+                  <span class="red">{{ _("Disabled") }}</span>
+                {% endif %}
+                <br>
+                {% if case.public_identity_hidden %}
+                  <span class="gray">{{ _("Hidden") }}</span>
+                {% else %}
+                  {{ _("Visible") }}
+                {% endif %}
+              </td>
+              <td>
+                {{ case.get_source_display() }}
+                {% if case.is_automated %}
+                  <br><span class="gray">{{ _("Auto") }}</span>
+                {% elif case.moderator %}
+                  <br><a href="{{ url('user_page', case.moderator.user.username) }}">{{ case.moderator.user.username }}</a>
+                {% endif %}
+              </td>
+              <td>
+                <form method="post" class="username-moderation-action-form">
+                  {% csrf_token %}
+                  <input type="hidden" name="case" value="{{ case.id }}">
+                  <button type="submit" name="action" value="allow" class="action-btn small">{{ _("Allow") }}</button>
+                </form>
+                <form method="post" class="username-moderation-action-form">
+                  {% csrf_token %}
+                  <input type="hidden" name="case" value="{{ case.id }}">
+                  <button type="submit" name="action" value="disable" class="action-btn small red">{{ _("Disable") }}</button>
+                </form>
+                {% if case.public_identity_hidden %}
+                  <form method="post" class="username-moderation-action-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="case" value="{{ case.id }}">
+                    <button type="submit" name="action" value="unhide" class="action-btn small">{{ _("Unhide") }}</button>
+                  </form>
+                {% else %}
+                  <form method="post" class="username-moderation-action-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="case" value="{{ case.id }}">
+                    <button type="submit" name="action" value="hide" class="action-btn small">{{ _("Hide name") }}</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" class="gray">{{ _("No username moderation cases found") }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.num_pages > 1 %}
+      <div class="chat-pagination">{% include "list-pages.html" %}</div>
+    {% endif %}
+  </div>
+{% endblock %}
