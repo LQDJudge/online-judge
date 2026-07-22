@@ -1108,21 +1108,58 @@ def get_profile_id_from_username(username):
 def _get_profile_public_identity_batch(args_list):
     profile_ids = [args[0] for args in args_list]
     profiles = _get_profile.batch([(profile_id,) for profile_id in profile_ids])
+
+    stale_profile_ids = [
+        profile_id
+        for profile_id, profile in zip(profile_ids, profiles)
+        if profile is not None
+        and ("is_active" not in profile or "public_identity_hidden" not in profile)
+    ]
+    stale_identities = {
+        profile_id: {"is_active": False, "public_identity_hidden": False}
+        for profile_id in stale_profile_ids
+    }
+    if stale_profile_ids:
+        stale_identities.update(
+            {
+                row["id"]: {
+                    "is_active": row["user__is_active"],
+                    "public_identity_hidden": row["public_identity_hidden_cached"],
+                }
+                for row in (
+                    Profile.objects.filter(id__in=stale_profile_ids)
+                    .annotate(
+                        public_identity_hidden_cached=Exists(
+                            UsernameModerationCase.objects.filter(
+                                user_id=OuterRef("user_id"),
+                                public_identity_hidden=True,
+                            )
+                        )
+                    )
+                    .values("id", "user__is_active", "public_identity_hidden_cached")
+                )
+            }
+        )
+
     return [
         (
-            {
-                "is_active": profile.get("is_active", False),
-                "public_identity_hidden": profile.get("public_identity_hidden", False),
-            }
-            if profile is not None
-            else {"is_active": False, "public_identity_hidden": False}
+            stale_identities[profile_id]
+            if profile_id in stale_identities
+            else (
+                {
+                    "is_active": profile["is_active"],
+                    "public_identity_hidden": profile["public_identity_hidden"],
+                }
+                if profile is not None
+                else {"is_active": False, "public_identity_hidden": False}
+            )
         )
-        for profile in profiles
+        for profile_id, profile in zip(profile_ids, profiles)
     ]
 
 
 @cache_wrapper(
-    prefix="Ppubid",
+    prefix="Ppubid2",
     expected_type=dict,
     batch_fn=_get_profile_public_identity_batch,
 )

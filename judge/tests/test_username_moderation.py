@@ -8,6 +8,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+import judge.models.profile as profile_models
 from judge.models import Language, Profile, UsernameModerationCase
 from judge.models.profile import get_profile_public_identity
 from judge.tasks.username_moderation import (
@@ -237,6 +238,46 @@ class UsernameModerationDisplayTest(TestCase):
         self.assertEqual(
             usernames,
             ["public_identity_0", "Disabled user", "public_identity_2"],
+        )
+
+    def test_legacy_profile_cache_without_identity_fields_falls_back_to_db(self):
+        hidden_user = User.objects.create_user(
+            username="legacy_cache_user", is_active=True
+        )
+        hidden_profile = Profile.objects.create(
+            user=hidden_user, language=self.language
+        )
+        UsernameModerationCase.objects.create(
+            user=hidden_user,
+            username=hidden_user.username,
+            public_identity_hidden=True,
+        )
+        inactive_user = User.objects.create_user(
+            username="legacy_inactive_user", is_active=False
+        )
+        inactive_profile = Profile.objects.create(
+            user=inactive_user, language=self.language
+        )
+
+        with patch.object(
+            profile_models._get_profile,
+            "batch",
+            return_value=[
+                {"username": hidden_user.username},
+                {"username": inactive_user.username},
+            ],
+        ):
+            with self.assertNumQueries(1):
+                identities = profile_models._get_profile_public_identity_batch(
+                    [(hidden_profile.id,), (inactive_profile.id,)]
+                )
+
+        self.assertEqual(
+            identities,
+            [
+                {"is_active": True, "public_identity_hidden": True},
+                {"is_active": False, "public_identity_hidden": False},
+            ],
         )
 
 
