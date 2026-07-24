@@ -44,22 +44,6 @@ msgstr "Buồn"
 msgid "Angry"
 msgstr "Phẫn nộ"
 
-#: chat_box/models.py:51
-msgid "Argentina"
-msgstr "Argentina"
-
-#: chat_box/models.py:52
-msgid "Spain"
-msgstr "Tây Ban Nha"
-
-#: chat_box/models.py:53
-msgid "GOAT"
-msgstr "GOAT"
-
-#: chat_box/models.py:54
-msgid "Siuuu"
-msgstr "Siuuu"
-
 #: chat_box/models.py:60
 msgid "last message id"
 msgstr "Tin nhắn"

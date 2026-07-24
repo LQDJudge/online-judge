@@ -648,7 +648,9 @@ def reaction_list(request):
     if reaction_filter is not None and reaction_filter not in CHAT_REACTION_CODES:
         return HttpResponseBadRequest()
 
-    reaction_qs = MessageReaction.objects.filter(message=message)
+    reaction_qs = MessageReaction.objects.filter(
+        message=message, reaction__in=CHAT_REACTION_CODES
+    )
     if reaction_filter is not None:
         reaction_qs = reaction_qs.filter(reaction=reaction_filter)
     counts = dict(

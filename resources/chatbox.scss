@@ -745,8 +745,8 @@ body:has(.chat-page) {
     }
   }
 
-  // Image-based reaction glyph (e.g. the "siuuu" icon) rendered in place of a
-  // text emoji. Sized to match the emoji in each context; shown as a round chip.
+  // Image-based reaction glyphs are supported for future custom reactions.
+  // Sized to match the emoji in each context; shown as a round chip.
   .reaction-img {
     display: inline-block;
     width: 1.25em;
@@ -1576,15 +1576,6 @@ body:has(.chat-page) {
       // messages, where body overflow-x:hidden then clips Delete/Mute.
       left: auto;
       right: calc(100% + 4px);
-    }
-
-    .reaction-picker {
-      width: 260px;
-      max-width: 260px;
-      box-sizing: border-box;
-      flex-wrap: wrap;
-      justify-content: center;
-      white-space: normal;
     }
 
     .message-header a {

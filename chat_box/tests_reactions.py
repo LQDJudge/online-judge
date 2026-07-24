@@ -57,6 +57,13 @@ class ReactionModelTest(TestCase):
         self.assertEqual(summary["total"], 0)
         self.assertIsNone(summary["my_reaction"])
 
+    def test_summary_ignores_removed_legacy_reactions(self):
+        MessageReaction.objects.create(message=self.msg, user=self.u1, reaction="siuuu")
+        summary = get_reactions_summary([self.msg.id], self.u1)[self.msg.id]
+        self.assertEqual(summary["counts"], {})
+        self.assertEqual(summary["total"], 0)
+        self.assertIsNone(summary["my_reaction"])
+
     def test_summary_is_batched_no_nplus1(self):
         # Many messages, each with a reaction -> still a constant number of queries.
         ids = []
@@ -267,6 +274,12 @@ class ReactionListTest(TestCase):
         resp = self._get(self.msg)
         self.assertEqual(resp.status_code, 200)
         self.assertNotIn("rl_u2", resp.content.decode())
+
+    def test_removed_legacy_reactions_are_hidden(self):
+        MessageReaction.objects.create(message=self.msg, user=self.u2, reaction="siuuu")
+        resp = self._get(self.msg)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn("reaction-list-section", resp.content.decode())
 
     def test_bad_message_id_is_400(self):
         self.assertEqual(

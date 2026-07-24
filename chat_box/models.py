@@ -23,23 +23,12 @@ CHAT_REACTIONS = [
     ("wow", "😮"),
     ("sad", "😢"),
     ("angry", "😠"),
-    ("argentina", "🇦🇷"),
-    ("spain", "🇪🇸"),
-    ("goat", "🐐"),
-    ("siuuu", "🐐"),
 ]
 CHAT_REACTION_CODES = [code for code, _emoji in CHAT_REACTIONS]
 CHAT_REACTION_EMOJI = dict(CHAT_REACTIONS)
 # Reactions whose glyph is a static image instead of the text emoji above.
 # Maps reaction code -> static path; the display layers render an <img> for these.
-CHAT_REACTION_IMAGES = {
-    # Twemoji graphics are CC BY 4.0; source/attribution is kept in the SVGs.
-    "argentina": "chat/argentina-flag-reaction.svg",
-    "spain": "chat/spain-flag-reaction.svg",
-    # Temporary 2026 World Cup final event reaction; remove after 2026-07-26.
-    "goat": "chat/messi-goat-reaction.jpg",
-    "siuuu": "chat/siuuu-reaction.jpg",
-}
+CHAT_REACTION_IMAGES = {}
 # Translatable human labels (for screen-reader aria-labels / tooltips).
 CHAT_REACTION_LABELS = {
     "like": _("Like"),
@@ -48,10 +37,6 @@ CHAT_REACTION_LABELS = {
     "wow": _("Wow"),
     "sad": _("Sad"),
     "angry": _("Angry"),
-    "argentina": _("Argentina"),
-    "spain": _("Spain"),
-    "goat": _("GOAT"),
-    "siuuu": _("Siuuu"),
 }
 
 

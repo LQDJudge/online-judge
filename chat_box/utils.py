@@ -5,7 +5,7 @@ import hashlib
 from django.conf import settings
 from django.db.models import Count
 
-from chat_box.models import Ignore, MessageReaction, UserRoom
+from chat_box.models import CHAT_REACTION_CODES, Ignore, MessageReaction, UserRoom
 
 from judge.caching import cache_wrapper
 
@@ -70,7 +70,9 @@ def get_reactions_summary(message_ids, user, include_my_reaction=True):
         return result
 
     rows = (
-        MessageReaction.objects.filter(message_id__in=message_ids)
+        MessageReaction.objects.filter(
+            message_id__in=message_ids, reaction__in=CHAT_REACTION_CODES
+        )
         .values("message_id", "reaction")
         .annotate(c=Count("id"))
     )
@@ -81,7 +83,7 @@ def get_reactions_summary(message_ids, user, include_my_reaction=True):
 
     if include_my_reaction and user is not None and getattr(user, "id", None):
         mine = MessageReaction.objects.filter(
-            message_id__in=message_ids, user=user
+            message_id__in=message_ids, user=user, reaction__in=CHAT_REACTION_CODES
         ).values_list("message_id", "reaction")
         for mid, reaction in mine:
             result[mid]["my_reaction"] = reaction
