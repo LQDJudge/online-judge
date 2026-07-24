@@ -117,10 +117,7 @@ def moderate_username_task(self, case_id, delete_safe_case=False):
     case.raw_response = result["raw_response"]
     case.is_automated = True
 
-    if (
-        result["decision"] == UsernameModerationCase.DECISION_BLOCK
-        and result["confidence"] >= 0.9
-    ):
+    if result["decision"] == UsernameModerationCase.DECISION_BLOCK:
         case.disable_user(hide_identity=True)
     elif result["decision"] == UsernameModerationCase.DECISION_ALLOW:
         if delete_safe_case and case.source == UsernameModerationCase.SOURCE_AUDIT:

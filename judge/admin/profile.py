@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.forms import ModelForm
 from django.utils.html import format_html
@@ -6,7 +7,7 @@ from django.contrib.auth.admin import UserAdmin as OldUserAdmin
 from django.contrib.auth.forms import UserChangeForm
 
 
-from judge.models import Profile, ProfileInfo
+from judge.models import Profile, ProfileInfo, UsernameModerationCase
 from judge.validators import (
     USERNAME_ALLOWED_MESSAGE,
     clean_username as clean_username_value,
@@ -179,9 +180,22 @@ class ProfileAdmin(VersionAdmin):
 
 
 class UserForm(UserChangeForm):
+    hide_public_identity = forms.BooleanField(
+        label=_("Hide username"),
+        required=False,
+        help_text=_("Show this account as Disabled user to normal visitors."),
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["username"].help_text = USERNAME_ALLOWED_MESSAGE
+        if self.instance.pk:
+            self.initial["hide_public_identity"] = (
+                UsernameModerationCase.objects.filter(
+                    user=self.instance,
+                    public_identity_hidden=True,
+                ).exists()
+            )
 
     def clean_username(self):
         username = self.cleaned_data.get("username")
@@ -201,6 +215,7 @@ class UserAdmin(OldUserAdmin):
             {
                 "fields": (
                     "is_active",
+                    "hide_public_identity",
                     "is_staff",
                     "is_superuser",
                     "groups",
@@ -219,11 +234,74 @@ class UserAdmin(OldUserAdmin):
             fields += (
                 "is_staff",
                 "is_active",
+                "hide_public_identity",
                 "is_superuser",
                 "groups",
                 "user_permissions",
             )
         return fields
+
+    def hide_public_identity(self, obj):
+        return obj.username_moderation_cases.filter(
+            public_identity_hidden=True
+        ).exists()
+
+    hide_public_identity.boolean = True
+    hide_public_identity.short_description = _("Hide username")
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if "hide_public_identity" not in form.cleaned_data:
+            return
+        self.set_public_identity_hidden(
+            request, obj, form.cleaned_data["hide_public_identity"]
+        )
+
+    def set_public_identity_hidden(self, request, user, hide_identity):
+        moderator = getattr(request.user, "profile", None)
+        if hide_identity:
+            case = (
+                UsernameModerationCase.objects.filter(user=user)
+                .exclude(decision=UsernameModerationCase.DECISION_ALLOW)
+                .order_by("-updated_at", "-id")
+                .first()
+            )
+            if case is None:
+                UsernameModerationCase.objects.create(
+                    user=user,
+                    username=user.username,
+                    normalized_username=user.username.casefold(),
+                    source=UsernameModerationCase.SOURCE_MANUAL,
+                    decision=UsernameModerationCase.DECISION_REVIEW,
+                    category=UsernameModerationCase.CATEGORY_OTHER,
+                    public_identity_hidden=True,
+                    moderator=moderator,
+                )
+            elif not case.public_identity_hidden:
+                case.public_identity_hidden = True
+                case.moderator = moderator
+                case.save(
+                    update_fields=[
+                        "public_identity_hidden",
+                        "moderator",
+                        "updated_at",
+                    ]
+                )
+            return
+
+        for case in UsernameModerationCase.objects.filter(
+            user=user,
+            public_identity_hidden=True,
+        ):
+            case.public_identity_hidden = False
+            case.moderator = moderator
+            case.save(
+                update_fields=[
+                    "public_identity_hidden",
+                    "moderator",
+                    "updated_at",
+                ]
+            )
 
     def has_add_permission(self, request):
         return False

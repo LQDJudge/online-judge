@@ -1,13 +1,16 @@
 from io import StringIO
+from types import SimpleNamespace
 from unittest.mock import patch
 
+from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
+from judge.admin.profile import UserAdmin
 import judge.models.profile as profile_models
 from judge.models import Language, Profile, UsernameModerationCase
 from judge.models.profile import get_profile_public_identity
@@ -66,6 +69,26 @@ class UsernameModerationTaskTest(TestCase):
         self.assertFalse(user.is_active)
         self.assertTrue(case.public_identity_hidden)
         self.assertEqual(case.status, UsernameModerationCase.STATUS_REVIEWED)
+
+    @override_settings(POE_API_KEY="test-key")
+    @patch("judge.tasks.username_moderation.LLMService.call_llm")
+    def test_block_disables_and_hides_user_regardless_of_confidence(self, call_llm):
+        call_llm.return_value = (
+            '{"decision":"block","category":"gambling","confidence":0.82,'
+            '"reason":"Likely gambling username"}'
+        )
+        user = User.objects.create_user(username="maybe_badname")
+        Profile.objects.create(user=user, language=self.language)
+        case = UsernameModerationCase.objects.create(user=user, username=user.username)
+
+        moderate_username_task(case.id)
+
+        user.refresh_from_db()
+        case.refresh_from_db()
+        self.assertFalse(user.is_active)
+        self.assertTrue(case.public_identity_hidden)
+        self.assertEqual(case.status, UsernameModerationCase.STATUS_REVIEWED)
+        self.assertEqual(case.decision, UsernameModerationCase.DECISION_BLOCK)
 
     @override_settings(POE_API_KEY="test-key")
     @patch("judge.tasks.username_moderation.LLMService.call_llm")
@@ -386,6 +409,86 @@ class UsernameModerationInternalViewTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.case.refresh_from_db()
         self.assertFalse(self.case.public_identity_hidden)
+
+
+@override_settings(LANGUAGE_CODE="en")
+class UsernameModerationUserAdminTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.language, _ = Language.objects.get_or_create(
+            key="PY3",
+            defaults={
+                "name": "Python 3",
+                "short_name": "PY3",
+                "common_name": "Python",
+                "ace": "python",
+                "pygments": "python3",
+                "template": "",
+            },
+        )
+        cls.admin_user = User.objects.create_superuser(
+            username="admin", password="pw", email="admin@example.com"
+        )
+        cls.admin_profile = Profile.objects.create(
+            user=cls.admin_user,
+            language=cls.language,
+        )
+
+    def setUp(self):
+        cache.clear()
+        self.model_admin = UserAdmin(User, AdminSite())
+        self.request = RequestFactory().post("/admin/auth/user/1/change/")
+        self.request.user = self.admin_user
+
+    def test_user_admin_form_includes_hide_username_below_active(self):
+        user = User.objects.create_user(username="admin_form_user")
+
+        form_class = self.model_admin.get_form(self.request, user)
+
+        permission_fields = self.model_admin.fieldsets[2][1]["fields"]
+        self.assertIn("hide_public_identity", form_class.base_fields)
+        self.assertEqual(
+            permission_fields[:3],
+            ("is_active", "hide_public_identity", "is_staff"),
+        )
+
+    def test_user_admin_hide_username_reuses_existing_block_case(self):
+        user = User.objects.create_user(username="linkzowincom1", is_active=False)
+        profile = Profile.objects.create(user=user, language=self.language)
+        case = UsernameModerationCase.objects.create(
+            user=user,
+            username=user.username,
+            decision=UsernameModerationCase.DECISION_BLOCK,
+            category=UsernameModerationCase.CATEGORY_GAMBLING,
+            source=UsernameModerationCase.SOURCE_REGISTRATION,
+            public_identity_hidden=False,
+            is_automated=True,
+        )
+
+        self.model_admin.save_model(
+            self.request,
+            user,
+            SimpleNamespace(cleaned_data={"hide_public_identity": True}),
+            change=True,
+        )
+
+        case.refresh_from_db()
+        self.assertTrue(case.public_identity_hidden)
+        self.assertEqual(case.moderator, self.admin_profile)
+        self.assertEqual(UsernameModerationCase.objects.filter(user=user).count(), 1)
+        self.assertEqual(profile.get_public_username(), "Disabled user")
+
+        self.model_admin.save_model(
+            self.request,
+            user,
+            SimpleNamespace(cleaned_data={"hide_public_identity": False}),
+            change=True,
+        )
+
+        case.refresh_from_db()
+        self.assertFalse(case.public_identity_hidden)
+        get_profile_public_identity.dirty(profile.id)
+        self.assertEqual(profile.get_public_username(), user.username)
 
 
 class UsernameModerationAuditCommandTest(TestCase):
