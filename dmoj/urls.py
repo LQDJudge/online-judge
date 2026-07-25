@@ -718,6 +718,7 @@ urlpatterns = [
     re_path(r"^comments/upvote/$", comment.upvote_comment, name="comment_upvote"),
     re_path(r"^comments/downvote/$", comment.downvote_comment, name="comment_downvote"),
     re_path(r"^comments/hide/$", comment.comment_hide, name="comment_hide"),
+    re_path(r"^comments/mute/$", comment.comment_mute, name="comment_mute"),
     re_path(r"^comments/post/$", comment.post_comment, name="comment_post"),
     re_path(
         r"^comments/get_comments/$",
@@ -1911,6 +1912,11 @@ urlpatterns = [
                     r"^chat_moderation$",
                     internal.InternalChatModeration.as_view(),
                     name="internal_chat_moderation",
+                ),
+                re_path(
+                    r"^comment_moderation$",
+                    internal.InternalCommentModeration.as_view(),
+                    name="internal_comment_moderation",
                 ),
                 re_path(
                     r"^username_moderation$",

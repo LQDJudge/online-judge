@@ -209,18 +209,25 @@ class ChatView(ListView):
         return context
 
 
-def hide_lobby_message(message, is_automated=False, moderator=None, reason=""):
+def hide_lobby_message(
+    message,
+    is_automated=False,
+    moderator=None,
+    reason="",
+    log_action=True,
+):
     """Hide a single lobby message and log the action."""
     message.hidden = True
     message.save(update_fields=["hidden"])
     get_first_msg_id.dirty(None)
-    ChatModerationLog.log_action(
-        message=message,
-        action="hide",
-        reason=reason,
-        is_automated=is_automated,
-        moderator=moderator,
-    )
+    if log_action:
+        ChatModerationLog.log_action(
+            message=message,
+            action="hide",
+            reason=reason,
+            is_automated=is_automated,
+            moderator=moderator,
+        )
 
 
 def notify_chat_mute(profile, mute_until=None, reason=""):
@@ -230,6 +237,7 @@ def notify_chat_mute(profile, mute_until=None, reason=""):
             "until": until
         }
     else:
+        until = ""
         summary = _("Your chat access has been muted permanently.")
 
     if reason:
@@ -243,6 +251,11 @@ def notify_chat_mute(profile, mute_until=None, reason=""):
         category=NotificationCategory.CHAT_MUTE,
         html_link=html_link,
         author=None,
+        extra_data={
+            "type": "chat_mute_notice",
+            "mute_until": until,
+            "reason": reason,
+        },
         deduplicate=False,
     )
     event.post(
@@ -260,6 +273,7 @@ def mute_chat_user(
     moderator=None,
     reason="",
     mute_type="permanent",
+    log_action=True,
 ):
     """Mute a user, hide lobby messages, log the action, and notify them."""
     now = timezone.now()
@@ -282,16 +296,22 @@ def mute_chat_user(
     Profile.dirty_cache(message.author_id)
     Message.objects.filter(room=None, author=message.author).update(hidden=True)
     get_first_msg_id.dirty(None)
-    ChatModerationLog.log_action(
-        message=message,
-        action=action,
-        reason=reason,
-        is_automated=is_automated,
-        moderator=moderator,
-        mute_until=mute_until,
-        mute_duration_days=duration_days,
-    )
+    if log_action:
+        ChatModerationLog.log_action(
+            message=message,
+            action=action,
+            reason=reason,
+            is_automated=is_automated,
+            moderator=moderator,
+            mute_until=mute_until,
+            mute_duration_days=duration_days,
+        )
     notify_chat_mute(message.author, mute_until=mute_until, reason=reason)
+    return {
+        "action": action,
+        "mute_until": mute_until,
+        "mute_duration_days": duration_days,
+    }
 
 
 def delete_message(request):

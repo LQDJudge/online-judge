@@ -4,7 +4,14 @@ from judge.models.choices import (
     ACE_THEMES,
     TIMEZONE,
 )
-from judge.models.comment import Comment, CommentLock, CommentVote
+from judge.models.comment import (
+    Comment,
+    CommentLock,
+    CommentModerationLog,
+    CommentVote,
+    hide_comment_for_moderation,
+    mute_comment_author,
+)
 from judge.models.contest import (
     Contest,
     ContestMoss,

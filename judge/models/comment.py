@@ -1,24 +1,25 @@
+import hashlib
 import itertools
 
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import CASCADE, Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 from reversion.models import Version
 
+from judge.caching import CacheableModel, cache_wrapper
 from judge.models.contest import Contest
 from judge.models.interface import BlogPost
 from judge.models.problem import Problem, Solution
 from judge.models.problem_review import ProblemReviewRun
 from judge.models.profile import Profile
-from judge.caching import cache_wrapper, CacheableModel
 
 
 def _batch_accessible_problem_ids(problem_ids, profile):
@@ -102,16 +103,23 @@ def _batch_accessible_blog_ids(blog_ids, profile):
 
 __all__ = [
     "Comment",
+    "CommentModerationLog",
     "CommentLock",
     "CommentVote",
     "Notification",
+    "get_comment_moderation_hash",
+    "get_temporary_comment_mute_duration_days",
     "get_visible_comment_count",
     "get_visible_top_level_comment_count",
     "get_user_vote_on_comment",
     "get_visible_reply_count",
     "get_top_level_comment_ids",
     "get_reply_ids",
+    "hide_comment_for_moderation",
+    "mute_comment_author",
 ]
+
+COMMENT_TEMP_MUTE_CAP_DAYS = 30
 
 
 class VersionRelation(GenericRelation):
@@ -459,6 +467,225 @@ class Comment(CacheableModel, MPTTModel):
         super().delete(*args, **kwargs)
         self.dirty_count_cache(content_type_id, object_id)
         self.dirty_list_cache(content_type_id, object_id, parent_id)
+
+
+class CommentModerationLog(models.Model):
+    ACTION_KEEP = "keep"
+    ACTION_HIDE = "hide"
+    ACTION_REVIEW = "review"
+    ACTION_MUTE_TEMP = "mute_temp"
+    ACTION_MUTE_PERM = "mute_perm"
+
+    ACTIONS = (
+        (ACTION_KEEP, _("Keep")),
+        (ACTION_HIDE, _("Hide Comment")),
+        (ACTION_REVIEW, _("Needs Review")),
+        (ACTION_MUTE_TEMP, _("Temporarily Mute User")),
+        (ACTION_MUTE_PERM, _("Permanently Mute User")),
+    )
+
+    comment = models.ForeignKey(
+        Comment, on_delete=CASCADE, related_name="moderation_logs"
+    )
+    action = models.CharField(max_length=20, choices=ACTIONS)
+    reason = models.TextField(blank=True)
+    content_hash = models.CharField(max_length=64, db_index=True)
+    is_automated = models.BooleanField(default=False)
+    moderator = models.ForeignKey(
+        Profile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="comment_moderation_actions",
+    )
+    mute_until = models.DateTimeField(null=True, blank=True)
+    mute_duration_days = models.PositiveIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["comment", "content_hash"]),
+            models.Index(fields=["action", "created_at"]),
+        ]
+        verbose_name = _("comment moderation log")
+        verbose_name_plural = _("comment moderation logs")
+
+    def __str__(self):
+        return "%s - Comment #%s - %s" % (
+            self.get_action_display(),
+            self.comment_id,
+            self.created_at,
+        )
+
+    @classmethod
+    def log_action(
+        cls,
+        comment,
+        action,
+        reason="",
+        is_automated=False,
+        moderator=None,
+        mute_until=None,
+        mute_duration_days=None,
+        content_hash=None,
+    ):
+        return cls.objects.create(
+            comment=comment,
+            action=action,
+            reason=reason,
+            is_automated=is_automated,
+            moderator=moderator,
+            mute_until=mute_until,
+            mute_duration_days=mute_duration_days,
+            content_hash=content_hash or get_comment_moderation_hash(comment),
+        )
+
+
+def get_comment_moderation_hash(comment):
+    return hashlib.sha256((comment.body or "").encode("utf-8")).hexdigest()
+
+
+def _notify_comment_hidden(comment, is_automated=False, moderator=None):
+    from judge.models.notification import Notification, NotificationCategory
+
+    if not comment.author_id:
+        return
+
+    Notification.objects.create_notification(
+        owner=comment.author,
+        category=NotificationCategory.HIDE_COMMENT,
+        html_link=format_html(
+            '<a href="{}">{}</a>',
+            comment.get_absolute_url(),
+            comment.page_title or _("comment"),
+        ),
+        author=None if is_automated else moderator,
+        deduplicate=False,
+    )
+
+
+def _notify_comment_mute(profile, mute_until=None, reason=""):
+    from judge.models.notification import Notification, NotificationCategory
+
+    if mute_until:
+        until = timezone.localtime(mute_until).strftime("%Y-%m-%d %H:%M")
+        summary = _("Your chat access has been muted until %(until)s.") % {
+            "until": until
+        }
+    else:
+        until = ""
+        summary = _("Your chat access has been muted permanently.")
+
+    if reason:
+        reason_text = _("Reason: %(reason)s") % {"reason": reason}
+        html_link = format_html("{}<br>{}", summary, reason_text)
+    else:
+        html_link = summary
+
+    Notification.objects.create_notification(
+        owner=profile,
+        category=NotificationCategory.CHAT_MUTE,
+        html_link=html_link,
+        author=None,
+        extra_data={
+            "type": "chat_mute_notice",
+            "mute_until": until,
+            "reason": reason,
+        },
+        deduplicate=False,
+    )
+
+
+def hide_comment_for_moderation(
+    comment,
+    reason="",
+    is_automated=False,
+    moderator=None,
+    log_action=True,
+    action=CommentModerationLog.ACTION_HIDE,
+):
+    hidden_comment_ids = list(
+        comment.get_descendants(include_self=True).values_list("id", flat=True)
+    )
+    comment.get_descendants(include_self=True).update(hidden=True)
+
+    Comment.dirty_count_cache(comment.content_type_id, comment.object_id)
+    Comment.dirty_cache(*hidden_comment_ids)
+    Comment.dirty_list_cache(
+        comment.content_type_id, comment.object_id, comment.parent_id
+    )
+
+    if log_action:
+        CommentModerationLog.log_action(
+            comment=comment,
+            action=action,
+            reason=reason,
+            is_automated=is_automated,
+            moderator=moderator,
+        )
+
+    _notify_comment_hidden(comment, is_automated=is_automated, moderator=moderator)
+
+
+def get_temporary_comment_mute_duration_days(profile):
+    previous_mutes = CommentModerationLog.objects.filter(
+        comment__author=profile,
+        action=CommentModerationLog.ACTION_MUTE_TEMP,
+    ).count()
+    return min(previous_mutes + 1, COMMENT_TEMP_MUTE_CAP_DAYS)
+
+
+def mute_comment_author(
+    comment,
+    reason="",
+    is_automated=False,
+    moderator=None,
+    mute_type="permanent",
+    log_action=True,
+):
+    now = timezone.now()
+    mute_until = None
+    duration_days = None
+    action = CommentModerationLog.ACTION_MUTE_PERM
+
+    if mute_type == "temporary":
+        duration_days = get_temporary_comment_mute_duration_days(comment.author)
+        base_time = comment.author.mute_until or now
+        if base_time < now:
+            base_time = now
+        mute_until = base_time + timezone.timedelta(days=duration_days)
+        action = CommentModerationLog.ACTION_MUTE_TEMP
+
+    comment.author.mute = True
+    comment.author.mute_until = mute_until
+    comment.author.mute_reason = reason
+    comment.author.save(update_fields=["mute", "mute_until", "mute_reason"])
+    Profile.dirty_cache(comment.author_id)
+
+    hide_comment_for_moderation(
+        comment,
+        reason=reason,
+        is_automated=is_automated,
+        moderator=moderator,
+        log_action=False,
+    )
+    if log_action:
+        CommentModerationLog.log_action(
+            comment=comment,
+            action=action,
+            reason=reason,
+            is_automated=is_automated,
+            moderator=moderator,
+            mute_until=mute_until,
+            mute_duration_days=duration_days,
+        )
+    _notify_comment_mute(comment.author, mute_until=mute_until, reason=reason)
+    return {
+        "action": action,
+        "mute_until": mute_until,
+        "mute_duration_days": duration_days,
+    }
 
 
 class CommentVote(models.Model):

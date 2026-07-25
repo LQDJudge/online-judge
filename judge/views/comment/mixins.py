@@ -63,6 +63,7 @@ class CommentableMixin:
                     points=F("problem__points")
                 ).exists()
             )
+            context["is_comment_muted"] = self.request.profile.mute
 
         sort_by, sort_order = parse_sort_params(self.request)
 
@@ -85,6 +86,7 @@ class CommentableMixin:
         context.update(
             {
                 "comment_lock": is_comment_locked(self.request),
+                "is_comment_muted": context.get("is_comment_muted", False),
                 "has_comments": top_level_count > 0,
                 "all_comment_count": total_comment_count,
                 "comment_content_type_id": content_type.id,

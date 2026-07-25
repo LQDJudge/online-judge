@@ -25,6 +25,7 @@ from django.views.generic import ListView, TemplateView, View
 
 from chat_box.models import ChatModerationLog
 from chat_box.utils import encrypt_channel
+from chat_box.views import hide_lobby_message, mute_chat_user
 from judge import event_poster as event
 from judge.ml.problem_duplicates import (
     DuplicateProblemMergePending,
@@ -43,11 +44,14 @@ from judge.ml.semantic_search import (
     SemanticSearchUnavailable,
 )
 from judge.models import (
+    CommentModerationLog,
     Problem,
     ProblemType,
     Profile,
     Submission,
     UsernameModerationCase,
+    hide_comment_for_moderation,
+    mute_comment_author,
 )
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.problem import get_distinct_problem_points
@@ -1336,14 +1340,271 @@ class InternalChatModeration(InternalView, ListView):
         search = self.request.GET.get("search", "").strip()
         if search:
             queryset = queryset.filter(
-                message__author__user__username__icontains=search
+                Q(message__author__user__username__icontains=search)
+                | Q(message__body__icontains=search)
             )
 
         return queryset.order_by("-created_at")
 
+    def _resolve_log(
+        self,
+        log,
+        action,
+        reason,
+        moderator,
+        mute_until=None,
+        mute_duration_days=None,
+    ):
+        log.action = action
+        log.reason = reason
+        log.is_automated = False
+        log.moderator = moderator
+        log.mute_until = mute_until
+        log.mute_duration_days = mute_duration_days
+        log.save(
+            update_fields=[
+                "action",
+                "reason",
+                "is_automated",
+                "moderator",
+                "mute_until",
+                "mute_duration_days",
+            ]
+        )
+
+    def post(self, request, *args, **kwargs):
+        log = get_object_or_404(
+            ChatModerationLog.objects.select_related("message", "message__author"),
+            id=request.POST.get("log"),
+        )
+        action = request.POST.get("action")
+        reason = (request.POST.get("reason") or log.reason or "").strip()
+        moderator = request.profile
+
+        if action == "keep":
+            self._resolve_log(log, "keep", reason, moderator)
+            messages.success(request, _("Chat moderation case kept."))
+        elif action == "hide":
+            hide_lobby_message(
+                log.message,
+                moderator=moderator,
+                reason=reason,
+                log_action=False,
+            )
+            self._resolve_log(log, "hide", reason, moderator)
+            messages.success(request, _("Chat message hidden."))
+        elif action == "mute_temp":
+            mute_result = mute_chat_user(
+                log.message,
+                moderator=moderator,
+                reason=reason,
+                mute_type="temporary",
+                log_action=False,
+            )
+            self._resolve_log(
+                log,
+                "mute_temp",
+                reason,
+                moderator,
+                mute_until=mute_result["mute_until"],
+                mute_duration_days=mute_result["mute_duration_days"],
+            )
+            messages.success(request, _("User temporarily muted."))
+        elif action == "mute_perm":
+            mute_result = mute_chat_user(
+                log.message,
+                moderator=moderator,
+                reason=reason,
+                mute_type="permanent",
+                log_action=False,
+            )
+            self._resolve_log(
+                log,
+                "mute_perm",
+                reason,
+                moderator,
+                mute_until=mute_result["mute_until"],
+                mute_duration_days=mute_result["mute_duration_days"],
+            )
+            messages.success(request, _("User permanently muted."))
+        else:
+            messages.error(request, _("Unknown moderation action."))
+
+        return HttpResponseRedirect(
+            request.META.get("HTTP_REFERER", reverse("internal_chat_moderation"))
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_type"] = "chat_moderation"
+        context["title"] = self.title
+        context["action_filter"] = self.request.GET.get("action", "")
+        context["search_query"] = self.request.GET.get("search", "")
+        query_params = self.request.GET.copy()
+        if "page" in query_params:
+            del query_params["page"]
+        if query_params:
+            query_string = query_params.urlencode()
+            context["page_prefix"] = self.request.path + "?" + query_string + "&page="
+            context["first_page_href"] = self.request.path + "?" + query_string
+        else:
+            context["page_prefix"] = self.request.path + "?page="
+            context["first_page_href"] = self.request.path
+
+        return context
+
+
+class InternalCommentModeration(InternalView, ListView):
+    model = CommentModerationLog
+    title = _("Comment Moderation")
+    template_name = "internal/comment_moderation.html"
+    paginate_by = 50
+    context_object_name = "logs"
+
+    def get_paginator(
+        self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
+    ):
+        return DiggPaginator(
+            queryset,
+            per_page,
+            body=6,
+            padding=2,
+            orphans=orphans,
+            allow_empty_first_page=allow_empty_first_page,
+            **kwargs,
+        )
+
+    def get_queryset(self):
+        queryset = CommentModerationLog.objects.exclude(
+            action=CommentModerationLog.ACTION_KEEP
+        ).select_related(
+            "comment",
+            "comment__author__user",
+            "comment__content_type",
+            "moderator__user",
+        )
+
+        action_filter = self.request.GET.get("action", "")
+        if action_filter == "mute":
+            queryset = queryset.filter(
+                action__in=[
+                    CommentModerationLog.ACTION_MUTE_TEMP,
+                    CommentModerationLog.ACTION_MUTE_PERM,
+                ]
+            )
+        elif action_filter:
+            queryset = queryset.filter(action=action_filter)
+
+        search = self.request.GET.get("search", "").strip()
+        if search:
+            queryset = queryset.filter(
+                Q(comment__author__user__username__icontains=search)
+                | Q(comment__body__icontains=search)
+            )
+
+        return queryset.order_by("-created_at")
+
+    def _resolve_log(
+        self,
+        log,
+        action,
+        reason,
+        moderator,
+        mute_until=None,
+        mute_duration_days=None,
+    ):
+        log.action = action
+        log.reason = reason
+        log.is_automated = False
+        log.moderator = moderator
+        log.mute_until = mute_until
+        log.mute_duration_days = mute_duration_days
+        log.save(
+            update_fields=[
+                "action",
+                "reason",
+                "is_automated",
+                "moderator",
+                "mute_until",
+                "mute_duration_days",
+            ]
+        )
+
+    def post(self, request, *args, **kwargs):
+        log = get_object_or_404(
+            CommentModerationLog.objects.select_related("comment", "comment__author"),
+            id=request.POST.get("log"),
+        )
+        action = request.POST.get("action")
+        reason = (request.POST.get("reason") or log.reason or "").strip()
+        moderator = request.profile
+
+        if action == "keep":
+            self._resolve_log(
+                log,
+                CommentModerationLog.ACTION_KEEP,
+                reason,
+                moderator,
+            )
+            messages.success(request, _("Comment moderation case kept."))
+        elif action == "hide":
+            hide_comment_for_moderation(
+                log.comment,
+                reason=reason,
+                moderator=moderator,
+                log_action=False,
+            )
+            self._resolve_log(
+                log,
+                CommentModerationLog.ACTION_HIDE,
+                reason,
+                moderator,
+            )
+            messages.success(request, _("Comment hidden."))
+        elif action == "mute_temp":
+            mute_result = mute_comment_author(
+                log.comment,
+                reason=reason,
+                moderator=moderator,
+                mute_type="temporary",
+                log_action=False,
+            )
+            self._resolve_log(
+                log,
+                CommentModerationLog.ACTION_MUTE_TEMP,
+                reason,
+                moderator,
+                mute_until=mute_result["mute_until"],
+                mute_duration_days=mute_result["mute_duration_days"],
+            )
+            messages.success(request, _("User temporarily muted."))
+        elif action == "mute_perm":
+            mute_result = mute_comment_author(
+                log.comment,
+                reason=reason,
+                moderator=moderator,
+                mute_type="permanent",
+                log_action=False,
+            )
+            self._resolve_log(
+                log,
+                CommentModerationLog.ACTION_MUTE_PERM,
+                reason,
+                moderator,
+                mute_until=mute_result["mute_until"],
+                mute_duration_days=mute_result["mute_duration_days"],
+            )
+            messages.success(request, _("User permanently muted."))
+        else:
+            messages.error(request, _("Unknown moderation action."))
+
+        return HttpResponseRedirect(
+            request.META.get("HTTP_REFERER", reverse("internal_comment_moderation"))
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_type"] = "comment_moderation"
         context["title"] = self.title
         context["action_filter"] = self.request.GET.get("action", "")
         context["search_query"] = self.request.GET.get("search", "")

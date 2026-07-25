@@ -19,27 +19,45 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../..", ".."))
 from llm_service.config import get_config
 from llm_service.llm_api import LLMService
 from judge.models import (
-    Organization,
     BlogPost,
     Comment,
+    CommentModerationLog,
+    Contest,
     OrganizationModerationLog,
+    Organization,
+    Problem,
+    Solution,
+    hide_comment_for_moderation,
+    mute_comment_author,
 )
 from chat_box.models import Message as ChatMessage, ChatModerationLog
 from chat_box.views import hide_lobby_message, mute_chat_user
 
 # Static system prompts for LLM caching
-COMMENT_SYSTEM_PROMPT = """You are a content moderator. Review comments and decide if each should be HIDDEN or KEPT.
+COMMENT_SYSTEM_PROMPT = """You are a comment moderator for an educational programming site used by primary, secondary, and high-school students. Review comments and decide the action for each.
 
-Respond ONLY with valid JSON array: [{"id": <comment_id>, "action": "hide" or "keep"}]
+Respond ONLY with valid JSON array: [{"id": <comment_id>, "action": "keep" or "hide" or "review" or "mute_temp" or "mute_perm", "reason": "<short reason>"}]
 
-HIDE only if the comment is clearly harmful:
-- Spam or advertising
-- Hate speech, slurs, or severe harassment
-- Threats or illegal content
-- Personal attacks or doxxing
+Moderation style:
+- Keep the discussion positive, friendly, and safe, like a teacher supervising a relaxed student study space.
+- Allow friendly off-topic comments, jokes, memes, sarcasm, playful banter, criticism, low-effort replies, and students making friends.
+- Focus enforcement on genuinely harmful behavior, not on harmless noise or normal socializing.
 
-KEEP everything else, including off-topic, criticism, low-effort, or casual comments.
-When in doubt, KEEP the comment."""
+Actions:
+- "keep": Comment is acceptable. Keep it visible.
+- "hide": Hide this single comment. Use for clear spam, scams, targeted insults, harassment, obscene content, unsafe links, or other isolated violations.
+- "review": Leave the comment visible but flag it for human review. Use when the comment may be unsafe but context is ambiguous.
+- "mute_temp": Hide this comment and temporarily mute the author. Use for repeated spam, repeated insults, disruptive behavior, or moderate harassment.
+- "mute_perm": Hide this comment and permanently mute the author. Use only for severe harassment, hate speech, threats, doxxing, explicit sexual content, grooming, or dangerous abuse.
+
+Be strict for harmful, abusive, bullying, insulting, obscene, adult/sexual, threatening, doxxing, discriminatory, scam, gambling, invalid/malicious, or other clearly unsafe content, in any language including Vietnamese, English, slang, and leetspeak.
+Be tolerant of obvious jokes, memes, sarcasm, playful banter, mild profanity without a target, and ambiguous context. Do not punish a user for a single unclear comment.
+Include a concise reason for every hide, review, or mute action. HIDE single comments for isolated clear violations. Use temporary mute for moderate repeated abuse. Use permanent mute only for severe abuse.
+When in doubt, KEEP the comment. If a comment seems concerning but not clearly harmful, use REVIEW instead of hiding.
+
+LINKS: Sharing links is allowed when the link appears to be valid and benign. KEEP links to contests, learning resources, LQDOJ organizations, study groups, Discord or other group chats, GitHub/docs, games, memes, or community events unless the message or destination is clearly harmful. Do not classify a link as promotional spam or a join-group violation solely because it invites users to a group, organization, Discord server, game, or community. Hide or mute link comments only when there is clear evidence of spam flooding, scams, gambling, adult content, malware/phishing, doxxing, hate/harassment, illegal activity, or another unsafe destination. If you cannot verify the destination and the surrounding comment is not clearly harmful, KEEP it.
+
+IMAGES: Comments containing images (shown as [imageN] with an attached file) are normal in this community: users share screenshots, problem images, memes, and jokes. KEEP image comments unless the image is clearly harmful (nudity, gore, hate symbols, harassment, doxxing, scams, or illegal content). If you cannot see an image or it failed to load, always KEEP the comment."""
 
 POST_SYSTEM_PROMPT = """You are a content moderator. Review blog posts and decide if each should be APPROVED, REJECTED, or SKIPPED.
 
@@ -51,9 +69,7 @@ SKIP: uncertain, needs human review.
 When in doubt, SKIP for human review."""
 
 # User prompts with variable content
-COMMENT_USER_PROMPT = """Community: {about}
-
-Comments to review:
+COMMENT_USER_PROMPT = """Site comments to review:
 {comments}"""
 
 POST_USER_PROMPT = """Community: {about}
@@ -61,20 +77,28 @@ POST_USER_PROMPT = """Community: {about}
 Posts to review:
 {posts}"""
 
-CHAT_SYSTEM_PROMPT = """You are a chat lobby moderator for an educational programming site. Review messages and decide the action for each.
+CHAT_SYSTEM_PROMPT = """You are a chat lobby moderator for an educational programming site used by primary, secondary, and high-school students. Review messages and decide the action for each.
 
-Respond ONLY with valid JSON array: [{"id": <message_id>, "action": "hide" or "mute_temp" or "mute_perm" or "keep", "reason": "<short reason>"}]
+Respond ONLY with valid JSON array: [{"id": <message_id>, "action": "keep" or "hide" or "review" or "mute_temp" or "mute_perm", "reason": "<short reason>"}]
+
+Moderation style:
+- Keep the lobby positive, friendly, and safe, like a teacher supervising a relaxed student study space.
+- Allow friendly off-topic chat, jokes, memes, sarcasm, playful banter, and students making friends.
+- Focus enforcement on genuinely harmful behavior, not on harmless noise or normal socializing.
 
 Actions:
-- "hide": Hide this single message. Use for clear spam, off-topic advertising, targeted insults, harassment, obscene content, or other isolated violations.
+- "hide": Hide this single message. Use for clear spam, scams, targeted insults, harassment, obscene content, unsafe links, or other isolated violations.
+- "review": Leave the message visible but flag it for human review. Use when the message may be unsafe but context is ambiguous.
 - "mute_temp": Hide ALL lobby messages from this user and temporarily mute them. Use for repeated spam, repeated insults, disruptive behavior, or moderate harassment.
 - "mute_perm": Hide ALL lobby messages from this user and permanently mute them. Use for severe harassment, hate speech, threats, doxxing, explicit sexual content, grooming, or dangerous abuse.
 - "keep": Message is acceptable. Keep it visible.
 
-Be strict for harmful, abusive, obscene, threatening, doxxing, discriminatory, scam, gambling, or other clearly unsafe content, in any language including Vietnamese, English, slang, and leetspeak.
+Be strict for harmful, abusive, bullying, insulting, obscene, adult/sexual, threatening, doxxing, discriminatory, scam, gambling, invalid/malicious, or other clearly unsafe content, in any language including Vietnamese, English, slang, and leetspeak.
 Be tolerant of obvious jokes, memes, sarcasm, playful banter, mild profanity without a target, and ambiguous context. Do not punish a user for a single unclear message.
-Include a concise reason for every hide or mute action. HIDE single messages for isolated clear violations. Use temporary mute for moderate repeated abuse. Use permanent mute only for severe abuse.
-When in doubt, KEEP the message.
+Include a concise reason for every hide, review, or mute action. HIDE single messages for isolated clear violations. Use temporary mute for moderate repeated abuse. Use permanent mute only for severe abuse.
+When in doubt, KEEP the message. If a message seems concerning but not clearly harmful, use REVIEW instead of hiding.
+
+LINKS: Sharing links is allowed when the link appears to be valid and benign. KEEP links to contests, learning resources, LQDOJ organizations, study groups, Discord or other group chats, GitHub/docs, games, memes, or community events unless the message or destination is clearly harmful. Do not classify a link as promotional spam or a join-group violation solely because it invites users to a group, organization, Discord server, game, or community. Hide or mute link messages only when there is clear evidence of spam flooding, scams, gambling, adult content, malware/phishing, doxxing, hate/harassment, illegal activity, or another unsafe destination. If you cannot verify the destination and the surrounding message is not clearly harmful, KEEP it.
 
 IMAGES: Messages containing images (shown as [imageN] with an attached file) are normal in this community: users share screenshots, problem images, memes, and jokes. KEEP image messages unless the image is clearly harmful (nudity, gore, hate symbols, harassment, doxxing, scams, or illegal content). If you cannot see an image or it failed to load, always KEEP the message."""
 
@@ -113,6 +137,12 @@ class Command(BaseCommand):
             help="Number of items to process per batch (default: 50)",
         )
         parser.add_argument(
+            "--comment-window-minutes",
+            type=int,
+            default=60,
+            help="Only review comments from this many recent minutes (default: 60)",
+        )
+        parser.add_argument(
             "--chat-only",
             action="store_true",
             help="Only moderate chat lobby messages",
@@ -147,6 +177,7 @@ class Command(BaseCommand):
 
         self.dry_run = options["dry_run"]
         self.batch_size = options["batch_size"]
+        self.comment_window_minutes = options["comment_window_minutes"]
 
         if options["chat_only"] and (options["comments_only"] or options["posts_only"]):
             self.stderr.write(
@@ -163,11 +194,14 @@ class Command(BaseCommand):
 
         total_stats = {
             "comments_hidden": 0,
+            "comments_reviewed": 0,
+            "comments_muted": 0,
             "comments_kept": 0,
             "posts_approved": 0,
             "posts_rejected": 0,
             "posts_skipped": 0,
             "chat_hidden": 0,
+            "chat_reviewed": 0,
             "chat_muted": 0,
             "chat_kept": 0,
             "errors": 0,
@@ -182,32 +216,43 @@ class Command(BaseCommand):
             for key in chat_stats:
                 total_stats[key] += chat_stats.get(key, 0)
         else:
-            # Get organizations
-            if options["org_ids"]:
-                org_ids = [int(x.strip()) for x in options["org_ids"].split(",")]
-                organizations = Organization.objects.filter(id__in=org_ids)
-            else:
-                organizations = Organization.objects.filter(is_community=True)
+            if not options["comments_only"]:
+                # Get organizations for pending post moderation
+                if options["org_ids"]:
+                    org_ids = [int(x.strip()) for x in options["org_ids"].split(",")]
+                    organizations = Organization.objects.filter(id__in=org_ids)
+                else:
+                    organizations = Organization.objects.filter(is_community=True)
 
-            if organizations.exists():
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"Processing {organizations.count()} organization(s)"
-                    )
-                )
-
-                for org in organizations:
-                    self.stdout.write(f"\n{'='*60}")
+                if organizations.exists():
                     self.stdout.write(
-                        self.style.SUCCESS(f"Organization: {org.name} (ID: {org.id})")
+                        self.style.SUCCESS(
+                            f"Processing {organizations.count()} organization(s)"
+                        )
                     )
-                    self.stdout.write(f"{'='*60}")
 
-                    org_stats = self.process_organization(org, options)
-                    for key in total_stats:
-                        total_stats[key] += org_stats.get(key, 0)
-            else:
-                self.stdout.write(self.style.WARNING("No organizations found"))
+                    for org in organizations:
+                        self.stdout.write(f"\n{'='*60}")
+                        self.stdout.write(
+                            self.style.SUCCESS(
+                                f"Organization: {org.name} (ID: {org.id})"
+                            )
+                        )
+                        self.stdout.write(f"{'='*60}")
+
+                        org_stats = self.process_organization(org, options)
+                        for key in total_stats:
+                            total_stats[key] += org_stats.get(key, 0)
+                else:
+                    self.stdout.write(self.style.WARNING("No organizations found"))
+
+            if not options["posts_only"]:
+                self.stdout.write(f"\n{'='*60}")
+                self.stdout.write(self.style.SUCCESS("Site-wide Comment Moderation"))
+                self.stdout.write(f"{'='*60}")
+                comment_stats = self.moderate_comments()
+                for key in comment_stats:
+                    total_stats[key] += comment_stats.get(key, 0)
 
             # Also moderate chat unless filtered to comments/posts only
             if not options["comments_only"] and not options["posts_only"]:
@@ -223,19 +268,24 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("SUMMARY"))
         self.stdout.write(f"{'='*60}")
         self.stdout.write(f"Comments hidden: {total_stats['comments_hidden']}")
+        self.stdout.write(
+            f"Comments flagged for review: {total_stats['comments_reviewed']}"
+        )
+        self.stdout.write(f"Comment users muted: {total_stats['comments_muted']}")
         self.stdout.write(f"Comments kept: {total_stats['comments_kept']}")
         self.stdout.write(f"Posts approved: {total_stats['posts_approved']}")
         self.stdout.write(f"Posts rejected: {total_stats['posts_rejected']}")
         self.stdout.write(f"Posts skipped: {total_stats['posts_skipped']}")
         self.stdout.write(f"Chat messages hidden: {total_stats['chat_hidden']}")
+        self.stdout.write(
+            f"Chat messages flagged for review: {total_stats['chat_reviewed']}"
+        )
         self.stdout.write(f"Chat users muted: {total_stats['chat_muted']}")
         self.stdout.write(f"Chat messages kept: {total_stats['chat_kept']}")
         self.stdout.write(f"Errors: {total_stats['errors']}")
 
     def process_organization(self, org, options):
         stats = {
-            "comments_hidden": 0,
-            "comments_kept": 0,
             "posts_approved": 0,
             "posts_rejected": 0,
             "posts_skipped": 0,
@@ -243,12 +293,6 @@ class Command(BaseCommand):
         }
 
         about = org.about or "General community"
-
-        # Process comments
-        if not options["posts_only"]:
-            comment_stats = self.moderate_comments(org, about)
-            for key in comment_stats:
-                stats[key] += comment_stats[key]
 
         # Process pending posts
         if not options["comments_only"]:
@@ -285,40 +329,54 @@ class Command(BaseCommand):
         labeled = re.sub(r"!\[[^\]]*\]\(([^)]+)\)", replace, content)
         return labeled, attachments
 
-    def moderate_comments(self, org, about):
-        """Moderate comments on organization blog posts (batched)"""
-        stats = {"comments_hidden": 0, "comments_kept": 0, "errors": 0}
+    def _comment_context_label(self, comment):
+        linked = comment.linked_object
+        if isinstance(linked, Problem):
+            return "Problem: %s" % linked.name
+        if isinstance(linked, Contest):
+            return "Contest: %s" % linked.name
+        if isinstance(linked, BlogPost):
+            return "Post: %s" % linked.title
+        if isinstance(linked, Solution):
+            return "Editorial: %s" % linked.problem.name
+        return "%s #%s" % (comment.content_type.model, comment.object_id)
 
-        # Get visible blog posts in this organization
-        blog_posts = BlogPost.objects.filter(
-            organizations=org,
-            visible=True,
+    def _get_unreviewed_comments(self):
+        cutoff = timezone.now() - timezone.timedelta(
+            minutes=self.comment_window_minutes
         )
+        allowed_content_type_ids = [
+            ContentType.objects.get_for_model(model).id
+            for model in (Problem, Contest, BlogPost, Solution)
+        ]
 
-        if not blog_posts.exists():
-            self.stdout.write("  No visible blog posts found")
-            return stats
+        reviewed_comment_ids = CommentModerationLog.objects.filter(
+            created_at__gte=cutoff
+        ).values_list("comment_id", flat=True)
 
-        blog_content_type = ContentType.objects.get_for_model(BlogPost)
-        comment_content_type = ContentType.objects.get_for_model(Comment)
-        blog_post_ids = list(blog_posts.values_list("id", flat=True))
-
-        # Get comment IDs already reviewed (in moderation log)
-        already_reviewed = OrganizationModerationLog.objects.filter(
-            organization=org,
-            content_type=comment_content_type,
-        ).values_list("object_id", flat=True)
-
-        # Get unhidden comments on these posts, excluding already reviewed
-        comments = list(
+        candidate_pool = list(
             Comment.objects.filter(
-                content_type=blog_content_type,
-                object_id__in=blog_post_ids,
                 hidden=False,
+                time__gte=cutoff,
+                content_type_id__in=allowed_content_type_ids,
             )
-            .exclude(id__in=already_reviewed)
-            .select_related("author")[: self.batch_size]
+            .exclude(id__in=reviewed_comment_ids)
+            .select_related("author__user", "content_type")
+            .order_by("id")[: self.batch_size]
         )
+        return candidate_pool
+
+    def moderate_comments(self):
+        """Moderate recent site-wide comments (batched)."""
+        stats = {
+            "comments_hidden": 0,
+            "comments_reviewed": 0,
+            "comments_muted": 0,
+            "comments_kept": 0,
+            "errors": 0,
+        }
+
+        comments = self._get_unreviewed_comments()
 
         if not comments:
             self.stdout.write("  No comments to review")
@@ -340,7 +398,13 @@ class Command(BaseCommand):
             labeled, imgs = self._embed_images(content[:500], image_counter)
             attachments.extend(imgs)
             comments_text.append(
-                f"[Comment ID: {comment.id}] by {author_name}:\n{labeled}"
+                "[Comment ID: %(id)s] by %(author)s\nContext: %(context)s\n%(body)s"
+                % {
+                    "id": comment.id,
+                    "author": author_name,
+                    "context": self._comment_context_label(comment),
+                    "body": labeled,
+                }
             )
 
         if not comments_text:
@@ -351,7 +415,6 @@ class Command(BaseCommand):
             self.stdout.write(f"  Uploaded {len(attachments)} image(s) to Poe")
 
         user_prompt = COMMENT_USER_PROMPT.format(
-            about=about[:1000],
             comments="\n\n---\n\n".join(comments_text),
         )
 
@@ -384,15 +447,52 @@ class Command(BaseCommand):
 
                 comment = comments_map[comment_id]
                 author_name = comment.author.username if comment.author else "Anonymous"
+                reason = (result.get("reason") or "").strip()
+                if action in (
+                    "hide",
+                    "review",
+                    "mute_temp",
+                    "mute_temporary",
+                    "mute_perm",
+                    "mute_permanent",
+                ):
+                    reason = reason or "Automated moderation"
 
-                if action == "hide":
+                if action in ("mute_perm", "mute_permanent"):
                     if not self.dry_run:
-                        comment.hidden = True
-                        comment.save(update_fields=["hidden"])
-                        OrganizationModerationLog.log_action(
-                            organization=org,
-                            content_object=comment,
-                            action="hide_comment",
+                        mute_comment_author(
+                            comment,
+                            reason=reason,
+                            is_automated=True,
+                            mute_type="permanent",
+                        )
+                    stats["comments_muted"] += 1
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"    MUTED: {author_name} - {comment.body[:50]}..."
+                        )
+                    )
+
+                elif action in ("mute_temp", "mute_temporary"):
+                    if not self.dry_run:
+                        mute_comment_author(
+                            comment,
+                            reason=reason,
+                            is_automated=True,
+                            mute_type="temporary",
+                        )
+                    stats["comments_muted"] += 1
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"    TEMP MUTED: {author_name} - {comment.body[:50]}..."
+                        )
+                    )
+
+                elif action == "hide":
+                    if not self.dry_run:
+                        hide_comment_for_moderation(
+                            comment,
+                            reason=reason,
                             is_automated=True,
                         )
                     stats["comments_hidden"] += 1
@@ -401,19 +501,36 @@ class Command(BaseCommand):
                             f"    HIDDEN: {author_name} - {comment.body[:50]}..."
                         )
                     )
+
+                elif action == "review":
+                    if not self.dry_run:
+                        CommentModerationLog.log_action(
+                            comment=comment,
+                            action=CommentModerationLog.ACTION_REVIEW,
+                            reason=reason,
+                            is_automated=True,
+                        )
+                    stats["comments_reviewed"] += 1
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"    REVIEW: {author_name} - {comment.body[:50]}..."
+                        )
+                    )
+
                 else:
                     if not self.dry_run:
-                        OrganizationModerationLog.log_action(
-                            organization=org,
-                            content_object=comment,
-                            action="keep_comment",
+                        CommentModerationLog.log_action(
+                            comment=comment,
+                            action=CommentModerationLog.ACTION_KEEP,
                             is_automated=True,
                         )
                     stats["comments_kept"] += 1
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"  Batch complete: {stats['comments_kept']} kept, {stats['comments_hidden']} hidden"
+                    f"  Batch complete: {stats['comments_kept']} kept, "
+                    f"{stats['comments_reviewed']} flagged, "
+                    f"{stats['comments_hidden']} hidden, {stats['comments_muted']} muted"
                 )
             )
 
@@ -569,7 +686,13 @@ class Command(BaseCommand):
 
     def moderate_chat(self):
         """Moderate lobby chat messages (batched)"""
-        stats = {"chat_hidden": 0, "chat_muted": 0, "chat_kept": 0, "errors": 0}
+        stats = {
+            "chat_hidden": 0,
+            "chat_reviewed": 0,
+            "chat_muted": 0,
+            "chat_kept": 0,
+            "errors": 0,
+        }
 
         # Only review messages from the last hour
         cutoff = timezone.now() - timezone.timedelta(hours=1)
@@ -659,6 +782,7 @@ class Command(BaseCommand):
                 reason = (result.get("reason") or "").strip()
                 if action in (
                     "hide",
+                    "review",
                     "mute",
                     "mute_perm",
                     "mute_permanent",
@@ -709,6 +833,21 @@ class Command(BaseCommand):
                         )
                     )
 
+                elif action == "review":
+                    if not self.dry_run:
+                        ChatModerationLog.log_action(
+                            message=msg,
+                            action="review",
+                            reason=reason,
+                            is_automated=True,
+                        )
+                    stats["chat_reviewed"] += 1
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"    REVIEW: {author_name} - {msg.body[:50]}..."
+                        )
+                    )
+
                 else:  # keep
                     if not self.dry_run:
                         ChatModerationLog.log_action(
@@ -719,6 +858,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.SUCCESS(
                     f"  Batch complete: {stats['chat_kept']} kept, "
+                    f"{stats['chat_reviewed']} flagged, "
                     f"{stats['chat_hidden']} hidden, {stats['chat_muted']} muted"
                 )
             )

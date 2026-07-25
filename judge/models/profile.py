@@ -355,8 +355,8 @@ class Profile(CacheableModel):
         db_index=True,
     )
     mute = models.BooleanField(
-        verbose_name=_("comment mute"),
-        help_text=_("Some users are at their best when silent."),
+        verbose_name=_("chat mute"),
+        help_text=_("Prevents the user from using chat and comments."),
         default=False,
     )
     mute_until = models.DateTimeField(

@@ -235,6 +235,105 @@
         background: rgba(22, 163, 74, 0.08);
     }
 
+    .comment-mute-modal-backdrop {
+        align-items: center;
+        background: rgb(0 0 0 / 35%);
+        display: none;
+        inset: 0;
+        justify-content: center;
+        padding: $space-lg;
+        position: fixed;
+        z-index: 1500;
+
+        &.is-open {
+            display: flex;
+        }
+    }
+
+    .comment-mute-modal {
+        background: $surface-primary;
+        border: $space-hairline solid $border_gray;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-modal;
+        box-sizing: border-box;
+        padding: $space-lg;
+        width: min(26em, 100%);
+
+        h3 {
+            font-size: 1.1rem;
+            margin: 0 0 $space-sm;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: $space-xs;
+        }
+
+        textarea {
+            background: $surface-primary;
+            border: $space-hairline solid $border_gray;
+            border-radius: $radius-md;
+            box-sizing: border-box;
+            color: $text-primary;
+            font: inherit;
+            padding: $space-sm;
+            resize: vertical;
+            width: 100%;
+        }
+    }
+
+    .comment-mute-modal-summary {
+        color: $text-muted;
+        margin: 0 0 $space-md;
+    }
+
+    .comment-mute-type-row {
+        margin-bottom: $space-md;
+    }
+
+    .comment-mute-type-label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: $space-xs;
+    }
+
+    .comment-mute-type-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-sm;
+
+        label {
+            align-items: center;
+            background: $background_light_gray;
+            border: $space-hairline solid $border_gray;
+            border-radius: $radius-md;
+            cursor: pointer;
+            display: inline-flex;
+            font-weight: normal;
+            gap: $space-xs;
+            margin: 0;
+            padding: $space-sm $space-md;
+        }
+
+        input {
+            margin: 0;
+        }
+    }
+
+    .comment-mute-modal-error {
+        color: $announcement_red;
+        margin: $space-xs 0 0;
+        min-height: 1.2em;
+    }
+
+    .comment-mute-modal-actions {
+        display: flex;
+        gap: $space-sm;
+        justify-content: flex-end;
+        margin-top: $space-md;
+    }
+
     // Bad/hidden comments
     .bad-comment {
         opacity: 0.5;

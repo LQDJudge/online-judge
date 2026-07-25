@@ -47,7 +47,7 @@ class CommentForm(ModelForm):
         if self.request is not None and self.request.user.is_authenticated:
             profile = self.request.profile
             if profile.mute:
-                raise ValidationError(_("Your part is silent, little toad."))
+                raise ValidationError(_("You are muted and cannot comment."))
             elif (
                 not self.request.user.is_staff
                 and not profile.submission_set.filter(

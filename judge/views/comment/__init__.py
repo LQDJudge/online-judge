@@ -9,6 +9,7 @@ from judge.views.comment.actions import (
     upvote_comment,
     downvote_comment,
     comment_hide,
+    comment_mute,
     post_comment,
 )
 from judge.views.comment.detail_views import (
@@ -48,6 +49,7 @@ __all__ = [
     "upvote_comment",
     "downvote_comment",
     "comment_hide",
+    "comment_mute",
     "post_comment",
     # Detail views
     "CommentContent",

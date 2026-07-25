@@ -87,7 +87,9 @@
             </a>
           {% endif %}
         </div>
-        <a href="javascript:reply_comment({{ item.id }})" title="{{ _('Reply') }}" class="action-link reply-link"><i class="fa-regular fa-comment-dots"></i>{{_('Reply')}}</a>
+        {% if not is_comment_muted %}
+          <a href="javascript:reply_comment({{ item.id }})" title="{{ _('Reply') }}" class="action-link reply-link"><i class="fa-regular fa-comment-dots"></i>{{_('Reply')}}</a>
+        {% endif %}
         <a href="javascript:void(0)" onclick="comment_share(this, {{ item.id }})" title="{{ _('Share') }}" class="action-link share-link" style="position: relative"><i class="fa fa-link fa-fw"></i>{{_('Share')}}</a>
         {% if profile and not comment_lock %}
           {% set can_edit = item.author_id == profile.id and not profile.mute %}
@@ -103,6 +105,12 @@
         {% if can_hide_comments %}
           <a href="javascript:hide_comment({{ item.id }})" title="{{ _('Hide') }}" data-id="{{ item.id }}" class="action-link">
             <i class="fa fa-trash fa-fw"></i>{{_('Hide')}}
+          </a>
+        {% endif %}
+        {% if profile and item.author_id != profile.id and (can_mute_comments_temporarily or can_mute_comments_permanently) %}
+          <a href="javascript:mute_comment({{ item.id }}, {{ 'true' if can_mute_comments_permanently else 'false' }}, {{ 'true' if not can_mute_comments_permanently else 'false' }})"
+             title="{{ _('Mute') }}" data-id="{{ item.id }}" class="action-link">
+            <i class="fa fa-ban fa-fw"></i>{{_('Mute')}}
           </a>
         {% endif %}
       </div>

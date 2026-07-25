@@ -321,6 +321,7 @@ class ChatModerationLog(models.Model):
     ACTIONS = (
         ("keep", _("Keep")),
         ("hide", _("Hide Message")),
+        ("review", _("Needs Review")),
         ("mute", _("Mute User")),
         ("mute_temp", _("Temporarily Mute User")),
         ("mute_perm", _("Permanently Mute User")),

@@ -53,11 +53,11 @@
 
             // Change "Unread" to "Read" in the status column
               var $statusSpan = $row.find('td:first-child span');
-              $statusSpan.removeClass('red').addClass('green').text('{{ _("Read") }}');
+              $statusSpan.removeClass('red').addClass('green').text('{{ _("Read")|escapejs }}');
             });
           }
         }).fail(function () {
-          alert('{{ _("Error occurred while marking as read") }}');
+          alert('{{ _("Error occurred while marking as read")|escapejs }}');
         });
       }
     });
@@ -161,7 +161,21 @@
                   {% endif %}
                 </td>
                 <td class="notification-content">
-                  {{ notification.html_link|safe }}
+                  {% set notification_extra = notification.extra_data or {} %}
+                  {% if notification.category == "chat_mute" and notification_extra.get("type") == "chat_mute_notice" %}
+                    {% if notification_extra.get("mute_until") %}
+                      {% set mute_until = notification_extra.get("mute_until") %}
+                      {% trans %}Your chat access has been muted until {{ mute_until }}.{% endtrans %}
+                    {% else %}
+                      {{ _("Your chat access has been muted permanently.") }}
+                    {% endif %}
+                    {% if notification_extra.get("reason") %}
+                      {% set mute_reason = notification_extra.get("reason") %}
+                      <br>{% trans %}Reason: {{ mute_reason }}{% endtrans %}
+                    {% endif %}
+                  {% else %}
+                    {{ notification.html_link|safe }}
+                  {% endif %}
                 </td>
                 <td class="notification-time">
                   {{ relative_time(notification.time) }}

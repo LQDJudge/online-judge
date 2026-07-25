@@ -13,6 +13,7 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseNotFound,
+    JsonResponse,
 )
 from django.shortcuts import get_object_or_404, render
 from django.utils.translation import gettext as _
@@ -35,6 +36,7 @@ from judge.models.comment import (
     get_user_vote_on_comment,
     get_visible_comment_count,
     get_visible_top_level_comment_count,
+    mute_comment_author,
 )
 from judge.models.profile import Profile, get_contribution_rank
 from judge.review.comment_notify import notify_review_comment
@@ -198,6 +200,18 @@ def _can_hide_comment(request, comment):
     return False
 
 
+def _can_mute_comment_temporarily(user):
+    return user.has_perm("judge.change_comment")
+
+
+def _can_mute_comment_permanently(user):
+    return user.is_superuser
+
+
+def _can_mute_comment(user):
+    return _can_mute_comment_temporarily(user) or _can_mute_comment_permanently(user)
+
+
 @require_POST
 def comment_hide(request):
     try:
@@ -249,6 +263,60 @@ def comment_hide(request):
     return HttpResponse("ok")
 
 
+@require_POST
+def comment_mute(request):
+    if not request.user.is_authenticated:
+        return HttpResponseBadRequest()
+
+    if not _can_mute_comment(request.user):
+        raise PermissionDenied()
+
+    try:
+        comment_id = int(request.POST["id"])
+    except (KeyError, ValueError):
+        return HttpResponseBadRequest()
+
+    comment = get_object_or_404(Comment.objects.select_related("author"), id=comment_id)
+
+    if comment.author_id == request.profile.id:
+        return HttpResponseBadRequest()
+
+    mute_type = request.POST.get("mute_type", "").strip()
+    if not mute_type:
+        mute_type = (
+            "permanent" if _can_mute_comment_permanently(request.user) else "temporary"
+        )
+
+    if mute_type == "temporary":
+        if not _can_mute_comment_temporarily(request.user):
+            raise PermissionDenied()
+    elif mute_type == "permanent":
+        if not _can_mute_comment_permanently(request.user):
+            raise PermissionDenied()
+    else:
+        return HttpResponseBadRequest()
+
+    reason = request.POST.get("reason", "").strip()
+    if (
+        not reason
+        and mute_type == "temporary"
+        and not _can_mute_comment_permanently(request.user)
+    ):
+        return JsonResponse({"error": _("Reason is required.")}, status=400)
+
+    with revisions.create_revision():
+        revisions.set_comment(_("Mute chat") + ": " + comment.body)
+        revisions.set_user(request.user)
+        mute_comment_author(
+            comment,
+            moderator=request.profile,
+            reason=reason,
+            mute_type=mute_type,
+        )
+
+    return JsonResponse({"mute": "done"})
+
+
 @ratelimit(key="user", rate=settings.RL_COMMENT)
 @login_required
 @require_POST
@@ -264,6 +332,9 @@ def post_comment(request):
     """
     if is_comment_locked(request):
         return HttpResponseForbidden(_("Comments are not allowed during this contest"))
+
+    if request.profile.mute:
+        return HttpResponseBadRequest(_("You are muted and cannot comment."))
 
     if (
         not request.user.is_staff

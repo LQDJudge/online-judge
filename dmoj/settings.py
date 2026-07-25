@@ -611,6 +611,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "judge.tasks.contest_review.reap_stale_contest_review_runs",
         "schedule": 300.0,  # every 5 minutes
     },
+    "auto-moderate-comments": {
+        "task": "judge.tasks.comment_moderation.moderate_recent_comments",
+        "schedule": 600.0,  # every 10 minutes
+    },
 }
 
 

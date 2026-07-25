@@ -40,48 +40,48 @@
           });
         });
 
-        $(".chat-review-mute-button").on("click", function () {
+        $(".comment-review-mute-button").on("click", function () {
           pendingMute = {
             logId: $(this).data("log-id"),
             reason: $(this).data("reason") || "",
           };
-          $("input[name='internal-chat-mute-type'][value='temporary']").prop("checked", true);
-          $("#internal-chat-mute-reason").val(pendingMute.reason);
-          $("#internal-chat-mute-error").text("");
-          $("#internal-chat-mute-modal")
+          $("input[name='internal-comment-mute-type'][value='temporary']").prop("checked", true);
+          $("#internal-comment-mute-reason").val(pendingMute.reason);
+          $("#internal-comment-mute-error").text("");
+          $("#internal-comment-mute-modal")
             .addClass("is-open")
             .attr("aria-hidden", "false");
-          $("#internal-chat-mute-reason").focus();
+          $("#internal-comment-mute-reason").focus();
         });
 
         function closeMuteModal() {
           pendingMute = null;
-          $("#internal-chat-mute-modal")
+          $("#internal-comment-mute-modal")
             .removeClass("is-open")
             .attr("aria-hidden", "true");
-          $("#internal-chat-mute-error").text("");
+          $("#internal-comment-mute-error").text("");
         }
 
-        $("#internal-chat-mute-cancel").on("click", closeMuteModal);
-        $("#internal-chat-mute-modal").on("click", function (e) {
+        $("#internal-comment-mute-cancel").on("click", closeMuteModal);
+        $("#internal-comment-mute-modal").on("click", function (e) {
           if (e.target === this) {
             closeMuteModal();
           }
         });
 
-        $("#internal-chat-mute-confirm").on("click", function () {
+        $("#internal-comment-mute-confirm").on("click", function () {
           if (!pendingMute) {
             return;
           }
 
-          var reason = $("#internal-chat-mute-reason").val().trim();
+          var reason = $("#internal-comment-mute-reason").val().trim();
           if (!reason) {
-            $("#internal-chat-mute-error").text('{{ _("Reason is required.")|escapejs }}');
-            $("#internal-chat-mute-reason").focus();
+            $("#internal-comment-mute-error").text('{{ _("Reason is required.")|escapejs }}');
+            $("#internal-comment-mute-reason").focus();
             return;
           }
 
-          var action = $("input[name='internal-chat-mute-type']:checked").val() === "permanent"
+          var action = $("input[name='internal-comment-mute-type']:checked").val() === "permanent"
             ? "mute_perm"
             : "mute_temp";
           var form = $("<form>", { method: "post" });
@@ -102,31 +102,31 @@
 {% endblock %}
 
 {% block middle_content %}
-  <div class="internal-chat-moderation-page">
-    <h2>{{ _("Moderation Log") }}</h2>
+  <div class="internal-comment-moderation-page">
+    <h2>{{ _("Comment Moderation") }}</h2>
 
     <div class="chat-moderation-controls">
       <a class="action-btn small {% if not action_filter %}background-gray{% endif %}"
-         href="{{ url('internal_chat_moderation') }}{% if search_query %}?search={{ search_query }}{% endif %}">
+         href="{{ url('internal_comment_moderation') }}{% if search_query %}?search={{ search_query }}{% endif %}">
         {{ _("All") }}
       </a>
-      <a class="action-btn small {% if action_filter == 'hide' %}background-gray{% endif %}"
-         href="{{ url('internal_chat_moderation') }}?action=hide{% if search_query %}&search={{ search_query }}{% endif %}">
-        {{ _("Hidden") }}
-      </a>
       <a class="action-btn small {% if action_filter == 'review' %}background-gray{% endif %}"
-         href="{{ url('internal_chat_moderation') }}?action=review{% if search_query %}&search={{ search_query }}{% endif %}">
+         href="{{ url('internal_comment_moderation') }}?action=review{% if search_query %}&search={{ search_query }}{% endif %}">
         {{ _("Needs review") }}
       </a>
+      <a class="action-btn small {% if action_filter == 'hide' %}background-gray{% endif %}"
+         href="{{ url('internal_comment_moderation') }}?action=hide{% if search_query %}&search={{ search_query }}{% endif %}">
+        {{ _("Hidden") }}
+      </a>
       <a class="action-btn small {% if action_filter == 'mute' %}background-gray{% endif %}"
-         href="{{ url('internal_chat_moderation') }}?action=mute{% if search_query %}&search={{ search_query }}{% endif %}">
+         href="{{ url('internal_comment_moderation') }}?action=mute{% if search_query %}&search={{ search_query }}{% endif %}">
         {{ _("Muted") }}
       </a>
       <form method="get">
         {% if action_filter %}
           <input type="hidden" name="action" value="{{ action_filter }}">
         {% endif %}
-        <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search username or message...') }}">
+        <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search username or comment...') }}">
         <button type="submit" class="action-btn small">{{ _("Search") }}</button>
       </form>
     </div>
@@ -136,39 +136,43 @@
     {% endif %}
 
     <div class="internal-table-scroll">
-      <table class="table chat-moderation-table">
+      <table class="table chat-moderation-table comment-moderation-table">
         <thead>
           <tr>
-            <th class="chat-time-column">{{ _("Time") }}</th>
-            <th class="chat-user-column">{{ _("User") }}</th>
-            <th class="chat-message-column">{{ _("Message") }}</th>
-            <th class="chat-action-column">{{ _("Action") }}</th>
-            <th class="chat-reason-column">{{ _("Reason") }}</th>
-            <th class="chat-expires-column">{{ _("Expires") }}</th>
-            <th class="chat-source-column">{{ _("Source") }}</th>
-            <th class="chat-button-column"></th>
+            <th class="comment-time-column">{{ _("Time") }}</th>
+            <th class="comment-user-column">{{ _("User") }}</th>
+            <th class="comment-body-column">{{ _("Comment") }}</th>
+            <th class="comment-context-column">{{ _("Context") }}</th>
+            <th class="comment-action-column">{{ _("Action") }}</th>
+            <th class="comment-reason-column">{{ _("Reason") }}</th>
+            <th class="comment-expires-column">{{ _("Expires") }}</th>
+            <th class="comment-source-column">{{ _("Source") }}</th>
+            <th class="comment-button-column">{{ _("Actions") }}</th>
           </tr>
         </thead>
         <tbody>
           {% for log in logs %}
             <tr>
+              <td><span class="gray">{{ log.created_at | date(_("N j, Y, g:i a")) }}</span></td>
               <td>
-                <span class="gray">{{ log.created_at | date(_("N j, Y, g:i a")) }}</span>
-              </td>
-              <td>
-                {% if log.message.author %}
-                  <a href="{{ url('user_page', log.message.author.user.username) }}">
-                    {{ log.message.author.user.username }}
+                {% if log.comment.author %}
+                  <a href="{{ url('user_page', log.comment.author.user.username) }}">
+                    {{ log.comment.author.user.username }}
                   </a>
                 {% else %}
                   <span class="gray">{{ _("Unknown") }}</span>
                 {% endif %}
               </td>
-              <td class="chat-message-cell" title="{{ log.message.body }}">
-                {{ log.message.body[:80] }}{% if log.message.body|length > 80 %}...{% endif %}
+              <td class="chat-message-cell" title="{{ log.comment.body }}">
+                {{ log.comment.body[:100] }}{% if log.comment.body|length > 100 %}...{% endif %}
               </td>
               <td>
-                {% if log.action in ["mute", "mute_temp", "mute_perm"] %}
+                <a href="{{ log.comment.get_absolute_url() }}">
+                  {{ log.comment.page_title[:60] }}{% if log.comment.page_title|length > 60 %}...{% endif %}
+                </a>
+              </td>
+              <td>
+                {% if log.action in ["mute_temp", "mute_perm"] %}
                   <span class="red">{{ _("Muted") }}</span>
                 {% elif log.action == "hide" %}
                   <span class="gray">{{ _("Hidden") }}</span>
@@ -188,7 +192,7 @@
               <td>
                 {% if log.mute_until %}
                   {{ log.mute_until | date(_("N j, Y, g:i a")) }}
-                {% elif log.action in ["mute", "mute_perm"] %}
+                {% elif log.action == "mute_perm" %}
                   {{ _("Forever") }}
                 {% else %}
                   <span class="gray">-</span>
@@ -207,36 +211,36 @@
               </td>
               <td>
                 {% if log.action == "review" %}
-                  <form method="post" class="chat-moderation-action-form">
+                  <form method="post" class="comment-moderation-action-form">
                     {% csrf_token %}
                     <input type="hidden" name="log" value="{{ log.id }}">
                     <input type="hidden" name="reason" value="{{ log.reason }}">
                     <button type="submit" name="action" value="keep" class="action-btn small">{{ _("Keep") }}</button>
                   </form>
-                  <form method="post" class="chat-moderation-action-form">
+                  <form method="post" class="comment-moderation-action-form">
                     {% csrf_token %}
                     <input type="hidden" name="log" value="{{ log.id }}">
                     <input type="hidden" name="reason" value="{{ log.reason }}">
                     <button type="submit" name="action" value="hide" class="action-btn small">{{ _("Hide") }}</button>
                   </form>
                   <button type="button"
-                          class="chat-review-mute-button action-btn small"
+                          class="comment-review-mute-button action-btn small"
                           data-log-id="{{ log.id }}"
                           data-reason="{{ log.reason }}">
                     {{ _("Mute") }}
                   </button>
-                {% elif log.action in ["mute", "mute_temp", "mute_perm"] and log.message.author and log.message.author.mute %}
-                  <button class="unmute-button action-btn small" data-profile-id="{{ log.message.author.id }}">
+                {% elif log.action in ["mute_temp", "mute_perm"] and log.comment.author and log.comment.author.mute %}
+                  <button class="unmute-button action-btn small" data-profile-id="{{ log.comment.author.id }}">
                     {{ _("Unmute") }}
                   </button>
+                {% else %}
+                  <span class="gray">-</span>
                 {% endif %}
               </td>
             </tr>
           {% else %}
             <tr>
-              <td colspan="8" class="gray">
-                {{ _("No moderation logs found") }}
-              </td>
+              <td colspan="9" class="gray">{{ _("No moderation logs found") }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -247,29 +251,29 @@
       <div class="chat-pagination">{% include "list-pages.html" %}</div>
     {% endif %}
 
-    <div id="internal-chat-mute-modal" class="chat-modal-backdrop" aria-hidden="true">
-      <div class="chat-modal" role="dialog" aria-modal="true" aria-labelledby="internal-chat-mute-title">
-        <h3 id="internal-chat-mute-title">{{ _("Mute user") }}</h3>
-        <p class="chat-modal-summary">{{ _("Mute this user and delete all lobby messages?") }}</p>
+    <div id="internal-comment-mute-modal" class="chat-modal-backdrop" aria-hidden="true">
+      <div class="chat-modal" role="dialog" aria-modal="true" aria-labelledby="internal-comment-mute-title">
+        <h3 id="internal-comment-mute-title">{{ _("Mute user") }}</h3>
+        <p class="chat-modal-summary">{{ _("Mute this user and hide this comment?") }}</p>
         <div class="chat-mute-type-row">
           <span class="chat-mute-type-label">{{ _("Mute duration") }}</span>
           <div class="chat-mute-type-options">
             <label>
-              <input type="radio" name="internal-chat-mute-type" value="temporary" checked>
+              <input type="radio" name="internal-comment-mute-type" value="temporary" checked>
               <span>{{ _("Temporary") }}</span>
             </label>
             <label>
-              <input type="radio" name="internal-chat-mute-type" value="permanent">
+              <input type="radio" name="internal-comment-mute-type" value="permanent">
               <span>{{ _("Forever") }}</span>
             </label>
           </div>
         </div>
-        <label for="internal-chat-mute-reason">{{ _("Reason") }}</label>
-        <textarea id="internal-chat-mute-reason" rows="4" maxlength="500" placeholder="{{ _('Explain why this user is being muted...') }}"></textarea>
-        <p id="internal-chat-mute-error" class="chat-modal-error" aria-live="polite"></p>
+        <label for="internal-comment-mute-reason">{{ _("Reason") }}</label>
+        <textarea id="internal-comment-mute-reason" rows="4" maxlength="500" placeholder="{{ _('Explain why this user is being muted...') }}"></textarea>
+        <p id="internal-comment-mute-error" class="chat-modal-error" aria-live="polite"></p>
         <div class="chat-modal-actions">
-          <button type="button" id="internal-chat-mute-cancel" class="action-btn background-gray">{{ _("Cancel") }}</button>
-          <button type="button" id="internal-chat-mute-confirm" class="action-btn">{{ _("Confirm mute") }}</button>
+          <button type="button" id="internal-comment-mute-cancel" class="action-btn background-gray">{{ _("Cancel") }}</button>
+          <button type="button" id="internal-comment-mute-confirm" class="action-btn">{{ _("Confirm mute") }}</button>
         </div>
       </div>
     </div>

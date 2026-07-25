@@ -17,9 +17,25 @@
         previewUrl: '{{ url('comment_preview') }}',
         imageUploadUrl: '/pagedown/image-upload/',
         isNewUser: {{ 'true' if is_new_user else 'false' }},
-        newUserMessage: '{{ _('You need to have solved at least one problem before your voice can be heard.') }}',
+        isCommentMuted: {{ 'true' if is_comment_muted else 'false' }},
+        newUserMessage: '{{ _('You need to have solved at least one problem before your voice can be heard.')|escapejs }}',
+        mutedMessage: '{{ _('You are muted and cannot comment.')|escapejs }}',
         placeholder: '{{ _('Write a comment...') }}'
       };
+
+      function getCommentPostError(xhr, fallback) {
+        try {
+          var response = JSON.parse(xhr.responseText);
+          if (typeof response === 'object') {
+            return Object.values(response).flat().join('\n');
+          }
+        } catch (e) {
+          if (xhr.responseText) {
+            return xhr.responseText;
+          }
+        }
+        return fallback;
+      }
 
       /**
        * Wait for MarkdownEditor to be loaded (handles race condition with pagedown_init.js)
@@ -52,6 +68,14 @@
           $container.html(`
             <div class="alert alert-info" style="margin-top: 1em;">
               ${commentConfig.newUserMessage}
+            </div>
+          `);
+          return;
+        }
+        if (commentConfig.isCommentMuted) {
+          $container.html(`
+            <div class="alert alert-warning" style="margin-top: 1em;">
+              ${commentConfig.mutedMessage}
             </div>
           `);
           return;
@@ -138,17 +162,10 @@
               $submitBtn.prop('disabled', false);
             },
             error: function(xhr) {
-              var errorMessage = 'An error occurred while posting your comment.';
-              try {
-                var response = JSON.parse(xhr.responseText);
-                if (typeof response === 'object') {
-                  errorMessage = Object.values(response).flat().join('<br>');
-                }
-              } catch (e) {
-                if (xhr.responseText) {
-                  errorMessage = xhr.responseText;
-                }
-              }
+              var errorMessage = getCommentPostError(
+                xhr,
+                '{{ _("An error occurred while posting your comment.")|escapejs }}'
+              );
               alert(errorMessage);
               $submitBtn.prop('disabled', false);
             },
@@ -169,6 +186,11 @@
        * @param {number} parentId - ID of the comment being replied to
        */
       window.reply_comment = function (parentId) {
+        if (commentConfig.isCommentMuted) {
+          alert(commentConfig.mutedMessage);
+          return;
+        }
+
         var $replyContainer = $('#comment-' + parentId + '-reply');
         var formId = 'reply-form-' + parentId;
         var editorId = 'reply-editor-' + parentId;
@@ -245,17 +267,10 @@
                 comment_get_replies(parentId);
               },
               error: function(xhr) {
-                var errorMessage = 'An error occurred while posting your comment.';
-                try {
-                  var response = JSON.parse(xhr.responseText);
-                  if (typeof response === 'object') {
-                    errorMessage = Object.values(response).flat().join('<br>');
-                  }
-                } catch (e) {
-                  if (xhr.responseText) {
-                    errorMessage = xhr.responseText;
-                  }
-                }
+                var errorMessage = getCommentPostError(
+                  xhr,
+                  '{{ _("An error occurred while posting your comment.")|escapejs }}'
+                );
                 alert(errorMessage);
                 $submitBtn.prop('disabled', false);
               },
@@ -391,7 +406,7 @@
 
       window.hide_comment = function (commentId) {
         // Ask for confirmation before hiding a comment
-        if (!(confirm('Are you sure you want to hide this comment?')))
+        if (!(confirm('{{ _("Are you sure you want to hide this comment?")|escapejs }}')))
           return;
 
         // Send request to hide the comment
@@ -404,6 +419,122 @@
           .catch(function () {
             alert('Failed to hide comment.');
           });
+      };
+
+      var pendingCommentMute = null;
+
+      function ensureCommentMuteModal() {
+        if ($('#comment-mute-modal').length) {
+          return;
+        }
+
+        var $modalParent = $('.comment-area').first();
+        if (!$modalParent.length) {
+          $modalParent = $('body');
+        }
+        $modalParent.append([
+          '<div id="comment-mute-modal" class="comment-mute-modal-backdrop" aria-hidden="true">',
+          '<div class="comment-mute-modal" role="dialog" aria-modal="true" aria-labelledby="comment-mute-title">',
+          '<h3 id="comment-mute-title">{{ _("Mute user")|escapejs }}</h3>',
+          '<p class="comment-mute-modal-summary">{{ _("Mute this user and hide this comment?")|escapejs }}</p>',
+          '<div class="comment-mute-type-row">',
+          '<span class="comment-mute-type-label">{{ _("Mute duration")|escapejs }}</span>',
+          '<div class="comment-mute-type-options">',
+          '<label>',
+          '<input type="radio" name="comment-mute-type" value="temporary" checked>',
+          '<span>{{ _("Temporary")|escapejs }}</span>',
+          '</label>',
+          '<label class="comment-mute-permanent-option">',
+          '<input type="radio" name="comment-mute-type" value="permanent">',
+          '<span>{{ _("Forever")|escapejs }}</span>',
+          '</label>',
+          '</div>',
+          '</div>',
+          '<label for="comment-mute-reason">{{ _("Reason")|escapejs }}</label>',
+          '<textarea id="comment-mute-reason" rows="4" maxlength="500" placeholder="{{ _("Explain why this user is being muted...")|escapejs }}"></textarea>',
+          '<p id="comment-mute-error" class="comment-mute-modal-error" aria-live="polite"></p>',
+          '<div class="comment-mute-modal-actions">',
+          '<button type="button" id="comment-mute-cancel" class="action-btn background-gray">{{ _("Cancel")|escapejs }}</button>',
+          '<button type="button" id="comment-mute-confirm" class="action-btn">{{ _("Confirm mute")|escapejs }}</button>',
+          '</div>',
+          '</div>',
+          '</div>'
+        ].join(''));
+
+        $('#comment-mute-cancel').on('click', closeCommentMuteModal);
+        $('#comment-mute-modal').on('click', function (e) {
+          if (e.target === this) {
+            closeCommentMuteModal();
+          }
+        });
+        $('#comment-mute-confirm').on('click', submitCommentMute);
+      }
+
+      function closeCommentMuteModal() {
+        pendingCommentMute = null;
+        $('#comment-mute-modal')
+          .removeClass('is-open')
+          .attr('aria-hidden', 'true');
+        $('#comment-mute-error').text('');
+        $('#comment-mute-confirm').prop('disabled', false);
+      }
+
+      function submitCommentMute() {
+        if (!pendingCommentMute) {
+          return;
+        }
+
+        var reason = $('#comment-mute-reason').val().trim();
+        if (!reason) {
+          $('#comment-mute-error').text('{{ _("Reason is required.")|escapejs }}');
+          $('#comment-mute-reason').focus();
+          return;
+        }
+
+        var muteType = $('input[name="comment-mute-type"]:checked').val() === 'permanent'
+          ? 'permanent'
+          : 'temporary';
+        $('#comment-mute-confirm').prop('disabled', true);
+        $.ajax({
+          url: '{{ url('comment_mute') }}',
+          type: 'POST',
+          data: {
+            id: pendingCommentMute.commentId,
+            mute_type: muteType,
+            reason: reason,
+            csrfmiddlewaretoken: $.cookie('csrftoken')
+          }
+        })
+          .then(function () {
+            $('#comment-' + pendingCommentMute.commentId).remove();
+            $('#comment-' + pendingCommentMute.commentId + '-children').remove();
+            closeCommentMuteModal();
+          })
+          .catch(function (xhr) {
+            var message = xhr.responseJSON && xhr.responseJSON.error
+              ? xhr.responseJSON.error
+              : '{{ _("Failed to mute user.")|escapejs }}';
+            $('#comment-mute-error').text(message);
+            $('#comment-mute-confirm').prop('disabled', false);
+          });
+      }
+
+      window.mute_comment = function (commentId, canPermanent, reasonRequired) {
+        ensureCommentMuteModal();
+        pendingCommentMute = {
+          commentId: commentId,
+          canPermanent: canPermanent,
+          reasonRequired: reasonRequired
+        };
+        $('input[name="comment-mute-type"][value="temporary"]').prop('checked', true);
+        $('.comment-mute-permanent-option').toggle(!!canPermanent);
+        $('#comment-mute-reason').val('');
+        $('#comment-mute-error').text('');
+        $('#comment-mute-confirm').prop('disabled', false);
+        $('#comment-mute-modal')
+          .addClass('is-open')
+          .attr('aria-hidden', 'false');
+        $('#comment-mute-reason').focus();
       };
 
       // Store inline edit editors by comment ID

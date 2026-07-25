@@ -26,6 +26,7 @@
 }
 
 .internal-chat-moderation-page,
+.internal-comment-moderation-page,
 .internal-username-moderation-page {
     max-width: 100%;
     min-width: 0;
@@ -45,18 +46,69 @@
     }
 
     .chat-moderation-table {
+        min-width: 58em;
+
         .chat-time-column {
-            width: 8.5em;
+            width: 6em;
         }
 
         .chat-user-column,
-        .chat-action-column,
+        .chat-action-column {
+            width: 6em;
+        }
+
+        .chat-message-column,
+        .chat-reason-column {
+            width: 10em;
+        }
+
+        .chat-expires-column {
+            width: 6em;
+        }
+
         .chat-source-column {
-            width: 7em;
+            width: 5em;
         }
 
         .chat-button-column {
-            width: 6em;
+            width: 7.5em;
+        }
+    }
+
+    .comment-moderation-table {
+        min-width: 55em;
+
+        .comment-time-column {
+            width: 5.5em;
+        }
+
+        .comment-user-column,
+        .comment-action-column {
+            width: 5.5em;
+        }
+
+        .comment-context-column {
+            width: 6.5em;
+        }
+
+        .comment-body-column {
+            width: 8em;
+        }
+
+        .comment-reason-column {
+            width: 6.5em;
+        }
+
+        .comment-expires-column {
+            width: 5.5em;
+        }
+
+        .comment-source-column {
+            width: 4.5em;
+        }
+
+        .comment-button-column {
+            width: 7.5em;
         }
     }
 
@@ -89,8 +141,115 @@
         margin-top: $space-md;
     }
 
+    .chat-modal-backdrop {
+        align-items: center;
+        background: rgb(0 0 0 / 35%);
+        display: none;
+        inset: 0;
+        justify-content: center;
+        padding: $space-lg;
+        position: fixed;
+        z-index: 1500;
+
+        &.is-open {
+            display: flex;
+        }
+    }
+
+    .chat-modal {
+        background: $surface-primary;
+        border: $space-hairline solid $border_gray;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-modal;
+        box-sizing: border-box;
+        padding: $space-lg;
+        width: min(26em, 100%);
+
+        h3 {
+            font-size: 1.1rem;
+            margin: 0 0 $space-sm;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: $space-xs;
+        }
+
+        textarea {
+            background: $surface-primary;
+            border: $space-hairline solid $border_gray;
+            border-radius: $radius-md;
+            box-sizing: border-box;
+            color: $text-primary;
+            font: inherit;
+            padding: $space-sm;
+            resize: vertical;
+            width: 100%;
+        }
+    }
+
+    .chat-modal-summary {
+        color: $text-muted;
+        margin: 0 0 $space-md;
+    }
+
+    .chat-mute-type-row {
+        margin-bottom: $space-md;
+    }
+
+    .chat-mute-type-label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: $space-xs;
+    }
+
+    .chat-mute-type-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-sm;
+
+        label {
+            align-items: center;
+            background: $background_light_gray;
+            border: $space-hairline solid $border_gray;
+            border-radius: $radius-md;
+            cursor: pointer;
+            display: inline-flex;
+            font-weight: normal;
+            gap: $space-xs;
+            margin: 0;
+            padding: $space-sm $space-md;
+        }
+
+        input {
+            margin: 0;
+        }
+    }
+
+    .chat-modal-error {
+        color: $announcement_red;
+        margin: $space-xs 0 0;
+        min-height: 1.2em;
+    }
+
+    .chat-modal-actions {
+        display: flex;
+        gap: $space-sm;
+        justify-content: flex-end;
+        margin-top: $space-md;
+    }
+
+    .chat-moderation-action-form,
+    .comment-moderation-action-form,
     .username-moderation-action-form {
         display: inline-block;
+        margin: 0 $space-xs $space-xs 0;
+    }
+
+    .chat-review-mute-button,
+    .comment-review-mute-button,
+    .unmute-button {
         margin: 0 $space-xs $space-xs 0;
     }
 }

@@ -56,6 +56,14 @@ class CommentListView(ListView):
         author_ids = get_content_author_ids(content_type_id, object_id)
         return profile.id in author_ids
 
+    def _can_mute_comments_temporarily(self):
+        return self.request.user.is_authenticated and self.request.user.has_perm(
+            "judge.change_comment"
+        )
+
+    def _can_mute_comments_permanently(self):
+        return self.request.user.is_authenticated and self.request.user.is_superuser
+
     def get(self, request, *args, **kwargs):
         self.object_list = self.get_queryset()
         if self.error_response:
@@ -83,6 +91,7 @@ class CommentListView(ListView):
 
         # Determine if user is new (can't comment)
         is_new_user = False
+        is_comment_muted = False
         if self.request.user.is_authenticated:
             is_new_user = (
                 not self.request.user.is_staff
@@ -90,6 +99,7 @@ class CommentListView(ListView):
                     points=F("problem__points")
                 ).exists()
             )
+            is_comment_muted = self.request.profile.mute
 
         context = super().get_context_data(**kwargs)
         context.update(
@@ -108,6 +118,9 @@ class CommentListView(ListView):
                 "compact": getattr(self, "compact", False),
                 "comment_lock": is_comment_locked(self.request),
                 "is_new_user": is_new_user,
+                "is_comment_muted": is_comment_muted,
+                "can_mute_comments_temporarily": self._can_mute_comments_temporarily(),
+                "can_mute_comments_permanently": self._can_mute_comments_permanently(),
             }
         )
         return context
@@ -182,6 +195,7 @@ class TopLevelCommentsView(CommentListView):
 
         # Determine if user is new (can't comment)
         is_new_user = False
+        is_comment_muted = False
         if self.request.user.is_authenticated:
             is_new_user = (
                 not self.request.user.is_staff
@@ -189,6 +203,7 @@ class TopLevelCommentsView(CommentListView):
                     points=F("problem__points")
                 ).exists()
             )
+            is_comment_muted = self.request.profile.mute
 
         context = super(CommentListView, self).get_context_data(**kwargs)
         context.update(
@@ -207,6 +222,9 @@ class TopLevelCommentsView(CommentListView):
                 "compact": getattr(self, "compact", False),
                 "comment_lock": is_comment_locked(self.request),
                 "is_new_user": is_new_user,
+                "is_comment_muted": is_comment_muted,
+                "can_mute_comments_temporarily": self._can_mute_comments_temporarily(),
+                "can_mute_comments_permanently": self._can_mute_comments_permanently(),
             }
         )
 

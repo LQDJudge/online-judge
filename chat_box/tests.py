@@ -302,6 +302,22 @@ class ChatMuteTest(TestCase):
         notification = Notification.objects.get(owner=self.author_profile)
         self.assertEqual(notification.category, NotificationCategory.CHAT_MUTE)
         self.assertIn("Repeated spam", notification.html_link)
+        self.assertEqual(notification.extra_data["type"], "chat_mute_notice")
+        self.assertEqual(notification.extra_data["reason"], "Repeated spam")
+        self.assertTrue(notification.extra_data["mute_until"])
+
+        self.client.login(username="muteduser", password="password123")
+        response = self.client.get("/notifications/", HTTP_ACCEPT_LANGUAGE="en")
+        self.assertContains(
+            response,
+            "Your chat access has been muted until",
+        )
+        self.assertContains(response, "Reason: Repeated spam")
+        self.assertNotContains(response, "Bạn bị cấm chat")
+
+        response = self.client.get("/notifications/", HTTP_ACCEPT_LANGUAGE="vi")
+        self.assertContains(response, "Bạn bị cấm chat đến")
+        self.assertContains(response, "Lý do: Repeated spam")
 
     def test_moderator_cannot_permanently_mute(self):
         message = Message.objects.create(

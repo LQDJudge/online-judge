@@ -1,4 +1,4 @@
-{% set can_comment = request.user.is_authenticated and not comment_lock %}
+{% set can_comment = request.user.is_authenticated and not comment_lock and not is_comment_muted %}
 <div id="comments" class="comment-area">
   <div class="comment-header-wrapper">
     <div style="display: flex; gap: 1em; align-items: center;">
@@ -31,6 +31,10 @@
   </div>
   {% if can_comment %}
     <div id="new-comment-container"></div>
+  {% elif is_comment_muted %}
+    <div class="alert alert-warning comment-muted-notice">
+      {{ _('You are muted and cannot comment.') }}
+    </div>
   {% endif %}
 
   <!-- Comments will be loaded via AJAX -->

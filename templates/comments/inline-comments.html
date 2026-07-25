@@ -1,10 +1,11 @@
-{% set can_comment = request.user.is_authenticated and not comment_lock %}
+{% set can_comment = request.user.is_authenticated and not comment_lock and not is_comment_muted %}
 <div class="comment-area compact-comments"
      data-content-type-id="{{ content_type_id }}"
      data-object-id="{{ object_id }}"
      data-post-url="{{ url('comment_post') }}"
      data-preview-url="{{ url('comment_preview') }}"
      data-is-new-user="{{ 'true' if is_new_user else 'false' }}"
+     data-is-comment-muted="{{ 'true' if is_comment_muted else 'false' }}"
      data-offset="{{ offset }}"
      data-has-more="{{ 'true' if comment_more > 0 else 'false' }}"
      data-sort-by="{{ sort_by }}"
@@ -14,6 +15,8 @@
   <div class="inline-comments-header">
     {% if can_comment %}
       <div class="inline-new-comment-container"></div>
+    {% elif is_comment_muted %}
+      <div class="inline-new-user-notice">{{ _('You are muted and cannot comment.') }}</div>
     {% endif %}
     <div class="inline-sort-controls">
       <select class="inline-sort-select">
@@ -69,6 +72,8 @@
       previewUrl: '{{ url("comment_preview") }}',
       getCommentsUrl: '{{ url("get_comments") }}',
       isNewUser: {{ 'true' if is_new_user else 'false' }},
+      isCommentMuted: {{ 'true' if is_comment_muted else 'false' }},
+      mutedMessage: '{{ _("You are muted and cannot comment.")|escapejs }}',
       offset: {{ offset }},
       hasMore: {{ 'true' if comment_more > 0 else 'false' }},
       sortBy: '{{ sort_by }}',
@@ -76,6 +81,20 @@
     };
 
   // Initialize sort controls
+    function getCommentPostError(xhr, fallback) {
+      try {
+        var response = JSON.parse(xhr.responseText);
+        if (typeof response === 'object') {
+          return Object.values(response).flat().join('\n');
+        }
+      } catch (e) {
+        if (xhr.responseText) {
+          return xhr.responseText;
+        }
+      }
+      return fallback;
+    }
+
     function initSortControls() {
       var $sortSelect = $container.find('.inline-sort-select');
       $sortSelect.on('change', function(e) {
@@ -132,6 +151,10 @@
 
       if (config.isNewUser) {
         $formContainer.html('<div class="inline-new-user-notice">{{ _("Solve a problem to comment") }}</div>');
+        return;
+      }
+      if (config.isCommentMuted) {
+        $formContainer.html('<div class="inline-new-user-notice">' + config.mutedMessage + '</div>');
         return;
       }
 
@@ -197,7 +220,7 @@
             $submitBtn.prop('disabled', false);
           },
           error: function(xhr) {
-            alert(xhr.responseText || '{{ _("Error posting comment") }}');
+            alert(getCommentPostError(xhr, '{{ _("Error posting comment")|escapejs }}'));
             $submitBtn.prop('disabled', false);
           }
         });
@@ -332,6 +355,11 @@
 
     if (typeof window.reply_comment === 'undefined') {
       window.reply_comment = function(parentId) {
+        if (config.isCommentMuted) {
+          alert(config.mutedMessage);
+          return;
+        }
+
         var $replyContainer = $('#comment-' + parentId + '-reply');
         var formId = 'inline-reply-form-' + parentId;
 
@@ -370,7 +398,9 @@
               data: { csrfmiddlewaretoken: $.cookie('csrftoken'), parent: parentId, body: body,
                 content_type_id: replyContentTypeId, object_id: replyObjectId },
               success: function() { $replyContainer.hide().html(''); comment_get_replies(parentId); },
-              error: function(xhr) { alert(xhr.responseText || 'Error posting reply'); }
+              error: function(xhr) {
+                alert(getCommentPostError(xhr, '{{ _("Error posting reply")|escapejs }}'));
+              }
             });
           });
           return;
@@ -406,7 +436,7 @@
                 comment_get_replies(parentId);
               },
               error: function(xhr) {
-                alert(xhr.responseText || '{{ _("Error posting reply") }}');
+                alert(getCommentPostError(xhr, '{{ _("Error posting reply")|escapejs }}'));
                 $submitBtn.prop('disabled', false);
               }
             });
@@ -435,7 +465,7 @@
   // Hide comment
     if (typeof window.hide_comment === 'undefined') {
       window.hide_comment = function(commentId) {
-        if (!confirm('{{ _("Are you sure you want to hide this comment?") }}')) return;
+        if (!confirm('{{ _("Are you sure you want to hide this comment?")|escapejs }}')) return;
         $.ajax({
           url: '{{ url("comment_hide") }}',
           type: 'POST',
@@ -449,9 +479,128 @@
             });
           },
           error: function(xhr) {
-            alert(xhr.responseText || '{{ _("Error hiding comment") }}');
+            alert(xhr.responseText || '{{ _("Error hiding comment")|escapejs }}');
           }
         });
+      };
+    }
+
+    if (typeof window.mute_comment === 'undefined') {
+      var pendingCommentMute = null;
+
+      function ensureCommentMuteModal() {
+        if ($('#comment-mute-modal').length) {
+          return;
+        }
+
+        var $modalParent = $('.comment-area').first();
+        if (!$modalParent.length) {
+          $modalParent = $('body');
+        }
+        $modalParent.append([
+          '<div id="comment-mute-modal" class="comment-mute-modal-backdrop" aria-hidden="true">',
+          '<div class="comment-mute-modal" role="dialog" aria-modal="true" aria-labelledby="comment-mute-title">',
+          '<h3 id="comment-mute-title">{{ _("Mute user")|escapejs }}</h3>',
+          '<p class="comment-mute-modal-summary">{{ _("Mute this user and hide this comment?")|escapejs }}</p>',
+          '<div class="comment-mute-type-row">',
+          '<span class="comment-mute-type-label">{{ _("Mute duration")|escapejs }}</span>',
+          '<div class="comment-mute-type-options">',
+          '<label>',
+          '<input type="radio" name="comment-mute-type" value="temporary" checked>',
+          '<span>{{ _("Temporary")|escapejs }}</span>',
+          '</label>',
+          '<label class="comment-mute-permanent-option">',
+          '<input type="radio" name="comment-mute-type" value="permanent">',
+          '<span>{{ _("Forever")|escapejs }}</span>',
+          '</label>',
+          '</div>',
+          '</div>',
+          '<label for="comment-mute-reason">{{ _("Reason")|escapejs }}</label>',
+          '<textarea id="comment-mute-reason" rows="4" maxlength="500" placeholder="{{ _("Explain why this user is being muted...")|escapejs }}"></textarea>',
+          '<p id="comment-mute-error" class="comment-mute-modal-error" aria-live="polite"></p>',
+          '<div class="comment-mute-modal-actions">',
+          '<button type="button" id="comment-mute-cancel" class="action-btn background-gray">{{ _("Cancel")|escapejs }}</button>',
+          '<button type="button" id="comment-mute-confirm" class="action-btn">{{ _("Confirm mute")|escapejs }}</button>',
+          '</div>',
+          '</div>',
+          '</div>'
+        ].join(''));
+
+        $('#comment-mute-cancel').on('click', closeCommentMuteModal);
+        $('#comment-mute-modal').on('click', function(e) {
+          if (e.target === this) {
+            closeCommentMuteModal();
+          }
+        });
+        $('#comment-mute-confirm').on('click', submitCommentMute);
+      }
+
+      function closeCommentMuteModal() {
+        pendingCommentMute = null;
+        $('#comment-mute-modal')
+          .removeClass('is-open')
+          .attr('aria-hidden', 'true');
+        $('#comment-mute-error').text('');
+        $('#comment-mute-confirm').prop('disabled', false);
+      }
+
+      function submitCommentMute() {
+        if (!pendingCommentMute) {
+          return;
+        }
+
+        var reason = $('#comment-mute-reason').val().trim();
+        if (!reason) {
+          $('#comment-mute-error').text('{{ _("Reason is required.")|escapejs }}');
+          $('#comment-mute-reason').focus();
+          return;
+        }
+
+        var muteType = $('input[name="comment-mute-type"]:checked').val() === 'permanent'
+          ? 'permanent'
+          : 'temporary';
+        $('#comment-mute-confirm').prop('disabled', true);
+        $.ajax({
+          url: '{{ url("comment_mute") }}',
+          type: 'POST',
+          data: {
+            csrfmiddlewaretoken: $.cookie('csrftoken'),
+            id: pendingCommentMute.commentId,
+            mute_type: muteType,
+            reason: reason
+          },
+          success: function() {
+            $('#comment-' + pendingCommentMute.commentId).fadeOut(300, function() {
+              $(this).remove();
+            });
+            closeCommentMuteModal();
+          },
+          error: function(xhr) {
+            var message = xhr.responseJSON && xhr.responseJSON.error
+              ? xhr.responseJSON.error
+              : '{{ _("Failed to mute user.")|escapejs }}';
+            $('#comment-mute-error').text(message);
+            $('#comment-mute-confirm').prop('disabled', false);
+          }
+        });
+      }
+
+      window.mute_comment = function(commentId, canPermanent, reasonRequired) {
+        ensureCommentMuteModal();
+        pendingCommentMute = {
+          commentId: commentId,
+          canPermanent: canPermanent,
+          reasonRequired: reasonRequired
+        };
+        $('input[name="comment-mute-type"][value="temporary"]').prop('checked', true);
+        $('.comment-mute-permanent-option').toggle(!!canPermanent);
+        $('#comment-mute-reason').val('');
+        $('#comment-mute-error').text('');
+        $('#comment-mute-confirm').prop('disabled', false);
+        $('#comment-mute-modal')
+          .addClass('is-open')
+          .attr('aria-hidden', 'false');
+        $('#comment-mute-reason').focus();
       };
     }
 
