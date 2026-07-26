@@ -717,7 +717,7 @@
         return String(args).trim();
       }
 
-      function normalizeTestcaseJsonEntry(item, defaultScore, fallbackTestcase) {
+      function normalizeTestcaseJsonEntry(item, defaultScore) {
         if (typeof item === 'string') {
           if (!item.trim()) {
             throw '{{_("Every testcase name must be a non-empty string.")}}';
@@ -738,8 +738,9 @@
         if (explicitTestcase && generatorArgs) {
           throw '{{_("Use either testcase or generator_args for each row, not both.")}}';
         }
-        var testcase = explicitTestcase || (generatorArgs ? fallbackTestcase : '');
-        if (!testcase) throw '{{_("Every row must have either testcase or generator_args.")}}';
+        if (!explicitTestcase && !generatorArgs) {
+          throw '{{_("Every row must have either testcase or generator_args.")}}';
+        }
 
         var score = item.score == null || item.score === ''
           ? (defaultScore == null ? 1 : defaultScore)
@@ -750,7 +751,7 @@
 
         return {
           score: score,
-          testcase: testcase,
+          testcase: explicitTestcase,
           generator_args: generatorArgs
         };
       }
@@ -783,7 +784,7 @@
         if (isBatchJson) {
           return {
             mode: 'batch',
-            batches: parsed.map(function(batch, batchIndex) {
+            batches: parsed.map(function(batch) {
               var score = Number(batch.score);
               if (!isFinite(score)) {
                 throw '{{_("Each batch must have a numeric score.")}}';
@@ -793,12 +794,8 @@
               }
               return {
                 score: score,
-                testcases: batch.testcases.map(function(testcase, caseIndex) {
-                  return normalizeTestcaseJsonEntry(
-                    testcase,
-                    1,
-                    'json_gen_batch' + (batchIndex + 1) + '_case' + (caseIndex + 1)
-                  );
+                testcases: batch.testcases.map(function(testcase) {
+                  return normalizeTestcaseJsonEntry(testcase, 1);
                 })
               };
             })
@@ -808,12 +805,8 @@
         if (isFlatJson) {
           return {
             mode: 'case',
-            cases: parsed.map(function(item, caseIndex) {
-              return normalizeTestcaseJsonEntry(
-                item,
-                1,
-                'json_gen_case' + (caseIndex + 1)
-              );
+            cases: parsed.map(function(item) {
+              return normalizeTestcaseJsonEntry(item, 1);
             })
           };
         }
