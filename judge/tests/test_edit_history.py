@@ -8,6 +8,7 @@ from reversion import revisions
 
 from judge.models import (
     Contest,
+    ContestParticipation,
     ContestProblem,
     Language,
     Problem,
@@ -374,6 +375,59 @@ class EditHistoryViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "+ history_added")
         self.assertContains(response, "- history_removed")
+
+    def test_contest_ranking_disqualify_is_recorded_in_history(self):
+        now = timezone.now()
+        contest = Contest.objects.create(
+            key="histcontestdisqualify",
+            name="History Contest Disqualify",
+            start_time=now - timezone.timedelta(hours=2),
+            end_time=now - timezone.timedelta(hours=1),
+        )
+        contest.authors.add(self.profile)
+        participant_user = User.objects.create_user("history_disqualified")
+        participant_profile, _ = Profile.objects.get_or_create(
+            user=participant_user, defaults={"language": self.language}
+        )
+        participation = ContestParticipation.objects.create(
+            contest=contest, user=participant_profile
+        )
+
+        with revisions.create_revision():
+            revisions.add_to_revision(contest)
+            revisions.set_user(self.user)
+            revisions.set_comment("Initial contest")
+
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("contest_participation_disqualify", args=[contest.key]),
+            {"participation": participation.id},
+        )
+        self.assertEqual(response.status_code, 302)
+        participation.refresh_from_db()
+        self.assertTrue(participation.is_disqualified)
+
+        view = ContestLog()
+        view.object = contest
+        with override("en"):
+            entries = list(view.get_queryset())
+        banned_change = next(
+            change
+            for entry in entries
+            for change in entry.changes
+            if change["field"] == "Banned users"
+        )
+
+        self.assertEqual(
+            banned_change["list_diff"]["new_items"],
+            [{"label": "history_disqualified", "status": "added"}],
+        )
+        self.assertTrue(
+            any(entry.revision.comment == "Edited from site" for entry in entries)
+        )
+        response = self.client.get(reverse("contest_log", args=[contest.key]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "+ history_disqualified")
 
     def test_problem_history_diffs_many_to_many_list_fields(self):
         problem = self.make_problem("histproblemlists")

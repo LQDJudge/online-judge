@@ -1929,7 +1929,11 @@ class ContestParticipationDisqualify(ContestMixin, SingleObjectMixin, View):
         except ObjectDoesNotExist:
             pass
         else:
-            participation.set_disqualified(not participation.is_disqualified)
+            with transaction.atomic(), revisions.create_revision():
+                participation.set_disqualified(not participation.is_disqualified)
+                revisions.add_to_revision(self.object)
+                revisions.set_user(request.user)
+                revisions.set_comment(_("Edited from site"))
         return HttpResponseRedirect(reverse("contest_ranking", args=(self.object.key,)))
 
 
@@ -1951,14 +1955,20 @@ class ContestBulkDisqualify(ContestMixin, SingleObjectMixin, View):
             if username:
                 usernames.add(username)
 
+        # A user can have multiple participations; load all matching rows once.
+        participations = self.object.users.filter(
+            user__user__username__in=usernames,
+            is_disqualified=False,
+        )
         disqualified_count = 0
-        for username in usernames:
-            # Use filter() instead of get() because a user can have multiple participations
-            participations = self.object.users.filter(user__user__username=username)
-            for participation in participations:
-                if not participation.is_disqualified:
-                    participation.set_disqualified(True)
-                    disqualified_count += 1
+        for participation in participations:
+            participation.set_disqualified(True)
+            disqualified_count += 1
+        if disqualified_count:
+            with revisions.create_revision():
+                revisions.add_to_revision(self.object)
+                revisions.set_user(request.user)
+                revisions.set_comment(_("Edited from site"))
 
         return HttpResponseRedirect(reverse("contest_ranking", args=(self.object.key,)))
 
