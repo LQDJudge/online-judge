@@ -69,6 +69,9 @@ DMOJ_PROBLEM_DATA_ROOT = None
 DMOJ_PROBLEM_DATA_PUSH_UPDATE = False
 DMOJ_PROBLEM_MIN_TIME_LIMIT = 0  # seconds
 DMOJ_PROBLEM_MAX_TIME_LIMIT = 60  # seconds
+# Maximum total judging time for a problem's dataset, in seconds:
+# time_limit * number of test cases. Enforced for non-admins on data save.
+DMOJ_PROBLEM_MAX_TOTAL_TIME_LIMIT = 180  # seconds
 DMOJ_PROBLEM_MIN_MEMORY_LIMIT = 0  # kilobytes
 DMOJ_PROBLEM_MAX_MEMORY_LIMIT = 1048576  # kilobytes
 DMOJ_PROBLEM_MIN_PROBLEM_POINTS = 0

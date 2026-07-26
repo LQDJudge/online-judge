@@ -38,6 +38,7 @@ from judge.models import (
     Problem,
     ProblemAttachment,
     ProblemPointsVote,
+    ProblemTestCase,
     ProblemTranslation,
     Profile,
     Solution,
@@ -1292,6 +1293,36 @@ class ProblemEditForm(AuthorManagedRoleFieldsMixin, DirectUploadFormMixin, Model
                     _("Time limit cannot exceed %(max)s seconds.")
                     % {"max": MAX_USER_TIME_LIMIT},
                 )
+
+            # Cap total judging time (time limit × number of test cases) so a
+            # non-admin can't build a dataset that ties up judges too long.
+            if (
+                time_limit is not None
+                and not self.fields["time_limit"].disabled
+                and self.instance
+                and self.instance.pk
+            ):
+                num_tests = ProblemTestCase.objects.filter(
+                    dataset=self.instance, type="C"
+                ).count()
+                total_time = time_limit * num_tests
+                max_total = settings.DMOJ_PROBLEM_MAX_TOTAL_TIME_LIMIT
+                if total_time > max_total:
+                    self.add_error(
+                        "time_limit",
+                        _(
+                            "Total judging time (time limit %(tl)ss × %(count)d "
+                            "test cases = %(total)ss) exceeds the maximum of "
+                            "%(max)ss. Reduce the time limit or the number of "
+                            "test cases."
+                        )
+                        % {
+                            "tl": time_limit,
+                            "count": num_tests,
+                            "total": total_time,
+                            "max": max_total,
+                        },
+                    )
 
             memory_limit = cleaned_data.get("memory_limit")
             if (

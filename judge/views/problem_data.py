@@ -286,12 +286,51 @@ class ProblemCaseFormSet(
 
     def __init__(self, *args, **kwargs):
         self.valid_files = kwargs.pop("valid_files", None)
+        self.problem_time_limit = kwargs.pop("problem_time_limit", None)
+        self.enforce_total_time_limit = kwargs.pop("enforce_total_time_limit", False)
         super(ProblemCaseFormSet, self).__init__(*args, **kwargs)
 
     def _construct_form(self, i, **kwargs):
         form = super(ProblemCaseFormSet, self)._construct_form(i, **kwargs)
         form.valid_files = self.valid_files
         return form
+
+    def clean(self):
+        super().clean()
+        if not self.enforce_total_time_limit or self.problem_time_limit is None:
+            return
+        # Skip the cross-form check when individual rows already have errors;
+        # their cleaned_data may be missing/inconsistent.
+        if any(self.errors):
+            return
+
+        num_tests = 0
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data"):
+                continue
+            if form.cleaned_data.get("DELETE"):
+                continue
+            # Only real cases (type "C") are judged; batch start/end rows don't
+            # run the solution and so don't consume judging time.
+            if form.cleaned_data.get("type") == "C":
+                num_tests += 1
+
+        max_total = settings.DMOJ_PROBLEM_MAX_TOTAL_TIME_LIMIT
+        total = self.problem_time_limit * num_tests
+        if total > max_total:
+            raise ValidationError(
+                _(
+                    "Total judging time (time limit %(tl)ss × %(count)d test "
+                    "cases = %(total)ss) exceeds the maximum of %(max)ss. "
+                    "Reduce the time limit or the number of test cases."
+                )
+                % {
+                    "tl": self.problem_time_limit,
+                    "count": num_tests,
+                    "total": total,
+                    "max": max_total,
+                }
+            )
 
 
 class ProblemManagerMixin(LoginRequiredMixin, ProblemMixin, DetailView):
@@ -378,6 +417,8 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
             data=self.request.POST if post else None,
             prefix="cases",
             valid_files=files,
+            problem_time_limit=self.object.time_limit,
+            enforce_total_time_limit=not self.request.user.is_superuser,
             queryset=ProblemTestCase.objects.filter(dataset_id=self.object.pk).order_by(
                 "order"
             ),

@@ -1550,6 +1550,13 @@
   <form class="problem-data-form" action="" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     {{ cases_formset.management_form }}
+    {% if cases_formset.non_form_errors() %}
+      <ul class="errorlist">
+        {% for error in cases_formset.non_form_errors() %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
     <table class="table">
       {{ data_form.as_table() }}
       <th>
