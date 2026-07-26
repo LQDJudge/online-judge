@@ -428,10 +428,53 @@ class AddOrganizationContestForm(ModelForm):
         }
 
 
-CONTEST_ROLE_FIELDS = ("authors", "curators", "testers")
+ROLE_MANAGEMENT_FIELDS = ("authors", "curators", "testers")
 
 
-class ContestEditForm(ModelForm):
+class AuthorManagedRoleFieldsMixin:
+    role_fields = ROLE_MANAGEMENT_FIELDS
+    role_error_message = _("Only authors can change authors, curators, or testers.")
+
+    def _setup_role_fields(self):
+        self.can_edit_roles = self._can_edit_roles()
+        if not self.can_edit_roles:
+            for field_name in self.role_fields:
+                if field_name in self.fields:
+                    self.fields[field_name].disabled = True
+
+    def _can_edit_roles(self):
+        user = getattr(self, "user", None)
+        instance = getattr(self, "instance", None)
+        if not (instance and instance.pk):
+            return True
+        if not (user and user.is_authenticated):
+            return False
+        if user.is_superuser:
+            return True
+        if not hasattr(user, "profile"):
+            return False
+
+        author_ids = getattr(instance, "author_ids", None)
+        if author_ids is None and hasattr(instance, "get_author_ids"):
+            author_ids = instance.get_author_ids()
+        if author_ids is not None:
+            return user.profile.id in author_ids
+
+        return instance.authors.filter(id=user.profile.id).exists()
+
+    def _validate_role_field_changes(self):
+        if self.can_edit_roles:
+            return
+        changed_role_fields = [
+            field_name
+            for field_name in self.role_fields
+            if field_name in self.changed_data
+        ]
+        if changed_role_fields:
+            raise ValidationError(self.role_error_message)
+
+
+class ContestEditForm(AuthorManagedRoleFieldsMixin, ModelForm):
     """
     Unified contest edit form. Serves all three contest types (public,
     org-private, course-private) via the general /contest/<key>/edit page.
@@ -440,14 +483,14 @@ class ContestEditForm(ModelForm):
     being able to flip visibility or move the contest between orgs.
     """
 
+    role_error_message = _(
+        "Only contest authors can change authors, curators, or testers."
+    )
+
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        self.can_edit_roles = self._can_edit_roles()
-
-        if not self.can_edit_roles:
-            for field_name in CONTEST_ROLE_FIELDS:
-                self.fields[field_name].disabled = True
+        self._setup_role_fields()
 
         if not (self.user and self.user.is_superuser):
             self.fields["organizations"].disabled = True
@@ -466,15 +509,6 @@ class ContestEditForm(ModelForm):
 
         if self.user and hasattr(self.user, "profile"):
             self.fields["format_config"].widget.theme = self.user.profile.ace_theme
-
-    def _can_edit_roles(self):
-        if not (self.user and self.user.is_authenticated):
-            return False
-        if self.user.is_superuser:
-            return True
-        if not (self.instance and self.instance.pk and hasattr(self.user, "profile")):
-            return False
-        return self.user.profile.id in self.instance.author_ids
 
     def clean(self):
         cleaned_data = super().clean()
@@ -511,16 +545,7 @@ class ContestEditForm(ModelForm):
                     )
                 )
 
-        if not self.can_edit_roles:
-            changed_role_fields = [
-                field_name
-                for field_name in CONTEST_ROLE_FIELDS
-                if field_name in self.changed_data
-            ]
-            if changed_role_fields:
-                raise ValidationError(
-                    _("Only contest authors can change authors, curators, or testers.")
-                )
+        self._validate_role_field_changes()
 
         return cleaned_data
 
@@ -1193,12 +1218,16 @@ MAX_USER_TIME_LIMIT = 10  # seconds
 MAX_USER_MEMORY_LIMIT = 1048576  # KB (1 GB)
 
 
-class ProblemEditForm(DirectUploadFormMixin, ModelForm):
+class ProblemEditForm(AuthorManagedRoleFieldsMixin, DirectUploadFormMixin, ModelForm):
+    role_error_message = _(
+        "Only problem authors can change authors, curators, or testers."
+    )
     memory_unit = forms.ChoiceField(choices=MEMORY_UNITS)
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+        self._setup_role_fields()
         self.fields["authors"].widget.can_add_related = False
         self.fields["curators"].widget.can_add_related = False
         self.fields["testers"].widget.can_add_related = False
@@ -1324,6 +1353,8 @@ class ProblemEditForm(DirectUploadFormMixin, ModelForm):
                             "You cannot publish this problem without selecting at least one organization."
                         )
                     )
+
+        self._validate_role_field_changes()
 
         return cleaned_data
 

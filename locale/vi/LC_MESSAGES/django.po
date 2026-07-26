@@ -793,6 +793,8 @@ msgstr ""
 #: judge/forms.py:522
 msgid "Only contest authors can change authors, curators, or testers."
 msgstr ""
+"Chỉ tác giả kỳ thi mới có thể thay đổi tác giả, quản lý, hoặc người kiểm "
+"tra."
 
 #: judge/forms.py:590
 msgid "Basic"
@@ -14828,6 +14830,26 @@ msgstr "Chọn tất cả"
 #: templates/widgets/sortable_formset.html:21
 msgid "No items yet."
 msgstr "Chưa có mục nào."
+
+#: judge/forms.py:436
+msgid "Only authors can change authors, curators, or testers."
+msgstr "Chỉ tác giả mới có thể thay đổi tác giả, quản lý, hoặc người kiểm tra."
+
+#: judge/forms.py:1223
+msgid "Only problem authors can change authors, curators, or testers."
+msgstr ""
+"Chỉ tác giả bài tập mới có thể thay đổi tác giả, quản lý, hoặc người kiểm "
+"tra."
+
+#: judge/views/quiz.py:351
+msgid "Only question authors can change authors or curators."
+msgstr "Chỉ tác giả câu hỏi mới có thể thay đổi tác giả hoặc quản lý."
+
+#: judge/views/quiz.py:913
+msgid "Only quiz authors can change authors, curators, or testers."
+msgstr ""
+"Chỉ tác giả bài kiểm tra mới có thể thay đổi tác giả, quản lý, hoặc người "
+"kiểm tra."
 
 #~ msgid "Mute this user permanently? Press Cancel for a temporary mute."
 #~ msgstr "Cấm chat người dùng này vĩnh viễn? Bấm Hủy để cấm tạm thời."

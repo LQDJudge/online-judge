@@ -38,6 +38,7 @@ from judge.tasks.llm import (
     improve_question_markdown_task,
     generate_question_explanation_task,
 )
+from judge.forms import AuthorManagedRoleFieldsMixin
 from judge.utils.permissions import can_use_ai_features
 
 from judge.widgets import HeavySelect2MultipleWidget, HeavyPreviewPageDownWidget
@@ -342,8 +343,23 @@ class QuestionBankList(
         return self.request.user.is_authenticated
 
 
-class QuizQuestionForm(forms.ModelForm):
+class QuizQuestionForm(AuthorManagedRoleFieldsMixin, forms.ModelForm):
     """Form for creating/editing quiz questions with markdown support."""
+
+    role_fields = ("authors", "curators")
+    role_error_message = gettext_lazy(
+        "Only question authors can change authors or curators."
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        self._setup_role_fields()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        self._validate_role_field_changes()
+        return cleaned_data
 
     class Meta:
         model = QuizQuestion
@@ -463,6 +479,11 @@ class QuestionBankCreate(
     title = gettext_lazy("Create Question")
     form_class = QuizQuestionForm
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         if not self.request.user.is_superuser:
@@ -515,6 +536,11 @@ class QuestionBankEdit(
         obj = super().get_object(queryset)
         self._original_is_public = obj.is_public
         return obj
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -880,8 +906,22 @@ class QuizCreate(
         return HttpResponseRedirect(self.get_success_url())
 
 
-class QuizEditForm(forms.ModelForm):
+class QuizEditForm(AuthorManagedRoleFieldsMixin, forms.ModelForm):
     """Form for editing quiz with proper widgets for ManyToMany fields."""
+
+    role_error_message = gettext_lazy(
+        "Only quiz authors can change authors, curators, or testers."
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        self._setup_role_fields()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        self._validate_role_field_changes()
+        return cleaned_data
 
     class Meta:
         model = Quiz
@@ -934,6 +974,11 @@ class QuizEdit(
         obj = super().get_object(queryset)
         self._original_is_public = obj.is_public
         return obj
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
