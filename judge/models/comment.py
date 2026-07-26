@@ -108,6 +108,7 @@ __all__ = [
     "CommentVote",
     "Notification",
     "get_comment_moderation_hash",
+    "get_comment_context_details",
     "get_temporary_comment_mute_duration_days",
     "get_visible_comment_count",
     "get_visible_top_level_comment_count",
@@ -120,6 +121,120 @@ __all__ = [
 ]
 
 COMMENT_TEMP_MUTE_CAP_DAYS = 30
+
+
+def _comment_target_url(link, comment_id):
+    if not link:
+        return ""
+    return "%s?target_comment=%d#comment-%d" % (link, comment_id, comment_id)
+
+
+def get_comment_context_details(comments):
+    comments = list(comments)
+    details = {}
+    ids_by_content_type = {}
+
+    for comment in comments:
+        ids_by_content_type.setdefault(comment.content_type_id, set()).add(
+            comment.object_id
+        )
+
+    problem_ct = ContentType.objects.get_for_model(Problem)
+    contest_ct = ContentType.objects.get_for_model(Contest)
+    blog_ct = ContentType.objects.get_for_model(BlogPost)
+    solution_ct = ContentType.objects.get_for_model(Solution)
+    review_run_ct = ContentType.objects.get_for_model(ProblemReviewRun)
+
+    problem_details = {}
+    if problem_ct.id in ids_by_content_type:
+        for problem in Problem.objects.filter(
+            id__in=ids_by_content_type[problem_ct.id]
+        ).values("id", "name", "code"):
+            problem_details[problem["id"]] = {
+                "title": problem["name"],
+                "prompt_label": "Problem: %s" % problem["name"],
+                "link": reverse("problem_detail", args=(problem["code"],)),
+            }
+
+    contest_details = {}
+    if contest_ct.id in ids_by_content_type:
+        for contest in Contest.objects.filter(
+            id__in=ids_by_content_type[contest_ct.id]
+        ).values("id", "name", "key"):
+            contest_details[contest["id"]] = {
+                "title": contest["name"],
+                "prompt_label": "Contest: %s" % contest["name"],
+                "link": reverse("contest_view", args=(contest["key"],)),
+            }
+
+    blog_details = {}
+    if blog_ct.id in ids_by_content_type:
+        for blog in BlogPost.objects.filter(
+            id__in=ids_by_content_type[blog_ct.id]
+        ).values("id", "title", "slug"):
+            blog_details[blog["id"]] = {
+                "title": blog["title"],
+                "prompt_label": "Post: %s" % blog["title"],
+                "link": reverse("blog_post", args=(blog["id"], blog["slug"])),
+            }
+
+    solution_details = {}
+    if solution_ct.id in ids_by_content_type:
+        solutions = (
+            Solution.objects.filter(id__in=ids_by_content_type[solution_ct.id])
+            .select_related("problem")
+            .only("id", "problem__name", "problem__code")
+        )
+        for solution in solutions:
+            title = _("Editorial for ") + solution.problem.name
+            solution_details[solution.id] = {
+                "title": title,
+                "prompt_label": "Editorial: %s" % solution.problem.name,
+                "link": reverse("problem_editorial", args=(solution.problem.code,)),
+            }
+
+    review_run_details = {}
+    if review_run_ct.id in ids_by_content_type:
+        runs = (
+            ProblemReviewRun.objects.filter(
+                id__in=ids_by_content_type[review_run_ct.id]
+            )
+            .select_related("problem")
+            .only("id", "problem__name", "problem__code")
+        )
+        for run in runs:
+            title = run.problem.name + " — " + _("Review")
+            review_run_details[run.id] = {
+                "title": title,
+                "prompt_label": "Review: %s" % run.problem.name,
+                "link": reverse("problem_review_dashboard", args=(run.problem.code,)),
+            }
+
+    detail_sources = {
+        problem_ct.id: problem_details,
+        contest_ct.id: contest_details,
+        blog_ct.id: blog_details,
+        solution_ct.id: solution_details,
+        review_run_ct.id: review_run_details,
+    }
+
+    for comment in comments:
+        detail = detail_sources.get(comment.content_type_id, {}).get(comment.object_id)
+        if detail:
+            details[comment.id] = {
+                "title": detail["title"],
+                "prompt_label": detail["prompt_label"],
+                "url": _comment_target_url(detail["link"], comment.id),
+            }
+        else:
+            fallback = "%s #%s" % (comment.content_type.model, comment.object_id)
+            details[comment.id] = {
+                "title": fallback,
+                "prompt_label": fallback,
+                "url": "",
+            }
+
+    return details
 
 
 class VersionRelation(GenericRelation):

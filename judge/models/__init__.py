@@ -9,6 +9,7 @@ from judge.models.comment import (
     CommentLock,
     CommentModerationLog,
     CommentVote,
+    get_comment_context_details,
     hide_comment_for_moderation,
     mute_comment_author,
 )

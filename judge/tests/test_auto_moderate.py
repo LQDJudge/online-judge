@@ -4,7 +4,9 @@ from unittest.mock import MagicMock, call, patch
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
+from django.db import connection
 from django.test import Client, SimpleTestCase, TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from chat_box.models import ChatModerationLog, Message
@@ -13,7 +15,7 @@ from judge.management.commands.auto_moderate import (
     COMMENT_SYSTEM_PROMPT,
 )
 from judge.models import BlogPost, Comment, CommentModerationLog, Language, Profile
-from judge.models.comment import mute_comment_author
+from judge.models.comment import get_comment_context_details, mute_comment_author
 
 
 class ChatModerationPromptTest(SimpleTestCase):
@@ -74,6 +76,44 @@ class AutoModerateCommandTest(TestCase):
             object_id=post.id,
             body=body,
         )
+
+    def test_comment_context_details_batch_blog_lookup(self):
+        user = User.objects.create_user("context_comment_user", password="pw")
+        profile, _ = Profile.objects.get_or_create(
+            user=user, defaults={"language": self.language}
+        )
+        post = BlogPost.objects.create(
+            title="Visible post",
+            slug="visible-post-context",
+            visible=True,
+            publish_on=timezone.now(),
+            content="Post body",
+        )
+        content_type = ContentType.objects.get_for_model(BlogPost)
+        comments = [
+            Comment.objects.create(
+                author=profile,
+                content_type=content_type,
+                object_id=post.id,
+                body="Comment %d" % index,
+            )
+            for index in range(4)
+        ]
+        comments = list(
+            Comment.objects.filter(id__in=[comment.id for comment in comments])
+            .select_related("content_type")
+            .order_by("id")
+        )
+
+        get_comment_context_details(comments[:1])
+        with CaptureQueriesContext(connection) as queries:
+            details = get_comment_context_details(comments)
+
+        self.assertLessEqual(len(queries), 1)
+        self.assertEqual(set(details), {comment.id for comment in comments})
+        for comment in comments:
+            self.assertEqual(details[comment.id]["prompt_label"], "Post: Visible post")
+            self.assertIn("#comment-%d" % comment.id, details[comment.id]["url"])
 
     @override_settings(POE_API_KEY="test-key", POE_BOT_NAME="Gemini-3-Flash")
     @patch("judge.management.commands.auto_moderate.LLMService")

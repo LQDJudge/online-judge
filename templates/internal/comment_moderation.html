@@ -167,9 +167,13 @@
                 {{ log.comment.body[:100] }}{% if log.comment.body|length > 100 %}...{% endif %}
               </td>
               <td>
-                <a href="{{ log.comment.get_absolute_url() }}">
-                  {{ log.comment.page_title[:60] }}{% if log.comment.page_title|length > 60 %}...{% endif %}
-                </a>
+                {% if log.comment_context_url %}
+                  <a href="{{ log.comment_context_url }}">
+                    {{ log.comment_context_title[:60] }}{% if log.comment_context_title|length > 60 %}...{% endif %}
+                  </a>
+                {% else %}
+                  {{ log.comment_context_title[:60] }}{% if log.comment_context_title|length > 60 %}...{% endif %}
+                {% endif %}
               </td>
               <td>
                 {% if log.action in ["mute_temp", "mute_perm"] %}

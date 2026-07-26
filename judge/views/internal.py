@@ -50,6 +50,7 @@ from judge.models import (
     Profile,
     Submission,
     UsernameModerationCase,
+    get_comment_context_details,
     hide_comment_for_moderation,
     mute_comment_author,
 )
@@ -1608,6 +1609,13 @@ class InternalCommentModeration(InternalView, ListView):
         context["title"] = self.title
         context["action_filter"] = self.request.GET.get("action", "")
         context["search_query"] = self.request.GET.get("search", "")
+        logs = list(context["logs"])
+        context_details = get_comment_context_details([log.comment for log in logs])
+        for log in logs:
+            detail = context_details.get(log.comment_id, {})
+            log.comment_context_title = detail.get("title", "")
+            log.comment_context_url = detail.get("url", "")
+        context["logs"] = logs
         query_params = self.request.GET.copy()
         if "page" in query_params:
             del query_params["page"]

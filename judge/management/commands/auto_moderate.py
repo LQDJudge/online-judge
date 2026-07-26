@@ -27,6 +27,7 @@ from judge.models import (
     Organization,
     Problem,
     Solution,
+    get_comment_context_details,
     hide_comment_for_moderation,
     mute_comment_author,
 )
@@ -329,18 +330,6 @@ class Command(BaseCommand):
         labeled = re.sub(r"!\[[^\]]*\]\(([^)]+)\)", replace, content)
         return labeled, attachments
 
-    def _comment_context_label(self, comment):
-        linked = comment.linked_object
-        if isinstance(linked, Problem):
-            return "Problem: %s" % linked.name
-        if isinstance(linked, Contest):
-            return "Contest: %s" % linked.name
-        if isinstance(linked, BlogPost):
-            return "Post: %s" % linked.title
-        if isinstance(linked, Solution):
-            return "Editorial: %s" % linked.problem.name
-        return "%s #%s" % (comment.content_type.model, comment.object_id)
-
     def _get_unreviewed_comments(self):
         cutoff = timezone.now() - timezone.timedelta(
             minutes=self.comment_window_minutes
@@ -389,6 +378,7 @@ class Command(BaseCommand):
         comments_map = {}
         attachments = []
         image_counter = [0]
+        context_details = get_comment_context_details(comments)
         for comment in comments:
             author_name = comment.author.username if comment.author else "Anonymous"
             content = (comment.body or "").strip()
@@ -402,7 +392,7 @@ class Command(BaseCommand):
                 % {
                     "id": comment.id,
                     "author": author_name,
-                    "context": self._comment_context_label(comment),
+                    "context": context_details[comment.id]["prompt_label"],
                     "body": labeled,
                 }
             )
