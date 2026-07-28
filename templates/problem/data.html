@@ -240,11 +240,21 @@
 
         $td = $checker.parent();
 
-        $("<a/>",{
-          text: " ({{_('Instruction')}})",
-          target: "_blank",
-          href: "{{url('test_data_instructions')}}"
-        }).appendTo($ioi_signature.parent());
+        var instructionBaseUrl = "{{ url('test_data_instructions') }}";
+        function appendInstructionLink($target, anchor) {
+          $("<a/>", {
+            text: " ({{ _('Instruction') }})",
+            target: "_blank",
+            href: instructionBaseUrl + anchor
+          }).appendTo($target);
+        }
+
+        appendInstructionLink($generator.parent(), "#test-generator");
+        appendInstructionLink($checker.parent(), "#checker");
+        appendInstructionLink($custom_checker.parent(), "#custom-checker");
+        appendInstructionLink($validator.parent(), "#checker");
+        appendInstructionLink($interactive.parent(), "#interactive");
+        appendInstructionLink($ioi_signature.parent(), "#ioi-signature");
 
         $checker.change(function () {
           $tr_checker.toggle($checker.val() == 'custom').change();
@@ -261,6 +271,7 @@
         let $output_only = $('#id_problem-data-output_only');
         let $tr_binary_data = $('#id_problem-data-binary_data').closest('tr');
         let $tr_output_zip = $('#id_problem-data-output_zip_size_mb').closest('tr');
+        appendInstructionLink($output_only.parent(), "#output-only");
         $output_only.change(function () {
           let on = $output_only.is(':checked');
           $tr_binary_data.toggle(on);
@@ -272,6 +283,8 @@
         let $is_communication = $('#id_problem-data-is_communication');
         let $tr_comm_manager = $('#id_problem-data-communication_manager').closest('tr');
         let $tr_comm_num_proc = $('#id_problem-data-communication_num_processes').closest('tr');
+        appendInstructionLink($is_communication.parent(), "#importing-ioi-tasks");
+        appendInstructionLink($('#id_problem-data-communication_manager').parent(), "#importing-ioi-tasks");
         $is_communication.change(function () {
           let on = $is_communication.is(':checked');
           $tr_comm_manager.toggle(on);
@@ -280,6 +293,7 @@
 
         // Testcase validator link
         var $validatorTd = $('#id_problem-data-testcase_validator').closest('td');
+        appendInstructionLink($validatorTd, "#testcase-validator");
         {% if data_form.testcase_validator.value() %}
           $validatorTd.append(
             ' <a href="{{ url("problem_validator", problem.code) }}" style="margin-left: 1em;">' +

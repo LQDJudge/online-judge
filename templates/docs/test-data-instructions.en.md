@@ -1,6 +1,6 @@
 [TOC]
 
-## 1. Test Generator
+## 1. Test Generator {#test-generator}
 
 Generate tests with a C++ program instead of uploading them. The generator takes constraint args plus a seed; print the input to **stdout** and the expected output to **stderr**.
 
@@ -53,7 +53,7 @@ int main(int args_length, char* args[]) {
 }
 ```
 
-### Generator Script
+### Generator Script {#generator-script}
 
 Appears under the generator file once saved. One line per test case — arguments are forwarded to the generator. Use **distinct seeds** to avoid duplicate tests.
 
@@ -76,13 +76,35 @@ Click **"Fill testcases"** to materialize one test row per script line. Args sho
 
 **Each test uses one source only** — either a file from the data ZIP or the generator. Don't forget to click **"Apply!"**.
 
-## 2. Custom Checker
+## 2. Checker {#checker}
+
+The checker decides whether a submission's output matches the expected answer. Prefer a built-in checker when it matches the problem: it is simpler, faster to configure, and does not require maintaining checker source code. Use a custom checker when the problem has multiple valid answers, special scoring, or a format that the built-in checkers cannot express.
+
+### 2.1. Default Checker {#default-checker}
+
+Built-in checkers do not need a checker file. Select the checker in the **Checker** dropdown, then fill checker arguments only when the selected checker exposes extra options.
+
+| Checker | Use when | Notes |
+|---|---|---|
+| `standard` | Most exact-output problems | Compares tokens and ignores whitespace between tokens. |
+| `floats` | Floating-point output with tolerance | Compares numeric tokens with either absolute or relative error. Set `precision` to the required number of decimal digits. Non-numeric tokens must match exactly. |
+| `floatsabs` | Floating-point output with absolute error only | Same as `floats`, but only absolute error is accepted. |
+| `floatsrel` | Floating-point output with relative error only | Same as `floats`, but only relative error is accepted. |
+| `rstripped` | Output where trailing spaces should not matter, but line structure should | Compares each line after removing trailing whitespace. Other whitespace remains meaningful. |
+| `sorted` | Output lines can appear in any order | Ignores empty lines, splits each non-empty line into tokens, sorts the lines, then compares. |
+| `identical` | Output must match byte-for-byte | Use for strict format checks or binary/text data where whitespace must be exact. |
+| `linecount` | Tokens must match on the same line | Ignores extra whitespace within a line, but line boundaries must match. |
+| `csv_accuracy`, `csv_rmse`, `csv_mae`, `csv_f1`, `csv_auc`, `csv_logloss` | Kaggle-style CSV submissions | See [Kaggle-style CSV problems](#kaggle-style-csv-problems) below for `checker_args` and scoring details. |
+
+Use **Testlib** or **Testlib (CMS / IOI)** when you already have a `checker.cpp` from Polygon, IOI, CMS, or a similar package. Upload that file in the C++ checker field. For IOI packages, see [Importing IOI tasks](#importing-ioi-tasks).
+
+### 2.2. Custom Checker {#custom-checker}
 
 Define custom judging logic for problems with multiple valid answers or special output formats.
 
-### Python
+#### Python {#custom-checker-python}
 
-The default checker. Implement `check`:
+For a Python custom checker, implement `check`:
 
 ```py
 def check(process_output, judge_output, **kwargs):
@@ -123,7 +145,7 @@ def check(process_output, judge_output, judge_input, **kwargs):
     return wa('a + b != n')
 ```
 
-### C++
+#### C++ {#custom-checker-cpp}
 
 Compile a C++ program invoked as `./main <input_file> <output_file> <ans_file>`.
 
@@ -164,7 +186,7 @@ int main(int argc, char** argv) {
 }
 ```
 
-## 3. Interactive (C++)
+## 3. Interactive (C++) {#interactive}
 
 C++ program invoked as `./main <input_file> <answer_file>`. The submitter's binary and your interactor are connected via stdin/stdout pipes.
 
@@ -215,7 +237,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-## 4. IOI Signature
+## 4. IOI Signature {#ioi-signature}
 
 Contestants implement a function; the judge links it with your handler. You provide:
 - **Header** (`.h`) — function declaration (C/C++ only)
@@ -223,7 +245,7 @@ Contestants implement a function; the judge links it with your handler. You prov
 
 **Example.** Input is `t` followed by `t` integers `n`. Contestants implement `solve(int n)` returning `n * 2`.
 
-### C/C++
+### C/C++ {#ioi-signature-cpp}
 
 **Header (header.h):**
 ```cpp
@@ -260,7 +282,7 @@ int solve(int n) {
 }
 ```
 
-### Python
+### Python {#ioi-signature-python}
 Student submission will be saved to file _submission.py.
 
 **Handler (handler.py):**
@@ -283,7 +305,7 @@ def solve(n):
     return n * 2
 ```
 
-### Java
+### Java {#ioi-signature-java}
 Students must name the class correctly as required by the problem for the handler to use.
 
 **Handler (handler.java):**
@@ -311,7 +333,7 @@ public class Solution {
 }
 ```
 
-### Importing IOI tasks
+### Importing IOI tasks {#importing-ioi-tasks}
 
 LQDOJ supports IOI-style tasks end-to-end: signature graders, subtask batching with all-or-nothing scoring, and interactive / multi-process tasks.
 
@@ -329,11 +351,11 @@ Hit **Apply!** and the problem is live.
 - [IOI 2025 — Souvenirs](https://ioinformatics.org/files/ioi2025problem1.pdf) — interactive task (one user process talking to a manager).
 - [IOI 2025 — Migrations](https://ioinformatics.org/files/ioi2025problem5.pdf) — two-process interactive task (encode + decode phases).
 
-## 5. Testcase Validator
+## 5. Testcase Validator {#testcase-validator}
 
 A program that confirms each test input matches the problem's constraints. Reads stdin; exit `0` = valid, non-zero = invalid (stderr captured as feedback). Click **"Run Validator"** to check every test.
 
-### C++
+### C++ {#testcase-validator-cpp}
 
 ```cpp
 #include <bits/stdc++.h>
@@ -365,7 +387,7 @@ int main() {
 }
 ```
 
-### Python
+### Python {#testcase-validator-python}
 
 ```python
 import sys
@@ -395,7 +417,7 @@ def main():
 main()
 ```
 
-## 6. Output-only Problems
+## 6. Output-only Problems {#output-only}
 
 Output-only problems don't require solvers to write a runnable program — instead they download the input data, compute the answer locally (with whatever tools they like), and submit just the result file. To configure one, tick **Is output only** in the test data form. The submit page then accepts a `.zip` (single files are auto-zipped client-side) and the chosen checker is applied to its contents.
 
@@ -403,13 +425,13 @@ Output-only problems don't require solvers to write a runnable program — inste
 
 > **Distributing the test inputs to solvers.** Files inside the test-data zip are private to the judge — solvers can't see them. To give solvers the inputs they need to compute answers locally (e.g. the test cases for an IOI-style output-only problem, or the training/test CSV for a Kaggle problem), upload them via the **Attachments** tab on the problem edit page. Attachments appear in a "Files" section on the problem statement page, with download links scoped to the problem's normal access permissions.
 
-### 6.1. Traditional output-only (IOI-style)
+### 6.1. Traditional output-only (IOI-style) {#traditional-output-only}
 
 For each test case, name the expected output file in the **Output file** column (e.g. `test01.out`). The submitter's zip must contain a file with the matching name; the configured checker (typically `Standard`, `Floats`, or a custom one) is then applied to compare submission output vs. expected output, the same as for a normal problem.
 
 This format is appropriate when the answer is a single deterministic file per test case (e.g. shortest-path lengths, integer answers, sorted lists). Pick whichever standard or custom checker fits the output type.
 
-### 6.2. Kaggle-style CSV problems
+### 6.2. Kaggle-style CSV problems {#kaggle-style-csv-problems}
 
 For machine-learning–style problems where the submission is a CSV of predictions to be scored against a hidden answer key with a metric like accuracy or RMSE, use one of the built-in CSV checkers from the `Checker` dropdown — no custom code needed:
 
@@ -451,4 +473,3 @@ To run a Kaggle-style contest with a public leaderboard during the contest and a
 While the contest runs in pretests-only mode, the checker honors `pretest_fraction` and scores only a deterministic hash-selected subset of rows — solvers see scores only on that subset (the public leaderboard). Row selection is keyed off `md5(id)`, so the same subset is used for every submission.
 
 After the contest ends, flip `run_pretests_only=False` on the contest and click **Rejudge all submissions**. The checker then ignores `pretest_fraction` and scores all rows — that's the private leaderboard.
-

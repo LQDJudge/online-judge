@@ -1,6 +1,6 @@
 [TOC]
 
-## 1. Test Generator
+## 1. Test Generator {#test-generator}
 
 Sinh test bằng một chương trình C++ thay vì upload file. Chương trình nhận các tham số ràng buộc cộng thêm `seed`; in input ra **stdout** và output mong đợi ra **stderr**.
 
@@ -53,7 +53,7 @@ int main(int args_length, char* args[]) {
 }
 ```
 
-### Script sinh test
+### Script sinh test {#generator-script}
 
 Hiện ra dưới mục file sinh test sau khi lưu. Mỗi dòng là tham số cho một test, được chuyển đến generator. Dùng **seed khác nhau** cho mỗi test để tránh trùng lặp.
 
@@ -76,13 +76,35 @@ Bấm **"Điền test"** để tạo một test cho mỗi dòng trong script. Th
 
 **Mỗi test chỉ dùng một nguồn dữ liệu** — hoặc từ ZIP, hoặc từ generator. Đừng quên bấm **"Lưu"**.
 
-## 2. Custom Checker
+## 2. Checker {#checker}
+
+Checker quyết định output của bài nộp có khớp với đáp án mong đợi hay không. Hãy ưu tiên checker có sẵn khi nó phù hợp với bài: cấu hình đơn giản hơn, không cần bảo trì code checker riêng. Dùng custom checker khi bài có nhiều đáp án đúng, cách tính điểm đặc biệt, hoặc format mà các checker có sẵn không biểu diễn được.
+
+### 2.1. Default Checker {#default-checker}
+
+Checker có sẵn không cần upload file checker. Chọn checker trong menu **Checker**, rồi điền checker arguments chỉ khi checker đó có tuỳ chọn bổ sung.
+
+| Checker | Dùng khi | Ghi chú |
+|---|---|---|
+| `standard` | Hầu hết bài exact-output | So sánh theo token và bỏ qua khoảng trắng giữa các token. |
+| `floats` | Output số thực có sai số | So sánh token số với sai số tuyệt đối hoặc tương đối. Đặt `precision` theo số chữ số thập phân yêu cầu. Token không phải số vẫn phải khớp chính xác. |
+| `floatsabs` | Output số thực chỉ dùng sai số tuyệt đối | Giống `floats`, nhưng chỉ chấp nhận sai số tuyệt đối. |
+| `floatsrel` | Output số thực chỉ dùng sai số tương đối | Giống `floats`, nhưng chỉ chấp nhận sai số tương đối. |
+| `rstripped` | Khoảng trắng cuối dòng không quan trọng, nhưng cấu trúc dòng vẫn quan trọng | So sánh từng dòng sau khi bỏ khoảng trắng cuối dòng. Các khoảng trắng khác vẫn có ý nghĩa. |
+| `sorted` | Các dòng output có thể xuất hiện theo thứ tự bất kỳ | Bỏ qua dòng rỗng, tách mỗi dòng không rỗng thành token, sắp xếp các dòng rồi so sánh. |
+| `identical` | Output phải khớp từng byte | Dùng cho format rất chặt hoặc dữ liệu text/binary mà khoảng trắng phải chính xác. |
+| `linecount` | Token phải khớp trên đúng từng dòng | Bỏ qua khoảng trắng thừa trong cùng một dòng, nhưng ranh giới dòng phải khớp. |
+| `csv_accuracy`, `csv_rmse`, `csv_mae`, `csv_f1`, `csv_auc`, `csv_logloss` | Bài nộp CSV kiểu Kaggle | Xem [Bài kiểu Kaggle (CSV)](#kaggle-style-csv-problems) bên dưới để biết `checker_args` và cách tính điểm. |
+
+Dùng **Testlib** hoặc **Testlib (CMS / IOI)** khi bạn đã có `checker.cpp` từ Polygon, IOI, CMS, hoặc package tương tự. Upload file đó ở trường checker C++. Với package IOI, xem [Import bài IOI](#importing-ioi-tasks).
+
+### 2.2. Custom Checker {#custom-checker}
 
 Định nghĩa cách chấm cho các bài có nhiều đáp án đúng hoặc format đặc biệt.
 
-### Python
+#### Python {#custom-checker-python}
 
-Checker mặc định. Cài đặt hàm `check`:
+Với custom checker Python, cài đặt hàm `check`:
 
 ```py
 def check(process_output, judge_output, **kwargs):
@@ -123,7 +145,7 @@ def check(process_output, judge_output, judge_input, **kwargs):
     return wa('a + b != n')
 ```
 
-### C++
+#### C++ {#custom-checker-cpp}
 
 Viết một chương trình C++ chạy theo dạng `./main <input_file> <output_file> <ans_file>`.
 
@@ -164,7 +186,7 @@ int main(int argc, char** argv) {
 }
 ```
 
-## 3. Interactive (C++)
+## 3. Interactive (C++) {#interactive}
 
 Chương trình C++ chạy theo dạng `./main <input_file> <answer_file>`. Bài làm và interactor giao tiếp qua stdin/stdout.
 
@@ -215,7 +237,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-## 4. IOI Signature
+## 4. IOI Signature {#ioi-signature}
 
 Thí sinh cài đặt một hàm; judge liên kết với handler do bạn cung cấp. Bạn chuẩn bị:
 - **Header** (`.h`) — khai báo hàm (chỉ C/C++)
@@ -223,7 +245,7 @@ Thí sinh cài đặt một hàm; judge liên kết với handler do bạn cung 
 
 **Ví dụ.** Input là `t` rồi đến `t` số nguyên `n`. Thí sinh cài đặt `solve(int n)` trả về `n * 2`.
 
-### C/C++
+### C/C++ {#ioi-signature-cpp}
 
 **Header (header.h):**
 ```cpp
@@ -260,7 +282,7 @@ int solve(int n) {
 }
 ```
 
-### Python
+### Python {#ioi-signature-python}
 Bài nộp của thí sinh sẽ được lưu vào file _submission.py.
 
 **Handler (handler.py):**
@@ -283,7 +305,7 @@ def solve(n):
     return n * 2
 ```
 
-### Java
+### Java {#ioi-signature-java}
 Học sinh phải đặt tên class đúng như yêu cầu của bài toán để handler sử dụng.
 
 **Handler (handler.java):**
@@ -311,7 +333,7 @@ public class Solution {
 }
 ```
 
-### Import bài IOI
+### Import bài IOI {#importing-ioi-tasks}
 
 LQDOJ hỗ trợ đầy đủ các bài kiểu IOI: signature grader, chia subtask all-or-nothing, và bài tương tác / nhiều tiến trình.
 
@@ -329,11 +351,11 @@ Bấm **Lưu** là bài có thể submit được.
 - [IOI 2025 — Souvenirs](https://ioinformatics.org/files/ioi2025problem1.pdf) — bài tương tác (một tiến trình bài làm giao tiếp với manager).
 - [IOI 2025 — Migrations](https://ioinformatics.org/files/ioi2025problem5.pdf) — bài tương tác hai tiến trình (encode + decode).
 
-## 5. Trình kiểm tra test
+## 5. Trình kiểm tra test {#testcase-validator}
 
 Chương trình kiểm tra input của mỗi test có thoả ràng buộc của đề. Đọc stdin; exit `0` = hợp lệ, khác 0 = không hợp lệ (stderr được ghi lại làm feedback). Bấm **"Chạy kiểm tra"** để kiểm tra tất cả test.
 
-### C++
+### C++ {#testcase-validator-cpp}
 
 ```cpp
 #include <bits/stdc++.h>
@@ -365,7 +387,7 @@ int main() {
 }
 ```
 
-### Python
+### Python {#testcase-validator-python}
 
 ```python
 import sys
@@ -394,7 +416,8 @@ def main():
 
 main()
 ```
-## 6. Bài Output-only
+
+## 6. Bài Output-only {#output-only}
 
 Bài *output-only* không yêu cầu người giải viết chương trình thực thi — thay vào đó họ tải file input về, tính đáp án ở máy mình (bằng bất kỳ công cụ nào), rồi chỉ nộp file kết quả. Để cấu hình, hãy tick **Output-only?** trong biểu mẫu Test Data. Trang nộp bài khi đó sẽ chấp nhận một file `.zip` (file đơn được tự động đóng gói thành zip ở phía trình duyệt) và bộ chấm được chọn sẽ áp dụng lên nội dung bên trong.
 
@@ -402,13 +425,13 @@ Bài *output-only* không yêu cầu người giải viết chương trình th�
 
 > **Phân phối input test cho người giải.** Các file trong file zip Test Data là riêng tư cho hệ thống chấm — người giải không thấy được. Để cung cấp cho người giải các input họ cần để tính đáp án ở máy (ví dụ các test cho bài output-only kiểu IOI, hoặc file CSV training/test cho bài Kaggle), hãy tải lên qua tab **Tệp đính kèm** trên trang chỉnh sửa bài. Các tệp đính kèm sẽ hiển thị ở mục "Tệp" trên trang đề bài, với liên kết tải xuống tuân theo quyền truy cập thông thường của bài.
 
-### 6.1. Output-only truyền thống (kiểu IOI)
+### 6.1. Output-only truyền thống (kiểu IOI) {#traditional-output-only}
 
 Với mỗi test case, đặt tên file output kỳ vọng ở cột **Output file** (ví dụ `test01.out`). File zip người dùng nộp phải chứa một file có tên trùng khớp; bộ chấm được cấu hình (thường là `Standard`, `Floats`, hoặc một bộ chấm tùy chỉnh) sẽ so sánh output trong bài nộp với output kỳ vọng, giống như bài thường.
 
 Định dạng này phù hợp khi đáp án là một file xác định cho mỗi test case (ví dụ độ dài đường đi ngắn nhất, một số nguyên, danh sách đã sắp xếp). Hãy chọn bộ chấm chuẩn hoặc tùy chỉnh phù hợp với loại output.
 
-### 6.2. Bài kiểu Kaggle (CSV)
+### 6.2. Bài kiểu Kaggle (CSV) {#kaggle-style-csv-problems}
 
 Với các bài kiểu machine-learning nơi bài nộp là một file CSV chứa các dự đoán, được chấm so với đáp án ẩn bằng các chỉ số như độ chính xác hoặc RMSE, hãy chọn một trong các bộ chấm CSV có sẵn từ menu `Bộ chấm` — không cần viết code:
 
@@ -450,4 +473,3 @@ Khi chọn một bộ chấm `csv_*`, biểu mẫu sẽ hiện ra:
 Trong lúc kỳ thi chạy ở chế độ pretests-only, bộ chấm sẽ áp dụng `pretest_fraction` và chỉ chấm điểm trên một tập con các dòng được chọn theo hàm băm — người giải chỉ thấy điểm trên tập đó (bảng xếp hạng public). Việc chọn dòng được xác định bằng `md5(id)`, do đó cùng một tập con được dùng cho mọi bài nộp.
 
 Sau khi kỳ thi kết thúc, hãy chuyển `run_pretests_only=False` trên kỳ thi rồi nhấn **Chấm lại tất cả bài nộp**. Bộ chấm khi đó sẽ bỏ qua `pretest_fraction` và chấm trên toàn bộ dòng — đó là bảng xếp hạng private.
-
