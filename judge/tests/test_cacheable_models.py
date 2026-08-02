@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.db import IntegrityError, transaction
 
 from judge.models import (
     Organization,
@@ -305,6 +306,43 @@ class OrganizationCacheInvalidationTestCase(TestCase):
         # Visitor's cache should also be invalidated
         org_ids_after = _get_most_recent_organization_ids(visitor_profile)
         self.assertEqual(len(org_ids_after), 0)
+
+    def test_add_organization_keeps_single_visit_row(self):
+        """Repeated visits to the same org should update one visit row."""
+        org = Organization.objects.create(
+            name="Cache Inv Single Visit Org",
+            slug="cache-inv-single-visit-org",
+            short_name="CISVO",
+            about="Test org for single visit rows",
+            registrant=self.profile,
+            is_open=True,
+        )
+
+        OrganizationProfile.add_organization(self.profile, org)
+        OrganizationProfile.add_organization(self.profile, org)
+
+        self.assertEqual(
+            OrganizationProfile.objects.filter(
+                profile=self.profile, organization=org
+            ).count(),
+            1,
+        )
+
+    def test_organization_profile_unique_per_profile_and_organization(self):
+        """The database should prevent duplicate visit rows."""
+        org = Organization.objects.create(
+            name="Cache Inv Unique Visit Org",
+            slug="cache-inv-unique-visit-org",
+            short_name="CIUVO",
+            about="Test org for unique visit rows",
+            registrant=self.profile,
+            is_open=True,
+        )
+
+        OrganizationProfile.objects.create(profile=self.profile, organization=org)
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            OrganizationProfile.objects.create(profile=self.profile, organization=org)
 
 
 class BatchCachingFallbackTestCase(TestCase):

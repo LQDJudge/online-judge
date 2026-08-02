@@ -5,7 +5,7 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, Max, OuterRef, CASCADE
@@ -842,17 +842,45 @@ class OrganizationProfile(models.Model):
         orgs = _get_most_recent_organization_ids(profile)
         if orgs and orgs[0] == organization.id:
             return
-        obj, created = cls.objects.update_or_create(
+        visit_time = now()
+        updated = cls.objects.filter(
             profile=profile,
             organization=organization,
-            defaults={"last_visit_time": now()},
-        )
+        ).update(last_visit_time=visit_time)
+        if updated > 1:
+            visit_ids = list(
+                cls.objects.filter(profile=profile, organization=organization)
+                .order_by("-last_visit_time", "-id")
+                .values_list("id", flat=True)
+            )
+            cls.objects.filter(id__in=visit_ids[1:]).delete()
+        elif updated == 0:
+            try:
+                with transaction.atomic():
+                    cls.objects.create(
+                        profile=profile,
+                        organization=organization,
+                        last_visit_time=visit_time,
+                    )
+            except IntegrityError:
+                cls.objects.filter(
+                    profile=profile,
+                    organization=organization,
+                ).update(last_visit_time=visit_time)
         _get_most_recent_organization_ids.dirty(profile)
 
     @classmethod
     def get_most_recent_organizations(cls, profile):
         org_ids = _get_most_recent_organization_ids(profile)
         return Organization.get_cached_instances(*org_ids)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profile", "organization"],
+                name="unique_organization_profile_visit",
+            )
+        ]
 
 
 @cache_wrapper("OPgmroid", expected_type=list)

@@ -580,7 +580,6 @@ class ContestEditForm(AuthorManagedRoleFieldsMixin, ModelForm):
             "access_code",
             "private_contestants",
             "view_contest_scoreboard",
-            "banned_users",
         )
         widgets = {
             "authors": HeavySelect2MultipleWidget(data_view="profile_select2"),
@@ -589,7 +588,6 @@ class ContestEditForm(AuthorManagedRoleFieldsMixin, ModelForm):
             "private_contestants": HeavySelect2MultipleWidget(
                 data_view="profile_select2"
             ),
-            "banned_users": HeavySelect2MultipleWidget(data_view="profile_select2"),
             "view_contest_scoreboard": HeavySelect2MultipleWidget(
                 data_view="profile_select2"
             ),
@@ -638,7 +636,6 @@ CONTEST_EDIT_FIELD_SECTIONS = [
             "view_contest_scoreboard",
         ],
     ),
-    (_("Justice"), ["banned_users"]),
 ]
 
 

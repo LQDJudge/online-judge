@@ -19,7 +19,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone, translation
 
-from judge.forms import ContestEditForm
+from judge.forms import CONTEST_EDIT_FIELD_SECTIONS, ContestEditForm
 from judge.models import (
     Contest,
     ContestParticipation,
@@ -184,7 +184,6 @@ class ContestEditTestBase(TestCase):
             "organizations": [str(o.id) for o in contest.organizations.all()],
             "private_contestants": [],
             "view_contest_scoreboard": [],
-            "banned_users": [],
             "rows-TOTAL_FORMS": str(len(row_data)),
             "rows-INITIAL_FORMS": str(
                 sum(1 for row in row_data if row.get("id") is not None)
@@ -235,7 +234,6 @@ class ContestEditTestBase(TestCase):
             "organizations": [str(o.id) for o in contest.organizations.all()],
             "private_contestants": [],
             "view_contest_scoreboard": [],
-            "banned_users": [],
         }
         post.update(post_overrides)
         return ContestEditForm(data=post, instance=contest, user=user)
@@ -347,6 +345,34 @@ class ContestEditFormVisibilityTests(ContestEditTestBase):
         form = self._form(self.org_contest, self.superuser)
         self.assertFalse(form.fields["organizations"].disabled)
 
+    def test_banned_users_hidden_from_public_contest_edit_form(self):
+        form = self._form(self.public_contest, self.superuser)
+        self.assertNotIn("banned_users", form.fields)
+        self.assertNotIn(
+            "banned_users",
+            [
+                field_name
+                for _section_label, field_names in CONTEST_EDIT_FIELD_SECTIONS
+                for field_name in field_names
+            ],
+        )
+
+    def test_forged_banned_users_post_is_ignored_by_public_form(self):
+        self.public_contest.banned_users.add(self.outsider.profile)
+        post = self._contest_edit_post_data(self.public_contest, [])
+        post["banned_users"] = [str(self.curator.profile.id)]
+
+        self.client.force_login(self.author)
+        resp = self.client.post(
+            reverse("contest_edit", args=[self.public_contest.key]), post
+        )
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(
+            list(self.public_contest.banned_users.values_list("id", flat=True)),
+            [self.outsider.profile.id],
+        )
+
 
 class ContestEditRoleFieldTests(ContestEditTestBase):
     """Contest authors own role management; curators can edit content only."""
@@ -445,7 +471,6 @@ class ContestEditAtomicityTests(ContestEditTestBase):
             "organizations": [],
             "private_contestants": [],
             "view_contest_scoreboard": [],
-            "banned_users": [],
             "rows-TOTAL_FORMS": "1",
             "rows-INITIAL_FORMS": "1",
             "rows-MIN_NUM_FORMS": "0",
