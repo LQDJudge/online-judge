@@ -201,6 +201,14 @@ class Message(models.Model):
     room = models.ForeignKey(
         Room, verbose_name="room id", on_delete=CASCADE, default=None, null=True
     )
+    reply_to = models.ForeignKey(
+        "self",
+        verbose_name=_("reply to"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="replies",
+    )
 
     def save(self, *args, **kwargs):
         self.body = self.body.strip()
