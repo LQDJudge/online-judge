@@ -330,6 +330,11 @@ LOGGING = {
             "level": "INFO",
             "propagate": True,
         },
+        "judge.judgeapi": {
+            "handlers": ["mail_admins", "console"],
+            "level": "ERROR",
+            "propagate": True,
+        },
         # Error logs
         "judge.errors": {
             "handlers": ["mail_admins"],

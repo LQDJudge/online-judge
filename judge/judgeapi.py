@@ -29,31 +29,36 @@ def _post_update_submission(submission, done=False):
 
 
 def judge_request(packet, reply=True):
+    timeout = getattr(settings, "BRIDGED_DJANGO_TIMEOUT_SECONDS", 10)
     sock = socket.create_connection(
-        settings.BRIDGED_DJANGO_CONNECT or settings.BRIDGED_DJANGO_ADDRESS[0]
+        settings.BRIDGED_DJANGO_CONNECT or settings.BRIDGED_DJANGO_ADDRESS[0],
+        timeout=timeout,
     )
+    sock.settimeout(timeout)
 
     output = json.dumps(packet, separators=(",", ":"))
     output = zlib.compress(output.encode("utf-8"))
-    writer = sock.makefile("wb")
-    writer.write(size_pack.pack(len(output)))
-    writer.write(output)
-    writer.close()
+    try:
+        writer = sock.makefile("wb")
+        writer.write(size_pack.pack(len(output)))
+        writer.write(output)
+        writer.close()
 
-    if reply:
-        reader = sock.makefile("rb", -1)
-        input = reader.read(size_pack.size)
-        if not input:
-            raise ValueError("Judge did not respond")
-        length = size_pack.unpack(input)[0]
-        input = reader.read(length)
-        if not input:
-            raise ValueError("Judge did not respond")
-        reader.close()
+        if reply:
+            reader = sock.makefile("rb", -1)
+            input = reader.read(size_pack.size)
+            if not input:
+                raise ValueError("Judge did not respond")
+            length = size_pack.unpack(input)[0]
+            input = reader.read(length)
+            if not input:
+                raise ValueError("Judge did not respond")
+            reader.close()
+
+            result = json.loads(zlib.decompress(input).decode("utf-8"))
+            return result
+    finally:
         sock.close()
-
-        result = json.loads(zlib.decompress(input).decode("utf-8"))
-        return result
 
 
 def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=None):
@@ -175,6 +180,16 @@ def notify_problem_update():
         judge_request({"name": "update-problems"})
     except Exception:
         logger.exception("Failed to send problem update notification to bridge")
+
+
+def bridge_status(detail=False, include_problems=False):
+    return judge_request(
+        {
+            "name": "bridge-status",
+            "detail": detail,
+            "include-problems": include_problems,
+        }
+    )
 
 
 def disconnect_judge(judge, force=False):

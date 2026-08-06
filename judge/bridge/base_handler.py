@@ -1,3 +1,4 @@
+import errno
 import logging
 import socket
 import struct
@@ -88,6 +89,8 @@ class ZlibPacketHandler(metaclass=RequestHandlerMeta):
 
         while remainder:
             data = self.request.recv(remainder)
+            if not data:
+                raise Disconnect()
             remainder -= len(data)
             buffer.append(data)
         self._on_packet(b"".join(buffer))
@@ -206,6 +209,11 @@ class ZlibPacketHandler(metaclass=RequestHandlerMeta):
             # When a gevent socket is shutdown, gevent cancels all waits, causing recv to raise cancel_wait_ex.
             if e.__class__.__name__ == "cancel_wait_ex":
                 return
+            # A watchdog may close the socket from another thread while this
+            # handler is blocked in recv(); treat that as an intentional
+            # disconnect instead of logging a base packet handling exception.
+            if getattr(e, "errno", None) == errno.EBADF:
+                return
             raise
         finally:
             self.on_cleanup()
@@ -215,4 +223,11 @@ class ZlibPacketHandler(metaclass=RequestHandlerMeta):
         self.request.sendall(size_pack.pack(len(compressed)) + compressed)
 
     def close(self):
-        self.request.shutdown(socket.SHUT_RDWR)
+        try:
+            self.request.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        try:
+            self.request.close()
+        except OSError:
+            pass

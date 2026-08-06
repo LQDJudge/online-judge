@@ -20,6 +20,7 @@ class DjangoHandler(ZlibPacketHandler):
             "disconnect-judge": self.on_disconnect_request,
             "validate-request": self.on_validate_request,
             "update-problems": self.on_update_problems,
+            "bridge-status": self.on_bridge_status,
         }
         self.judges = judges
 
@@ -70,10 +71,20 @@ class DjangoHandler(ZlibPacketHandler):
         self.judges.broadcast_update_problems()
         return {"name": "update-problems-received"}
 
+    def on_bridge_status(self, data):
+        return {
+            "name": "bridge-status",
+            **self.judges.status(
+                detail=bool(data.get("detail")),
+                include_problems=bool(data.get("include-problems")),
+            ),
+        }
+
     def on_disconnect_request(self, data):
         judge_id = data["judge-id"]
         force = data["force"]
         self.judges.disconnect(judge_id, force=force)
+        return {"name": "disconnect-judge-received"}
 
     def on_malformed(self, packet):
         logger.error("Malformed packet: %s", packet)

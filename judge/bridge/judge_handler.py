@@ -9,6 +9,7 @@ from operator import itemgetter
 from django import db
 from django.conf import settings
 from django.core.cache import cache
+from django.db import OperationalError
 from django.db.models import F
 from django.urls import reverse
 from django.utils import timezone
@@ -99,8 +100,20 @@ def _ensure_connection():
     db.connection.close_if_unusable_or_obsolete()
 
 
+def _is_stale_database_error(exception):
+    if not isinstance(exception, OperationalError):
+        return False
+    if exception.args and exception.args[0] in (2006, 2013):
+        return True
+    message = str(exception).lower()
+    return "server has gone away" in message or "lost connection" in message
+
+
 class JudgeHandler(ZlibPacketHandler):
     proxies = proxy_list(settings.BRIDGED_JUDGE_PROXIES or [])
+    retryable_database_packets = frozenset(
+        ("handshake-connected", "ping-response", "supported-problems")
+    )
 
     def __init__(self, request, client_address, server, judges):
         super().__init__(request, client_address, server)
@@ -166,7 +179,10 @@ class JudgeHandler(ZlibPacketHandler):
         sub, working_data = self.judges.remove(self)
 
         if self.name is not None:
-            self._disconnected()
+            try:
+                self._disconnected()
+            except Exception:
+                logger.exception("Failed to mark judge %s disconnected", self.name)
         logger.info(
             "Judge disconnected from: %s with name %s", self.client_address, self.name
         )
@@ -230,6 +246,7 @@ class JudgeHandler(ZlibPacketHandler):
         self.problems = set(p for p, _ in problem_packet)
 
     def _update_judge_problems(self):
+        _ensure_connection()
         chunk_size = 500
 
         target_problem_codes = self.problems
@@ -267,6 +284,7 @@ class JudgeHandler(ZlibPacketHandler):
             _get_judge_problems.dirty(self.judge)
 
     def _connected(self):
+        _ensure_connection()
         judge = self.judge = Judge.objects.get(name=self.name)
         judge.start_time = timezone.now()
         judge.online = True
@@ -303,6 +321,7 @@ class JudgeHandler(ZlibPacketHandler):
         )
 
     def _disconnected(self):
+        _ensure_connection()
         Judge.objects.filter(id=self.judge.id).update(online=False)
         RuntimeVersion.objects.filter(judge=self.judge).delete()
         self.judge.problems.clear()
@@ -326,6 +345,7 @@ class JudgeHandler(ZlibPacketHandler):
         super().send(json.dumps(data, separators=(",", ":")))
 
     def on_handshake(self, packet):
+        _ensure_connection()
         if "id" not in packet or "key" not in packet:
             logger.warning("Malformed handshake: %s", self.client_address)
             self.close()
@@ -346,7 +366,7 @@ class JudgeHandler(ZlibPacketHandler):
         self.judges.register(self)
         self._ping_thread_ref = threading.Thread(target=self._ping_thread, daemon=True)
         self._ping_thread_ref.start()
-        self._connected()
+        self._handle_with_database_retry("handshake-connected", self._connected)
 
     def can_judge(self, problem, executor, judge_id=None):
         return (
@@ -546,6 +566,8 @@ class JudgeHandler(ZlibPacketHandler):
         self.send({"name": "terminate-submission"})
 
     def get_current_submission(self):
+        if isinstance(self._working, bool):
+            return None
         return self._working or None
 
     def ping(self):
@@ -561,12 +583,35 @@ class JudgeHandler(ZlibPacketHandler):
                 self.on_malformed(data)
             else:
                 handler = self.handlers.get(data["name"], self.on_malformed)
-                handler(data)
+                self._handle_packet(data, handler)
         except Exception:
             logger.exception("Error in packet handling (Judge-side): %s", self.name)
             self._packet_exception()
             # You can't crash here because you aren't so sure about the judges
             # not being malicious or simply malforms. THIS IS A SERVER!
+
+    def _handle_packet(self, data, handler):
+        self._handle_with_database_retry(data.get("name"), lambda: handler(data))
+
+    def _handle_with_database_retry(self, packet_name, handler):
+        _ensure_connection()
+        try:
+            handler()
+        except OperationalError as e:
+            if (
+                packet_name not in self.retryable_database_packets
+                or not _is_stale_database_error(e)
+            ):
+                raise
+            logger.warning(
+                "Retrying %s from %s after stale database connection",
+                packet_name,
+                self.name,
+                exc_info=True,
+            )
+            db.connection.close()
+            _ensure_connection()
+            handler()
 
     def _packet_exception(self):
         json_log.exception(
