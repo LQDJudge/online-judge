@@ -8,7 +8,7 @@ from typing import Optional
 
 # Default configuration values
 DEFAULT_BOT_NAME = "Claude-Sonnet-4.6"
-DEFAULT_MODERATION_BOT_NAME = "gpt-5-nano"
+DEFAULT_MODERATION_BOT_NAME = "Qwen3.7-Flash-EL"
 DEFAULT_SLEEP_TIME = 2.5
 DEFAULT_TIMEOUT = 300
 DEFAULT_MAX_RETRIES = 1

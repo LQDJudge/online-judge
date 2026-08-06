@@ -15,6 +15,8 @@ import tempfile
 
 from django.utils.translation import gettext_lazy as _
 
+from celery.schedules import crontab
+
 # ES modules (.mjs, e.g. the vendored PDF.js viewer) must be served with a
 # JavaScript MIME type or browsers reject them ("Strict MIME type checking").
 # This covers Django-served static (runserver/whitenoise); when nginx serves
@@ -600,11 +602,41 @@ AUTO_REVIEW_CONTEST_RUN_TIMEOUT_SECONDS = (
 )
 AUTO_REVIEW_CONTEST_LEAK_DETAILS_CAP = 50  # max leaker rows stored in details_json
 
-# Celery Beat schedule. Currently used by the auto-review reapers; if you
-# add a new periodic task, append it here. Note: the schedule is only active
-# when celery-beat is running (`celery -A dmoj_celery beat`), separate from
-# the worker process. If beat is not deployed in your environment, the reapers
-# will not fire — stuck runs would have to be cleared manually.
+# ============================================================
+# Periodic moderation and maintenance
+# ============================================================
+AUTO_MODERATE_CHAT_ENABLED = True
+AUTO_MODERATE_CHAT_BATCH_SIZE = 100
+AUTO_MODERATE_CHAT_WINDOW_MINUTES = 120
+AUTO_MODERATE_CHAT_LOCK_TIMEOUT = 900
+AUTO_MODERATE_COMMENTS_ENABLED = True
+AUTO_MODERATE_COMMENTS_BATCH_SIZE = 50
+AUTO_MODERATE_COMMENTS_WINDOW_MINUTES = 120
+AUTO_MODERATE_COMMENTS_LOCK_TIMEOUT = 900
+AUTO_MODERATE_POSTS_ENABLED = True
+AUTO_MODERATE_POSTS_BATCH_SIZE = 50
+AUTO_MODERATE_POSTS_LOCK_TIMEOUT = 1800
+
+PERIODIC_CLEANUP_INACTIVE_ENABLED = True
+PERIODIC_CLEANUP_INACTIVE_BATCH_SIZE = 100
+PERIODIC_CLEANUP_INACTIVE_LOCK_TIMEOUT = 3600
+PERIODIC_DELETE_OLD_NOTIFICATIONS_ENABLED = True
+PERIODIC_DELETE_OLD_NOTIFICATIONS_BATCH_SIZE = 1000
+PERIODIC_DELETE_OLD_NOTIFICATIONS_LOCK_TIMEOUT = 3600
+PERIODIC_CLEAR_EXPIRED_SESSIONS_ENABLED = True
+PERIODIC_CLEAR_EXPIRED_SESSIONS_BATCH_SIZE = 1000
+PERIODIC_CLEAR_EXPIRED_SESSIONS_SLEEP = 0.5
+PERIODIC_CLEAR_EXPIRED_SESSIONS_LOCK_TIMEOUT = 3600
+PERIODIC_RECOMPUTE_COMMENT_SCORES_ENABLED = True
+PERIODIC_RECOMPUTE_COMMENT_SCORES_LOCK_TIMEOUT = 3600
+PERIODIC_RECOMPUTE_CONTRIBUTIONS_ENABLED = True
+PERIODIC_RECOMPUTE_CONTRIBUTIONS_LOCK_TIMEOUT = 7200
+PERIODIC_FIX_ORGANIZATION_PRIVATE_ENABLED = True
+PERIODIC_FIX_ORGANIZATION_PRIVATE_LOCK_TIMEOUT = 3600
+
+# Celery Beat schedule. Application-level periodic jobs belong here so the
+# cadence is versioned with the codebase. This schedule is only active when
+# celery-beat is running (`celery -A dmoj_celery beat`), separate from workers.
 CELERY_BEAT_SCHEDULE = {
     "reap-stale-review-runs": {
         "task": "judge.tasks.review.reap_stale_review_runs",
@@ -617,6 +649,38 @@ CELERY_BEAT_SCHEDULE = {
     "auto-moderate-comments": {
         "task": "judge.tasks.comment_moderation.moderate_recent_comments",
         "schedule": 600.0,  # every 10 minutes
+    },
+    "auto-moderate-chat": {
+        "task": "judge.tasks.chat_moderation.moderate_recent_chat",
+        "schedule": 300.0,  # every 5 minutes
+    },
+    "auto-moderate-posts": {
+        "task": "judge.tasks.post_moderation.moderate_pending_posts",
+        "schedule": crontab(minute=30),  # every hour
+    },
+    "cleanup-inactive-accounts": {
+        "task": "judge.tasks.maintenance.cleanup_inactive_accounts",
+        "schedule": crontab(minute=0, hour=4),
+    },
+    "clear-expired-sessions": {
+        "task": "judge.tasks.maintenance.clear_expired_sessions",
+        "schedule": crontab(minute=4, hour=4),
+    },
+    "recompute-comment-scores": {
+        "task": "judge.tasks.maintenance.recompute_comment_scores",
+        "schedule": crontab(minute=7, hour=4),
+    },
+    "delete-old-notifications": {
+        "task": "judge.tasks.maintenance.delete_old_notifications",
+        "schedule": crontab(minute=10, hour=4),
+    },
+    "sync-organization-private-flags": {
+        "task": "judge.tasks.maintenance.sync_organization_private_flags",
+        "schedule": crontab(minute=15, hour=4),
+    },
+    "recompute-contributions": {
+        "task": "judge.tasks.maintenance.recompute_contributions",
+        "schedule": crontab(minute=18, hour=4),
     },
 }
 

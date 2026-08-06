@@ -125,7 +125,7 @@ class AutoModerateCommandTest(TestCase):
             timeout = 30
 
             def get_bot_name_for_moderation(self):
-                return "gpt-5-nano"
+                return "Qwen3.7-Flash-EL"
 
         get_config.return_value = FakeConfig()
 
@@ -138,10 +138,10 @@ class AutoModerateCommandTest(TestCase):
 
         llm_service.assert_has_calls(
             [
-                call(api_key="test-key", bot_name="Gemini-3-Flash"),
+                call(api_key="test-key", bot_name="Qwen3.7-Flash-EL"),
                 call(
                     api_key="test-key",
-                    bot_name="gpt-5-nano",
+                    bot_name="Qwen3.7-Flash-EL",
                     sleep_time=0.5,
                     timeout=30,
                 ),
@@ -158,7 +158,7 @@ class AutoModerateCommandTest(TestCase):
             timeout = 30
 
             def get_bot_name_for_moderation(self):
-                return "gpt-5-nano"
+                return "Qwen3.7-Flash-EL"
 
         comment = self.create_comment()
         get_config.return_value = FakeConfig()
@@ -192,7 +192,7 @@ class AutoModerateCommandTest(TestCase):
             timeout = 30
 
             def get_bot_name_for_moderation(self):
-                return "gpt-5-nano"
+                return "Qwen3.7-Flash-EL"
 
         user = User.objects.create_user("chat_review_user", password="pw")
         profile, _ = Profile.objects.get_or_create(
@@ -224,6 +224,88 @@ class AutoModerateCommandTest(TestCase):
         self.assertTrue(log.is_automated)
         message.refresh_from_db()
         self.assertFalse(message.hidden)
+
+    @override_settings(POE_API_KEY="test-key", POE_BOT_NAME="Gemini-3-Flash")
+    @patch("judge.management.commands.auto_moderate.LLMService")
+    @patch("judge.management.commands.auto_moderate.get_config")
+    def test_chat_moderation_accepts_string_ids_and_custom_window(
+        self, get_config, llm_service
+    ):
+        class FakeConfig:
+            api_key = "test-key"
+            sleep_time = 0.5
+            timeout = 30
+
+            def get_bot_name_for_moderation(self):
+                return "Qwen3.7-Flash-EL"
+
+        user = User.objects.create_user("chat_string_id_user", password="pw")
+        profile, _ = Profile.objects.get_or_create(
+            user=user, defaults={"language": self.language}
+        )
+        message = Message.objects.create(
+            room=None,
+            author=profile,
+            body="Older message still inside custom moderation window",
+        )
+        Message.objects.filter(id=message.id).update(
+            time=timezone.now() - timezone.timedelta(minutes=90)
+        )
+        get_config.return_value = FakeConfig()
+        unused_service = MagicMock()
+        chat_service = MagicMock()
+        chat_service.call_llm.return_value = (
+            '[{"id": "%d", "action": "keep"}]' % message.id
+        )
+        llm_service.side_effect = [unused_service, chat_service]
+
+        call_command(
+            "auto_moderate",
+            "--chat-only",
+            "--chat-window-minutes",
+            "120",
+            stdout=StringIO(),
+        )
+
+        log = ChatModerationLog.objects.get(message=message)
+        self.assertEqual(log.action, "keep")
+        self.assertTrue(log.is_automated)
+
+    @override_settings(POE_API_KEY="test-key", POE_BOT_NAME="Gemini-3-Flash")
+    @patch("judge.management.commands.auto_moderate.LLMService")
+    @patch("judge.management.commands.auto_moderate.get_config")
+    def test_chat_moderation_reports_missing_batch_decisions(
+        self, get_config, llm_service
+    ):
+        class FakeConfig:
+            api_key = "test-key"
+            sleep_time = 0.5
+            timeout = 30
+
+            def get_bot_name_for_moderation(self):
+                return "Qwen3.7-Flash-EL"
+
+        user = User.objects.create_user("chat_missing_decision_user", password="pw")
+        profile, _ = Profile.objects.get_or_create(
+            user=user, defaults={"language": self.language}
+        )
+        first = Message.objects.create(room=None, author=profile, body="First message")
+        second = Message.objects.create(
+            room=None, author=profile, body="Second message"
+        )
+        get_config.return_value = FakeConfig()
+        unused_service = MagicMock()
+        chat_service = MagicMock()
+        chat_service.call_llm.return_value = '[{"id": %d, "action": "keep"}]' % first.id
+        llm_service.side_effect = [unused_service, chat_service]
+        output = StringIO()
+
+        call_command("auto_moderate", "--chat-only", stdout=output)
+
+        self.assertTrue(ChatModerationLog.objects.filter(message=first).exists())
+        self.assertFalse(ChatModerationLog.objects.filter(message=second).exists())
+        self.assertIn("Missing moderation results for chat messages", output.getvalue())
+        self.assertIn("Errors: 1", output.getvalue())
 
     def test_chat_moderation_search_matches_message_body(self):
         admin = User.objects.create_superuser("chat_mod_admin", password="pw")

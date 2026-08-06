@@ -250,10 +250,12 @@ location /socket.io/ {
 
 ### Celery
 
-Used for background tasks like batch rejudging:
+Used for background tasks like batch rejudging, AI processing, moderation, and
+scheduled maintenance. Run both a worker and beat in production:
 
 ```bash
 celery -A dmoj_celery worker
+celery -A dmoj_celery beat
 ```
 
 ### Judge
@@ -657,17 +659,22 @@ LQDOJ includes a problem recommendation system using collaborative filtering and
 
 See [`judge/ml/README.md`](judge/ml/README.md) for the full setup guide.
 
-## Crontab
+## Periodic Jobs
 
-Recommended cron jobs for production. Edit with `crontab -e` and replace `<venv>` and `<site>` with your actual paths:
+Application-level periodic jobs are scheduled in `CELERY_BEAT_SCHEDULE` in
+`dmoj/settings.py` and require `celery -A dmoj_celery beat` plus at least one
+Celery worker. This includes moderation, notification cleanup, session cleanup,
+inactive-account cleanup, score recomputation, contribution recomputation,
+organization-private flag sync, and auto-review reapers.
+
+Use cron only for server/infrastructure scripts that should stay outside the
+Django worker process, such as backups, bridge container restarts, or external ML
+pipelines. Example production crontab entries:
 
 ```crontab
-0 4 * * * <venv>/bin/python3 <site>/manage.py cleanup_inactive --users --orgs
-4 4 * * * <venv>/bin/python3 <site>/manage.py batch_clearsessions
-7 4 * * * <venv>/bin/python3 <site>/manage.py recompute_comment_scores
-10 4 * * * <venv>/bin/python3 <site>/manage.py delete_old_notifications
-11 4 * * * <venv>/bin/python3 <site>/manage.py recompute_contributions
-15 4 * * * <venv>/bin/python3 <site>/manage.py fix_organization_private
+0 2 * * * /home/ubuntu/backup/backup.sh >> /home/ubuntu/backup/backup.log 2>&1
+0 3 * * * /home/ubuntu/cronjobs/ml_gen_data.sh
+30 2 * * * /home/ubuntu/bridge/run.sh >> /home/ubuntu/bridge/cron.log 2>&1
 ```
 
 ---
@@ -913,10 +920,12 @@ location /socket.io/ {
 
 ### Celery
 
-Dùng cho một số task như batch rejudge:
+Dùng cho các task nền như batch rejudge, xử lý AI, moderation và maintenance
+định kỳ. Trên production cần chạy cả worker và beat:
 
 ```bash
 celery -A dmoj_celery worker
+celery -A dmoj_celery beat
 ```
 
 ### Judge
@@ -1311,17 +1320,20 @@ LQDOJ có hệ thống gợi ý bài tập sử dụng collaborative filtering v
 
 Xem [`judge/ml/README.md`](judge/ml/README.md) để biết hướng dẫn chi tiết.
 
-### Crontab
+### Job định kỳ
 
-Các cron job khuyến nghị cho production. Chỉnh sửa bằng `crontab -e`, thay `<venv>` và `<site>` bằng đường dẫn thực tế:
+Các job định kỳ thuộc ứng dụng được cấu hình trong `CELERY_BEAT_SCHEDULE` ở
+`dmoj/settings.py` và cần `celery -A dmoj_celery beat` cùng ít nhất một Celery
+worker. Nhóm này bao gồm moderation, dọn notification, dọn session, dọn account
+không hoạt động, tính lại score, tính lại contribution, đồng bộ cờ
+organization-private và các reaper của auto-review.
+
+Chỉ dùng cron cho script hạ tầng nằm ngoài Django worker, ví dụ backup, restart
+container bridge hoặc pipeline ML bên ngoài. Ví dụ crontab production:
 
 ```crontab
-0 4 * * * <venv>/bin/python3 <site>/manage.py cleanup_inactive --users --orgs
-4 4 * * * <venv>/bin/python3 <site>/manage.py batch_clearsessions
-7 4 * * * <venv>/bin/python3 <site>/manage.py recompute_comment_scores
-10 4 * * * <venv>/bin/python3 <site>/manage.py delete_old_notifications
-11 4 * * * <venv>/bin/python3 <site>/manage.py recompute_contributions
-15 4 * * * <venv>/bin/python3 <site>/manage.py fix_organization_private
+0 2 * * * /home/ubuntu/backup/backup.sh >> /home/ubuntu/backup/backup.log 2>&1
+0 3 * * * /home/ubuntu/cronjobs/ml_gen_data.sh
+30 2 * * * /home/ubuntu/bridge/run.sh >> /home/ubuntu/bridge/cron.log 2>&1
 ```
-
 </details>

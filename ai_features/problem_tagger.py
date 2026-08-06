@@ -209,19 +209,25 @@ B) AI / output-only / Kaggle-style. Expect: task description, data description (
 A problem is `is_valid=true` if it falls into EITHER style and the reader can tell what to predict and how submissions will be scored. Missing classical-CP-only elements (sample I/O, time/memory limits, integer constraints) is FINE for style B.
 
 DIFFICULTY RATING GUIDELINES:
-For classical CP, use Codeforces-style ratings:
-- 800-1200: Basic implementation, simple math, greedy, ad-hoc
-- 1300-1600: Standard algorithms, basic DP, graph traversal, binary search
-- 1700-2000: Advanced algorithms, complex DP, data structures, number theory
-- 2100-2400: Sophisticated techniques, advanced data structures, complex math
-- 2500+: Expert-level algorithms, research-level techniques
+Use the LQDOJ 100-3000 difficulty scale. Return an integer, preferably rounded to the nearest 100 unless the problem clearly sits between two buckets.
+
+For classical CP, calibrate as:
+- 100-300: First-programming exercises: print, read input, one arithmetic expression.
+- 400-600: Very easy conditionals/loops, direct formulas, simple digit/string processing.
+- 700-900: Easy implementation, simple math, basic simulation, straightforward ad-hoc.
+- 1000-1200: Non-trivial beginner/bronze problems requiring a small observation, simple greedy, prefix sums, or brute force within constraints.
+- 1300-1600: Standard algorithms: basic DP, graph traversal, binary search, sorting/two-pointers with a clear invariant.
+- 1700-2000: Advanced algorithms or combinations: harder DP, shortest paths, data structures, number theory, constructive reasoning.
+- 2100-2400: Sophisticated techniques: optimized DP, advanced data structures, graph theory, string algorithms, complex math.
+- 2500-3000: Expert-level techniques, interactive/communication-heavy problems, research-level observations, or multiple advanced ideas.
 
 For AI / output-only problems, calibrate as:
-- 800-1200: Tabular Kaggle-style task with clean CSV, standard metric (accuracy / RMSE), small dataset, baseline obvious.
-- 1300-1600: Bigger / dirtier dataset, semi-supervised or class-imbalance issues, classical ML model expected.
-- 1700-2000: CV / NLP / signal task requiring a non-trivial neural model, custom data loading, or careful preprocessing.
-- 2100-2400: Hard CV / NLP with strict constraints (model-size cap, no external data, structured output), retrieval / segmentation / multi-output scoring.
-- 2500+: Research-frontier AI tasks (LLM-judged, dense prediction with custom metric, novel modality).
+- 100-600: Tutorial dataset task where a baseline script or direct rule is enough.
+- 700-1000: Clean tabular/image/text classification or regression with standard metric and obvious baseline.
+- 1100-1500: Bigger or noisier dataset, class imbalance, semi-supervised labels, feature engineering, or classical ML model selection expected.
+- 1600-2000: CV / NLP / signal task requiring non-trivial neural models, custom data loading, or careful preprocessing.
+- 2100-2400: Hard CV / NLP / structured prediction with strict constraints, retrieval / segmentation / multi-output scoring, or limited labels.
+- 2500-3000: Research-frontier AI tasks, novel modalities, LLM-judged outputs, dense prediction with custom metric, or difficult optimization.
 
 TAG SELECTION RULES:
 1. Choose 1-4 most relevant tags that represent the CORE technique(s) needed.
@@ -250,7 +256,7 @@ MULTI-PROBLEM FILES: If a file contains multiple problems (like a contest proble
 
             user_prompt = f"""TASK: Analyze this competitive programming problem and provide:
 1. Format validation: is it a complete problem of either style A (classical CP with statement + I/O format + constraints + examples) OR style B (AI / output-only / Kaggle-style with task description + data description + submission format + scoring metric)?
-2. Difficulty rating (integer, like Codeforces rating) - only if valid format
+2. Difficulty rating (integer on the LQDOJ 100-3000 scale) - only if valid format
 3. Core algorithmic tags (1-4 tags from provided list) - only if valid format
 
 {problem_info}You have both the problem statement and author's accepted solution. Problem statement is in Vietnamese or English.
@@ -278,7 +284,7 @@ AUTHOR'S ACCEPTED SOLUTION:
 
             user_prompt = f"""TASK: Analyze this competitive programming problem and provide:
 1. Format validation: is it a complete problem of either style A (classical CP with statement + I/O format + constraints + examples) OR style B (AI / output-only / Kaggle-style with task description + data description + submission format + scoring metric)?
-2. Difficulty rating (integer, like Codeforces rating) - only if valid format  
+2. Difficulty rating (integer on the LQDOJ 100-3000 scale) - only if valid format
 3. Core algorithmic tags (1-4 tags from provided list) - only if valid format
 
 {problem_info}Problem statement is in Vietnamese or English.

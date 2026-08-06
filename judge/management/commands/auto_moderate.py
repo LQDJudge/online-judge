@@ -148,6 +148,12 @@ class Command(BaseCommand):
             action="store_true",
             help="Only moderate chat lobby messages",
         )
+        parser.add_argument(
+            "--chat-window-minutes",
+            type=int,
+            default=60,
+            help="Only review chat messages from this many recent minutes (default: 60)",
+        )
 
     def handle(self, *args, **options):
         # Get LLM settings
@@ -156,17 +162,16 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR("POE_API_KEY not found in settings"))
             return
 
-        bot_name = getattr(settings, "POE_BOT_NAME", "Gemini-3-Flash")
-
         try:
             config = get_config()
+            bot_name = config.get_bot_name_for_moderation()
             self.llm_service = LLMService(
                 api_key=api_key,
                 bot_name=bot_name,
             )
             self.chat_llm_service = LLMService(
                 api_key=config.api_key,
-                bot_name=config.get_bot_name_for_moderation(),
+                bot_name=bot_name,
                 sleep_time=config.sleep_time,
                 timeout=config.timeout,
             )
@@ -179,6 +184,7 @@ class Command(BaseCommand):
         self.dry_run = options["dry_run"]
         self.batch_size = options["batch_size"]
         self.comment_window_minutes = options["comment_window_minutes"]
+        self.chat_window_minutes = options["chat_window_minutes"]
 
         if options["chat_only"] and (options["comments_only"] or options["posts_only"]):
             self.stderr.write(
@@ -428,14 +434,22 @@ class Command(BaseCommand):
                 return stats
 
             # Process results
+            processed_comment_ids = set()
             for result in results:
-                comment_id = result.get("id")
+                comment_id = self._coerce_result_id(result.get("id"))
                 action = result.get("action", "").lower()
 
                 if comment_id not in comments_map:
+                    stats["errors"] += 1
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"    Ignoring result for unknown comment id: {result.get('id')}"
+                        )
+                    )
                     continue
 
                 comment = comments_map[comment_id]
+                processed_comment_ids.add(comment_id)
                 author_name = comment.author.username if comment.author else "Anonymous"
                 reason = (result.get("reason") or "").strip()
                 if action in (
@@ -515,6 +529,20 @@ class Command(BaseCommand):
                             is_automated=True,
                         )
                     stats["comments_kept"] += 1
+
+            missing_comment_ids = set(comments_map) - processed_comment_ids
+            if missing_comment_ids:
+                stats["errors"] += len(missing_comment_ids)
+                self.stdout.write(
+                    self.style.WARNING(
+                        "  Missing moderation results for comments: %(ids)s"
+                        % {
+                            "ids": ", ".join(
+                                str(i) for i in sorted(missing_comment_ids)
+                            )
+                        }
+                    )
+                )
 
             self.stdout.write(
                 self.style.SUCCESS(
@@ -684,8 +712,7 @@ class Command(BaseCommand):
             "errors": 0,
         }
 
-        # Only review messages from the last hour
-        cutoff = timezone.now() - timezone.timedelta(hours=1)
+        cutoff = timezone.now() - timezone.timedelta(minutes=self.chat_window_minutes)
 
         # Get message IDs already reviewed (within the same time window)
         already_reviewed = ChatModerationLog.objects.filter(
@@ -753,15 +780,23 @@ class Command(BaseCommand):
 
             # Track muted authors to skip redundant processing
             muted_authors = set()
+            processed_message_ids = set()
 
             for result in results:
-                msg_id = result.get("id")
+                msg_id = self._coerce_result_id(result.get("id"))
                 action = result.get("action", "").lower()
 
                 if msg_id not in messages_map:
+                    stats["errors"] += 1
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"    Ignoring result for unknown message id: {result.get('id')}"
+                        )
+                    )
                     continue
 
                 msg = messages_map[msg_id]
+                processed_message_ids.add(msg_id)
 
                 # Skip if this author was already muted in this batch
                 if msg.author_id in muted_authors:
@@ -845,6 +880,20 @@ class Command(BaseCommand):
                         )
                     stats["chat_kept"] += 1
 
+            missing_message_ids = set(messages_map) - processed_message_ids
+            if missing_message_ids:
+                stats["errors"] += len(missing_message_ids)
+                self.stdout.write(
+                    self.style.WARNING(
+                        "  Missing moderation results for chat messages: %(ids)s"
+                        % {
+                            "ids": ", ".join(
+                                str(i) for i in sorted(missing_message_ids)
+                            )
+                        }
+                    )
+                )
+
             self.stdout.write(
                 self.style.SUCCESS(
                     f"  Batch complete: {stats['chat_kept']} kept, "
@@ -858,6 +907,12 @@ class Command(BaseCommand):
             stats["errors"] = len(messages_map)
 
         return stats
+
+    def _coerce_result_id(self, value):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
 
     def parse_json_response(self, response):
         """Parse JSON response from LLM, handling markdown code blocks"""
