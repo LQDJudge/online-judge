@@ -3,13 +3,23 @@ General LLM API service for Poe API calls
 Provides clean interface for various LLM tasks with image support
 """
 
-import fastapi_poe as fp
-import time
-import re
-import requests
-import os
-from typing import Optional, List
 import logging
+import os
+import re
+import signal
+import time
+from typing import List, Optional
+from urllib.parse import unquote, urlparse
+
+try:
+    from django.conf import settings
+    from django.core.files.storage import default_storage
+except ImportError:
+    settings = None
+    default_storage = None
+
+import fastapi_poe as fp
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +58,6 @@ class LLMService:
             timeout: Maximum seconds to wait for the streaming response.
                      If None, uses self.timeout (from config). Set 0 to disable.
         """
-        import signal
-
         stream_timeout = (
             timeout if timeout is not None else getattr(self, "timeout", 120)
         )
@@ -286,8 +294,6 @@ class LLMService:
         if not site_domain:
             return False
         try:
-            from urllib.parse import urlparse
-
             parsed = urlparse(url)
             url_domain = parsed.netloc.lower()
             site_domain = site_domain.lower()
@@ -301,8 +307,6 @@ class LLMService:
     def _extract_local_path_from_url(self, url: str) -> Optional[str]:
         """Extract local file path from a site URL."""
         try:
-            from urllib.parse import urlparse, unquote
-
             parsed = urlparse(url)
             path = unquote(parsed.path)
 
@@ -427,115 +431,154 @@ class LLMService:
             logger.error(f"Error uploading file from {url}: {e}")
             return None
 
-    def _upload_local_file(self, file_path: str) -> Optional[fp.Attachment]:
-        """
-        Upload a local file to Poe using fp.upload_file_sync
-        Handles both MEDIA_ROOT files and DMOJ_PROBLEM_DATA_ROOT files (for PDFs)
+    def _is_supported_upload_file(self, file_name: str) -> bool:
+        supported_extensions = {
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".bmp",
+            ".webp",
+            ".pdf",
+            ".txt",
+            ".md",
+        }
+        file_ext = os.path.splitext(file_name)[1].lower()
+        if file_ext not in supported_extensions:
+            logger.warning(
+                f"Unsupported file extension: {file_ext} for file: {file_name}"
+            )
+            return False
+        return True
 
-        Args:
-            file_path: Local file path (URL path like /media/file.jpg or /problem/code/data/file.pdf)
+    def _upload_bytes_to_poe(
+        self, file_content: bytes, file_name: str, source_label: str
+    ) -> Optional[fp.Attachment]:
+        max_size = 50 * 1024 * 1024
+        if len(file_content) > max_size:
+            logger.warning(
+                f"File too large ({len(file_content)} bytes): {source_label}"
+            )
+            return None
 
-        Returns:
-            Uploaded Attachment object or None if failed
-        """
-        try:
-            # Get Django settings
-            try:
-                from django.conf import settings
+        if not self._is_supported_upload_file(file_name):
+            return None
 
-                media_root = getattr(settings, "MEDIA_ROOT", None)
-                problem_data_root = getattr(settings, "DMOJ_PROBLEM_DATA_ROOT", None)
-            except ImportError:
-                logger.error("Django not available for settings lookup")
-                return None
+        logger.info(f"Uploading file to Poe: {source_label}")
+        attachment = fp.upload_file_sync(
+            file=file_content, file_name=file_name, api_key=self.api_key
+        )
+        logger.info(f"Successfully uploaded file: {file_name}")
+        return attachment
 
-            # Determine storage type and construct full file path
-            clean_path = file_path.lstrip("/")
+    def _upload_problem_data_file(self, clean_path: str) -> Optional[fp.Attachment]:
+        if settings is None:
+            logger.error("Django not available for settings lookup")
+            return None
 
-            # Check if this is a problem data file (PDF)
-            if clean_path.startswith("problem/") and "/data/" in clean_path:
-                # This is a problem PDF: /problem/{code}/data/{filename}
-                if not problem_data_root:
-                    logger.error("DMOJ_PROBLEM_DATA_ROOT not found in Django settings")
-                    return None
+        problem_data_root = getattr(settings, "DMOJ_PROBLEM_DATA_ROOT", None)
+        if not problem_data_root:
+            logger.error("DMOJ_PROBLEM_DATA_ROOT not found in Django settings")
+            return None
 
-                # Extract problem code and filename from URL
-                # Pattern: problem/{code}/data/{filename}
-                import re
+        match = re.match(r"problem/([^/]+)/data/(.+)$", clean_path)
+        if not match:
+            logger.warning(f"Invalid problem data URL format: {clean_path}")
+            return None
 
-                match = re.match(r"problem/([^/]+)/data/(.+)$", clean_path)
-                if not match:
-                    logger.warning(f"Invalid problem data URL format: {clean_path}")
-                    return None
+        problem_code, filename = match.groups()
+        problem_path = self._clean_relative_storage_path(f"{problem_code}/{filename}")
+        if not problem_path:
+            logger.warning(f"Unsafe problem data URL path: {clean_path}")
+            return None
 
-                problem_code, filename = match.groups()
-                # Problem data files are stored as: {DMOJ_PROBLEM_DATA_ROOT}/{code}/{filename}
-                # Example: /problems/qnadrill/qnadrill.pdf
-                full_path = os.path.join(problem_data_root, problem_code, filename)
-                logger.info(f"Using problem data storage: {full_path}")
+        full_path = os.path.join(problem_data_root, problem_path)
+        logger.info(f"Using problem data storage: {full_path}")
 
-            else:
-                # This is a regular media file (images, uploads, etc.)
-                if not media_root:
-                    logger.error("MEDIA_ROOT not found in Django settings")
-                    return None
+        if not os.path.exists(full_path):
+            logger.warning(f"Local file not found: {full_path}")
+            return None
 
-                # For media files, remove 'media/' prefix since MEDIA_ROOT already points to media directory
-                # Example: /media/pagedown-uploads/image.png -> pagedown-uploads/image.png
-                if clean_path.startswith("media/"):
-                    clean_path = clean_path[6:]  # Remove 'media/' prefix
+        with open(full_path, "rb") as f:
+            file_content = f.read()
 
-                full_path = os.path.join(media_root, clean_path)
-                logger.info(f"Using media storage: {full_path}")
+        return self._upload_bytes_to_poe(
+            file_content=file_content,
+            file_name=os.path.basename(full_path),
+            source_label=full_path,
+        )
 
-            # Check if file exists
+    def _get_media_storage_path(self, clean_path: str) -> str:
+        if clean_path.startswith("media/"):
+            return clean_path[6:]
+        return clean_path
+
+    def _clean_relative_storage_path(self, storage_path: str) -> Optional[str]:
+        path = storage_path.replace("\\", "/")
+        if path.startswith("/"):
+            return None
+
+        parts = [part for part in path.split("/") if part]
+        if not parts or any(part in (".", "..") for part in parts):
+            return None
+        return "/".join(parts)
+
+    def _upload_media_file(self, clean_path: str) -> Optional[fp.Attachment]:
+        if settings is None or default_storage is None:
+            logger.error("Django not available for media storage lookup")
+            return None
+
+        media_root = getattr(settings, "MEDIA_ROOT", None)
+        storage_path = self._get_media_storage_path(clean_path)
+        storage_path = self._clean_relative_storage_path(storage_path)
+        if not storage_path:
+            logger.warning(f"Unsafe media URL path: {clean_path}")
+            return None
+
+        if media_root:
+            full_path = os.path.join(media_root, storage_path)
+            logger.info(f"Using media filesystem storage: {full_path}")
+
             if not os.path.exists(full_path):
                 logger.warning(f"Local file not found: {full_path}")
                 return None
 
-            # Check file size (optional safety check)
-            file_size = os.path.getsize(full_path)
-            max_size = 50 * 1024 * 1024  # 50MB limit
-            if file_size > max_size:
-                logger.warning(f"File too large ({file_size} bytes): {full_path}")
-                return None
-
-            # Check if it's a supported file type
-            supported_extensions = {
-                ".png",
-                ".jpg",
-                ".jpeg",
-                ".gif",
-                ".bmp",
-                ".webp",
-                ".pdf",
-                ".txt",
-                ".md",
-            }
-            file_ext = os.path.splitext(full_path)[1].lower()
-
-            if file_ext not in supported_extensions:
-                logger.warning(
-                    f"Unsupported file extension: {file_ext} for file: {full_path}"
-                )
-                return None
-
-            # Read file content
             with open(full_path, "rb") as f:
                 file_content = f.read()
 
-            # Extract file name
-            file_name = os.path.basename(full_path)
-
-            # Upload file to Poe
-            logger.info(f"Uploading local file: {full_path}")
-            attachment = fp.upload_file_sync(
-                file=file_content, file_name=file_name, api_key=self.api_key
+            return self._upload_bytes_to_poe(
+                file_content=file_content,
+                file_name=os.path.basename(full_path),
+                source_label=full_path,
             )
 
-            logger.info(f"Successfully uploaded local file: {file_name}")
-            return attachment
+        logger.info(f"Using Django default storage for media: {storage_path}")
+        if not default_storage.exists(storage_path):
+            logger.warning(f"Media file not found in default storage: {storage_path}")
+            return None
 
+        with default_storage.open(storage_path, "rb") as f:
+            file_content = f.read()
+
+        return self._upload_bytes_to_poe(
+            file_content=file_content,
+            file_name=os.path.basename(storage_path),
+            source_label=storage_path,
+        )
+
+    def _upload_local_file(self, file_path: str) -> Optional[fp.Attachment]:
+        """
+        Upload a site-local file reference to Poe.
+
+        Problem data PDFs are read from DMOJ_PROBLEM_DATA_ROOT. Media files are
+        read from MEDIA_ROOT when configured, otherwise from Django default
+        storage so S3-backed production media works without a local media tree.
+        """
+        try:
+            clean_path = unquote(file_path).lstrip("/")
+            if clean_path.startswith("problem/") and "/data/" in clean_path:
+                return self._upload_problem_data_file(clean_path)
+            return self._upload_media_file(clean_path)
         except Exception as e:
             logger.error(f"Error uploading local file {file_path}: {e}")
             return None
