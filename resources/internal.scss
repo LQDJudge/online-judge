@@ -527,6 +527,28 @@
         }
     }
 
+    .bridge-status-actions {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-sm;
+    }
+
+    .bridge-auto-refresh-toggle {
+        align-items: center;
+        background: $background_light_gray;
+        border: $space-hairline solid $border_gray;
+        border-radius: $radius-md;
+        cursor: pointer;
+        display: inline-flex;
+        gap: $space-xs;
+        padding: $space-xs $space-sm;
+
+        input {
+            margin: 0;
+        }
+    }
+
     .bridge-status-error {
         background: $color-message-error-bg;
         border: $space-hairline solid $color-message-error-border;

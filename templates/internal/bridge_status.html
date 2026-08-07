@@ -7,9 +7,83 @@
 {% block js_media %}
   <script type="text/javascript">
     $(function () {
-      window.setInterval(function () {
-        window.location.reload();
-      }, 30000);
+      var storageKey = 'internalBridgeStatusAutoRefresh';
+      var refreshMs = 30000;
+      var refreshTimer = null;
+      var refreshInFlight = false;
+
+      function autoRefreshEnabled() {
+        return window.localStorage.getItem(storageKey) !== 'off';
+      }
+
+      function bindAutoRefreshToggle() {
+        var $toggle = $('#bridge-auto-refresh');
+        $toggle.prop('checked', autoRefreshEnabled());
+        $toggle.off('change.bridgeStatus').on('change.bridgeStatus', function () {
+          applyAutoRefreshState(this.checked);
+        });
+      }
+
+      function getDetailsState() {
+        return {
+          languages: $('.bridge-languages-toggle').prop('open'),
+          debug: $('.bridge-debug-toggle').prop('open')
+        };
+      }
+
+      function restoreDetailsState(state) {
+        $('.bridge-languages-toggle').prop('open', state.languages);
+        $('.bridge-debug-toggle').prop('open', state.debug);
+      }
+
+      function refreshBridgeStatus() {
+        if (refreshInFlight)
+          return;
+        refreshInFlight = true;
+        var detailsState = getDetailsState();
+        window.fetch(window.location.href, {
+          credentials: 'same-origin',
+          headers: {'X-Requested-With': 'XMLHttpRequest'}
+        }).then(function (response) {
+          return response.text();
+        }).then(function (html) {
+          var doc = new DOMParser().parseFromString(html, 'text/html');
+          var next = doc.querySelector('.internal-bridge-status-page');
+          var current = document.querySelector('.internal-bridge-status-page');
+          if (!next || !current)
+            return;
+          current.replaceWith(next);
+          bindAutoRefreshToggle();
+          restoreDetailsState(detailsState);
+        }).finally(function () {
+          refreshInFlight = false;
+        });
+      }
+
+      function startRefreshTimer() {
+        if (refreshTimer !== null)
+          window.clearInterval(refreshTimer);
+        refreshTimer = window.setInterval(refreshBridgeStatus, refreshMs);
+      }
+
+      function stopRefreshTimer() {
+        if (refreshTimer !== null) {
+          window.clearInterval(refreshTimer);
+          refreshTimer = null;
+        }
+      }
+
+      function applyAutoRefreshState(enabled) {
+        window.localStorage.setItem(storageKey, enabled ? 'on' : 'off');
+        $('#bridge-auto-refresh').prop('checked', enabled);
+        if (enabled)
+          startRefreshTimer();
+        else
+          stopRefreshTimer();
+      }
+
+      bindAutoRefreshToggle();
+      applyAutoRefreshState(autoRefreshEnabled());
     });
   </script>
 {% endblock %}
@@ -18,7 +92,13 @@
   <div class="internal-bridge-status-page">
     <div class="bridge-status-heading">
       <h2>{{ _("Bridge Status") }}</h2>
-      <a class="action-btn small background-gray" href="{{ url('internal_bridge_status') }}">{{ _("Refresh") }}</a>
+      <div class="bridge-status-actions">
+        <label class="bridge-auto-refresh-toggle" for="bridge-auto-refresh">
+          <input id="bridge-auto-refresh" type="checkbox">
+          <span>{{ _("Auto update") }}</span>
+        </label>
+        <a class="action-btn small background-gray" href="{{ url('internal_bridge_status') }}">{{ _("Refresh") }}</a>
+      </div>
     </div>
 
     {% if bridge_error %}
