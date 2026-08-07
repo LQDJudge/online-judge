@@ -100,6 +100,24 @@ A simplified format that only considers the last submission for each problem.
 **Configuration:**
 - `cumtime`: Set to `true` to enable time penalties (default: `false`)
 
+## Codeforces
+
+The Codeforces format uses partial scoring for non-AC submissions and time-decayed bonus scoring for AC submissions.
+
+**Scoring:** If a participant has not fully solved a problem, the best partial score is used. If a participant fully solves a problem, the AC score starts at the problem's `initial_ac_score` at contest start and decays linearly to the problem's normal `points` at contest end.
+
+**Initial AC Score:** Each contest problem row has an optional `initial_ac_score` field. Leave it blank to use `round(10 / 3 * points)`.
+
+**Penalty:** Each non-AC submission before the first AC subtracts a configurable score penalty from the AC score (default: 50).
+
+**Minimum AC Score:** A full AC always earns at least the problem's normal `points`, even after time decay and submission penalties.
+
+**Time:** Cumulative time is disabled by default. It can be enabled for a secondary tiebreaker.
+
+**Configuration:**
+- `penalty`: Score deducted for each non-AC submission before the first AC (default: 50)
+- `cumtime`: Set to `true` to show/use cumulative time as a secondary tiebreaker (default: `false`)
+
 ---
 
 ## Choosing a Format
@@ -110,6 +128,7 @@ A simplified format that only considers the last submission for each problem.
 - **New IOI:** For advanced olympiad contests with hidden subtasks
 - **AtCoder:** For contests following AtCoder's penalty system
 - **ECOO:** For contests with bonus scoring systems
+- **Codeforces:** For contests where early AC submissions earn extra score that decays over time
 - **Ultimate:** For contests where only the final submission matters
 
 ## Configuration Format

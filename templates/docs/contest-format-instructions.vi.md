@@ -89,7 +89,25 @@ Trang này mô tả các định dạng cuộc thi được hỗ trợ bởi LQD
 - `first_ac_bonus`: Điểm được trao cho giải pháp AC lần đầu (mặc định: 10)
 - `time_bonus`: Phút trên mỗi điểm thưởng cho nộp bài sớm (mặc định: 5, đặt thành 0 để tắt)
 
-## 7. Ultimate
+## 7. Codeforces
+
+Định dạng Codeforces dùng điểm từng phần cho bài chưa AC và điểm thưởng giảm dần theo thời gian cho bài AC.
+
+**Chấm điểm:** Nếu thí sinh chưa giải trọn vẹn bài toán, hệ thống dùng điểm từng phần tốt nhất. Nếu thí sinh AC bài toán, điểm AC bắt đầu từ `initial_ac_score` của bài ở đầu cuộc thi và giảm tuyến tính về `points` thông thường của bài ở cuối cuộc thi.
+
+**Điểm AC ban đầu:** Mỗi dòng bài trong cuộc thi có trường tùy chọn `initial_ac_score`. Để trống để dùng `round(10 / 3 * points)`.
+
+**Phạt:** Mỗi lần nộp chưa AC trước lần AC đầu tiên sẽ trừ một lượng điểm phạt có thể cấu hình khỏi điểm AC (mặc định: 50).
+
+**Điểm AC tối thiểu:** Một bài AC luôn nhận ít nhất `points` thông thường của bài, kể cả sau khi giảm theo thời gian và trừ phạt nộp sai.
+
+**Thời gian:** Thời gian tích lũy được tắt theo mặc định. Có thể bật để dùng làm tiêu chí phụ.
+
+**Cấu hình:**
+- `penalty`: Số điểm bị trừ cho mỗi lần nộp chưa AC trước lần AC đầu tiên (mặc định: 50)
+- `cumtime`: Đặt thành `true` để hiển thị/dùng thời gian tích lũy làm tiêu chí phụ (mặc định: `false`)
+
+## 8. Ultimate
 
 Định dạng đơn giản chỉ xem xét lần nộp cuối cùng cho mỗi bài toán.
 
@@ -112,6 +130,7 @@ Trang này mô tả các định dạng cuộc thi được hỗ trợ bởi LQD
 - **New IOI:** Cho các cuộc thi olympiad nâng cao với subtask ẩn
 - **AtCoder:** Cho các cuộc thi tuân theo hệ thống phạt của AtCoder
 - **ECOO:** Cho các cuộc thi với hệ thống chấm điểm thưởng
+- **Codeforces:** Cho các cuộc thi nơi bài AC sớm nhận thêm điểm và điểm này giảm dần theo thời gian
 - **Ultimate:** Cho các cuộc thi nơi chỉ lần nộp cuối cùng quan trọng
 
 ## Định dạng cấu hình

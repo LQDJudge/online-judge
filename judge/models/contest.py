@@ -967,6 +967,16 @@ class ContestProblem(ImmutableIdentityMixin, models.Model):
         on_delete=CASCADE,
     )
     points = models.IntegerField(verbose_name=_("points"))
+    initial_ac_score = models.FloatField(
+        verbose_name=_("initial AC score"),
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+        help_text=_(
+            "Score for an AC at contest start. Leave blank to use "
+            "round(10 / 3 * points)."
+        ),
+    )
     partial = models.BooleanField(default=True, verbose_name=_("partial"))
     is_pretested = models.BooleanField(default=False, verbose_name=_("is pretested"))
     order = models.PositiveIntegerField(db_index=True, verbose_name=_("order"))
@@ -1006,6 +1016,12 @@ class ContestProblem(ImmutableIdentityMixin, models.Model):
             raise ValidationError(_("Either problem or quiz must be set"))
         if self.problem and self.quiz:
             raise ValidationError(_("Cannot set both problem and quiz"))
+        if (
+            self.initial_ac_score is not None
+            and self.points is not None
+            and self.initial_ac_score < self.points
+        ):
+            raise ValidationError(_("Initial AC score cannot be less than points."))
 
     def save(self, *args, **kwargs):
         self.validate_immutable_identity()

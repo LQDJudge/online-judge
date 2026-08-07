@@ -107,6 +107,14 @@ class ComputeContestInputHashTest(TestCase):
         h2 = compute_contest_input_hash(self.contest)
         self.assertNotEqual(h1, h2)
 
+    def test_changes_when_contest_problem_initial_ac_score_changes(self):
+        h1 = compute_contest_input_hash(self.contest)
+        cp1 = ContestProblem.objects.get(contest=self.contest, problem=self.p1)
+        cp1.initial_ac_score = 300
+        cp1.save()
+        h2 = compute_contest_input_hash(self.contest)
+        self.assertNotEqual(h1, h2)
+
     def test_changes_when_trusted_user_added(self):
         h1 = compute_contest_input_hash(self.contest)
         user2 = User.objects.create_user("ch2", "ch2@h.com", "x")

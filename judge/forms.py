@@ -996,6 +996,7 @@ class ContestRowForm(ModelForm):
             "problem",
             "quiz",
             "points",
+            "initial_ac_score",
             "partial",
             "is_pretested",
             "max_submissions",
@@ -1011,6 +1012,7 @@ class ContestRowForm(ModelForm):
                 data_view="quiz_select2", attrs={"style": "width: 100%"}
             ),
             "points": forms.NumberInput(attrs={"style": "width: 4em"}),
+            "initial_ac_score": forms.NumberInput(attrs={"style": "width: 6em"}),
             "max_submissions": forms.NumberInput(attrs={"style": "width: 4em"}),
             "hidden_subtasks": forms.TextInput(attrs={"style": "width: 5em"}),
         }

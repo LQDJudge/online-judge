@@ -50,6 +50,7 @@ def compute_contest_input_hash(contest: Contest) -> str:
             "code": cp.problem.code,
             "order": cp.order,
             "points": int(cp.points) if cp.points is not None else 0,
+            "initial_ac_score": cp.initial_ac_score,
             "input_hash": compute_input_hash(cp.problem),
         }
         for cp in contest_problems
@@ -72,6 +73,7 @@ def compute_contest_input_hash(contest: Contest) -> str:
             "code": cp.quiz.code,
             "order": cp.order,
             "points": int(cp.points) if cp.points is not None else 0,
+            "initial_ac_score": cp.initial_ac_score,
         }
         for cp in quiz_slots
     ]

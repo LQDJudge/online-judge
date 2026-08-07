@@ -3,6 +3,7 @@ from django.test import SimpleTestCase
 
 from judge.contest_format.atcoder import AtCoderContestFormat
 from judge.contest_format.base import MAX_FORMAT_BONUS_POINTS, MAX_PENALTY_MINUTES
+from judge.contest_format.codeforces import CodeforcesContestFormat
 from judge.contest_format.ecoo import ECOOContestFormat
 from judge.contest_format.icpc import ICPCContestFormat
 
@@ -19,6 +20,12 @@ class ContestFormatConfigValidationTests(SimpleTestCase):
 
         with self.assertRaises(ValidationError):
             ICPCContestFormat.validate({"penalty": MAX_PENALTY_MINUTES + 1})
+
+    def test_codeforces_rejects_absurd_penalty(self):
+        CodeforcesContestFormat.validate({"penalty": MAX_FORMAT_BONUS_POINTS})
+
+        with self.assertRaises(ValidationError):
+            CodeforcesContestFormat.validate({"penalty": MAX_FORMAT_BONUS_POINTS + 1})
 
     def test_ecoo_rejects_absurd_bonus_config(self):
         ECOOContestFormat.validate(

@@ -2709,6 +2709,7 @@ class ContestLog(
         "quiz",
         "order",
         "points",
+        "initial_ac_score",
         "partial",
         "is_pretested",
         "show_testcases",
@@ -2952,6 +2953,12 @@ class ContestLog(
         points = fields.get("points")
         if points not in (None, ""):
             parts.append(_("points=%(points)s") % {"points": points})
+        initial_ac_score = fields.get("initial_ac_score")
+        if initial_ac_score not in (None, ""):
+            parts.append(
+                _("initial AC score=%(initial_ac_score)s")
+                % {"initial_ac_score": initial_ac_score}
+            )
         parts.append(
             _("partial=%(partial)s")
             % {"partial": self._format_history_bool(fields.get("partial"))}

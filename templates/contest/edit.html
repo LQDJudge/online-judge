@@ -133,9 +133,55 @@
         $formset.find('.sortable-row').each(function() {
           enhanceContestRow($(this));
         });
+
+        updateInitialAcScoreVisibility();
+      }
+
+      function updateInitialAcScoreDefault($row) {
+        var $points = $row.children('.sortable-col-points').find('input').first();
+        var $initialAcScore = $row.children('.sortable-col-initial_ac_score').find('input').first();
+        var points = parseFloat($points.val());
+
+        if (!$points.length || !$initialAcScore.length || !isFinite(points)) {
+          return;
+        }
+
+        var defaultValue = String(Math.round((10 / 3) * points));
+        if (!getFieldValue($initialAcScore)) {
+          $initialAcScore.val(defaultValue);
+          $initialAcScore.attr('data-codeforces-default', '1');
+        } else if ($initialAcScore.attr('data-codeforces-default') === '1') {
+          $initialAcScore.val(defaultValue);
+        }
+      }
+
+      function updateInitialAcScoreVisibility() {
+        var isCodeforces = $('#id_format_name').val() === 'codeforces';
+        $('.contest-edit-page .sortable-formset[data-prefix="rows"] .sortable-col-initial_ac_score')
+          .toggle(isCodeforces);
+        if (isCodeforces) {
+          $('.contest-edit-page .sortable-formset[data-prefix="rows"] .sortable-row:not(.sortable-template)').each(function() {
+            updateInitialAcScoreDefault($(this));
+          });
+        } else {
+          $('.contest-edit-page .sortable-formset[data-prefix="rows"] .sortable-col-initial_ac_score input[data-codeforces-default="1"]').each(function() {
+            $(this).val('').removeAttr('data-codeforces-default');
+          });
+        }
       }
 
       enhanceContestRows();
+      $('#id_format_name').on('change', updateInitialAcScoreVisibility);
+
+      $(document).on('input change', '.contest-edit-page .sortable-formset[data-prefix="rows"] .sortable-col-points input', function() {
+        if ($('#id_format_name').val() === 'codeforces') {
+          updateInitialAcScoreDefault($(this).closest('.sortable-row'));
+        }
+      });
+
+      $(document).on('input change', '.contest-edit-page .sortable-formset[data-prefix="rows"] .sortable-col-initial_ac_score input', function() {
+        $(this).removeAttr('data-codeforces-default');
+      });
 
       $(document).on('click', '.contest-row-type-btn', function() {
         var $btn = $(this);

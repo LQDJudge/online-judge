@@ -406,6 +406,12 @@ class ProblemMerge:
         if source_cp.points > target_cp.points:
             target_cp.points = source_cp.points
             update_fields.append("points")
+        if source_cp.initial_ac_score is not None and (
+            target_cp.initial_ac_score is None
+            or source_cp.initial_ac_score > target_cp.initial_ac_score
+        ):
+            target_cp.initial_ac_score = source_cp.initial_ac_score
+            update_fields.append("initial_ac_score")
         if source_cp.partial and not target_cp.partial:
             target_cp.partial = True
             update_fields.append("partial")
