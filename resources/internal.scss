@@ -504,6 +504,187 @@
     }
 }
 
+.internal-bridge-status-page {
+    max-width: 100%;
+    min-width: 0;
+
+    h3 {
+        margin: $space-xl 0 $space-md;
+    }
+
+    .bridge-status-heading {
+        align-items: center;
+        border-bottom: $space-hairline solid $border_gray;
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-md;
+        justify-content: space-between;
+        margin-bottom: $space-md;
+        padding-bottom: $space-md;
+
+        h2 {
+            margin: 0;
+        }
+    }
+
+    .bridge-status-error {
+        background: $color-message-error-bg;
+        border: $space-hairline solid $color-message-error-border;
+        border-radius: $radius-md;
+        color: $color-message-error-text;
+        padding: $space-md;
+    }
+
+    .bridge-status-summary {
+        background: $background_light_gray;
+        border: $space-hairline solid $border_gray;
+        border-radius: $radius-md;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        margin: 0 0 $space-lg;
+    }
+
+    .bridge-status-metric {
+        align-items: baseline;
+        border-right: $space-hairline solid $border_gray;
+        display: flex;
+        flex: 1 1 11em;
+        gap: $space-sm;
+        justify-content: space-between;
+        min-width: 0;
+        padding: $space-sm $space-md;
+
+        &:last-child {
+            border-right: 0;
+        }
+
+        dt {
+            color: $text-muted;
+            font-size: 0.9em;
+            margin: 0;
+        }
+
+        dd {
+            color: $widget_black;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 0;
+        }
+    }
+
+    .bridge-compact-table {
+        margin-bottom: $space-lg;
+
+        table {
+            min-width: 38em;
+        }
+    }
+
+    .bridge-languages-toggle,
+    .bridge-debug-toggle {
+        border-bottom: $space-hairline solid $border_gray;
+        border-top: $space-hairline solid $border_gray;
+        margin: $space-lg 0;
+
+        summary {
+            align-items: baseline;
+            cursor: pointer;
+            display: flex;
+            gap: $space-sm;
+            font-weight: bold;
+            justify-content: space-between;
+            padding: $space-sm 0;
+        }
+    }
+
+    .bridge-language-count,
+    .bridge-debug-hint {
+        color: $text-muted;
+        font-size: 0.9em;
+        font-weight: normal;
+    }
+
+    .bridge-languages-toggle[open],
+    .bridge-debug-toggle[open] {
+        summary {
+            border-bottom: $space-hairline solid $border_gray;
+        }
+    }
+
+    .bridge-debug-toggle {
+        margin-top: $space-xl;
+
+        h4 {
+            margin: $space-lg 0 $space-sm;
+        }
+    }
+
+    .bridge-languages-grid {
+        display: grid;
+        gap: $space-md;
+        grid-template-columns: repeat(auto-fit, minmax(16em, 1fr));
+        padding: $space-md 0;
+    }
+
+    .bridge-language-group {
+        min-width: 0;
+
+        h4 {
+            margin: 0 0 $space-xs;
+        }
+    }
+
+    .bridge-language-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-xs;
+
+        code {
+            background: $surface-primary;
+            border: $space-hairline solid $border_gray;
+            border-radius: $radius-sm;
+            padding: $space-nano $space-xs;
+        }
+    }
+
+    .bridge-judges-table,
+    .bridge-work-table,
+    .bridge-validation-table,
+    .bridge-queue-table,
+    .bridge-debug-table {
+        min-width: 56em;
+    }
+
+    .bridge-empty-row {
+        color: $text-muted;
+        text-align: center;
+    }
+
+    .bridge-section-note {
+        color: $text-muted;
+        margin: -$space-xs 0 $space-sm;
+    }
+
+    @media(max-width: 700px) {
+        .bridge-status-metric {
+            border-bottom: $space-hairline solid $border_gray;
+            border-right: 0;
+            flex-basis: 100%;
+
+            &:last-child {
+                border-bottom: 0;
+            }
+        }
+
+        .bridge-languages-toggle summary,
+        .bridge-debug-toggle summary {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+}
+
 // Auto-review verdict badges in the request_public queue.
 .auto-review-badge {
     display: inline-flex;

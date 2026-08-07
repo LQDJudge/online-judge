@@ -27,6 +27,7 @@ from chat_box.models import ChatModerationLog
 from chat_box.utils import encrypt_channel
 from chat_box.views import hide_lobby_message, mute_chat_user
 from judge import event_poster as event
+from judge.judgeapi import bridge_status
 from judge.ml.problem_duplicates import (
     DuplicateProblemMergePending,
     DuplicateProblemReportOptions,
@@ -468,6 +469,47 @@ class InternalProblemDuplicateStatusApi(InternalView, View):
                 }
             )
         return JsonResponse({"submissions": results})
+
+
+class InternalBridgeStatus(InternalView, TemplateView):
+    title = _("Bridge Status")
+    template_name = "internal/bridge_status.html"
+    queue_limit = 100
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_type"] = "bridge_status"
+        context["title"] = self.title
+        context["bridge_error"] = None
+        context["status"] = {}
+
+        try:
+            status = bridge_status(detail=True, include_problems=False)
+            if status.get("name") != "bridge-status":
+                raise ValueError(_("Malformed bridge status response."))
+        except Exception as exc:
+            logger.warning("Failed to load bridge status: %s", exc, exc_info=True)
+            context["bridge_error"] = _("Bridge status is unavailable: %(error)s") % {
+                "error": str(exc),
+            }
+            return context
+
+        judges = []
+        for judge in status.get("judges-detail", []):
+            judge = dict(judge)
+            judge.pop("problems", None)
+            judges.append(judge)
+
+        context["status"] = status
+        context["judges"] = judges
+        queue = status.get("queue", [])
+        context["queue"] = queue[: self.queue_limit]
+        context["queue_total"] = len(queue)
+        context["queue_limit"] = self.queue_limit
+        context["active_submissions"] = status.get("active-submissions-detail", [])
+        context["active_validations"] = status.get("active-validations-detail", [])
+        context["running_users"] = status.get("running-users", [])
+        return context
 
 
 class InternalProblemQueue(InternalView, ListView):

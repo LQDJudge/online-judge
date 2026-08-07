@@ -1874,6 +1874,11 @@ urlpatterns = [
                     name="internal_problem_duplicate_status_api",
                 ),
                 re_path(
+                    r"^bridge_status$",
+                    internal.InternalBridgeStatus.as_view(),
+                    name="internal_bridge_status",
+                ),
+                re_path(
                     r"^problem_queue_mark_private$",
                     internal.mark_problem_private,
                     name="internal_mark_problem_private",

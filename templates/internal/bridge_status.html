@@ -1,0 +1,364 @@
+{% extends "two-column-content.html" %}
+
+{% block left_sidebar %}
+  {% include "internal/left-sidebar.html" %}
+{% endblock %}
+
+{% block js_media %}
+  <script type="text/javascript">
+    $(function () {
+      window.setInterval(function () {
+        window.location.reload();
+      }, 30000);
+    });
+  </script>
+{% endblock %}
+
+{% block middle_content %}
+  <div class="internal-bridge-status-page">
+    <div class="bridge-status-heading">
+      <h2>{{ _("Bridge Status") }}</h2>
+      <a class="action-btn small background-gray" href="{{ url('internal_bridge_status') }}">{{ _("Refresh") }}</a>
+    </div>
+
+    {% if bridge_error %}
+      <div class="bridge-status-error">
+        {{ bridge_error }}
+      </div>
+    {% else %}
+      <dl class="bridge-status-summary">
+        <div class="bridge-status-metric">
+          <dt>{{ _("Judges") }}</dt>
+          <dd>{{ status["judges"] }}</dd>
+        </div>
+        <div class="bridge-status-metric">
+          <dt>{{ _("Queued submissions") }}</dt>
+          <dd>{{ status["queued-submissions"] }}</dd>
+        </div>
+        <div class="bridge-status-metric">
+          <dt>{{ _("Active submissions") }}</dt>
+          <dd>{{ status["active-submissions"] }}</dd>
+        </div>
+        <div class="bridge-status-metric">
+          <dt>{{ _("Queued validations") }}</dt>
+          <dd>{{ status["queued-validations"] }}</dd>
+        </div>
+        <div class="bridge-status-metric">
+          <dt>{{ _("Active validations") }}</dt>
+          <dd>{{ status["active-validations"] }}</dd>
+        </div>
+      </dl>
+
+      <h3>{{ _("Bridge internals") }}</h3>
+      <div class="internal-table-scroll bridge-compact-table">
+        <table class="table">
+          <tbody>
+            <tr>
+              <th>{{ _("Node map") }}</th>
+              <td>{{ status["node-map-size"] }}</td>
+              <th>{{ _("Submission map") }}</th>
+              <td>{{ status["submission-map-size"] }}</td>
+            </tr>
+            <tr>
+              <th>{{ _("Validation map") }}</th>
+              <td>{{ status["validate-map-size"] }}</td>
+              <th>{{ _("Running users") }}</th>
+              <td>
+                {% if running_users %}
+                  {{ running_users|join(", ") }}
+                {% else %}
+                  <span class="gray">{{ _("None") }}</span>
+                {% endif %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>{{ _("Judges") }}</h3>
+      <div class="internal-table-scroll">
+        <table class="table bridge-judges-table">
+          <thead>
+            <tr>
+              <th>{{ _("Judge") }}</th>
+              <th>{{ _("State") }}</th>
+              <th>{{ _("Load") }}</th>
+              <th>{{ _("Latency") }}</th>
+              <th>{{ _("Current work") }}</th>
+              <th>{{ _("Problem count") }}</th>
+              <th>{{ _("Address") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for judge in judges %}
+              <tr>
+                <td><strong>{{ judge["name"] }}</strong></td>
+                <td>
+                  {% if judge["working"] %}
+                    <span class="blue">{{ _("Working") }}</span>
+                  {% else %}
+                    <span class="green">{{ _("Idle") }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ judge["load"] if judge["load"] is not none else _("Unknown") }}</td>
+                <td>{{ judge["latency"] if judge["latency"] is not none else _("Unknown") }}</td>
+                <td>
+                  {% if judge["current-submission"] is not none %}
+                    {{ _("Submission %(id)s") % {'id': judge["current-submission"]} }}
+                  {% elif judge["current-validation"] is not none %}
+                    {{ _("Validation %(id)s") % {'id': judge["current-validation"]} }}
+                    {% if judge["current-validation-problem"] %}
+                      <br><span class="gray">{{ judge["current-validation-problem"] }}</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="gray">{{ _("None") }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ judge["problem-count"] }}</td>
+                <td>
+                  <code>{{ judge["address"] or _("Unknown") }}</code>
+                  {% if judge["client-address"] %}
+                    <br><span class="gray">{{ judge["client-address"] }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="7" class="bridge-empty-row">{{ _("No judges are connected.") }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <details class="bridge-languages-toggle">
+        <summary>
+          <span>{{ _("Languages") }}</span>
+          <span class="bridge-language-count">{{ _("Executor detail by judge") }}</span>
+        </summary>
+        <div class="bridge-languages-grid">
+          {% for judge in judges %}
+            <div class="bridge-language-group">
+              <h4>{{ judge["name"] }}</h4>
+              {% if judge["executors"] %}
+                <div class="bridge-language-list">
+                  {% for executor in judge["executors"] %}
+                    <code>{{ executor }}</code>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <span class="gray">{{ _("No languages reported.") }}</span>
+              {% endif %}
+            </div>
+          {% else %}
+            <span class="gray">{{ _("No judges are connected.") }}</span>
+          {% endfor %}
+        </div>
+      </details>
+
+      <h3>{{ _("Active submissions") }}</h3>
+      <div class="internal-table-scroll">
+        <table class="table bridge-work-table">
+          <thead>
+            <tr>
+              <th>{{ _("Submission") }}</th>
+              <th>{{ _("Judge") }}</th>
+              <th>{{ _("Problem") }}</th>
+              <th>{{ _("Language") }}</th>
+              <th>{{ _("User") }}</th>
+              <th>{{ _("Source") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in active_submissions %}
+              <tr>
+                <td>{{ item["submission-id"] }}</td>
+                <td>{{ item["judge"] or _("Unknown") }}</td>
+                <td><code>{{ item["problem"] or _("Unknown") }}</code></td>
+                <td>{{ item["language"] or _("Unknown") }}</td>
+                <td>{{ item["user-id"] if item["user-id"] is not none else _("Unknown") }}</td>
+                <td>{{ _("%(bytes)s bytes") % {'bytes': item["source-bytes"]} }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="6" class="bridge-empty-row">{{ _("No active submissions.") }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h3>{{ _("Active validations") }}</h3>
+      <div class="internal-table-scroll">
+        <table class="table bridge-validation-table">
+          <thead>
+            <tr>
+              <th>{{ _("Validation") }}</th>
+              <th>{{ _("Judge") }}</th>
+              <th>{{ _("Problem") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in active_validations %}
+              <tr>
+                <td>{{ item["validate-id"] }}</td>
+                <td>{{ item["judge"] or _("Unknown") }}</td>
+                <td><code>{{ item["problem-id"] or _("Unknown") }}</code></td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="3" class="bridge-empty-row">{{ _("No active validations.") }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h3>{{ _("Queue") }}</h3>
+      {% if queue_total > queue_limit %}
+        <p class="bridge-section-note">
+          {{ _("Showing first %(limit)s of %(total)s queued items.") % {'limit': queue_limit, 'total': queue_total} }}
+        </p>
+      {% endif %}
+      <div class="internal-table-scroll">
+        <table class="table bridge-queue-table">
+          <thead>
+            <tr>
+              <th>{{ _("Priority") }}</th>
+              <th>{{ _("Type") }}</th>
+              <th>{{ _("ID") }}</th>
+              <th>{{ _("Problem") }}</th>
+              <th>{{ _("Language") }}</th>
+              <th>{{ _("Judge filter") }}</th>
+              <th>{{ _("User") }}</th>
+              <th>{{ _("Source") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in queue %}
+              <tr>
+                <td>{{ item["priority"] }}</td>
+                <td>{{ item["type"] }}</td>
+                {% if item["type"] == "submission" %}
+                  <td>{{ item["submission-id"] }}</td>
+                  <td><code>{{ item["problem"] or _("Unknown") }}</code></td>
+                  <td>{{ item["language"] or _("Unknown") }}</td>
+                  <td>{{ item["judge-id"] or _("Any") }}</td>
+                  <td>{{ item["user-id"] if item["user-id"] is not none else _("Unknown") }}</td>
+                  <td>{{ _("%(bytes)s bytes") % {'bytes': item["source-bytes"]} }}</td>
+                {% else %}
+                  <td>{{ item["validate-id"] }}</td>
+                  <td><code>{{ item["problem-id"] or _("Unknown") }}</code></td>
+                  <td><span class="gray">{{ _("N/A") }}</span></td>
+                  <td><span class="gray">{{ _("N/A") }}</span></td>
+                  <td><span class="gray">{{ _("N/A") }}</span></td>
+                  <td><span class="gray">{{ _("N/A") }}</span></td>
+                {% endif %}
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="8" class="bridge-empty-row">{{ _("The bridge queue is empty.") }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <details class="bridge-debug-toggle">
+        <summary>
+          <span>{{ _("Debug info") }}</span>
+          <span class="bridge-debug-hint">{{ _("Bridge maps and ownership state") }}</span>
+        </summary>
+
+        <div class="internal-table-scroll bridge-compact-table">
+          <table class="table">
+            <tbody>
+              <tr>
+                <th>{{ _("node_map size") }}</th>
+                <td>{{ status["node-map-size"] }}</td>
+                <th>{{ _("submission_map size") }}</th>
+                <td>{{ status["submission-map-size"] }}</td>
+              </tr>
+              <tr>
+                <th>{{ _("validate_map size") }}</th>
+                <td>{{ status["validate-map-size"] }}</td>
+                <th>{{ _("queue rows shown") }}</th>
+                <td>{{ queue|length }} / {{ queue_total }}</td>
+              </tr>
+              <tr>
+                <th>{{ _("running_users") }}</th>
+                <td colspan="3">
+                  {% if running_users %}
+                    <code>{{ running_users|join(", ") }}</code>
+                  {% else %}
+                    <span class="gray">{{ _("None") }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4>{{ _("submission_map") }}</h4>
+        <div class="internal-table-scroll">
+          <table class="table bridge-debug-table">
+            <thead>
+              <tr>
+                <th>{{ _("Submission") }}</th>
+                <th>{{ _("Judge") }}</th>
+                <th>{{ _("Problem") }}</th>
+                <th>{{ _("Language") }}</th>
+                <th>{{ _("User") }}</th>
+                <th>{{ _("User tier") }}</th>
+                <th>{{ _("Source bytes") }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in active_submissions %}
+                <tr>
+                  <td>{{ item["submission-id"] }}</td>
+                  <td>{{ item["judge"] or _("Unknown") }}</td>
+                  <td><code>{{ item["problem"] or _("Unknown") }}</code></td>
+                  <td>{{ item["language"] or _("Unknown") }}</td>
+                  <td>{{ item["user-id"] if item["user-id"] is not none else _("Unknown") }}</td>
+                  <td>{{ item["user-tier"] if item["user-tier"] is not none else _("Unknown") }}</td>
+                  <td>{{ item["source-bytes"] }}</td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="7" class="bridge-empty-row">{{ _("submission_map is empty.") }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <h4>{{ _("validate_map") }}</h4>
+        <div class="internal-table-scroll">
+          <table class="table bridge-debug-table">
+            <thead>
+              <tr>
+                <th>{{ _("Validation") }}</th>
+                <th>{{ _("Judge") }}</th>
+                <th>{{ _("Problem") }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in active_validations %}
+                <tr>
+                  <td>{{ item["validate-id"] }}</td>
+                  <td>{{ item["judge"] or _("Unknown") }}</td>
+                  <td><code>{{ item["problem-id"] or _("Unknown") }}</code></td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="3" class="bridge-empty-row">{{ _("validate_map is empty.") }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    {% endif %}
+  </div>
+{% endblock %}
