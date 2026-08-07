@@ -136,6 +136,17 @@ def get_contest_submission_count(problem, profile, virtual):
     )
 
 
+def can_submit_current_contest_problem(request, participation):
+    if participation is None or not participation.spectate:
+        return True
+
+    contest = participation.contest
+    profile = request.profile
+    return contest.is_editable_by(request.user) or (
+        profile is not None and profile.id in contest.tester_ids
+    )
+
+
 def get_problems_in_organization(request, organization):
     problem_list = ProblemList(request=request)
     problem_list.setup_problem_list(request)
@@ -397,6 +408,9 @@ class ProblemDetail(
             clarifications = contest_problem.clarifications
             context["has_clarifications"] = clarifications.count() > 0
             context["clarifications"] = clarifications.order_by("-date")
+            context["can_submit_to_problem"] = can_submit_current_contest_problem(
+                self.request, user.profile.current_contest
+            )
             context["submission_limit"] = contest_problem.max_submissions
             if contest_problem.max_submissions:
                 context["submissions_left"] = max(
@@ -406,6 +420,10 @@ class ProblemDetail(
                     ),
                     0,
                 )
+                if context["submissions_left"] <= 0:
+                    context["can_submit_to_problem"] = False
+        else:
+            context["can_submit_to_problem"] = True
 
         context["available_judges"] = Judge.objects.filter(
             online=True, problems=self.object
@@ -1114,6 +1132,11 @@ def problem_submit(request, problem, submission=None):
                     except ContestProblem.DoesNotExist:
                         model = form.save()
                     else:
+                        if not can_submit_current_contest_problem(
+                            request, profile.current_contest
+                        ):
+                            raise PermissionDenied()
+
                         max_subs = contest_problem.max_submissions
                         if (
                             max_subs
@@ -1189,17 +1212,28 @@ def problem_submit(request, problem, submission=None):
 
     submission_limit = submissions_left = None
     next_valid_submit_time = None
+    can_submit_to_problem = True
     if profile.current_contest is not None:
         contest = profile.current_contest.contest
         try:
-            submission_limit = problem.contests.get(contest=contest).max_submissions
+            contest_problem = problem.contests.get(contest=contest)
         except ContestProblem.DoesNotExist:
             pass
         else:
+            can_submit_to_problem = can_submit_current_contest_problem(
+                request, profile.current_contest
+            )
+            submission_limit = contest_problem.max_submissions
             if submission_limit:
-                submissions_left = submission_limit - get_contest_submission_count(
-                    problem, profile, profile.current_contest.virtual
+                submissions_left = max(
+                    submission_limit
+                    - get_contest_submission_count(
+                        problem, profile, profile.current_contest.virtual
+                    ),
+                    0,
                 )
+                if submissions_left <= 0:
+                    can_submit_to_problem = False
         if contest.rate_limit:
             t = last_nth_submitted_date_in_contest(profile, contest, contest.rate_limit)
             if t is not None:
@@ -1229,6 +1263,7 @@ def problem_submit(request, problem, submission=None):
             "no_judges": not form.fields["language"].queryset,
             "submission_limit": submission_limit,
             "submissions_left": submissions_left,
+            "can_submit_to_problem": can_submit_to_problem,
             "ACE_URL": settings.ACE_URL,
             "default_lang": default_lang,
             "problem_id": problem.id,

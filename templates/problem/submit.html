@@ -61,7 +61,7 @@
       }
     }
 
-    {% if request.in_contest and next_valid_submit_time and not (submission_limit and submissions_left <= 0) %}
+    {% if request.in_contest and next_valid_submit_time and can_submit_to_problem %}
       $(function () {
         const $submitButton = $("#submit-button");
         $submitButton.prop('disabled', true);
@@ -172,6 +172,10 @@
         // }).resize();
 
         $('#problem_submit').submit(function (event) {
+          {% if not can_submit_to_problem %}
+            event.preventDefault();
+            return;
+          {% endif %}
           if ($('#id_source').val().length > 65536) {
             alert("{{ _('Your source code must contain at most 65536 characters.') }}");
             event.preventDefault();
@@ -375,7 +379,7 @@
       <div class="submit-bar">
         {{ form.judge }}
         <input id="submit-button" type="submit" value="{{ _('Submit!') }}" class="submit-btn"
-               {% if request.in_contest and submission_limit and  submissions_left <= 0 %}disabled{% endif %}>
+               {% if not can_submit_to_problem %}disabled{% endif %}>
         <span id="countdown-timer"></span>
       </div>
     {% endif %}
