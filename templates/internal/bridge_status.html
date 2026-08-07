@@ -65,7 +65,14 @@
               <th>{{ _("Running users") }}</th>
               <td>
                 {% if running_users %}
-                  {{ running_users|join(", ") }}
+                  {% for user in running_users %}
+                    {% if user.username %}
+                      <a href="{{ url('user_page', user.username) }}">{{ user.display }}</a>
+                    {% else %}
+                      {{ user.display }}
+                    {% endif %}
+                    {% if not loop.last %}, {% endif %}
+                  {% endfor %}
                 {% else %}
                   <span class="gray">{{ _("None") }}</span>
                 {% endif %}
@@ -100,11 +107,18 @@
                     <span class="green">{{ _("Idle") }}</span>
                   {% endif %}
                 </td>
-                <td>{{ judge["load"] if judge["load"] is not none else _("Unknown") }}</td>
-                <td>{{ judge["latency"] if judge["latency"] is not none else _("Unknown") }}</td>
+                <td>{{ judge["load-display"] if judge["load-display"] is not none else _("Unknown") }}</td>
+                <td>{{ judge["latency-display"] if judge["latency-display"] is not none else _("Unknown") }}</td>
                 <td>
                   {% if judge["current-submission"] is not none %}
-                    {{ _("Submission %(id)s", id=judge["current-submission"]) }}
+                    {{ _("Submission") }} <a href="{{ url('submission_status', judge['current-submission']) }}">{{ judge["current-submission"] }}</a>
+                    {% if judge["current-submission-user-username"] %}
+                      <br>
+                      <span class="gray">
+                        {{ _("User") }}
+                        <a href="{{ url('user_page', judge['current-submission-user-username']) }}">{{ judge["current-submission-user-username"] }}</a>
+                      </span>
+                    {% endif %}
                   {% elif judge["current-validation"] is not none %}
                     {{ _("Validation %(id)s", id=judge["current-validation"]) }}
                     {% if judge["current-validation-problem"] %}
@@ -116,9 +130,9 @@
                 </td>
                 <td>{{ judge["problem-count"] }}</td>
                 <td>
-                  <code>{{ judge["address"] or _("Unknown") }}</code>
-                  {% if judge["client-address"] %}
-                    <br><span class="gray">{{ judge["client-address"] }}</span>
+                  <code>{{ judge["address-display"] or _("Unknown") }}</code>
+                  {% if judge["client-address-display"] %}
+                    <br><span class="gray">{{ judge["client-address-display"] }}</span>
                   {% endif %}
                 </td>
               </tr>
@@ -172,11 +186,19 @@
           <tbody>
             {% for item in active_submissions %}
               <tr>
-                <td>{{ item["submission-id"] }}</td>
+                <td><a href="{{ url('submission_status', item['submission-id']) }}">{{ item["submission-id"] }}</a></td>
                 <td>{{ item["judge"] or _("Unknown") }}</td>
                 <td><code>{{ item["problem"] or _("Unknown") }}</code></td>
                 <td>{{ item["language"] or _("Unknown") }}</td>
-                <td>{{ item["user-id"] if item["user-id"] is not none else _("Unknown") }}</td>
+                <td>
+                  {% if item["user-username"] %}
+                    <a href="{{ url('user_page', item['user-username']) }}">{{ item["user-display"] }}</a>
+                  {% elif item["user-display"] %}
+                    {{ item["user-display"] }}
+                  {% else %}
+                    {{ _("Unknown") }}
+                  {% endif %}
+                </td>
                 <td>{{ _("%(bytes)s bytes", bytes=item["source-bytes"]) }}</td>
               </tr>
             {% else %}
@@ -240,11 +262,19 @@
                 <td>{{ item["priority"] }}</td>
                 <td>{{ item["type"] }}</td>
                 {% if item["type"] == "submission" %}
-                  <td>{{ item["submission-id"] }}</td>
+                  <td><a href="{{ url('submission_status', item['submission-id']) }}">{{ item["submission-id"] }}</a></td>
                   <td><code>{{ item["problem"] or _("Unknown") }}</code></td>
                   <td>{{ item["language"] or _("Unknown") }}</td>
                   <td>{{ item["judge-id"] or _("Any") }}</td>
-                  <td>{{ item["user-id"] if item["user-id"] is not none else _("Unknown") }}</td>
+                  <td>
+                    {% if item["user-username"] %}
+                      <a href="{{ url('user_page', item['user-username']) }}">{{ item["user-display"] }}</a>
+                    {% elif item["user-display"] %}
+                      {{ item["user-display"] }}
+                    {% else %}
+                      {{ _("Unknown") }}
+                    {% endif %}
+                  </td>
                   <td>{{ _("%(bytes)s bytes", bytes=item["source-bytes"]) }}</td>
                 {% else %}
                   <td>{{ item["validate-id"] }}</td>
@@ -289,7 +319,9 @@
                 <th>{{ _("running_users") }}</th>
                 <td colspan="3">
                   {% if running_users %}
-                    <code>{{ running_users|join(", ") }}</code>
+                    {% for user in running_users %}
+                      <code>{{ user.display }} (#{{ user.id }})</code>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
                   {% else %}
                     <span class="gray">{{ _("None") }}</span>
                   {% endif %}
@@ -309,6 +341,7 @@
                 <th>{{ _("Problem") }}</th>
                 <th>{{ _("Language") }}</th>
                 <th>{{ _("User") }}</th>
+                <th>{{ _("Profile ID") }}</th>
                 <th>{{ _("User tier") }}</th>
                 <th>{{ _("Source bytes") }}</th>
               </tr>
@@ -316,17 +349,18 @@
             <tbody>
               {% for item in active_submissions %}
                 <tr>
-                  <td>{{ item["submission-id"] }}</td>
+                  <td><a href="{{ url('submission_status', item['submission-id']) }}">{{ item["submission-id"] }}</a></td>
                   <td>{{ item["judge"] or _("Unknown") }}</td>
                   <td><code>{{ item["problem"] or _("Unknown") }}</code></td>
                   <td>{{ item["language"] or _("Unknown") }}</td>
+                  <td>{{ item["user-display"] or _("Unknown") }}</td>
                   <td>{{ item["user-id"] if item["user-id"] is not none else _("Unknown") }}</td>
                   <td>{{ item["user-tier"] if item["user-tier"] is not none else _("Unknown") }}</td>
                   <td>{{ item["source-bytes"] }}</td>
                 </tr>
               {% else %}
                 <tr>
-                  <td colspan="7" class="bridge-empty-row">{{ _("submission_map is empty.") }}</td>
+                  <td colspan="8" class="bridge-empty-row">{{ _("submission_map is empty.") }}</td>
                 </tr>
               {% endfor %}
             </tbody>

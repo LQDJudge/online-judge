@@ -498,18 +498,98 @@ class InternalBridgeStatus(InternalView, TemplateView):
         for judge in status.get("judges-detail", []):
             judge = dict(judge)
             judge.pop("problems", None)
+            judge["load-display"] = self._format_number(judge.get("load"))
+            judge["latency-display"] = self._format_number(judge.get("latency"))
+            judge["address-display"] = self._format_address(judge.get("address"))
+            judge["client-address-display"] = self._format_address(
+                judge.get("client-address")
+            )
+            if judge["client-address-display"] == judge["address-display"]:
+                judge["client-address-display"] = None
             judges.append(judge)
 
-        context["status"] = status
-        context["judges"] = judges
         queue = status.get("queue", [])
-        context["queue"] = queue[: self.queue_limit]
+        displayed_queue = queue[: self.queue_limit]
+        active_submissions = status.get("active-submissions-detail", [])
+        running_users = status.get("running-users", [])
+        user_display = self._profile_user_display(
+            running_users,
+            active_submissions,
+            displayed_queue,
+        )
+
+        context["status"] = status
+        context["queue"] = self._with_user_display(displayed_queue, user_display)
         context["queue_total"] = len(queue)
         context["queue_limit"] = self.queue_limit
-        context["active_submissions"] = status.get("active-submissions-detail", [])
+        active_submissions = self._with_user_display(
+            active_submissions,
+            user_display,
+        )
+        submission_user_display = {
+            item["submission-id"]: item["user-username"] for item in active_submissions
+        }
+        for judge in judges:
+            judge["current-submission-user-username"] = submission_user_display.get(
+                judge.get("current-submission")
+            )
+        context["judges"] = judges
+        context["active_submissions"] = active_submissions
         context["active_validations"] = status.get("active-validations-detail", [])
-        context["running_users"] = status.get("running-users", [])
+        context["running_users"] = [
+            {
+                "id": user_id,
+                "display": user_display.get(user_id, "#%s" % user_id),
+                "username": user_display.get(user_id),
+            }
+            for user_id in running_users
+        ]
         return context
+
+    def _profile_user_display(self, running_users, *item_groups):
+        user_ids = {user_id for user_id in running_users if user_id is not None}
+        for items in item_groups:
+            for item in items:
+                user_id = item.get("user-id")
+                if user_id is not None:
+                    user_ids.add(user_id)
+
+        profiles = Profile.get_cached_instances(*sorted(user_ids))
+        return {profile.id: profile.username for profile in profiles}
+
+    def _with_user_display(self, items, user_display):
+        enriched = []
+        for item in items:
+            item = dict(item)
+            user_id = item.get("user-id")
+            username = user_display.get(user_id)
+            item["user-username"] = username
+            item["user-display"] = (
+                username or "#%s" % user_id if user_id is not None else None
+            )
+            enriched.append(item)
+        return enriched
+
+    def _format_number(self, value):
+        if value is None:
+            return None
+        try:
+            return ("%.3f" % float(value)).rstrip("0").rstrip(".")
+        except (TypeError, ValueError):
+            return value
+
+    def _format_address(self, value):
+        if value is None:
+            return None
+        if isinstance(value, (list, tuple)) and len(value) == 2:
+            return "%s:%s" % (value[0], value[1])
+        if not isinstance(value, str):
+            return value
+        if value.startswith("[") and "]:" in value:
+            host, port = value[1:].split("]:", 1)
+            if ":" not in host:
+                return "%s:%s" % (host, port)
+        return value
 
 
 class InternalProblemQueue(InternalView, ListView):
