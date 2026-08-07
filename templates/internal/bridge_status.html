@@ -104,9 +104,9 @@
                 <td>{{ judge["latency"] if judge["latency"] is not none else _("Unknown") }}</td>
                 <td>
                   {% if judge["current-submission"] is not none %}
-                    {{ _("Submission %(id)s") % {'id': judge["current-submission"]} }}
+                    {{ _("Submission %(id)s", id=judge["current-submission"]) }}
                   {% elif judge["current-validation"] is not none %}
-                    {{ _("Validation %(id)s") % {'id': judge["current-validation"]} }}
+                    {{ _("Validation %(id)s", id=judge["current-validation"]) }}
                     {% if judge["current-validation-problem"] %}
                       <br><span class="gray">{{ judge["current-validation-problem"] }}</span>
                     {% endif %}
@@ -177,7 +177,7 @@
                 <td><code>{{ item["problem"] or _("Unknown") }}</code></td>
                 <td>{{ item["language"] or _("Unknown") }}</td>
                 <td>{{ item["user-id"] if item["user-id"] is not none else _("Unknown") }}</td>
-                <td>{{ _("%(bytes)s bytes") % {'bytes': item["source-bytes"]} }}</td>
+                <td>{{ _("%(bytes)s bytes", bytes=item["source-bytes"]) }}</td>
               </tr>
             {% else %}
               <tr>
@@ -217,7 +217,7 @@
       <h3>{{ _("Queue") }}</h3>
       {% if queue_total > queue_limit %}
         <p class="bridge-section-note">
-          {{ _("Showing first %(limit)s of %(total)s queued items.") % {'limit': queue_limit, 'total': queue_total} }}
+          {{ _("Showing first %(limit)s of %(total)s queued items.", limit=queue_limit, total=queue_total) }}
         </p>
       {% endif %}
       <div class="internal-table-scroll">
@@ -245,7 +245,7 @@
                   <td>{{ item["language"] or _("Unknown") }}</td>
                   <td>{{ item["judge-id"] or _("Any") }}</td>
                   <td>{{ item["user-id"] if item["user-id"] is not none else _("Unknown") }}</td>
-                  <td>{{ _("%(bytes)s bytes") % {'bytes': item["source-bytes"]} }}</td>
+                  <td>{{ _("%(bytes)s bytes", bytes=item["source-bytes"]) }}</td>
                 {% else %}
                   <td>{{ item["validate-id"] }}</td>
                   <td><code>{{ item["problem-id"] or _("Unknown") }}</code></td>
