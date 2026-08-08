@@ -477,7 +477,24 @@ def post_message(request):
     if not check_valid_message(request, room):
         return HttpResponseBadRequest()
 
-    new_message = Message(author=request.profile, body=request.POST["body"], room=room)
+    reply_to = None
+    reply_to_raw = request.POST.get("reply_to")
+    if reply_to_raw:
+        try:
+            candidate = Message.objects.filter(hidden=False).get(id=int(reply_to_raw))
+            # Only link a parent from the SAME room (None == lobby). A cross-room
+            # or vanished/hidden parent is dropped silently so the post still lands.
+            if candidate.room_id == (room.id if room else None):
+                reply_to = candidate
+        except (ValueError, Message.DoesNotExist):
+            reply_to = None
+
+    new_message = Message(
+        author=request.profile,
+        body=request.POST["body"],
+        room=room,
+        reply_to=reply_to,
+    )
     new_message.save()
 
     if not room:

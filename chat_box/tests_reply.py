@@ -1,11 +1,14 @@
+from unittest import mock
+
 from django.core.cache import cache
 from django.db import connection
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
+from django.urls import reverse
 from django.contrib.auth.models import User
 
 from judge.models import Profile
-from chat_box.models import Message
+from chat_box.models import Message, Room, UserRoom
 from chat_box.views import build_reply_snippet, get_reply_quotes
 
 
@@ -109,3 +112,54 @@ class ReplyQuotesTest(TestCase):
 
         # Same query count for 5 replies as for 1 -> no per-row query.
         self.assertEqual(len(ctx_many.captured_queries), len(ctx_one.captured_queries))
+
+
+class PostReplyEndpointTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.u = User.objects.create_user(username="carol", password="pw")
+        self.p = Profile.objects.create(user=self.u)
+        self.client.force_login(self.u)
+
+    def tearDown(self):
+        cache.clear()
+
+    def _post(self, body, reply_to=""):
+        with mock.patch("chat_box.views.event.post"):
+            return self.client.post(
+                reverse("post_chat_message"),
+                {"body": body, "room": "", "reply_to": str(reply_to), "tmp_id": "1"},
+            )
+
+    def test_valid_reply_links_parent(self):
+        parent = Message.objects.create(author=self.p, body="parent", room=None)
+        resp = self._post("child", reply_to=parent.id)
+        self.assertEqual(resp.status_code, 200)
+        child = Message.objects.latest("id")
+        self.assertEqual(child.reply_to_id, parent.id)
+
+    def test_plain_message_has_no_reply(self):
+        resp = self._post("hi")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(Message.objects.latest("id").reply_to_id)
+
+    def test_hidden_parent_dropped_but_message_posts(self):
+        parent = Message.objects.create(
+            author=self.p, body="secret", room=None, hidden=True
+        )
+        resp = self._post("child", reply_to=parent.id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(Message.objects.latest("id").reply_to_id)
+
+    def test_nonexistent_parent_dropped_but_message_posts(self):
+        resp = self._post("child", reply_to=999999)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(Message.objects.latest("id").reply_to_id)
+
+    def test_cross_room_parent_dropped(self):
+        room = Room.objects.create(last_msg_id=None)
+        UserRoom.objects.create(user=self.p, room=room)
+        parent = Message.objects.create(author=self.p, body="in room", room=room)
+        resp = self._post("child in lobby", reply_to=parent.id)  # posts to lobby
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(Message.objects.latest("id").reply_to_id)
