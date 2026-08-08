@@ -75,6 +75,7 @@ class ReplyQuotesTest(TestCase):
         quotes = get_reply_quotes([child])
         self.assertEqual(quotes[child.id]["parent_id"], parent.id)
         self.assertEqual(quotes[child.id]["author_id"], self.p.id)
+        self.assertEqual(quotes[child.id]["author_name"], "bob")
         self.assertEqual(quotes[child.id]["snippet"], "hello parent")
         self.assertFalse(quotes[child.id]["unavailable"])
 
@@ -99,10 +100,21 @@ class ReplyQuotesTest(TestCase):
         self.assertNotIn(child.id, get_reply_quotes([child]))
 
     def test_no_nplus1_across_many_replies(self):
-        parents = [self._msg("p%d" % i) for i in range(5)]
+        # Distinct author per parent so the test also guards the public-identity
+        # lookup (get_public_username), not just the Profile cache.
+        authors = [
+            Profile.objects.create(
+                user=User.objects.create_user(username="nq%d" % i, password="x")
+            )
+            for i in range(5)
+        ]
+        parents = [
+            Message.objects.create(author=authors[i], body="p%d" % i, room=None)
+            for i in range(5)
+        ]
         children = [self._msg("c%d" % i, reply_to=parents[i]) for i in range(5)]
 
-        cache.clear()  # cold Profile cache
+        cache.clear()  # cold Profile + identity caches
         with CaptureQueriesContext(connection) as ctx_many:
             get_reply_quotes(children)
 
@@ -110,7 +122,8 @@ class ReplyQuotesTest(TestCase):
         with CaptureQueriesContext(connection) as ctx_one:
             get_reply_quotes(children[:1])
 
-        # Same query count for 5 replies as for 1 -> no per-row query.
+        # Same query count for 5 replies (5 distinct authors) as for 1 -> no
+        # per-row and no per-author query.
         self.assertEqual(len(ctx_many.captured_queries), len(ctx_one.captured_queries))
 
 
