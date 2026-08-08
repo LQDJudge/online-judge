@@ -706,7 +706,8 @@
           );
           $quote.find('.message-reply-quote-author').text(author);
           $quote.find('.message-reply-quote-text').text(text || '[image]');
-          $html.find('.message-bubble-wrapper').prepend($quote);
+          // Insert ABOVE the bubble row (matches the server template layout).
+          $html.find('.message-bubble-wrapper').before($quote);
         }
       }
       ChatUI.addMessage($html[0].outerHTML, true);
@@ -985,6 +986,29 @@
       $(document).on('click', '.chat-reply-banner-cancel', function(e) {
         e.stopPropagation();
         ChatMessages.clearReplyBanner();
+      });
+
+      $(document).on('click', '.message-reply-quote', function(e) {
+        // Let clicks on the inner author link navigate normally.
+        if ($(e.target).closest('a').length) return;
+        e.stopPropagation();
+        var parentId = $(this).data('reply-target');
+        if (!parentId) return;  // an "unavailable" quote has no target
+        var $target = $('#message-' + parentId);
+        if ($target.length) {
+          $target[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+          var $block = $('#message-block-' + parentId);
+          $block.removeClass('message-highlight');
+          void $block[0].offsetWidth;  // reflow so re-adding the class restarts the anim
+          $block.addClass('message-highlight');
+          setTimeout(function() { $block.removeClass('message-highlight'); }, 2000);
+        } else {
+          // MVP: parent not in the loaded window (older than the ~50 in view).
+          // No gap-fetch (backlog); flash the quote to acknowledge the click.
+          var $q = $(this);
+          $q.addClass('message-reply-quote-flash');
+          setTimeout(function() { $q.removeClass('message-reply-quote-flash'); }, 600);
+        }
       });
     },
 

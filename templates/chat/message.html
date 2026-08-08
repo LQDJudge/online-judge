@@ -16,19 +16,21 @@
         {{ relative_time(message.time, abs=_('{time}'), rel=_('{time}'), format=_('g:i a d/m/Y')) }}
       </span>
     </div>
-    <div class="message-bubble-wrapper body-block message-block" id="message-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
-      {% if reply_quote %}
-        {% if reply_quote.unavailable %}
-          <div class="message-reply-quote message-reply-quote-unavailable">
-            <span class="message-reply-quote-text">{{ _('Original message unavailable') }}</span>
-          </div>
-        {% else %}
-          <div class="message-reply-quote" role="button" tabindex="0" data-reply-target="{{ reply_quote.parent_id }}" title="{{ _('Jump to message') }}">
-            <span class="message-reply-quote-author">{{ link_user(reply_quote.author_id) }}</span>
-            <span class="message-reply-quote-text">{{ reply_quote.snippet }}</span>
-          </div>
-        {% endif %}
+    {# Reply quote is a sibling ABOVE the bubble row (Messenger-style), not inside
+       the flex row, so it stacks on its own line rather than beside the message. #}
+    {% if reply_quote %}
+      {% if reply_quote.unavailable %}
+        <div class="message-reply-quote message-reply-quote-unavailable">
+          <span class="message-reply-quote-text">{{ _('Original message unavailable') }}</span>
+        </div>
+      {% else %}
+        <div class="message-reply-quote" role="button" tabindex="0" data-reply-target="{{ reply_quote.parent_id }}" title="{{ _('Jump to message') }}">
+          <span class="message-reply-quote-author">{{ link_user(reply_quote.author_id) }}</span>
+          <span class="message-reply-quote-text">{{ reply_quote.snippet }}</span>
+        </div>
       {% endif %}
+    {% endif %}
+    <div class="message-bubble-wrapper body-block message-block" id="message-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
       <div class="message-text message-bubble {% if request.profile.id != message.author_id %}message-text-other message-bubble-other{% else %}message-text-myself message-bubble-self{% endif %}" id="message-text-{{ message.id }}">
         {{message.body|markdown(lazy_load=False)|reference|str|safe }}
       </div>
