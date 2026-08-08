@@ -491,6 +491,7 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
     context_object_name = "users"
     template_name = "user/list.html"
     paginate_by = 20
+    infinite_pagination_max_page = 10000
     all_sorts = frozenset(
         (
             "points",

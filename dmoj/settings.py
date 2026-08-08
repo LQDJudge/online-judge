@@ -574,6 +574,10 @@ RL_SEMANTIC_SEARCH = "5/m"
 # Anonymous users may only access the first N pages of paginated listings.
 ANON_MAX_PAGE = 3
 
+# Infinite pagination avoids COUNT(*) and cannot know the final page cheaply.
+# Reject extreme page numbers before creating massive SQL OFFSET queries.
+INFINITE_PAGINATION_MAX_PAGE = 1000
+
 # ============================================================
 # Auto-review pipeline (problem public requests)
 # ============================================================

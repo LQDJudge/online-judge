@@ -2,10 +2,24 @@ import collections
 import inspect
 from math import ceil
 
+from django.conf import settings
 from django.core.paginator import EmptyPage, InvalidPage
 from django.http import Http404
 from django.utils.functional import cached_property
 from django.utils.inspect import method_has_no_args
+
+from judge.utils.views import anonymous_page_limit_response
+
+
+def get_requested_page_number(request, kwargs=None, page_kwarg="page"):
+    page = None
+    if kwargs:
+        page = kwargs.get(page_kwarg)
+    page = page or request.GET.get(page_kwarg) or 1
+    try:
+        return int(page)
+    except (TypeError, ValueError):
+        raise Http404("Page cannot be converted to an int.")
 
 
 class InfinitePage(collections.abc.Sequence):
@@ -118,6 +132,29 @@ def infinite_paginate(queryset, page, page_size, pad_pages, paginator=None):
 class InfinitePaginationMixin:
     pad_pages = 2
 
+    def get_infinite_pagination_max_page(self):
+        return getattr(
+            self,
+            "infinite_pagination_max_page",
+            getattr(settings, "INFINITE_PAGINATION_MAX_PAGE", None),
+        )
+
+    def dispatch(self, request, *args, **kwargs):
+        page_kwarg = getattr(self, "page_kwarg", "page")
+        if getattr(self, "limit_anonymous_pages", False):
+            limited_response = anonymous_page_limit_response(
+                request, kwargs, page_kwarg
+            )
+            if limited_response is not None:
+                return limited_response
+
+        page_number = get_requested_page_number(request, kwargs, page_kwarg)
+        max_page = self.get_infinite_pagination_max_page()
+        if max_page is not None and page_number > max_page:
+            raise Http404("Page exceeds the maximum allowed page.")
+
+        return super().dispatch(request, *args, **kwargs)
+
     @property
     def use_infinite_pagination(self):
         return True
@@ -131,11 +168,7 @@ class InfinitePaginationMixin:
             return paginator, page, object_list, has_other
 
         page_kwarg = self.page_kwarg
-        page = self.kwargs.get(page_kwarg) or self.request.GET.get(page_kwarg) or 1
-        try:
-            page_number = int(page)
-        except ValueError:
-            raise Http404("Page cannot be converted to an int.")
+        page_number = get_requested_page_number(self.request, self.kwargs, page_kwarg)
         try:
             paginator = DummyPaginator(page_size)
             page = infinite_paginate(
