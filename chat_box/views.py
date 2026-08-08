@@ -23,6 +23,7 @@ from reversion import revisions
 from judge import event_poster as event
 from judge.caching import cache_wrapper
 from judge.models.notification import Notification, NotificationCategory
+from judge.models.profile import get_profile_public_identity
 from chat_box.models import (
     ChatModerationLog,
     Ignore,
@@ -165,7 +166,7 @@ class ChatView(ListView):
                 "object_list": self.messages,
                 "has_next": self.has_next(),
                 **reaction_render_context(self.messages, request.profile),
-                **reply_render_context(self.messages),
+                **reply_render_context(self.messages, request.user),
             },
         )
 
@@ -190,7 +191,7 @@ class ChatView(ListView):
         )
         context["chat_lobby_channel"] = encrypt_channel("chat_lobby")
         context.update(reaction_render_context(self.messages, self.request.profile))
-        context.update(reply_render_context(self.messages))
+        context.update(reply_render_context(self.messages, self.request.user))
         if self.room:
             other_user = self.room.other_user(self.request.profile)
             if other_user:
@@ -681,12 +682,13 @@ def build_reply_snippet(body):
     return text
 
 
-def get_reply_quotes(messages):
+def get_reply_quotes(messages, viewer=None):
     """Map child message id -> quote data for its parent (single level, no N+1).
 
     Only messages that reply appear in the result. All parents are fetched in ONE
-    query; a missing or hidden parent is marked unavailable. Warms the Profile
-    cache for quote authors so link_user() in the template stays 0-query.
+    query; a missing or hidden parent is marked unavailable. Warms the Profile and
+    public-identity caches in bulk so get_public_username() below stays 0-query,
+    while still masking authors who hid their identity ("Disabled user").
     """
     parent_ids = {m.reply_to_id for m in messages if m.reply_to_id}
     if not parent_ids:
@@ -699,8 +701,14 @@ def get_reply_quotes(messages):
         )
     }
 
+    # Bulk-warm both caches (constant number of queries, not per-author) so the
+    # get_public_username() calls in the loop never hit the DB.
+    author_ids = {p["author_id"] for p in parents.values() if not p["hidden"]}
+    if author_ids:
+        Profile.get_cached_instances(*author_ids)
+        get_profile_public_identity.batch([(aid,) for aid in author_ids])
+
     quotes = {}
-    author_ids = []
     for message in messages:
         pid = message.reply_to_id
         if not pid:
@@ -709,22 +717,21 @@ def get_reply_quotes(messages):
         if parent is None or parent["hidden"]:
             quotes[message.id] = {"unavailable": True}
         else:
-            author_ids.append(parent["author_id"])
             quotes[message.id] = {
                 "parent_id": pid,
                 "author_id": parent["author_id"],
+                "author_name": Profile(id=parent["author_id"]).get_public_username(
+                    viewer
+                ),
                 "snippet": build_reply_snippet(parent["body"]),
                 "unavailable": False,
             }
-
-    if author_ids:
-        Profile.get_cached_instances(*author_ids)
     return quotes
 
 
-def reply_render_context(messages):
+def reply_render_context(messages, viewer=None):
     """Context vars for rendering reply quotes for a set of messages."""
-    return {"reply_quotes": get_reply_quotes(messages)}
+    return {"reply_quotes": get_reply_quotes(messages, viewer)}
 
 
 @login_required
@@ -832,7 +839,7 @@ def chat_message_ajax(request):
         {
             "message": message,
             **reaction_render_context([message], request.profile),
-            **reply_render_context([message]),
+            **reply_render_context([message], request.user),
         },
     )
 

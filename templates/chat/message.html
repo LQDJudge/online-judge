@@ -25,7 +25,7 @@
         </div>
       {% else %}
         <div class="message-reply-quote" role="button" tabindex="0" data-reply-target="{{ reply_quote.parent_id }}" title="{{ _('Jump to message') }}">
-          <span class="message-reply-quote-author">{{ link_user(reply_quote.author_id) }}</span>
+          <span class="message-reply-quote-author">{{ reply_quote.author_name }}</span>
           <span class="message-reply-quote-text">{{ reply_quote.snippet }}</span>
         </div>
       {% endif %}
