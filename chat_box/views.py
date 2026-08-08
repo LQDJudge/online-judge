@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
 from django.db.models import Count, F
@@ -163,6 +165,7 @@ class ChatView(ListView):
                 "object_list": self.messages,
                 "has_next": self.has_next(),
                 **reaction_render_context(self.messages, request.profile),
+                **reply_render_context(self.messages),
             },
         )
 
@@ -187,6 +190,7 @@ class ChatView(ListView):
         )
         context["chat_lobby_channel"] = encrypt_channel("chat_lobby")
         context.update(reaction_render_context(self.messages, self.request.profile))
+        context.update(reply_render_context(self.messages))
         if self.room:
             other_user = self.room.other_user(self.request.profile)
             if other_user:
@@ -640,6 +644,72 @@ def get_reaction_image_urls():
     return {code: static(path) for code, path in CHAT_REACTION_IMAGES.items()}
 
 
+REPLY_SNIPPET_LIMIT = 60
+# A body that is ONLY a markdown image (optionally surrounded by whitespace).
+_IMAGE_ONLY_RE = re.compile(r"^\s*!\[[^\]]*\]\([^)]*\)\s*$")
+
+
+def build_reply_snippet(body):
+    """Plain-text ~60-char preview of a parent message for the reply quote.
+
+    Text only (never markdown-rendered) so the quote can't inject HTML. An
+    image-only body has no text to show, so it collapses to an "[image]" marker.
+    """
+    body = body or ""
+    if _IMAGE_ONLY_RE.match(body):
+        return "[image]"
+    text = " ".join(body.split())
+    if len(text) > REPLY_SNIPPET_LIMIT:
+        return text[:REPLY_SNIPPET_LIMIT] + "…"
+    return text
+
+
+def get_reply_quotes(messages):
+    """Map child message id -> quote data for its parent (single level, no N+1).
+
+    Only messages that reply appear in the result. All parents are fetched in ONE
+    query; a missing or hidden parent is marked unavailable. Warms the Profile
+    cache for quote authors so link_user() in the template stays 0-query.
+    """
+    parent_ids = {m.reply_to_id for m in messages if m.reply_to_id}
+    if not parent_ids:
+        return {}
+
+    parents = {
+        row["id"]: row
+        for row in Message.objects.filter(id__in=parent_ids).values(
+            "id", "author_id", "body", "hidden"
+        )
+    }
+
+    quotes = {}
+    author_ids = []
+    for message in messages:
+        pid = message.reply_to_id
+        if not pid:
+            continue
+        parent = parents.get(pid)
+        if parent is None or parent["hidden"]:
+            quotes[message.id] = {"unavailable": True}
+        else:
+            author_ids.append(parent["author_id"])
+            quotes[message.id] = {
+                "parent_id": pid,
+                "author_id": parent["author_id"],
+                "snippet": build_reply_snippet(parent["body"]),
+                "unavailable": False,
+            }
+
+    if author_ids:
+        Profile.get_cached_instances(*author_ids)
+    return quotes
+
+
+def reply_render_context(messages):
+    """Context vars for rendering reply quotes for a set of messages."""
+    return {"reply_quotes": get_reply_quotes(messages)}
+
+
 @login_required
 def reaction_list(request):
     """Render the capped list of users who reacted to a message.
@@ -745,6 +815,7 @@ def chat_message_ajax(request):
         {
             "message": message,
             **reaction_render_context([message], request.profile),
+            **reply_render_context([message]),
         },
     )
 
