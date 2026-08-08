@@ -64,7 +64,8 @@
         chatMuted: "{{ _('You are muted from chat.') }}",
         emoji: "{{ _('Emoji') }}",
         searchPlaceholder: "{{ _('Search by handle...') }}",
-        enterMessage: "{{ _('Enter your message') }}"
+        enterMessage: "{{ _('Enter your message') }}",
+        replyingTo: "{{ _('Replying to %(user)s') }}"
       },
       messageTemplate: `{% with message=message_template %}{% set is_message_template = True %}{% include "chat/message.html" %}{% endwith %}`
     };
