@@ -577,7 +577,9 @@ body:has(.chat-page) {
     &:hover .message-actions,
     &:focus-within .message-actions,
     &:hover .message-react,
-    &:focus-within .message-react {
+    &:focus-within .message-react,
+    &:hover .message-reply-toggle,
+    &:focus-within .message-reply-toggle {
       opacity: 1;
     }
   }
@@ -1746,4 +1748,138 @@ body:has(.chat-page) {
   textarea {
     resize: none;
   }
+
+  // ============================================
+  // Reply feature: quote, toggle, banner, highlight
+  // ============================================
+
+  // Single-level quote shown above a reply's own text.
+  .message-reply-quote {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    // Compact quote that stacks above the bubble; cap at the bubble's own width.
+    width: fit-content;
+    max-width: 70%;
+    margin-bottom: 2px;
+    padding: 4px 8px;
+    border-left: 3px solid $theme_color;
+    border-radius: 6px;
+    background: $background_light_gray;
+    font-size: 0.85em;
+    cursor: pointer;
+
+    .message-reply-quote-author {
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .message-reply-quote-text {
+      color: $widget_black;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;  // allow the flex item to shrink so ellipsis can engage
+    }
+
+    // Parent was deleted/hidden/unreachable: non-interactive, muted.
+    &.message-reply-quote-unavailable {
+      border-left-color: $border_gray;
+      color: $border_gray;
+      font-style: italic;
+      cursor: default;
+    }
+
+    // Brief pulse when the parent isn't in the DOM to jump to.
+    &.message-reply-quote-flash {
+      animation: reply-quote-flash 0.6s ease;
+    }
+  }
+
+  // Hover-revealed reply button (mirrors .message-react-toggle shape;
+  // reveal is driven by the .message-bubble-wrapper hover group above).
+  .message-reply-toggle {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: $text-muted;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+
+    &:hover,
+    &:focus {
+      opacity: 1;
+      background: $background_light_gray;
+      color: $widget_black;
+      outline: none;
+    }
+  }
+
+  // Flash the jumped-to message so the eye can find it.
+  .message-highlight {
+    animation: reply-jump-highlight 2s ease;
+  }
+
+  // Compose banner shown above the input while replying.
+  .chat-reply-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 12px;
+    border-top: 1px solid $border_gray;
+    background: $background_light_gray;
+
+    .chat-reply-banner-body {
+      display: flex;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    .chat-reply-banner-label {
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .chat-reply-banner-snippet {
+      color: $widget_black;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-reply-banner-cancel {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2em;
+      color: $widget_black;
+    }
+  }
+
+  // On touch/narrow screens there is no hover, so keep the toggle visible.
+  @media (max-width: 799px) {
+    .message-reply-toggle {
+      opacity: 1;
+    }
+  }
+}
+
+@keyframes reply-jump-highlight {
+  0%   { background: rgba($theme_color, 0.35); }
+  100% { background: transparent; }
+}
+
+@keyframes reply-quote-flash {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
 }
