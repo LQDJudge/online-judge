@@ -1,10 +1,11 @@
-from django.views.generic import ListView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.utils.translation import gettext as _
+from django.db.models import Count, Q
 from django.http import JsonResponse
+from django.utils.translation import gettext as _
+from django.views.generic import ListView, View
 
 from judge.models import Notification, Profile
-from judge.models.notification import unseen_notifications_count, NotificationCategory
+from judge.models.notification import NotificationCategory, unseen_notifications_count
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 
 __all__ = ["NotificationList", "NotificationMarkAsRead"]
@@ -51,18 +52,32 @@ class NotificationList(LoginRequiredMixin, InfinitePaginationMixin, ListView):
         context["current_author"] = self.request.GET.get("author", "")
         context["current_search"] = self.request.GET.get("search", "")
 
-        # Add available categories for filter dropdown
-        context["notification_categories"] = NotificationCategory.choices
+        # Compute all category and page-level statistics in one grouped query.
+        # Categories with no notifications are filled with zero below so the
+        # filter remains complete. Python's stable sort preserves the existing
+        # category order when unseen counts are tied.
+        category_stats = {
+            row["category"]: row
+            for row in Notification.objects.filter(owner=self.request.profile)
+            .values("category")
+            .annotate(
+                total=Count("id"),
+                unseen=Count("id", filter=Q(is_read=False)),
+            )
+        }
+        notification_categories = [
+            (value, label, category_stats.get(value, {}).get("unseen", 0))
+            for value, label in NotificationCategory.choices
+        ]
+        notification_categories.sort(key=lambda item: -item[2])
 
-        # Add statistics
-        total_notifications = Notification.objects.filter(
-            owner=self.request.profile
-        ).count()
-        unread_notifications = Notification.objects.filter(
-            owner=self.request.profile, is_read=False
-        ).count()
-        context["total_notifications"] = total_notifications
-        context["unread_notifications"] = unread_notifications
+        context["notification_categories"] = notification_categories
+        context["total_notifications"] = sum(
+            row["total"] for row in category_stats.values()
+        )
+        context["unread_notifications"] = sum(
+            row["unseen"] for row in category_stats.values()
+        )
 
         return context
 

@@ -125,7 +125,7 @@
           <div class="filter-form-group">
             <label class="bold-text margin-label" for="public"><i class="non-italics">{{ _('Public request') }}</i></label>
             <select id="public" name="public" style="width: 100%">
-              <option value="">{{ _('All') }}</option>
+              <option value="">{{ _('All requests') }}</option>
               <option value="pending" {% if active_public == 'pending' %}selected{% endif %}>{{ _('Pending') }}</option>
               <option value="approved" {% if active_public == 'approved' %}selected{% endif %}>{{ _('Approved') }}</option>
               <option value="rejected" {% if active_public == 'rejected' %}selected{% endif %}>{{ _('Rejected') }}</option>

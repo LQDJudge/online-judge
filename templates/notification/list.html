@@ -76,9 +76,9 @@
             <label for="category">{{ _("Category") }}</label>
             <select name="category" id="category">
               <option value="">{{ _("All Categories") }}</option>
-              {% for value, label in notification_categories %}
+              {% for value, label, unseen_count in notification_categories %}
                 <option value="{{ value }}" {% if current_category==value %}selected{% endif %}>
-                  {{ label }}
+                  {{ label }} ({{ unseen_count }})
                 </option>
               {% endfor %}
             </select>

@@ -14,7 +14,11 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from judge.models import Contest, Language, Problem, ProblemGroup, Profile
-from judge.models.contest_review import ContestReviewCheckResult, ContestReviewRun
+from judge.models.contest_review import (
+    ContestPublicRequest,
+    ContestReviewCheckResult,
+    ContestReviewRun,
+)
 from judge.models.problem_review import ProblemReviewRun
 from judge.review.verdict import batched_verdicts
 
@@ -100,6 +104,25 @@ class ReviewListViewTest(TestCase):
             triggered_by=cls.author_profile,
             input_hash="hc1",
         )
+        ContestPublicRequest.objects.create(
+            contest=cls.c_author,
+            requested_by=cls.author_profile,
+        )
+
+        # Review history can exist without an actionable public request, for
+        # example after an author cancels or an admin manually reruns review.
+        cls.c_unrequested = Contest.objects.create(
+            key="cunrequested",
+            name="Unrequested Contest",
+            start_time=timezone.now(),
+            end_time=timezone.now() + timezone.timedelta(hours=1),
+        )
+        cls.c_unrequested.authors.add(cls.author_profile)
+        ContestReviewRun.objects.create(
+            contest=cls.c_unrequested,
+            triggered_by=cls.admin_profile,
+            input_hash="hc-unrequested",
+        )
 
     # ------------------------------------------------------------------
     # problem list
@@ -148,13 +171,20 @@ class ReviewListViewTest(TestCase):
     # contest list
     # ------------------------------------------------------------------
 
-    def test_contest_admin_sees_all(self):
+    def test_contest_admin_sees_requested_by_default(self):
         self.client.force_login(self.admin_profile.user)
         resp = self.client.get("/contests/review/")
         self.assertEqual(resp.status_code, 200)
         ids = {c.id for c in resp.context["items"]}
         self.assertSetEqual(ids, {self.c_author.id})
         self.assertContains(resp, f'id="contest-row-{self.c_author.id}"')
+
+    def test_contest_no_request_filter_shows_unrequested_review_history(self):
+        self.client.force_login(self.admin_profile.user)
+        resp = self.client.get("/contests/review/", {"public": "none"})
+        self.assertEqual(resp.status_code, 200)
+        ids = {c.id for c in resp.context["items"]}
+        self.assertSetEqual(ids, {self.c_unrequested.id})
 
     def test_contest_review_latest_runs_include_template_fields(self):
         latest_runs, _verdicts = batched_verdicts(
@@ -192,6 +222,10 @@ class ReviewListViewTest(TestCase):
             triggered_by=self.author_profile,
             input_hash="hc-started-public",
         )
+        ContestPublicRequest.objects.create(
+            contest=started_public,
+            requested_by=self.author_profile,
+        )
         future_public = Contest.objects.create(
             key="futurepublic",
             name="Future Public Contest",
@@ -204,6 +238,10 @@ class ReviewListViewTest(TestCase):
             contest=future_public,
             triggered_by=self.author_profile,
             input_hash="hc-future-public",
+        )
+        ContestPublicRequest.objects.create(
+            contest=future_public,
+            requested_by=self.author_profile,
         )
 
         self.client.force_login(self.admin_profile.user)
@@ -229,4 +267,4 @@ class ReviewListViewTest(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         ids = {c.id for c in resp.context["items"]}
-        self.assertSetEqual(ids, {self.c_author.id})
+        self.assertSetEqual(ids, {self.c_unrequested.id})

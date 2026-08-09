@@ -508,6 +508,9 @@ class ContestReviewListView(QueryStringSortMixin, TitleMixin, ListView):
     matches `Contest.is_editable_by`: superusers + holders of
     `judge.edit_all_contest` see all; otherwise authors/curators only.
 
+    The default view only shows contests with an actionable public request.
+    Review history without a request is available via ``?public=none``.
+
     Each row links to `/contest/<key>/review` (the per-item dashboard).
     """
 
@@ -571,6 +574,11 @@ class ContestReviewListView(QueryStringSortMixin, TitleMixin, ListView):
             qs = qs.filter(public_request__status=ContestPublicRequest.REJECTED)
         elif public == "none":
             qs = qs.filter(public_request__isnull=True)
+        else:
+            # Keep the default list actionable: review runs without a public
+            # request cannot be accepted or rejected. They remain available
+            # through the explicit "No request" filter for audit/history.
+            qs = qs.filter(public_request__isnull=False)
 
         verdict = self.request.GET.get("verdict")
         if verdict in VERDICT_FILTER_CHOICES:

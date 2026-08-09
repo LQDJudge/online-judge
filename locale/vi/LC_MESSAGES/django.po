@@ -9696,6 +9696,10 @@ msgstr "Tìm lượt xem xét..."
 msgid "Author"
 msgstr "Tác giả"
 
+#: templates/contest/review_list.html:128
+msgid "All requests"
+msgstr "Tất cả yêu cầu"
+
 #: templates/contest/review_list.html:132
 #: templates/problem/review_list.html:176
 msgid "No request"
