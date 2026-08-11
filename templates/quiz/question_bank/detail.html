@@ -6,6 +6,12 @@
 
 {% block js_media %}
   <script>
+    $(function () {
+      $('.copy-question-id').on('click', function () {
+        copyToClipboard(String($(this).data('question-id')), this);
+      });
+    });
+
     function confirmDeleteQuestion() {
       {% if used_in_quizzes %}
         alert('{{ _("Cannot delete: This question is used in one or more quizzes. Remove it from those quizzes first.") }}');
@@ -27,6 +33,12 @@
     <h2 class="content-title">{{ question.title }}</h2>
 
     <div class="question-meta">
+      <span class="id-tag">
+        <i class="fa fa-hashtag"></i>&nbsp;{{ _('ID') }}: {{ question.pk }}
+      </span>
+      <button type="button" class="btn btn-sm btn-default copy-question-id" data-question-id="{{ question.pk }}" title="{{ _('Copy') }} {{ _('ID') }}" aria-label="{{ _('Copy') }} {{ _('ID') }}">
+        <i class="fa fa-copy"></i>
+      </button>
       <span class="type-tag">
         <i class="fa fa-tag"></i>&nbsp;{{ question.get_question_type_display() }}
       </span>

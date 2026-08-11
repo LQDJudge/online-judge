@@ -60,8 +60,9 @@ from judge.models import (
 from judge.models.quiz import QuizQuestionType
 from judge.models.course import Course
 from judge.utils.views import (
-    TitleMixin,
     DiggPaginatorMixin,
+    QueryStringSortMixin,
+    TitleMixin,
     paginate_query_context,
 )
 from judge.utils.history import RevisionDiffMixin
@@ -149,6 +150,17 @@ def _get_short_answer_accepted_answers(correct_answers):
     ]
 
 
+def _parse_question_id_search(search):
+    normalized = search.strip()
+    if normalized.startswith("#"):
+        normalized = normalized[1:]
+    if normalized[:1].lower() == "q":
+        normalized = normalized[1:]
+    if normalized.isdigit():
+        return int(normalized)
+    return None
+
+
 class QuizObjectEditorMixin(UserPassesTestMixin):
     """Mixin that checks if user can edit a specific quiz."""
 
@@ -234,6 +246,7 @@ class PendingGradingCountMixin:
 class QuestionBankList(
     LoginRequiredMixin,
     PendingGradingCountMixin,
+    QueryStringSortMixin,
     DiggPaginatorMixin,
     TitleMixin,
     ListView,
@@ -252,6 +265,9 @@ class QuestionBankList(
     context_object_name = "questions"
     title = gettext_lazy("Question Bank")
     paginate_by = 50
+    all_sorts = frozenset(("id", "title", "question_type", "is_public", "created_at"))
+    default_sort = "-created_at"
+    default_desc = frozenset(("created_at", "is_public"))
 
     @property
     def in_contest(self):
@@ -295,11 +311,15 @@ class QuestionBankList(
         # Filter by search term
         search = self.request.GET.get("search", "").strip()
         if search:
-            queryset = queryset.filter(
+            question_id = _parse_question_id_search(search)
+            search_filter = (
                 Q(title__icontains=search)
                 | Q(tags__icontains=search)
                 | Q(content__icontains=search)
             )
+            if question_id is not None:
+                search_filter |= Q(id=question_id)
+            queryset = queryset.filter(search_filter)
 
         # Filter by question type
         question_type = self.request.GET.get("type", "")
@@ -318,7 +338,10 @@ class QuestionBankList(
         elif is_public == "false":
             queryset = queryset.filter(is_public=False)
 
-        return queryset.order_by("-created_at")
+        order = getattr(self, "order", self.default_sort)
+        if order.lstrip("-") == "id":
+            return queryset.order_by(order)
+        return queryset.order_by(order, "-id")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -334,7 +357,8 @@ class QuestionBankList(
             context["current_contest"] = self.request.profile.current_contest.contest
 
         # Add pagination context for query parameter pagination
-        context.update(paginate_query_context(self.request))
+        context.update(self.get_sort_context())
+        context.update(self.get_sort_paginate_context())
 
         return context
 
@@ -1557,9 +1581,11 @@ class QuizSearchQuestions(LoginRequiredMixin, QuizObjectEditorMixin, View):
 
         # Filter by search query
         if query:
-            questions = questions.filter(
-                Q(title__icontains=query) | Q(tags__icontains=query)
-            )
+            question_id = _parse_question_id_search(query)
+            search_filter = Q(title__icontains=query) | Q(tags__icontains=query)
+            if question_id is not None:
+                search_filter |= Q(id=question_id)
+            questions = questions.filter(search_filter)
 
         # Limit results and ensure distinct
         questions = questions.distinct()[:20]

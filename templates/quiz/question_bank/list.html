@@ -74,12 +74,15 @@
 {% block middle_content %}
   <div class="question-bank-list-page">
     {% if questions %}
-      <table id="question-table" class="table striped question-table">
+      <table id="question-table" class="table striped modern question-table">
         <thead>
           <tr>
-            <th class="question-visibility"></th>
-            <th class="question-title">{{ _('Question') }}</th>
-            <th class="question-type">{{ _('Question Type') }}</th>
+            <th class="question-visibility">
+              <a href="{{ sort_links.is_public }}"><i class="fa fa-globe"></i>{{ sort_order.is_public }}</a>
+            </th>
+            <th class="question-id"><a href="{{ sort_links.id }}">{{ _('ID') }}{{ sort_order.id }}</a></th>
+            <th class="question-title"><a href="{{ sort_links.title }}">{{ _('Question') }}{{ sort_order.title }}</a></th>
+            <th class="question-type"><a href="{{ sort_links.question_type }}">{{ _('Question Type') }}{{ sort_order.question_type }}</a></th>
             <th class="question-tags">{{ _('Tags') }}</th>
             <th class="question-actions"></th>
           </tr>
@@ -93,6 +96,9 @@
                 {% else %}
                   <i class="fa fa-lock announcement_red" title="{{ _('Private') }}"></i>
                 {% endif %}
+              </td>
+              <td class="question-id">
+                <a href="{{ url('question_bank_detail', question.pk) }}">{{ question.pk }}</a>
               </td>
               <td class="question-title">
                 <a href="{{ url('question_bank_detail', question.pk) }}">{{ question.title }}</a>

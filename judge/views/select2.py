@@ -18,6 +18,17 @@ from judge.models import (
 )
 
 
+def _parse_question_id_search(term):
+    normalized = term.strip()
+    if normalized.startswith("#"):
+        normalized = normalized[1:]
+    if normalized[:1].lower() == "q":
+        normalized = normalized[1:]
+    if normalized.isdigit():
+        return int(normalized)
+    return None
+
+
 def _get_user_queryset(term, org_id=None):
     if org_id:
         try:
@@ -278,9 +289,14 @@ class QuizSelect2View(Select2View):
 
 class QuizQuestionSelect2View(Select2View):
     def get_queryset(self):
-        queryset = QuizQuestion.objects.filter(
-            Q(title__icontains=self.term) | Q(content__icontains=self.term)
+        question_id = _parse_question_id_search(self.term)
+        question_filter = Q(title__icontains=self.term) | Q(
+            content__icontains=self.term
         )
+        if question_id is not None:
+            question_filter |= Q(id=question_id)
+
+        queryset = QuizQuestion.objects.filter(question_filter)
 
         # Filter by permissions if user is not superuser
         if self.request.user.is_authenticated:

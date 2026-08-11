@@ -6,6 +6,7 @@ Tests for quiz grading, attempts, and workflows.
 
 from django.test import TestCase, TransactionTestCase
 from django.contrib.auth.models import User
+from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
@@ -160,7 +161,103 @@ class QuizQuestionDetailTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Imported SA Question")
+        self.assertContains(response, f"ID: {question.pk}")
+        self.assertContains(response, f'data-question-id="{question.pk}"')
         self.assertNotContains(response, "Accepted Answers")
+
+
+class QuizQuestionBankDiscoverabilityTestCase(TestCase):
+    """Tests for finding and identifying reusable quiz questions."""
+
+    fixtures = ["language_small"]
+
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            username="questionadmin", email="questionadmin@test.com", password="pw"
+        )
+        Profile.objects.get_or_create(
+            user=self.user,
+            defaults={"language": Language.objects.first()},
+        )
+        self.client.force_login(self.user)
+
+    def _create_question(self, title, question_type="MC", is_public=False):
+        return QuizQuestion.objects.create(
+            question_type=question_type,
+            title=title,
+            content="Question content without numeric identifiers",
+            choices=[{"id": "a", "text": "Answer"}],
+            correct_answers={"answers": "a"},
+            is_public=is_public,
+        )
+
+    def test_select2_question_search_matches_exact_id(self):
+        question = self._create_question("Findable only by primary key")
+
+        response = self.client.get(
+            reverse("quiz_question_select2"), {"term": f"Q{question.pk}"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        results = response.json()["results"]
+        self.assertEqual([item["id"] for item in results], [question.pk])
+        self.assertEqual(results[0]["text"], f"Q{question.pk}: {question.title}")
+
+    def test_question_bank_search_matches_exact_id(self):
+        target = self._create_question("Target question")
+        other = self._create_question("Other question")
+
+        response = self.client.get(
+            reverse("question_bank_list"), {"search": f"#{target.pk}"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Target question")
+        self.assertContains(response, f">{target.pk}</a>")
+        self.assertNotContains(response, "Other question")
+        self.assertNotContains(response, f">{other.pk}</a>")
+
+    def test_question_bank_id_column_sorts(self):
+        first = self._create_question("First by ID")
+        second = self._create_question("Second by ID")
+
+        response = self.client.get(reverse("question_bank_list"), {"order": "id"})
+
+        self.assertEqual(response.status_code, 200)
+        ids = [question.pk for question in response.context["questions"]]
+        self.assertEqual(ids, [first.pk, second.pk])
+        self.assertContains(response, reverse("question_bank_list") + "?order=-id")
+
+    def test_question_bank_requested_columns_sort(self):
+        beta_public = self._create_question("Beta", question_type="SA", is_public=True)
+        alpha_private = self._create_question(
+            "Alpha", question_type="MC", is_public=False
+        )
+
+        response = self.client.get(reverse("question_bank_list"), {"order": "title"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [question.pk for question in response.context["questions"]],
+            [alpha_private.pk, beta_public.pk],
+        )
+
+        response = self.client.get(
+            reverse("question_bank_list"), {"order": "question_type"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [question.pk for question in response.context["questions"]],
+            [alpha_private.pk, beta_public.pk],
+        )
+
+        response = self.client.get(
+            reverse("question_bank_list"), {"order": "-is_public"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [question.pk for question in response.context["questions"]],
+            [beta_public.pk, alpha_private.pk],
+        )
 
 
 class QuizImportParsingTestCase(TestCase):

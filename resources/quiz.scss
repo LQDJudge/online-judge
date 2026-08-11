@@ -3484,11 +3484,37 @@ form.quiz-join-pseudotab {
 
     th {
       padding: 0;
+
+      a {
+        display: block;
+        padding: 4px 10px;
+      }
     }
 
     .question-visibility {
       width: 50px;
       text-align: center;
+    }
+
+    .question-id {
+      width: 50px;
+      white-space: nowrap;
+      text-align: center;
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+    }
+
+    th.question-title {
+      text-align: center;
+    }
+
+    td.question-title {
+      text-align: left;
+      padding-left: 1em;
+      width: 100%;
     }
 
     .question-type {
@@ -3597,6 +3623,23 @@ form.quiz-join-pseudotab {
     margin-top: 0;
     margin-bottom: 1rem;
     flex-wrap: wrap;
+
+    .id-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.4em 0.8em;
+      border: 1px solid $border_gray;
+      border-radius: 4px;
+      font-size: 0.9em;
+      font-weight: 600;
+      background: $background_light_gray;
+      color: $widget_black;
+    }
+
+    .copy-question-id {
+      padding: 0.4em 0.65em;
+      line-height: 1;
+    }
 
     .type-tag {
       display: inline-flex;

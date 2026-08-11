@@ -418,11 +418,20 @@ function fallbackCopy(text, target) {
 }
 
 function showCopyFeedback(target, message) {
-    // Get the position of the copy button relative to the viewport
-    var container = $(target).closest('pre, .filename');
-    var containerRect = container[0].getBoundingClientRect();
-    var copyButtonTop = containerRect.top + (container.hasClass('filename') ? container.height() / 2 : 8);
-    var copyButtonRight = containerRect.right - 12;
+    var $target = $(target);
+    var container = $target.closest('pre, .filename');
+    var copyButtonTop;
+    var copyButtonRight;
+
+    if (container.length) {
+        var containerRect = container[0].getBoundingClientRect();
+        copyButtonTop = containerRect.top + (container.hasClass('filename') ? container.height() / 2 : 8);
+        copyButtonRight = containerRect.right - 12;
+    } else {
+        var targetRect = $target[0].getBoundingClientRect();
+        copyButtonTop = targetRect.top + targetRect.height / 2;
+        copyButtonRight = targetRect.right;
+    }
     
     // Create a temporary feedback element positioned fixed to viewport
     var feedback = $('<div>', {
