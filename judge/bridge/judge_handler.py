@@ -679,6 +679,21 @@ class JudgeHandler(ZlibPacketHandler):
             )
             return
 
+        if submission.status == "AB":
+            logger.info(
+                "Ignoring grading end for aborted submission: %s", submission.id
+            )
+            json_log.info(
+                self._make_json_log(
+                    packet,
+                    action="grading-end",
+                    info="already aborted",
+                    finish=True,
+                    result="AB",
+                )
+            )
+            return
+
         time = 0
         memory = 0
         points = 0.0

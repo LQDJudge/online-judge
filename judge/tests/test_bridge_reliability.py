@@ -200,6 +200,23 @@ class JudgeListReliabilityTests(TestCase):
         self.assertIn({"name": "terminate-submission"}, judge.sent)
         self.assertIn({"name": "update-problems"}, judge.sent)
 
+    def test_abort_active_submission_is_not_requeued_on_disconnect(self):
+        judges = JudgeList()
+        judge = FakeJudge()
+        judges.judges.add(judge)
+        judges.judge(1, "aplusb", "PY3", "src", None, 4, user_id=1)
+
+        self.assertFalse(judges.abort(1))
+        self.assertIn({"name": "terminate-submission"}, judge.sent)
+        self.assertNotIn(1, judges.submission_map)
+
+        with patch("judge.bridge.judge_list.logger.warning"):
+            sub, working_data = judges.remove(judge)
+
+        self.assertIsNone(sub)
+        self.assertEqual(working_data, {})
+        self.assertNotIn(1, judges.node_map)
+
     def test_status_counts_queue_and_active_work(self):
         judges = JudgeList()
         judge = FakeJudge()

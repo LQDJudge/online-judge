@@ -364,6 +364,9 @@ class JudgeList(object):
                     self.queue.remove(node)
                     del self.node_map[submission]
                 return False
+
+            del self.submission_map[submission]
+            self._mark_finished(submission)
         try:
             judge.abort()
         except Exception:
@@ -371,7 +374,7 @@ class JudgeList(object):
                 "Failed to abort submission %d on %s", submission, judge.name
             )
             self._fail_judge(judge, clear_work=False)
-        return True
+        return False
 
     def validate(self, validate_id, problem_id):
         """Dispatch validation to an available judge or queue it."""
