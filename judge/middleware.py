@@ -1,23 +1,25 @@
-import time
-import logging
 import random
-import json
-from datetime import datetime
+import time
 from urllib.parse import quote, urlparse
 
 from django.conf import settings
 from django.contrib.auth import logout
-from django.http import HttpResponseRedirect
-from django.urls import Resolver404, resolve, reverse
+from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils.translation import gettext as _
+from django.db import connection
+from django.http import HttpResponseRedirect
+from django.urls import Resolver404, resolve, reverse
 from django.utils import timezone
-from django.contrib.auth.models import User
+from django.utils.translation import gettext as _
 
-from judge.models import Organization, Course, Language, Profile
+from judge.cache_handler import (
+    clear_request_l0_cache,
+    start_request_cache_profile,
+    stop_request_cache_profile,
+)
+from judge.models import Course, Language, Organization, Profile, RequestMetric
 from judge.utils.views import generic_message
-from judge.cache_handler import clear_request_l0_cache
 
 USED_DOMAINS = ["www"]
 URL_NAMES_BYPASS_SUBDOMAIN = ["submission_source_file"]
@@ -211,31 +213,165 @@ class CourseMiddleware(object):
 class SlowRequestMiddleware(object):
     def __init__(self, get_response):
         self.get_response = get_response
+        self.sample_rate = self._get_rate_setting("REQUEST_METRICS_SAMPLE_RATE", 0.1)
+        self.collect_db_timing = getattr(
+            settings, "REQUEST_METRICS_COLLECT_DB_TIMING", True
+        )
+        self.collect_cache_timing = getattr(
+            settings, "REQUEST_METRICS_COLLECT_CACHE_TIMING", True
+        )
+        self.profile_sample_rate = self._get_rate_setting(
+            "REQUEST_METRICS_PROFILE_SAMPLE_RATE", 0.01
+        )
+        self.cache_profile_sample_rate = self._get_rate_setting(
+            "REQUEST_METRICS_CACHE_PROFILE_SAMPLE_RATE", 0.01
+        )
+        self.slow_threshold_seconds = getattr(
+            settings, "SLOW_REQUEST_THRESHOLD_SECONDS", 5
+        )
+        self.max_profiler_queries = getattr(
+            settings, "REQUEST_METRICS_MAX_PROFILER_QUERIES", 5
+        )
+        self.max_cache_profiler_operations = getattr(
+            settings, "REQUEST_METRICS_MAX_CACHE_PROFILER_OPERATIONS", 5
+        )
 
     def __call__(self, request):
-        logger = logging.getLogger("judge.request_time")
-        logger_slow = logging.getLogger("judge.slow_request")
-        start_time = time.time()
-        response = self.get_response(request)
-        if response.status_code == 200:
-            try:
-                response_time = time.time() - start_time
-                url_name = resolve(request.path).url_name
-                message = {
-                    "url_name": url_name,
-                    "response_time": response_time * 1000,
-                    "profile": request.user.username,
-                    "date": datetime.now().strftime("%Y/%m/%d"),
-                    "url": request.build_absolute_uri(),
-                    "method": request.method,
-                }
-                if response_time > 9:
-                    logger_slow.info(json.dumps(message))
-                if random.random() < 0.1:
-                    logger.info(json.dumps(message))
-            except Exception:
-                pass
+        start_time = time.perf_counter()
+        profiler = None
+        cache_profiler = None
+        if self.collect_cache_timing:
+            start_request_cache_profile(
+                capture_details=self._sample(self.cache_profile_sample_rate),
+                max_operations=self.max_cache_profiler_operations,
+            )
+
+        try:
+            if self.collect_db_timing:
+                profiler = RequestQueryProfiler(
+                    capture_details=self._sample(self.profile_sample_rate),
+                    max_queries=self.max_profiler_queries,
+                )
+                with connection.execute_wrapper(profiler):
+                    response = self.get_response(request)
+            else:
+                response = self.get_response(request)
+        finally:
+            if self.collect_cache_timing:
+                cache_profiler = stop_request_cache_profile()
+
+        if not self._should_record_request(request, response):
+            return response
+
+        try:
+            response_time = time.perf_counter() - start_time
+            is_slow = response_time >= self.slow_threshold_seconds
+            if is_slow or self._sample(self.sample_rate):
+                self._record_metric(
+                    request, response, response_time, profiler, cache_profiler
+                )
+        except Exception:
+            pass
         return response
+
+    def _get_rate_setting(self, setting_name, default):
+        value = getattr(settings, setting_name, None)
+        if value is None and setting_name == "REQUEST_METRICS_SAMPLE_RATE":
+            value = getattr(settings, "REQUEST_TIME_SAMPLE_RATE", None)
+        if value is None:
+            value = default
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            return default
+        return max(0, min(value, 1))
+
+    def _sample(self, rate):
+        return rate >= 1 or random.random() < rate
+
+    def _should_record_request(self, request, response):
+        if not (0 < self.sample_rate or self.slow_threshold_seconds > 0):
+            return False
+        if getattr(response, "streaming", False):
+            return False
+        if getattr(request, "path", "").startswith("/internal/"):
+            return False
+        return True
+
+    def _record_metric(
+        self, request, response, response_time, profiler=None, cache_profiler=None
+    ):
+        resolved = None
+        try:
+            resolved = resolve(request.path_info, getattr(request, "urlconf", None))
+        except Exception:
+            pass
+
+        profiler_data = {}
+        if profiler is not None:
+            profiler_data.update(profiler.as_dict())
+        if cache_profiler is not None:
+            profiler_data.update(cache_profiler.as_dict())
+
+        user = getattr(request, "user", None)
+        RequestMetric.objects.create(
+            url_name=resolved.url_name if resolved else None,
+            response_time_ms=response_time * 1000,
+            is_authenticated=user is not None and user.is_authenticated,
+            username=(
+                user.username if user is not None and user.is_authenticated else ""
+            ),
+            full_url=request.build_absolute_uri(),
+            path=request.get_full_path(),
+            method=request.method,
+            status_code=response.status_code,
+            db_query_count=profiler.query_count if profiler is not None else None,
+            db_time_ms=profiler.db_time_ms if profiler is not None else None,
+            cache_call_count=(
+                cache_profiler.call_count if cache_profiler is not None else None
+            ),
+            cache_time_ms=(
+                cache_profiler.total_time_ms if cache_profiler is not None else None
+            ),
+            profiler=profiler_data,
+        )
+
+
+class RequestQueryProfiler:
+    def __init__(self, capture_details=False, max_queries=5):
+        self.capture_details = capture_details
+        self.max_queries = max_queries
+        self.query_count = 0
+        self.db_time_ms = 0
+        self.slowest_queries = []
+
+    def __call__(self, execute, sql, params, many, context):
+        start_time = time.perf_counter()
+        try:
+            return execute(sql, params, many, context)
+        finally:
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
+            self.query_count += 1
+            self.db_time_ms += elapsed_ms
+            if self.capture_details and self.max_queries > 0:
+                self._record_query(sql, elapsed_ms, many)
+
+    def _record_query(self, sql, elapsed_ms, many):
+        self.slowest_queries.append(
+            {
+                "sql": str(sql)[:1000],
+                "time_ms": elapsed_ms,
+                "many": bool(many),
+            }
+        )
+        self.slowest_queries = sorted(
+            self.slowest_queries, key=lambda query: query["time_ms"], reverse=True
+        )[: self.max_queries]
+
+    def as_dict(self):
+        if not self.slowest_queries:
+            return {}
+        return {"slowest_queries": self.slowest_queries}
 
 
 class RequestScopedCacheMiddleware:

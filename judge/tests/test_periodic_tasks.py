@@ -157,6 +157,24 @@ class PeriodicMaintenanceTaskTest(SimpleTestCase):
                 {"lock_timeout": 222},
             ),
             (
+                maintenance.delete_old_request_metrics,
+                {
+                    "REQUEST_METRICS_RETENTION_DAYS": 9,
+                    "PERIODIC_DELETE_OLD_REQUEST_METRICS_ENABLED": True,
+                    "PERIODIC_DELETE_OLD_REQUEST_METRICS_BATCH_SIZE": 14,
+                    "PERIODIC_DELETE_OLD_REQUEST_METRICS_LOCK_TIMEOUT": 244,
+                },
+                (
+                    "periodic:delete_old_request_metrics",
+                    "delete_old_request_metrics",
+                    "--days",
+                    "9",
+                    "--batch-size",
+                    "14",
+                ),
+                {"lock_timeout": 244},
+            ),
+            (
                 maintenance.clear_expired_sessions,
                 {
                     "PERIODIC_CLEAR_EXPIRED_SESSIONS_ENABLED": True,

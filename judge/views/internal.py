@@ -1,9 +1,9 @@
 import difflib
-import json
 import logging
-import os
+import math
 import uuid
 from datetime import timedelta
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
@@ -49,6 +49,7 @@ from judge.models import (
     Problem,
     ProblemType,
     Profile,
+    RequestMetric,
     Submission,
     UsernameModerationCase,
     get_comment_context_details,
@@ -1329,61 +1330,372 @@ def problem_tag(request):
 
 class RequestTimeMixin(object):
     log_sort_fields = ()
+    default_window = "24h"
+    summary_limit = 50000
 
-    def get_log_filename(self):
-        logger = logging.getLogger(self.log_name)
-        for handler in logger.handlers:
-            log_filename = getattr(handler, "baseFilename", None)
-            if log_filename:
-                return log_filename
-        return None
+    def get_slow_threshold_ms(self):
+        return getattr(settings, "SLOW_REQUEST_THRESHOLD_SECONDS", 5) * 1000
 
-    def get_requests_data(self):
-        log_filename = self.get_log_filename()
-        if not log_filename or not os.path.exists(log_filename):
-            return []
+    def get_order(self, default):
+        order = self.request.GET.get("order", default)
+        if order not in self.log_sort_fields:
+            return default
+        return order
 
-        requests = []
+    def get_window_options(self):
+        return (
+            ("1h", _("1 hour")),
+            ("6h", _("6 hours")),
+            ("24h", _("24 hours")),
+            ("7d", _("7 days")),
+            ("all", _("Retained")),
+        )
 
-        with open(log_filename, "r") as f:
-            for line in f:
-                try:
-                    info = json.loads(line)
-                    requests.append(info)
-                except:
-                    continue
-        return requests
+    def get_window_delta(self, window):
+        return {
+            "1h": timedelta(hours=1),
+            "6h": timedelta(hours=6),
+            "24h": timedelta(hours=24),
+            "7d": timedelta(days=7),
+        }.get(window)
+
+    def get_retention_cutoff(self):
+        retention_days = getattr(settings, "REQUEST_METRICS_RETENTION_DAYS", 7)
+        if retention_days <= 0:
+            return None
+        return timezone.now() - timedelta(days=retention_days)
+
+    def get_window(self):
+        window = self.request.GET.get("window", self.default_window)
+        valid_windows = {value for value, label in self.get_window_options()}
+        if window not in valid_windows:
+            return self.default_window
+        return window
+
+    def get_summary_limit(self):
+        return getattr(settings, "REQUEST_METRICS_SUMMARY_LIMIT", self.summary_limit)
+
+    def get_metric_queryset(self):
+        if hasattr(self, "_metric_queryset"):
+            return self._metric_queryset
+
+        queryset = RequestMetric.objects.all()
+        retention_cutoff = self.get_retention_cutoff()
+        if retention_cutoff is not None:
+            queryset = queryset.filter(time__gte=retention_cutoff)
+        window_delta = self.get_window_delta(self.get_window())
+        if window_delta is not None:
+            queryset = queryset.filter(time__gte=timezone.now() - window_delta)
+
+        route_query = self.request.GET.get("route", "").strip()
+        if route_query:
+            queryset = queryset.filter(
+                Q(url_name__icontains=route_query) | Q(path__icontains=route_query)
+            )
+
+        username_query = self.request.GET.get("username", "").strip()
+        if username_query:
+            queryset = queryset.filter(username__icontains=username_query)
+
+        auth_filter = self.request.GET.get("auth", "").strip()
+        if auth_filter == "logged_in":
+            queryset = queryset.filter(is_authenticated=True)
+        elif auth_filter == "logged_out":
+            queryset = queryset.filter(is_authenticated=False)
+
+        method = self.request.GET.get("method", "").strip().upper()
+        if method:
+            queryset = queryset.filter(method=method)
+
+        status = self.request.GET.get("status", "").strip()
+        if status:
+            try:
+                queryset = queryset.filter(status_code=int(status))
+            except ValueError:
+                pass
+
+        min_time = safe_float_or_none(self.request.GET.get("min_time"))
+        if min_time is not None:
+            queryset = queryset.filter(response_time_ms__gte=min_time)
+
+        self._metric_queryset = self.apply_page_filter(queryset)
+        return self._metric_queryset
+
+    def apply_page_filter(self, queryset):
+        return queryset
+
+    def get_filter_context(self):
+        return {
+            "window": self.get_window(),
+            "window_options": self.get_window_options(),
+            "route_query": self.request.GET.get("route", "").strip(),
+            "username_query": self.request.GET.get("username", "").strip(),
+            "auth_filter": self.request.GET.get("auth", "").strip(),
+            "method_filter": self.request.GET.get("method", "").strip().upper(),
+            "status_filter": self.request.GET.get("status", "").strip(),
+            "min_time_filter": self.request.GET.get("min_time", "").strip(),
+        }
+
+    def query_with(self, **overrides):
+        params = self.request.GET.copy()
+        for key, value in overrides.items():
+            if value is None:
+                params.pop(key, None)
+            else:
+                params[key] = value
+        query_string = params.urlencode()
+        return "?%s" % query_string if query_string else ""
+
+    def get_url_name_param(self, url_name):
+        return "None" if url_name is None else url_name
+
+    def percentile(self, values, percentile):
+        if not values:
+            return None
+        sorted_values = sorted(values)
+        index = math.ceil(len(sorted_values) * percentile) - 1
+        return sorted_values[max(index, 0)]
+
+    def build_overview(self, metrics, route_count):
+        response_times = [metric["response_time_ms"] for metric in metrics]
+        db_times = [
+            metric["db_time_ms"]
+            for metric in metrics
+            if metric["db_time_ms"] is not None
+        ]
+        cache_times = [
+            metric["cache_time_ms"]
+            for metric in metrics
+            if metric["cache_time_ms"] is not None
+        ]
+        slow_count = sum(
+            1
+            for metric in metrics
+            if metric["response_time_ms"] >= self.get_slow_threshold_ms()
+        )
+        profiled_count = sum(1 for metric in metrics if metric["profiler"])
+        total_count = len(metrics)
+        return {
+            "sample_count": total_count,
+            "route_count": route_count,
+            "avg_time": sum(response_times) / total_count if total_count else None,
+            "p95_time": self.percentile(response_times, 0.95),
+            "max_time": max(response_times) if response_times else None,
+            "slow_count": slow_count,
+            "slow_rate": (slow_count / total_count * 100) if total_count else None,
+            "avg_db_time": sum(db_times) / len(db_times) if db_times else None,
+            "avg_cache_time": (
+                sum(cache_times) / len(cache_times) if cache_times else None
+            ),
+            "profiled_count": profiled_count,
+            "summary_limit": self.get_summary_limit(),
+        }
+
+    def build_route_summary(self, metrics):
+        overview = self.build_overview(metrics, route_count=1 if metrics else 0)
+        query_counts = [
+            metric["db_query_count"]
+            for metric in metrics
+            if metric["db_query_count"] is not None
+        ]
+        cache_call_counts = [
+            metric["cache_call_count"]
+            for metric in metrics
+            if metric["cache_call_count"] is not None
+        ]
+        response_times = [metric["response_time_ms"] for metric in metrics]
+        db_times = [
+            metric["db_time_ms"]
+            for metric in metrics
+            if metric["db_time_ms"] is not None
+        ]
+        cache_times = [
+            metric["cache_time_ms"]
+            for metric in metrics
+            if metric["cache_time_ms"] is not None
+        ]
+        status_counts = {}
+        method_counts = {}
+        authenticated_count = 0
+        for metric in metrics:
+            status_counts[metric["status_code"]] = (
+                status_counts.get(metric["status_code"], 0) + 1
+            )
+            method_counts[metric["method"]] = method_counts.get(metric["method"], 0) + 1
+            if metric["is_authenticated"]:
+                authenticated_count += 1
+
+        overview.update(
+            {
+                "min_time": min(response_times) if response_times else None,
+                "max_db_time": max(db_times) if db_times else None,
+                "max_cache_time": max(cache_times) if cache_times else None,
+                "avg_query_count": (
+                    sum(query_counts) / len(query_counts) if query_counts else None
+                ),
+                "avg_cache_call_count": (
+                    sum(cache_call_counts) / len(cache_call_counts)
+                    if cache_call_counts
+                    else None
+                ),
+                "db_ratio": (
+                    overview["avg_db_time"] / overview["avg_time"] * 100
+                    if overview["avg_db_time"] is not None and overview["avg_time"]
+                    else None
+                ),
+                "cache_ratio": (
+                    overview["avg_cache_time"] / overview["avg_time"] * 100
+                    if overview["avg_cache_time"] is not None and overview["avg_time"]
+                    else None
+                ),
+                "status_counts": sorted(status_counts.items()),
+                "method_counts": sorted(method_counts.items()),
+                "authenticated_count": authenticated_count,
+                "anonymous_count": len(metrics) - authenticated_count,
+            }
+        )
+        return overview
 
 
 class InternalRequestTime(InternalView, ListView, RequestTimeMixin):
     title = _("Request times")
     template_name = "internal/request_time.html"
     context_object_name = "pages"
-    log_name = "judge.request_time"
+    list_url_name = "internal_request_time"
     detail_url_name = "internal_request_time_detail"
     page_type = "request_time"
-    log_sort_fields = ("time", "count")
+    log_sort_fields = (
+        "impact_ms",
+        "avg_time",
+        "p95_time",
+        "max_time",
+        "slow_count",
+        "slow_rate",
+        "count",
+        "avg_db_time",
+        "avg_query_count",
+        "db_ratio",
+        "avg_cache_time",
+        "avg_cache_call_count",
+        "cache_ratio",
+    )
 
     def get_queryset(self):
-        requests = self.get_requests_data()
+        metrics = list(
+            self.get_metric_queryset()
+            .order_by("-time")
+            .values(
+                "url_name",
+                "path",
+                "response_time_ms",
+                "db_query_count",
+                "db_time_ms",
+                "cache_call_count",
+                "cache_time_ms",
+                "time",
+                "profiler",
+            )[: self.get_summary_limit()]
+        )
         table = {}
-        for r in requests:
-            url_name = r["url_name"]
+        for metric in metrics:
+            url_name = metric["url_name"]
             if url_name not in table:
                 table[url_name] = {
-                    "time": 0,
+                    "total_time": 0,
+                    "times": [],
+                    "db_times": [],
+                    "query_counts": [],
+                    "cache_times": [],
+                    "cache_call_counts": [],
                     "count": 0,
+                    "slow_count": 0,
+                    "max_time": 0,
+                    "profiled_count": 0,
+                    "latest": None,
+                    "sample_path": metric["path"],
                     "url_name": url_name,
+                    "url_name_display": url_name or _("Unresolved"),
+                    "detail_query": self.query_with(
+                        url_name=self.get_url_name_param(url_name), order=None
+                    ),
+                    "latest_query": self.query_with(
+                        url_name=self.get_url_name_param(url_name), order="time"
+                    ),
+                    "db_query": self.query_with(
+                        url_name=self.get_url_name_param(url_name), order="db_time_ms"
+                    ),
+                    "cache_query": self.query_with(
+                        url_name=self.get_url_name_param(url_name),
+                        order="cache_time_ms",
+                    ),
                 }
-            old_sum = table[url_name]["time"] * table[url_name]["count"]
+            response_time = metric["response_time_ms"]
             table[url_name]["count"] += 1
-            table[url_name]["time"] = (old_sum + float(r["response_time"])) / table[
-                url_name
-            ]["count"]
-        order = self.request.GET.get("order", "time")
-        if order not in self.log_sort_fields:
-            order = "time"
-        return sorted(table.values(), key=lambda x: x[order], reverse=True)
+            table[url_name]["total_time"] += response_time
+            table[url_name]["times"].append(response_time)
+            table[url_name]["max_time"] = max(
+                table[url_name]["max_time"], response_time
+            )
+            if response_time >= self.get_slow_threshold_ms():
+                table[url_name]["slow_count"] += 1
+            if metric["db_time_ms"] is not None:
+                table[url_name]["db_times"].append(metric["db_time_ms"])
+            if metric["db_query_count"] is not None:
+                table[url_name]["query_counts"].append(metric["db_query_count"])
+            if metric["cache_time_ms"] is not None:
+                table[url_name]["cache_times"].append(metric["cache_time_ms"])
+            if metric["cache_call_count"] is not None:
+                table[url_name]["cache_call_counts"].append(metric["cache_call_count"])
+            if metric["profiler"]:
+                table[url_name]["profiled_count"] += 1
+            if (
+                table[url_name]["latest"] is None
+                or metric["time"] > table[url_name]["latest"]
+            ):
+                table[url_name]["latest"] = metric["time"]
+
+        pages = []
+        for page in table.values():
+            times = page.pop("times")
+            db_times = page.pop("db_times")
+            query_counts = page.pop("query_counts")
+            cache_times = page.pop("cache_times")
+            cache_call_counts = page.pop("cache_call_counts")
+            page["avg_time"] = page["total_time"] / page["count"]
+            page["p95_time"] = self.percentile(times, 0.95)
+            page["impact_ms"] = page["total_time"]
+            page["slow_rate"] = page["slow_count"] / page["count"] * 100
+            page["avg_db_time"] = sum(db_times) / len(db_times) if db_times else None
+            page["avg_query_count"] = (
+                sum(query_counts) / len(query_counts) if query_counts else None
+            )
+            page["avg_cache_time"] = (
+                sum(cache_times) / len(cache_times) if cache_times else None
+            )
+            page["avg_cache_call_count"] = (
+                sum(cache_call_counts) / len(cache_call_counts)
+                if cache_call_counts
+                else None
+            )
+            page["db_ratio"] = (
+                page["avg_db_time"] / page["avg_time"] * 100
+                if page["avg_db_time"] is not None and page["avg_time"]
+                else None
+            )
+            page["cache_ratio"] = (
+                page["avg_cache_time"] / page["avg_time"] * 100
+                if page["avg_cache_time"] is not None and page["avg_time"]
+                else None
+            )
+            pages.append(page)
+
+        self.overview = self.build_overview(metrics, len(pages))
+        order = self.get_order("impact_ms")
+        return sorted(
+            pages,
+            key=lambda x: x[order] if x[order] is not None else -1,
+            reverse=True,
+        )
 
     def get_context_data(self, **kwargs):
         context = super(InternalRequestTime, self).get_context_data(**kwargs)
@@ -1391,13 +1703,35 @@ class InternalRequestTime(InternalView, ListView, RequestTimeMixin):
         context["title"] = self.title
         context["current_path"] = self.request.path
         context["detail_path"] = reverse(self.detail_url_name)
+        context["slow_threshold_ms"] = self.get_slow_threshold_ms()
+        context["overview"] = getattr(
+            self, "overview", self.build_overview([], route_count=0)
+        )
+        context["filters"] = self.get_filter_context()
+        context["order_query"] = lambda order: self.query_with(order=order)
+        context["clear_filters_url"] = self.request.path
         return context
 
 
 class InternalRequestTimeDetail(InternalRequestTime):
     template_name = "internal/request_time_detail.html"
     context_object_name = "requests"
-    log_sort_fields = ("response_time",)
+    log_sort_fields = (
+        "time",
+        "response_time_ms",
+        "status_code",
+        "db_time_ms",
+        "db_query_count",
+        "cache_time_ms",
+        "cache_call_count",
+    )
+
+    def get_profile_url(self, metric_id):
+        query_string = urlencode({"return": self.request.get_full_path()})
+        return "%s?%s" % (
+            reverse("internal_request_metric_profile", kwargs={"metric_id": metric_id}),
+            query_string,
+        )
 
     def get_queryset(self):
         url_name = self.request.GET.get("url_name", None)
@@ -1406,27 +1740,83 @@ class InternalRequestTimeDetail(InternalRequestTime):
         if url_name == "None":
             url_name = None
         self.title = url_name
-        requests = self.get_requests_data()
-        filtered_requests = [r for r in requests if r["url_name"] == url_name]
-        order = self.request.GET.get("order", "response_time")
-        if order not in self.log_sort_fields:
-            order = "response_time"
-        return sorted(filtered_requests, key=lambda x: x[order], reverse=True)[:200]
+        queryset = self.get_metric_queryset().filter(url_name=url_name)
+        order = self.get_order("response_time_ms")
+        return queryset.order_by("-%s" % order)[:200]
 
     def get_context_data(self, **kwargs):
         context = super(InternalRequestTimeDetail, self).get_context_data(**kwargs)
+        url_name = self.request.GET.get("url_name", None)
+        if url_name == "None":
+            url_name = None
+        route_metrics = list(
+            self.get_metric_queryset()
+            .filter(url_name=url_name)
+            .order_by("-time")
+            .values(
+                "response_time_ms",
+                "db_query_count",
+                "db_time_ms",
+                "cache_call_count",
+                "cache_time_ms",
+                "status_code",
+                "method",
+                "is_authenticated",
+                "profiler",
+            )[: self.get_summary_limit()]
+        )
         context["url_name"] = self.request.GET.get("url_name", None)
+        context["url_name_display"] = self.title or _("Unresolved")
+        context["order_query"] = lambda order: self.query_with(order=order)
+        context["back_path"] = reverse(self.list_url_name)
+        context["back_query"] = self.query_with(url_name=None, order=None)
+        context["route_summary"] = self.build_route_summary(route_metrics)
+        context["profile_url"] = self.get_profile_url
+        return context
+
+
+class InternalRequestMetricProfile(InternalView, TemplateView):
+    title = _("Request profile")
+    template_name = "internal/request_metric_profile.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(InternalRequestMetricProfile, self).get_context_data(**kwargs)
+        metric = get_object_or_404(RequestMetric, id=kwargs["metric_id"])
+        back_url = self.request.GET.get("return") or reverse("internal_request_time")
+        if not (
+            back_url.startswith("/internal/request_time")
+            or back_url.startswith("/internal/internal_slow_request")
+        ):
+            back_url = reverse("internal_request_time")
+        cache_profile = metric.profiler.get("cache", {}) if metric.profiler else {}
+        context["title"] = self.title
+        context["page_type"] = "request_time"
+        context["metric"] = metric
+        context["back_url"] = back_url
+        context["cache_profile"] = cache_profile
+        context["slowest_queries"] = metric.profiler.get("slowest_queries", [])
+        context["cache_operations"] = sorted(
+            cache_profile.get("by_operation", {}).items()
+        )
         return context
 
 
 class InternalSlowRequest(InternalRequestTime):
-    log_name = "judge.slow_request"
+    title = _("Slow requests")
+    list_url_name = "internal_slow_request"
     detail_url_name = "internal_slow_request_detail"
     page_type = "slow_request"
 
+    def apply_page_filter(self, queryset):
+        return queryset.filter(response_time_ms__gte=self.get_slow_threshold_ms())
+
 
 class InternalSlowRequestDetail(InternalRequestTimeDetail):
-    log_name = "judge.slow_request"
+    title = _("Slow requests")
+    list_url_name = "internal_slow_request"
+
+    def apply_page_filter(self, queryset):
+        return queryset.filter(response_time_ms__gte=self.get_slow_threshold_ms())
 
 
 class InternalChatModeration(InternalView, ListView):

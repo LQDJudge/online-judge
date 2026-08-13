@@ -315,6 +315,17 @@ MIDDLEWARE = (
     "judge.middleware.ContentSecurityPolicyMiddleware",
 )
 
+REQUEST_METRICS_SAMPLE_RATE = 0.1
+REQUEST_METRICS_COLLECT_DB_TIMING = True
+REQUEST_METRICS_COLLECT_CACHE_TIMING = True
+REQUEST_METRICS_PROFILE_SAMPLE_RATE = 0.01
+REQUEST_METRICS_CACHE_PROFILE_SAMPLE_RATE = 0.01
+REQUEST_METRICS_RETENTION_DAYS = 7
+REQUEST_METRICS_SUMMARY_LIMIT = 50000
+REQUEST_METRICS_MAX_PROFILER_QUERIES = 5
+REQUEST_METRICS_MAX_CACHE_PROFILER_OPERATIONS = 5
+SLOW_REQUEST_THRESHOLD_SECONDS = 5
+
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
 # Hosts whose pages are allowed to be embedded via <iframe> in user-authored
@@ -628,6 +639,9 @@ PERIODIC_CLEANUP_INACTIVE_LOCK_TIMEOUT = 3600
 PERIODIC_DELETE_OLD_NOTIFICATIONS_ENABLED = True
 PERIODIC_DELETE_OLD_NOTIFICATIONS_BATCH_SIZE = 1000
 PERIODIC_DELETE_OLD_NOTIFICATIONS_LOCK_TIMEOUT = 3600
+PERIODIC_DELETE_OLD_REQUEST_METRICS_ENABLED = True
+PERIODIC_DELETE_OLD_REQUEST_METRICS_BATCH_SIZE = 1000
+PERIODIC_DELETE_OLD_REQUEST_METRICS_LOCK_TIMEOUT = 3600
 PERIODIC_CLEAR_EXPIRED_SESSIONS_ENABLED = True
 PERIODIC_CLEAR_EXPIRED_SESSIONS_BATCH_SIZE = 1000
 PERIODIC_CLEAR_EXPIRED_SESSIONS_SLEEP = 0.5
@@ -678,6 +692,10 @@ CELERY_BEAT_SCHEDULE = {
     "delete-old-notifications": {
         "task": "judge.tasks.maintenance.delete_old_notifications",
         "schedule": crontab(minute=10, hour=4),
+    },
+    "delete-old-request-metrics": {
+        "task": "judge.tasks.maintenance.delete_old_request_metrics",
+        "schedule": crontab(minute=13, hour=4),
     },
     "sync-organization-private-flags": {
         "task": "judge.tasks.maintenance.sync_organization_private_flags",

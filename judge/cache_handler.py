@@ -1,9 +1,11 @@
-from django.core.cache.backends.base import BaseCache
-from django.core.cache import caches
-from django.conf import settings
+from functools import wraps
+import sys
 import threading
 import time
-import sys
+
+from django.conf import settings
+from django.core.cache import caches
+from django.core.cache.backends.base import BaseCache
 
 DEFAULT_L0_TIMEOUT = 60
 
@@ -14,6 +16,108 @@ def _primary_cache():
 
 # Thread-local storage for request-scoped L0 cache
 _thread_local = threading.local()
+
+
+class RequestCacheProfiler:
+    def __init__(self, capture_details=False, max_operations=5):
+        self.capture_details = capture_details
+        self.max_operations = max_operations
+        self.call_count = 0
+        self.total_time_ms = 0.0
+        self.errors = 0
+        self.by_operation = {}
+        self.slowest_operations = []
+
+    def record(self, operation, duration_ms, error=False):
+        self.call_count += 1
+        self.total_time_ms += duration_ms
+        if error:
+            self.errors += 1
+
+        operation_stats = self.by_operation.setdefault(
+            operation,
+            {
+                "count": 0,
+                "time_ms": 0.0,
+                "errors": 0,
+            },
+        )
+        operation_stats["count"] += 1
+        operation_stats["time_ms"] += duration_ms
+        if error:
+            operation_stats["errors"] += 1
+
+        if self.capture_details and self.max_operations > 0:
+            self.slowest_operations.append(
+                {
+                    "operation": operation,
+                    "time_ms": duration_ms,
+                    "error": error,
+                }
+            )
+            self.slowest_operations = sorted(
+                self.slowest_operations,
+                key=lambda cache_call: cache_call["time_ms"],
+                reverse=True,
+            )[: self.max_operations]
+
+    def as_dict(self):
+        if self.call_count == 0:
+            return {}
+
+        data = {
+            "calls": self.call_count,
+            "time_ms": self.total_time_ms,
+            "errors": self.errors,
+            "by_operation": self.by_operation,
+        }
+        if self.slowest_operations:
+            data["slowest_operations"] = self.slowest_operations
+        return {"cache": data}
+
+
+def start_request_cache_profile(capture_details=False, max_operations=5):
+    profiler = RequestCacheProfiler(
+        capture_details=capture_details, max_operations=max_operations
+    )
+    _thread_local.request_cache_profile = profiler
+    return profiler
+
+
+def stop_request_cache_profile():
+    profiler = getattr(_thread_local, "request_cache_profile", None)
+    if hasattr(_thread_local, "request_cache_profile"):
+        del _thread_local.request_cache_profile
+    return profiler
+
+
+def _record_request_cache_operation(operation, duration_ms, error=False):
+    profiler = getattr(_thread_local, "request_cache_profile", None)
+    if profiler is not None:
+        profiler.record(operation, duration_ms, error=error)
+
+
+def profile_cache_operation(operation):
+    def decorator(method):
+        @wraps(method)
+        def wrapper(self, *args, **kwargs):
+            start_time = time.perf_counter()
+            error = False
+            try:
+                return method(self, *args, **kwargs)
+            except Exception:
+                error = True
+                raise
+            finally:
+                _record_request_cache_operation(
+                    operation,
+                    (time.perf_counter() - start_time) * 1000,
+                    error=error,
+                )
+
+        return wrapper
+
+    return decorator
 
 
 class L0CacheStats:
@@ -421,6 +525,7 @@ class CacheHandler(BaseCache):
     def __init__(self, location, params):
         super().__init__(params)
 
+    @profile_cache_operation("get")
     def get(self, key, default=None, **kwargs):
         """
         Retrieve a value from the cache with request-scoped L0 caching.
@@ -456,6 +561,7 @@ class CacheHandler(BaseCache):
                 return result
             return default
 
+    @profile_cache_operation("set")
     def set(self, key, value, timeout=None, **kwargs):
         """
         Set a value in the cache and in the request-scoped L0 cache.
@@ -478,6 +584,7 @@ class CacheHandler(BaseCache):
             # Original behavior when stats are disabled
             _primary_cache().set(key, value, timeout, **kwargs)
 
+    @profile_cache_operation("delete")
     def delete(self, key, **kwargs):
         """
         Delete a value from both request-scoped L0 and primary cache.
@@ -498,6 +605,7 @@ class CacheHandler(BaseCache):
             # Original behavior when stats are disabled
             _primary_cache().delete(key, **kwargs)
 
+    @profile_cache_operation("add")
     def add(self, key, value, timeout=None, **kwargs):
         """
         Add a value to the cache only if the key does not already exist.
@@ -522,6 +630,7 @@ class CacheHandler(BaseCache):
             # Original behavior when stats are disabled
             return _primary_cache().add(key, value, timeout, **kwargs)
 
+    @profile_cache_operation("get_many")
     def get_many(self, keys, **kwargs):
         """
         Retrieve multiple values from the cache with request-scoped L0 caching.
@@ -580,6 +689,7 @@ class CacheHandler(BaseCache):
             results.update(cache_results)
             return results
 
+    @profile_cache_operation("set_many")
     def set_many(self, data, timeout=None, **kwargs):
         """
         Set multiple values in the cache and request-scoped L0 cache.
@@ -603,6 +713,7 @@ class CacheHandler(BaseCache):
         else:
             _primary_cache().set_many(data, timeout, **kwargs)
 
+    @profile_cache_operation("delete_many")
     def delete_many(self, keys, **kwargs):
         """
         Delete multiple values from both request-scoped L0 and primary cache.
@@ -623,6 +734,7 @@ class CacheHandler(BaseCache):
         else:
             _primary_cache().delete_many(keys, **kwargs)
 
+    @profile_cache_operation("clear")
     def clear(self, **kwargs):
         """
         Clear both request-scoped L0 and primary caches.
@@ -641,6 +753,7 @@ class CacheHandler(BaseCache):
         else:
             _primary_cache().clear(**kwargs)
 
+    @profile_cache_operation("incr")
     def incr(self, key, delta=1, **kwargs):
         """
         Increment a value in the cache and update request-scoped L0 cache.
@@ -666,6 +779,7 @@ class CacheHandler(BaseCache):
             l0_cache.set(key, result)
             return result
 
+    @profile_cache_operation("decr")
     def decr(self, key, delta=1, **kwargs):
         """
         Decrement a value in the cache and update request-scoped L0 cache.

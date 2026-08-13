@@ -5,20 +5,106 @@
 {% endblock %}
 
 {% block middle_content %}
+  <h2>{{ title }}</h2>
+
+  <form method="get">
+    <label>
+      {{ _("Window") }}
+      <select name="window">
+        {% for value, label in filters.window_options %}
+          <option value="{{ value }}"{% if filters.window == value %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      {{ _("Route") }}
+      <input type="text" name="route" value="{{ filters.route_query }}" placeholder="{{ _('URL name or path') }}">
+    </label>
+    <label>
+      {{ _("User") }}
+      <input type="text" name="username" value="{{ filters.username_query }}">
+    </label>
+    <label>
+      {{ _("Auth") }}
+      <select name="auth">
+        <option value=""{% if not filters.auth_filter %} selected{% endif %}>{{ _("All") }}</option>
+        <option value="logged_in"{% if filters.auth_filter == "logged_in" %} selected{% endif %}>{{ _("Logged in") }}</option>
+        <option value="logged_out"{% if filters.auth_filter == "logged_out" %} selected{% endif %}>{{ _("Logged out") }}</option>
+      </select>
+    </label>
+    <label>
+      {{ _("Method") }}
+      <input type="text" name="method" value="{{ filters.method_filter }}" size="6">
+    </label>
+    <label>
+      {{ _("Status") }}
+      <input type="number" name="status" value="{{ filters.status_filter }}" min="100" max="599">
+    </label>
+    <label>
+      {{ _("Min ms") }}
+      <input type="number" name="min_time" value="{{ filters.min_time_filter }}" min="0" step="1">
+    </label>
+    <button type="submit" class="action-btn">{{ _("Apply") }}</button>
+    <a href="{{ clear_filters_url }}" class="action-btn">{{ _("Reset") }}</a>
+  </form>
+
   <table class="table">
     <thead>
       <tr>
-        <th>URL Name</th>
-        <th><a href="{{current_path}}?order=time">Time (ms)</a></th>
-        <th><a href="{{current_path}}?order=count">Count</a></th>
+        <th>{{ _("Samples") }}</th>
+        <th>{{ _("Routes") }}</th>
+        <th>{{ _("Avg (ms)") }}</th>
+        <th>{{ _("Slow") }}</th>
+        <th>{{ _("Slow %%") }}</th>
+        <th>{{ _("Profiled") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ overview.sample_count }}</td>
+        <td>{{ overview.route_count }}</td>
+        <td>{{ overview.avg_time|floatformat(2) if overview.avg_time is not none else "-" }}</td>
+        <td>{{ overview.slow_count }}</td>
+        <td>{{ overview.slow_rate|floatformat(1) if overview.slow_rate is not none else "-" }}</td>
+        <td>{{ overview.profiled_count }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ _("URL Name") }}</th>
+        <th>{{ _("Example path") }}</th>
+        <th><a href="{{ order_query('count') }}">{{ _("Count") }}</a></th>
+        <th><a href="{{ order_query('impact_ms') }}">{{ _("Impact (ms)") }}</a></th>
+        <th><a href="{{ order_query('avg_time') }}">{{ _("Avg (ms)") }}</a></th>
+        <th>{{ _("Latest") }}</th>
+        <th>{{ _("Links") }}</th>
       </tr>
     </thead>
     <tbody>
       {% for page in pages %}
         <tr>
-          <td><a href="{{detail_path}}?url_name={{page['url_name']}}">{{page['url_name']}}</a></td>
-          <td>{{page['time'] | floatformat(2)}}</td>
-          <td>{{page['count']}}</td>
+          <td><a href="{{ detail_path }}{{ page['detail_query'] }}">{{ page['url_name_display'] }}</a></td>
+          <td><code>{{ page['sample_path'] }}</code></td>
+          <td>{{ page['count'] }}</td>
+          <td>{{ page['impact_ms'] | floatformat(2) }}</td>
+          <td>{{ page['avg_time'] | floatformat(2) }}</td>
+          <td>{{ page['latest']|date("Y-m-d H:i:s") if page['latest'] else "-" }}</td>
+          <td>
+            <a href="{{ detail_path }}{{ page['latest_query'] }}">{{ _("Latest") }}</a>
+            |
+            <a href="{{ detail_path }}{{ page['detail_query'] }}">{{ _("Slowest") }}</a>
+            |
+            <a href="{{ detail_path }}{{ page['db_query'] }}">{{ _("DB") }}</a>
+            |
+            <a href="{{ detail_path }}{{ page['cache_query'] }}">{{ _("Cache") }}</a>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="7">{{ _("No request metrics match these filters.") }}</td>
         </tr>
       {% endfor %}
     </tbody>

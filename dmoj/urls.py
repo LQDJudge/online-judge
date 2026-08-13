@@ -1944,6 +1944,11 @@ urlpatterns = [
                     name="internal_request_time_detail",
                 ),
                 re_path(
+                    r"^request_time_profile/(?P<metric_id>\d+)$",
+                    internal.InternalRequestMetricProfile.as_view(),
+                    name="internal_request_metric_profile",
+                ),
+                re_path(
                     r"^internal_slow_request$",
                     internal.InternalSlowRequest.as_view(),
                     name="internal_slow_request",

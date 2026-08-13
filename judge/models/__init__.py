@@ -111,6 +111,7 @@ from judge.models.problem_review import (
     ProblemReviewCheckResult,
     ProblemReviewSubmissionTag,
 )
+from judge.models.request_metric import RequestMetric
 from judge.models.contest_review import (
     ContestReviewRun,
     ContestReviewCheckResult,

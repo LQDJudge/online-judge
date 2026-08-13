@@ -1,3 +1,4 @@
+from datetime import timedelta
 from io import StringIO
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -9,10 +10,11 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from judge.admin.profile import UserAdmin
 import judge.models.profile as profile_models
-from judge.models import Language, Profile, UsernameModerationCase
+from judge.models import Language, Profile, RequestMetric, UsernameModerationCase
 from judge.models.profile import get_profile_public_identity
 from judge.tasks.username_moderation import (
     moderate_username_task,
@@ -556,21 +558,148 @@ class InternalRequestTimeTest(TestCase):
         )
         Profile.objects.create(user=self.admin, language=self.language)
 
-    @patch("judge.views.internal.logging.getLogger")
-    def test_request_time_handles_missing_log_handler(self, get_logger):
-        get_logger.return_value.handlers = []
+    def create_metric(self, **kwargs):
+        defaults = {
+            "time": timezone.now(),
+            "url_name": "problem_detail",
+            "path": "/problem/a",
+            "full_url": "http://testserver/problem/a",
+            "method": "GET",
+            "status_code": 200,
+            "is_authenticated": False,
+            "username": "",
+            "response_time_ms": 100,
+            "db_query_count": 2,
+            "db_time_ms": 20,
+            "cache_call_count": 3,
+            "cache_time_ms": 4,
+            "profiler": {},
+        }
+        defaults.update(kwargs)
+        return RequestMetric.objects.create(**defaults)
+
+    def test_request_time_handles_empty_metrics(self):
         self.client.login(username="request_time_admin", password="pw")
 
         response = self.client.get(reverse("internal_request_time"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "URL Name")
+        self.assertContains(response, "Links")
 
-    @patch("judge.views.internal.logging.getLogger")
-    def test_request_time_ignores_invalid_sort_key_without_log_handler(
-        self, get_logger
-    ):
-        get_logger.return_value.handlers = []
+    @override_settings(SLOW_REQUEST_THRESHOLD_SECONDS=1)
+    def test_request_time_aggregates_recent_metric_data(self):
+        now = timezone.now()
+        self.create_metric(response_time_ms=100, time=now - timedelta(minutes=3))
+        self.create_metric(response_time_ms=200, time=now - timedelta(minutes=2))
+        self.create_metric(
+            response_time_ms=1000,
+            time=now - timedelta(minutes=1),
+            profiler={
+                "slowest_queries": [{"sql": "SELECT 1", "time_ms": 15, "many": False}]
+            },
+        )
+        self.create_metric(
+            url_name="contest_view",
+            path="/contest/x",
+            full_url="http://testserver/contest/x",
+            response_time_ms=300,
+            time=now,
+        )
+        self.client.login(username="request_time_admin", password="pw")
+
+        response = self.client.get(reverse("internal_request_time"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Slowest")
+        pages = {page["url_name"]: page for page in response.context["pages"]}
+        self.assertAlmostEqual(pages["problem_detail"]["avg_time"], 433.333, places=2)
+        self.assertEqual(pages["problem_detail"]["p95_time"], 1000)
+        self.assertEqual(pages["problem_detail"]["max_time"], 1000)
+        self.assertEqual(pages["problem_detail"]["slow_count"], 1)
+        self.assertEqual(pages["problem_detail"]["profiled_count"], 1)
+        self.assertAlmostEqual(pages["problem_detail"]["avg_cache_time"], 4, places=2)
+        self.assertAlmostEqual(
+            pages["problem_detail"]["avg_cache_call_count"], 3, places=2
+        )
+        detail_response = self.client.get(
+            reverse("internal_request_time_detail") + "?url_name=problem_detail"
+        )
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(detail_response, "P95 (ms)")
+        self.assertEqual(detail_response.context["route_summary"]["max_time"], 1000)
+
+    def test_request_time_detail_sorts_by_status_code(self):
+        self.create_metric(response_time_ms=100, status_code=200)
+        self.create_metric(response_time_ms=150, status_code=302, method="POST")
+        self.client.login(username="request_time_admin", password="pw")
+
+        response = self.client.get(
+            reverse("internal_request_time_detail")
+            + "?url_name=problem_detail&order=status_code"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["requests"][0].status_code, 302)
+        self.assertContains(response, "Route stats")
+
+    def test_request_metric_profile_shows_sampled_profiler_data(self):
+        metric = self.create_metric(
+            profiler={
+                "slowest_queries": [{"sql": "SELECT 1", "time_ms": 15, "many": False}],
+                "cache": {
+                    "calls": 2,
+                    "time_ms": 3,
+                    "errors": 0,
+                    "by_operation": {"get": {"count": 2, "time_ms": 3, "errors": 0}},
+                    "slowest_operations": [
+                        {"operation": "get", "time_ms": 2, "error": False}
+                    ],
+                },
+            }
+        )
+        self.client.login(username="request_time_admin", password="pw")
+
+        response = self.client.get(
+            reverse("internal_request_metric_profile", kwargs={"metric_id": metric.id})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "SELECT 1")
+        self.assertContains(response, "Cache operations")
+
+    def test_request_time_filters_logged_out_requests(self):
+        self.create_metric(
+            response_time_ms=100, is_authenticated=True, username="alice"
+        )
+        self.create_metric(
+            url_name="contest_view",
+            path="/contest/x",
+            full_url="http://testserver/contest/x",
+            response_time_ms=300,
+            username="",
+        )
+        self.client.login(username="request_time_admin", password="pw")
+
+        response = self.client.get(
+            reverse("internal_request_time") + "?auth=logged_out"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        pages = {page["url_name"]: page for page in response.context["pages"]}
+        self.assertNotIn("problem_detail", pages)
+        self.assertIn("contest_view", pages)
+
+    def test_delete_old_request_metrics_removes_expired_rows(self):
+        old_metric = self.create_metric(time=timezone.now() - timedelta(days=10))
+        fresh_metric = self.create_metric(time=timezone.now() - timedelta(days=1))
+
+        call_command("delete_old_request_metrics", "--days", "7", stdout=StringIO())
+
+        self.assertFalse(RequestMetric.objects.filter(id=old_metric.id).exists())
+        self.assertTrue(RequestMetric.objects.filter(id=fresh_metric.id).exists())
+
+    def test_request_time_ignores_invalid_sort_key(self):
         self.client.login(username="request_time_admin", password="pw")
 
         response = self.client.get(reverse("internal_request_time") + "?order=bad")

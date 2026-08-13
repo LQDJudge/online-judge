@@ -1,0 +1,140 @@
+{% extends "two-column-content.html" %}
+
+{% block left_sidebar %}
+  {% include "internal/left-sidebar.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  <h2>{{ title }}</h2>
+  <p>
+    <a href="{{ back_url }}" class="action-btn">{{ _("Back") }}</a>
+  </p>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ _("Time") }}</th>
+        <th>{{ _("Profile") }}</th>
+        <th>{{ _("Method") }}</th>
+        <th>{{ _("Status") }}</th>
+        <th>{{ _("Time (ms)") }}</th>
+        <th>{{ _("DB (ms)") }}</th>
+        <th>{{ _("Queries") }}</th>
+        <th>{{ _("Cache (ms)") }}</th>
+        <th>{{ _("Cache calls") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ metric.time|date("Y-m-d H:i:s") }}</td>
+        <td>
+          {% if metric.username %}
+            <a href="/user/{{ metric.username|urlquote }}">{{ metric.username }}</a>
+          {% else %}
+            {{ _("None") }}
+          {% endif %}
+        </td>
+        <td>{{ metric.method }}</td>
+        <td>{{ metric.status_code }}</td>
+        <td>{{ metric.response_time_ms|floatformat(2) }}</td>
+        <td>{{ metric.db_time_ms|floatformat(2) if metric.db_time_ms is not none else "-" }}</td>
+        <td>{{ metric.db_query_count if metric.db_query_count is not none else "-" }}</td>
+        <td>{{ metric.cache_time_ms|floatformat(2) if metric.cache_time_ms is not none else "-" }}</td>
+        <td>{{ metric.cache_call_count if metric.cache_call_count is not none else "-" }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><code>{{ metric.full_url }}</code></p>
+
+  <h3>{{ _("Slowest queries") }}</h3>
+  {% if slowest_queries %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{{ _("Time (ms)") }}</th>
+          <th>{{ _("Many") }}</th>
+          <th>{{ _("SQL") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for query in slowest_queries %}
+          <tr>
+            <td>{{ query.time_ms|floatformat(2) }}</td>
+            <td>{{ _("Yes") if query.many else _("No") }}</td>
+            <td><pre><code>{{ query.sql }}</code></pre></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>{{ _("No sampled query details for this request.") }}</p>
+  {% endif %}
+
+  <h3>{{ _("Cache operations") }}</h3>
+  {% if cache_profile %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{{ _("Calls") }}</th>
+          <th>{{ _("Time (ms)") }}</th>
+          <th>{{ _("Errors") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ cache_profile['calls'] }}</td>
+          <td>{{ cache_profile['time_ms']|floatformat(2) }}</td>
+          <td>{{ cache_profile['errors'] }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{{ _("Operation") }}</th>
+          <th>{{ _("Calls") }}</th>
+          <th>{{ _("Time (ms)") }}</th>
+          <th>{{ _("Errors") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for operation, stats in cache_operations %}
+          <tr>
+            <td>{{ operation }}</td>
+            <td>{{ stats['count'] }}</td>
+            <td>{{ stats['time_ms']|floatformat(2) }}</td>
+            <td>{{ stats['errors'] }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>{{ _("No cache profile was recorded for this request.") }}</p>
+  {% endif %}
+
+  <h3>{{ _("Slowest cache calls") }}</h3>
+  {% if cache_profile.slowest_operations %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{{ _("Operation") }}</th>
+          <th>{{ _("Time (ms)") }}</th>
+          <th>{{ _("Error") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for operation in cache_profile.slowest_operations %}
+          <tr>
+            <td>{{ operation.operation }}</td>
+            <td>{{ operation.time_ms|floatformat(2) }}</td>
+            <td>{{ _("Yes") if operation.error else _("No") }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>{{ _("No sampled cache call details for this request.") }}</p>
+  {% endif %}
+{% endblock %}

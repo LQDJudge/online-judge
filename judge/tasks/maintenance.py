@@ -43,6 +43,25 @@ def delete_old_notifications():
 
 
 @shared_task
+def delete_old_request_metrics():
+    if not getattr(settings, "PERIODIC_DELETE_OLD_REQUEST_METRICS_ENABLED", True):
+        logger.info("Request metric cleanup skipped because it is disabled")
+        return {"skipped": True, "reason": "disabled"}
+
+    return run_locked_command(
+        "periodic:delete_old_request_metrics",
+        "delete_old_request_metrics",
+        "--days",
+        str(getattr(settings, "REQUEST_METRICS_RETENTION_DAYS", 7)),
+        "--batch-size",
+        str(getattr(settings, "PERIODIC_DELETE_OLD_REQUEST_METRICS_BATCH_SIZE", 1000)),
+        lock_timeout=getattr(
+            settings, "PERIODIC_DELETE_OLD_REQUEST_METRICS_LOCK_TIMEOUT", 3600
+        ),
+    )
+
+
+@shared_task
 def clear_expired_sessions():
     if not getattr(settings, "PERIODIC_CLEAR_EXPIRED_SESSIONS_ENABLED", True):
         logger.info("Expired session cleanup skipped because it is disabled")

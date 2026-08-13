@@ -5,30 +5,141 @@
 {% endblock %}
 
 {% block middle_content %}
+  <h2>{{ url_name_display }}</h2>
+  <p>
+    <a href="{{ back_path }}{{ back_query }}" class="action-btn">{{ _("Back to request metrics") }}</a>
+  </p>
+
+  <h3>{{ _("Route stats") }}</h3>
   <table class="table">
     <thead>
       <tr>
-        <th>Profile</th>
-        <th>URL</th>
-        <th>Method</th>
-        <th><a href="{{current_path}}?order=response_time&url_name={{url_name}}">Time (ms)</a></th>
-        <th><a href="{{current_path}}?order=date&url_name={{url_name}}">Date</a></th>
+        <th>{{ _("Samples") }}</th>
+        <th>{{ _("Avg (ms)") }}</th>
+        <th>{{ _("P95 (ms)") }}</th>
+        <th>{{ _("Max (ms)") }}</th>
+        <th>{{ _("Min (ms)") }}</th>
+        <th>{{ _("Slow") }}</th>
+        <th>{{ _("Slow %%") }}</th>
+        <th>{{ _("Profiled") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ route_summary.sample_count }}</td>
+        <td>{{ route_summary.avg_time|floatformat(2) if route_summary.avg_time is not none else "-" }}</td>
+        <td>{{ route_summary.p95_time|floatformat(2) if route_summary.p95_time is not none else "-" }}</td>
+        <td>{{ route_summary.max_time|floatformat(2) if route_summary.max_time is not none else "-" }}</td>
+        <td>{{ route_summary.min_time|floatformat(2) if route_summary.min_time is not none else "-" }}</td>
+        <td>{{ route_summary.slow_count }}</td>
+        <td>{{ route_summary.slow_rate|floatformat(1) if route_summary.slow_rate is not none else "-" }}</td>
+        <td>{{ route_summary.profiled_count }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>{{ _("Route breakdown") }}</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ _("Avg DB (ms)") }}</th>
+        <th>{{ _("DB %%") }}</th>
+        <th>{{ _("Queries") }}</th>
+        <th>{{ _("Max DB (ms)") }}</th>
+        <th>{{ _("Avg cache (ms)") }}</th>
+        <th>{{ _("Cache %%") }}</th>
+        <th>{{ _("Cache calls") }}</th>
+        <th>{{ _("Max cache (ms)") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ route_summary.avg_db_time|floatformat(2) if route_summary.avg_db_time is not none else "-" }}</td>
+        <td>{{ route_summary.db_ratio|floatformat(1) if route_summary.db_ratio is not none else "-" }}</td>
+        <td>{{ route_summary.avg_query_count|floatformat(1) if route_summary.avg_query_count is not none else "-" }}</td>
+        <td>{{ route_summary.max_db_time|floatformat(2) if route_summary.max_db_time is not none else "-" }}</td>
+        <td>{{ route_summary.avg_cache_time|floatformat(2) if route_summary.avg_cache_time is not none else "-" }}</td>
+        <td>{{ route_summary.cache_ratio|floatformat(1) if route_summary.cache_ratio is not none else "-" }}</td>
+        <td>{{ route_summary.avg_cache_call_count|floatformat(1) if route_summary.avg_cache_call_count is not none else "-" }}</td>
+        <td>{{ route_summary.max_cache_time|floatformat(2) if route_summary.max_cache_time is not none else "-" }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>{{ _("Request mix") }}</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ _("Logged in") }}</th>
+        <th>{{ _("Logged out") }}</th>
+        <th>{{ _("Methods") }}</th>
+        <th>{{ _("Statuses") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ route_summary.authenticated_count }}</td>
+        <td>{{ route_summary.anonymous_count }}</td>
+        <td>
+          {% for method, count in route_summary.method_counts %}
+            {{ method }}: {{ count }}{% if not loop.last %}, {% endif %}
+          {% else %}
+            -
+          {% endfor %}
+        </td>
+        <td>
+          {% for status, count in route_summary.status_counts %}
+            {{ status }}: {{ count }}{% if not loop.last %}, {% endif %}
+          {% else %}
+            -
+          {% endfor %}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th><a href="{{ order_query('time') }}">{{ _("Time") }}</a></th>
+        <th>{{ _("Profile") }}</th>
+        <th>{{ _("Method") }}</th>
+        <th><a href="{{ order_query('status_code') }}">{{ _("Status") }}</a></th>
+        <th><a href="{{ order_query('response_time_ms') }}">{{ _("Time (ms)") }}</a></th>
+        <th><a href="{{ order_query('db_time_ms') }}">{{ _("DB (ms)") }}</a></th>
+        <th><a href="{{ order_query('cache_time_ms') }}">{{ _("Cache (ms)") }}</a></th>
+        <th>{{ _("Profiler") }}</th>
+        <th>{{ _("Path") }}</th>
       </tr>
     </thead>
     <tbody>
       {% for request in requests %}
         <tr>
+          <td>{{ request.time|date("Y-m-d H:i:s") }}</td>
           <td>
-            {% if request['profile'] %}
-              <a href="/user/{{request['profile']}}">{{request['profile']}}</a>
+            {% if request.username %}
+              <a href="/user/{{ request.username|urlquote }}">{{ request.username }}</a>
             {% else %}
-              None
+              {{ _("None") }}
             {% endif %}
           </td>
-          <td>{{request['url']}}</td>
-          <td>{{request['method']}}</td>
-          <td>{{request['response_time'] | floatformat(2)}}</td>
-          <td>{{request['date']}}</td>
+          <td>{{ request.method }}</td>
+          <td>{{ request.status_code }}</td>
+          <td>{{ request.response_time_ms | floatformat(2) }}</td>
+          <td>{{ request.db_time_ms|floatformat(2) if request.db_time_ms is not none else "-" }}</td>
+          <td>{{ request.cache_time_ms|floatformat(2) if request.cache_time_ms is not none else "-" }}</td>
+          <td>
+            {% if request.profiler %}
+              <a href="{{ profile_url(request.id) }}">{{ _("View") }}</a>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td><code>{{ request.path }}</code></td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="9">{{ _("No request metrics match these filters.") }}</td>
         </tr>
       {% endfor %}
     </tbody>
