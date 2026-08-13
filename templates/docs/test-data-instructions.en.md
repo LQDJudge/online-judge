@@ -1,12 +1,82 @@
 [TOC]
 
-## 1. Test Generator {#test-generator}
+## 1. Start here {#start-here}
 
-Generate tests with a C++ program instead of uploading them. The generator takes constraint args plus a seed; print the input to **stdout** and the expected output to **stderr**.
+The Test Data page turns your test files, generators, checkers, and scoring rules into the `init.yml` used by the judge. Most problems only need three things:
+
+1. Add the tests, either by uploading a ZIP in **Data zip file** or by uploading a C++ **Generator file**.
+2. Click **Fill testcases** or use **Add new case** until the **Test Cases** table has one real row for each test.
+3. Choose a **Checker**, review the points and pretest flags, then click **Apply!**.
+
+Rows with type **Normal case** are real tests. **Batch start** and **Batch end** rows only group tests for subtask scoring; they are not run as tests themselves. Each normal case should use exactly one source: either **Input file** / **Output file** from the ZIP, or **Generator Args** for the generator.
+
+Clicking **Apply!** saves the files and rows, generates `init.yml`, and notifies judges that the problem data changed. If the page shows feedback above the form, fix that issue and click **Apply!** again.
+
+### UI map {#ui-map}
+
+Use this table as the source of truth for what each control on the Test Data page does.
+
+| UI control | What to put there | When to use it |
+|---|---|---|
+| **Data zip file** | A `.zip` containing private input/output files. | You already have `.in` / `.out` style files. |
+| **Generator file** | A C++ file, usually named `gen.cpp`. | You want the judge to generate tests from arguments instead of storing all files. |
+| **Generator Script** | One line of arguments per generated test. Open it from the generator row after saving a generator. | You have a generator and want many generated rows. |
+| **Checker** | The judging method: `standard`, `floats`, `custom`, `testlib`, `csv_*`, etc. | Every problem needs a checker; `standard` is fine for most exact-output tasks. |
+| **Checker arguments** | JSON options for the selected checker. The UI shows helper inputs for float and CSV checkers. | Needed for tolerances, CSV columns, public/private leaderboard splits, and other checker-specific options. |
+| **Custom checker file** | Python checker source. | Use with **Custom checker (PY)**. |
+| **Custom cpp checker file** | C++ checker or Testlib checker source. | Use with **Custom checker (CPP)**, **Testlib**, or **Testlib (CMS / IOI)**. |
+| **Interactive judge** | C++ interactor source. | Use with **Interactive** or **Interactive (Testlib)**. |
+| **Input file name** / **Output file name** | File names used by submissions instead of stdin/stdout. | Only for file-I/O problems. Leave blank for normal stdin/stdout. |
+| **Is output only** | Checkbox. | Contestants submit output files instead of source code. |
+| **Binary answer data** | Checkbox. | Expected answers or submitted output files are binary, such as `.npy`, `.npz`, images, or archives. |
+| **Output submission size limit (MB)** | Maximum output-only ZIP size. | Output-only problems with larger result files. |
+| **Is IOI signature** | Checkbox that reveals language-specific signature grader rows. | Contestants implement a function instead of a full program. |
+| **Is communication** | Checkbox for IOI-style manager/user multi-process tasks. | Interactive IOI packages with `manager.cpp`. |
+| **Manager** and **Num processes** | Manager source and number of user processes. | Communication tasks only. |
+| **Testcase validator** | C++ or Python validator source. | You want to check every generated/uploaded input against constraints. |
+| **Autofill testcases** | Batch mode, batch starts, **Fill testcases**, and **Or use custom JSON**. | Quickly create or replace rows in the **Test Cases** table. |
+| **Test Cases** table | The final list of cases and batches used by the judge. | Always review this table before clicking **Apply!**. |
+
+The **Test Cases** table has these columns:
+
+| Column | Meaning |
+|---|---|
+| **Type** | `Normal case` runs one test. `Batch start` begins a subtask. `Batch end` closes it. |
+| **Input file** | ZIP file used as judge input. Leave empty for generator-only rows. |
+| **Output file** | ZIP file used as expected output. Leave empty for generator-only rows. |
+| **Points** | For normal rows, the case weight. For batch-start rows, the total batch score. |
+| **Pretest?** | Whether the case is visible in pretest-only judging. For batched tests, set this on the batch-start row. |
+| **Generator Args** | Arguments passed to the generator for this test. Leave empty for ZIP-backed rows. |
+| **Delete?** | Removes the row when you click **Apply!**. |
+
+## 2. Adding Tests {#adding-tests}
+
+### 2.1. Upload a ZIP {#zip-test-data}
+
+Use **Data zip file** when you already have `.in` / `.out` files. The file names in the **Input file** and **Output file** columns must exist in the ZIP. After uploading the ZIP, click **Fill testcases** to pair input and output files automatically, or use **Add new case** and select the files manually.
+
+Keep the ZIP as plain test data. The ZIP is private to the judge; if contestants need to download inputs for an output-only or Kaggle-style problem, upload those public files from the problem edit page's **Attachments** tab instead.
+
+### 2.2. Use a Generator {#test-generator}
+
+Use a generator when the test data is easier to describe by constraints than by storing every `.in` / `.out` file. The generator is a C++ program. It receives command-line arguments, usually constraint parameters plus a seed, then prints:
+
+- the test input to **stdout**
+- the expected answer to **stderr**
 
 ```bash
 ./generator [arg_1] [arg_2] ... [seed]
 ```
+
+The generator time limit is the problem time limit, so write it like normal competitive-programming code. Use fast I/O for `cout` and disable automatic flushing for `cerr`:
+
+```cpp
+ios::sync_with_stdio(false);
+cin.tie(nullptr);
+cerr.unsetf(ios::unitbuf);
+```
+
+Also prefer `'\n'` over `endl`. This matters because expected output is written to `cerr`; by default `cerr` flushes after each operation, which can make large generated answers unnecessarily slow.
 
 **Example.** Input: two integers `a, b` with `1 <= a, b <= 100000`. Output: `a + b`.
 
@@ -14,73 +84,114 @@ Generate tests with a C++ program instead of uploading them. The generator takes
 #include <bits/stdc++.h>
 using namespace std;
 
-int main(int args_length, char* args[]) {
-    if (args_length != 4) {
+int main(int argc, char* argv[]) {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    cerr.unsetf(ios::unitbuf);
+
+    if (argc != 4) {
         cerr << "Usage: ./generator <x> <y> <global_seed>" << endl;
         return 1;
     }
 
-    int x = stoi(args[1]); // lower bound for the limits of a and b
-    int y = stoi(args[2]); // upper bound for the limits of a and b
-    int global_seed = stoi(args[3]); // random seed
+    int x = stoi(argv[1]);
+    int y = stoi(argv[2]);
+    int global_seed = stoi(argv[3]);
 
     if (x > y) {
-        cerr << "Error: x should be less than or equal to y" << endl;
+        cerr << "Error: x should be less than or equal to y\n";
         return 1;
     }
 
-    // Combine global seed with x and y to create unique seed
     int combined_seed = global_seed ^ (x * 31 + y * 37);
-
-    // Initialize random with computed seed
     mt19937 gen(combined_seed);
     uniform_int_distribution<> dist(x, y);
 
-    // Input: Generate two random integers a and b
     int a = dist(gen);
     int b = dist(gen);
-
-    // Output: Solution to create output
     int c = a + b;
 
-    // Print input to stdout
-    cout << a << " " << b << endl;
-
-    // Print output to stderr
-    cerr << c << endl;
+    cout << a << ' ' << b << '\n';
+    cerr << c << '\n';
 
     return 0;
 }
 ```
 
-### Generator Script {#generator-script}
+### 2.3. Generator Script {#generator-script}
 
-Appears under the generator file once saved. One line per test case — arguments are forwarded to the generator. Use **distinct seeds** to avoid duplicate tests.
+After saving a generator file, use **Generator Script** to create many generated tests quickly. One non-empty, non-comment line becomes one normal test case. The line is split by spaces and passed directly to the generator. Use distinct seeds unless you intentionally want duplicate tests.
 
-For the `a + b` problem, a strong 10-test suite might cover small/medium/large ranges:
+For the `a + b` problem, this 10-test suite covers small, medium, and large ranges:
 
 ```
+# Small values
 1 10 12
 1 10 5123
 1 10 254
+
+# Medium values
 100 1000 51234
 100 1000 4135
 100 1000 123
+
+# Large values
 10000 100000 456
 10000 100000 4129
 10000 100000 5912
 10000 100000 4753
 ```
 
-Click **"Fill testcases"** to materialize one test row per script line. Args show in the **Generator Args** column and can be edited inline; "Add new case" lets you add individual tests.
+Click **Fill testcases** to materialize one test row per script line. The arguments appear in the **Generator Args** column and can be edited inline. **Add new case** can add one generated case manually.
 
-**Each test uses one source only** — either a file from the data ZIP or the generator. Don't forget to click **"Apply!"**.
+### 2.4. Custom JSON autofill {#custom-json-autofill}
 
-## 2. Checker {#checker}
+Use **Or use custom JSON** when the exact rows are already known or generated by another tool. Each row should use either `testcase` for ZIP-backed data or `generator_args` for generated data, not both.
+
+Non-batched example:
+
+```json
+[
+  {"score": 1, "testcase": "1"},
+  {"score": 1, "generator_args": "2 --small"},
+  {"score": 2, "testcase": "complete-small-01"}
+]
+```
+
+Batched example:
+
+```json
+[
+  {"score": 21, "testcases": ["subtask1-01", "subtask1-02", "subtask1-03"]},
+  {"score": 79, "testcases": [
+    "subtask2-01",
+    {"generator_args": "2 --large"},
+    "subtask2-03"
+  ]}
+]
+```
+
+JSON autofill only fills rows on the page. Review the result, then click **Apply!**.
+
+### 2.5. Batches and scoring {#batches-and-scoring}
+
+Use batches for subtasks. Enter **Batch start positions** as the first test number of each batch. For example, `1, 5, 9` creates batches `[1..4]`, `[5..8]`, and `[9..end]`.
+
+The **Batch mode** dropdown controls how **Fill testcases** assigns points:
+
+| Mode | Use when | What it creates |
+|---|---|---|
+| **Sum (VOI)** | Each case contributes independently | Every case gets weight `1`; the batch score is the sum of passed case weights. |
+| **All or 0 (ICPC)** | A subtask should pass only if every case passes | Earlier cases in the batch get `0`, the last case gets `1`; the batch uses sum scoring. |
+| **Min (IOI)** | A subtask score should be limited by the weakest case | Every case gets weight `1`; the batch uses min scoring. |
+
+You can still edit points, pretest flags, and batch scoring manually after autofill.
+
+## 3. Checker {#checker}
 
 The checker decides whether a submission's output matches the expected answer. Prefer a built-in checker when it matches the problem: it is simpler, faster to configure, and does not require maintaining checker source code. Use a custom checker when the problem has multiple valid answers, special scoring, or a format that the built-in checkers cannot express.
 
-### 2.1. Default Checker {#default-checker}
+### 3.1. Default Checker {#default-checker}
 
 Built-in checkers do not need a checker file. Select the checker in the **Checker** dropdown, then fill checker arguments only when the selected checker exposes extra options.
 
@@ -98,7 +209,7 @@ Built-in checkers do not need a checker file. Select the checker in the **Checke
 
 Use **Testlib** or **Testlib (CMS / IOI)** when you already have a `checker.cpp` from Polygon, IOI, CMS, or a similar package. Upload that file in the C++ checker field. For IOI packages, see [Importing IOI tasks](#importing-ioi-tasks).
 
-### 2.2. Custom Checker {#custom-checker}
+### 3.2. Custom Checker {#custom-checker}
 
 Define custom judging logic for problems with multiple valid answers or special output formats.
 
@@ -186,7 +297,7 @@ int main(int argc, char** argv) {
 }
 ```
 
-## 3. Interactive (C++) {#interactive}
+## 4. Interactive (C++) {#interactive}
 
 C++ program invoked as `./main <input_file> <answer_file>`. The submitter's binary and your interactor are connected via stdin/stdout pipes.
 
@@ -237,7 +348,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-## 4. IOI Signature {#ioi-signature}
+## 5. IOI Signature {#ioi-signature}
 
 Contestants implement a function; the judge links it with your handler. You provide:
 - **Header** (`.h`) — function declaration (C/C++ only)
@@ -351,7 +462,7 @@ Hit **Apply!** and the problem is live.
 - [IOI 2025 — Souvenirs](https://ioinformatics.org/files/ioi2025problem1.pdf) — interactive task (one user process talking to a manager).
 - [IOI 2025 — Migrations](https://ioinformatics.org/files/ioi2025problem5.pdf) — two-process interactive task (encode + decode phases).
 
-## 5. Testcase Validator {#testcase-validator}
+## 6. Testcase Validator {#testcase-validator}
 
 A program that confirms each test input matches the problem's constraints. Reads stdin; exit `0` = valid, non-zero = invalid (stderr captured as feedback). Click **"Run Validator"** to check every test.
 
@@ -417,7 +528,7 @@ def main():
 main()
 ```
 
-## 6. Output-only Problems {#output-only}
+## 7. Output-only Problems {#output-only}
 
 Output-only problems don't require solvers to write a runnable program — instead they download the input data, compute the answer locally (with whatever tools they like), and submit just the result file. To configure one, tick **Is output only** in the test data form. The submit page then accepts a `.zip` (single files are auto-zipped client-side) and the chosen checker is applied to its contents.
 
@@ -425,13 +536,13 @@ Output-only problems don't require solvers to write a runnable program — inste
 
 > **Distributing the test inputs to solvers.** Files inside the test-data zip are private to the judge — solvers can't see them. To give solvers the inputs they need to compute answers locally (e.g. the test cases for an IOI-style output-only problem, or the training/test CSV for a Kaggle problem), upload them via the **Attachments** tab on the problem edit page. Attachments appear in a "Files" section on the problem statement page, with download links scoped to the problem's normal access permissions.
 
-### 6.1. Traditional output-only (IOI-style) {#traditional-output-only}
+### 7.1. Traditional output-only (IOI-style) {#traditional-output-only}
 
 For each test case, name the expected output file in the **Output file** column (e.g. `test01.out`). The submitter's zip must contain a file with the matching name; the configured checker (typically `Standard`, `Floats`, or a custom one) is then applied to compare submission output vs. expected output, the same as for a normal problem.
 
 This format is appropriate when the answer is a single deterministic file per test case (e.g. shortest-path lengths, integer answers, sorted lists). Pick whichever standard or custom checker fits the output type.
 
-### 6.2. Kaggle-style CSV problems {#kaggle-style-csv-problems}
+### 7.2. Kaggle-style CSV problems {#kaggle-style-csv-problems}
 
 For machine-learning–style problems where the submission is a CSV of predictions to be scored against a hidden answer key with a metric like accuracy or RMSE, use one of the built-in CSV checkers from the `Checker` dropdown — no custom code needed:
 

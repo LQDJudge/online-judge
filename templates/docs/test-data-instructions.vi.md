@@ -1,12 +1,82 @@
 [TOC]
 
-## 1. Test Generator {#test-generator}
+## 1. Bắt đầu từ đây {#start-here}
 
-Sinh test bằng một chương trình C++ thay vì upload file. Chương trình nhận các tham số ràng buộc cộng thêm `seed`; in input ra **stdout** và output mong đợi ra **stderr**.
+Trang Test Data chuyển file test, generator, checker và quy tắc tính điểm của bạn thành file `init.yml` để judge sử dụng. Hầu hết bài chỉ cần ba bước:
+
+1. Thêm test, bằng cách upload ZIP ở **File zip chứa test** hoặc upload chương trình C++ ở **File sinh test**.
+2. Bấm **Điền test** hoặc dùng **Thêm test mới** cho đến khi bảng **Test Cases** có một dòng thật cho mỗi test.
+3. Chọn **Checker**, kiểm tra lại điểm và pretest, rồi bấm **Lưu**.
+
+Dòng loại **Normal case** là test thật. Dòng **Batch start** và **Batch end** chỉ dùng để gom test thành subtask; hai loại dòng này không chạy như test riêng. Mỗi normal case chỉ nên dùng đúng một nguồn dữ liệu: hoặc **Input file** / **Output file** từ ZIP, hoặc **Tham số sinh test** cho generator.
+
+Khi bấm **Lưu**, hệ thống lưu file và các dòng test, sinh `init.yml`, rồi báo cho judge biết test data của bài đã thay đổi. Nếu trang hiện feedback lỗi phía trên form, hãy sửa lỗi đó rồi bấm **Lưu** lại.
+
+### Bản đồ giao diện {#ui-map}
+
+Dùng bảng này để biết chính xác mỗi control trên trang Test Data dùng làm gì.
+
+| Control trên UI | Điền gì vào đó | Khi nào dùng |
+|---|---|---|
+| **File zip chứa test** | File `.zip` chứa input/output riêng tư. | Bạn đã có sẵn các file kiểu `.in` / `.out`. |
+| **File sinh test** | File C++, thường đặt tên `gen.cpp`. | Bạn muốn judge sinh test từ tham số thay vì lưu toàn bộ file test. |
+| **Generator Script** | Mỗi dòng là một bộ tham số cho một test sinh tự động. Mở mục này từ dòng generator sau khi đã lưu generator. | Bạn có generator và muốn tạo nhiều dòng test. |
+| **Checker** | Cách chấm: `standard`, `floats`, `custom`, `testlib`, `csv_*`, v.v. | Bài nào cũng cần checker; `standard` phù hợp với đa số bài exact-output. |
+| **Checker arguments** | JSON tuỳ chọn cho checker đã chọn. UI có ô hỗ trợ cho checker số thực và CSV. | Cần khi cấu hình sai số, cột CSV, public/private leaderboard, hoặc tuỳ chọn riêng của checker. |
+| **Custom checker file** | Source checker Python. | Dùng với **Custom checker (PY)**. |
+| **Custom cpp checker file** | Source checker C++ hoặc Testlib. | Dùng với **Custom checker (CPP)**, **Testlib**, hoặc **Testlib (CMS / IOI)**. |
+| **Interactive judge** | Source interactor C++. | Dùng với **Interactive** hoặc **Interactive (Testlib)**. |
+| **Input file name** / **Output file name** | Tên file mà bài nộp dùng thay cho stdin/stdout. | Chỉ dùng cho bài file I/O. Để trống cho stdin/stdout bình thường. |
+| **Output-only?** | Checkbox. | Người giải nộp file output thay vì source code. |
+| **Binary answer data** | Checkbox. | Đáp án hoặc output nộp lên là dữ liệu nhị phân, ví dụ `.npy`, `.npz`, ảnh hoặc archive. |
+| **Output submission size limit (MB)** | Dung lượng tối đa của ZIP output-only. | Bài output-only có file kết quả lớn. |
+| **Nộp bài bằng hàm?** | Checkbox mở các dòng signature grader theo ngôn ngữ. | Người giải cài đặt hàm thay vì chương trình đầy đủ. |
+| **Bài Communication** | Checkbox cho bài IOI kiểu manager/user nhiều tiến trình. | Gói IOI tương tác có `manager.cpp`. |
+| **Manager** và **Số tiến trình** | Source manager và số tiến trình bài làm. | Chỉ dùng cho bài communication. |
+| **Trình kiểm tra test** | Source validator C++ hoặc Python. | Bạn muốn kiểm tra mọi input đã upload/sinh ra có đúng ràng buộc. |
+| **Tự động điền test** | Chế độ batch, vị trí bắt đầu batch, **Điền test**, và **Or use custom JSON**. | Tạo nhanh hoặc thay thế các dòng trong bảng **Test Cases**. |
+| **Test Cases** | Danh sách case và batch cuối cùng mà judge dùng. | Luôn kiểm tra bảng này trước khi bấm **Lưu**. |
+
+Bảng **Test Cases** có các cột sau:
+
+| Cột | Ý nghĩa |
+|---|---|
+| **Type** | `Normal case` chạy một test. `Batch start` bắt đầu subtask. `Batch end` kết thúc subtask. |
+| **Input file** | File trong ZIP dùng làm input cho judge. Để trống với dòng chỉ dùng generator. |
+| **Output file** | File trong ZIP dùng làm output mong đợi. Để trống với dòng chỉ dùng generator. |
+| **Points** | Với normal case là trọng số test. Với batch-start row là tổng điểm của batch. |
+| **Pretest?** | Test có dùng trong chế độ chỉ chấm pretest hay không. Với test trong batch, đặt cờ này ở dòng batch-start. |
+| **Tham số sinh test** | Tham số truyền vào generator cho test này. Để trống với dòng dùng file trong ZIP. |
+| **Xoá?** | Xoá dòng khi bấm **Lưu**. |
+
+## 2. Thêm test {#adding-tests}
+
+### 2.1. Upload ZIP {#zip-test-data}
+
+Dùng **File zip chứa test** khi bạn đã có các file `.in` / `.out`. Tên file trong cột **Input file** và **Output file** phải tồn tại trong ZIP. Sau khi upload ZIP, bấm **Điền test** để tự ghép input/output, hoặc dùng **Thêm test mới** rồi chọn file thủ công.
+
+Hãy để ZIP này chỉ chứa dữ liệu chấm riêng tư. File trong ZIP không hiển thị cho người giải; nếu người giải cần tải input cho bài output-only hoặc Kaggle, hãy upload các file public đó ở tab **Tệp đính kèm** của trang chỉnh sửa bài.
+
+### 2.2. Dùng Generator {#test-generator}
+
+Dùng generator khi mô tả test bằng ràng buộc dễ hơn lưu từng file `.in` / `.out`. Generator là một chương trình C++. Chương trình nhận tham số dòng lệnh, thường gồm tham số ràng buộc và seed, rồi in:
+
+- input của test ra **stdout**
+- đáp án mong đợi ra **stderr**
 
 ```bash
 ./generator [arg_1] [arg_2] ... [seed]
 ```
+
+Giới hạn thời gian của generator chính là giới hạn thời gian của bài, nên hãy viết như code thi lập trình bình thường. Dùng fast I/O cho `cout` và tắt tự động flush của `cerr`:
+
+```cpp
+ios::sync_with_stdio(false);
+cin.tie(nullptr);
+cerr.unsetf(ios::unitbuf);
+```
+
+Nên dùng `'\n'` thay vì `endl`. Điều này quan trọng vì đáp án được in ra `cerr`; mặc định `cerr` flush sau mỗi lần ghi, nên output lớn có thể làm generator chạy chậm không cần thiết.
 
 **Ví dụ.** Bài toán: input gồm hai số `a, b` với `1 <= a, b <= 100000`. Output: `a + b`.
 
@@ -14,73 +84,114 @@ Sinh test bằng một chương trình C++ thay vì upload file. Chương trình
 #include <bits/stdc++.h>
 using namespace std;
 
-int main(int args_length, char* args[]) {
-    if (args_length != 4) {
+int main(int argc, char* argv[]) {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    cerr.unsetf(ios::unitbuf);
+
+    if (argc != 4) {
         cerr << "Usage: ./generator <x> <y> <global_seed>" << endl;
         return 1;
     }
 
-    int x = stoi(args[1]); // cận dưới cho giới hạn của a và b
-    int y = stoi(args[2]); // cận trên cho giới hạn của a và b
-    int global_seed = stoi(args[3]); // seed để random
+    int x = stoi(argv[1]);
+    int y = stoi(argv[2]);
+    int global_seed = stoi(argv[3]);
 
     if (x > y) {
-        cerr << "Error: x should be less than or equal to y" << endl;
+        cerr << "Error: x should be less than or equal to y\n";
         return 1;
     }
 
-    // Kết hợp global seed với x và y để tạo seed duy nhất
     int combined_seed = global_seed ^ (x * 31 + y * 37);
-
-    // Khởi tạo random với seed đã tính
     mt19937 gen(combined_seed);
     uniform_int_distribution<> dist(x, y);
 
-    // Input: Sinh hai số random a và b cho input
     int a = dist(gen);
     int b = dist(gen);
-
-    // Output: Lời giải để tạo ra output
     int c = a + b;
 
-    // In input ra stdout
-    cout << a << " " << b << endl;
-
-    // In output ra stderr
-    cerr << c << endl;
+    cout << a << ' ' << b << '\n';
+    cerr << c << '\n';
 
     return 0;
 }
 ```
 
-### Script sinh test {#generator-script}
+### 2.3. Script sinh test {#generator-script}
 
-Hiện ra dưới mục file sinh test sau khi lưu. Mỗi dòng là tham số cho một test, được chuyển đến generator. Dùng **seed khác nhau** cho mỗi test để tránh trùng lặp.
+Sau khi lưu file generator, dùng **Generator Script** để tạo nhanh nhiều test sinh tự động. Mỗi dòng không rỗng và không phải comment sẽ trở thành một normal case. Dòng được tách theo dấu cách và truyền thẳng vào generator. Dùng seed khác nhau trừ khi bạn cố ý muốn test trùng.
 
-Với bài `a + b`, một bộ 10 test mạnh có thể trải đều các dải nhỏ / trung bình / lớn:
+Với bài `a + b`, bộ 10 test này phủ các dải nhỏ, trung bình và lớn:
 
 ```
+# Giá trị nhỏ
 1 10 12
 1 10 5123
 1 10 254
+
+# Giá trị trung bình
 100 1000 51234
 100 1000 4135
 100 1000 123
+
+# Giá trị lớn
 10000 100000 456
 10000 100000 4129
 10000 100000 5912
 10000 100000 4753
 ```
 
-Bấm **"Điền test"** để tạo một test cho mỗi dòng trong script. Tham số hiển thị ở cột **"Tham số sinh test"** và có thể chỉnh trực tiếp; nút **"Thêm test mới"** để thêm test rời.
+Bấm **Điền test** để tạo một dòng test cho mỗi dòng script. Tham số hiển thị ở cột **Tham số sinh test** và có thể chỉnh trực tiếp. **Thêm test mới** có thể thêm một test sinh tự động thủ công.
 
-**Mỗi test chỉ dùng một nguồn dữ liệu** — hoặc từ ZIP, hoặc từ generator. Đừng quên bấm **"Lưu"**.
+### 2.4. Tự điền bằng JSON {#custom-json-autofill}
 
-## 2. Checker {#checker}
+Dùng **Or use custom JSON** khi các dòng cần tạo đã được xác định sẵn hoặc được sinh bởi công cụ khác. Mỗi dòng chỉ nên dùng `testcase` cho dữ liệu từ ZIP hoặc `generator_args` cho dữ liệu sinh tự động, không dùng cả hai.
+
+Ví dụ không chia batch:
+
+```json
+[
+  {"score": 1, "testcase": "1"},
+  {"score": 1, "generator_args": "2 --small"},
+  {"score": 2, "testcase": "complete-small-01"}
+]
+```
+
+Ví dụ có batch:
+
+```json
+[
+  {"score": 21, "testcases": ["subtask1-01", "subtask1-02", "subtask1-03"]},
+  {"score": 79, "testcases": [
+    "subtask2-01",
+    {"generator_args": "2 --large"},
+    "subtask2-03"
+  ]}
+]
+```
+
+JSON chỉ điền các dòng trên trang. Hãy kiểm tra kết quả rồi bấm **Lưu**.
+
+### 2.5. Batch và cách tính điểm {#batches-and-scoring}
+
+Dùng batch cho subtask. Nhập **Vị trí bắt đầu batch** là số thứ tự test đầu tiên của mỗi batch. Ví dụ `1, 5, 9` tạo các batch `[1..4]`, `[5..8]`, và `[9..hết]`.
+
+Menu **Chế độ batch** quyết định cách **Điền test** gán điểm:
+
+| Chế độ | Dùng khi | Kết quả được tạo |
+|---|---|---|
+| **Sum (VOI)** | Mỗi test đóng góp điểm độc lập | Mỗi test có trọng số `1`; điểm batch là tổng trọng số các test pass. |
+| **All or 0 (ICPC)** | Subtask chỉ đạt điểm khi pass mọi test | Các test đầu trong batch có điểm `0`, test cuối có điểm `1`; batch dùng kiểu cộng điểm. |
+| **Min (IOI)** | Điểm subtask bị giới hạn bởi test yếu nhất | Mỗi test có trọng số `1`; batch dùng kiểu lấy min. |
+
+Sau khi tự điền, bạn vẫn có thể sửa điểm, pretest và cách tính điểm batch thủ công.
+
+## 3. Checker {#checker}
 
 Checker quyết định output của bài nộp có khớp với đáp án mong đợi hay không. Hãy ưu tiên checker có sẵn khi nó phù hợp với bài: cấu hình đơn giản hơn, không cần bảo trì code checker riêng. Dùng custom checker khi bài có nhiều đáp án đúng, cách tính điểm đặc biệt, hoặc format mà các checker có sẵn không biểu diễn được.
 
-### 2.1. Default Checker {#default-checker}
+### 3.1. Default Checker {#default-checker}
 
 Checker có sẵn không cần upload file checker. Chọn checker trong menu **Checker**, rồi điền checker arguments chỉ khi checker đó có tuỳ chọn bổ sung.
 
@@ -98,7 +209,7 @@ Checker có sẵn không cần upload file checker. Chọn checker trong menu **
 
 Dùng **Testlib** hoặc **Testlib (CMS / IOI)** khi bạn đã có `checker.cpp` từ Polygon, IOI, CMS, hoặc package tương tự. Upload file đó ở trường checker C++. Với package IOI, xem [Import bài IOI](#importing-ioi-tasks).
 
-### 2.2. Custom Checker {#custom-checker}
+### 3.2. Custom Checker {#custom-checker}
 
 Định nghĩa cách chấm cho các bài có nhiều đáp án đúng hoặc format đặc biệt.
 
@@ -186,7 +297,7 @@ int main(int argc, char** argv) {
 }
 ```
 
-## 3. Interactive (C++) {#interactive}
+## 4. Interactive (C++) {#interactive}
 
 Chương trình C++ chạy theo dạng `./main <input_file> <answer_file>`. Bài làm và interactor giao tiếp qua stdin/stdout.
 
@@ -237,7 +348,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-## 4. IOI Signature {#ioi-signature}
+## 5. IOI Signature {#ioi-signature}
 
 Thí sinh cài đặt một hàm; judge liên kết với handler do bạn cung cấp. Bạn chuẩn bị:
 - **Header** (`.h`) — khai báo hàm (chỉ C/C++)
@@ -351,7 +462,7 @@ Bấm **Lưu** là bài có thể submit được.
 - [IOI 2025 — Souvenirs](https://ioinformatics.org/files/ioi2025problem1.pdf) — bài tương tác (một tiến trình bài làm giao tiếp với manager).
 - [IOI 2025 — Migrations](https://ioinformatics.org/files/ioi2025problem5.pdf) — bài tương tác hai tiến trình (encode + decode).
 
-## 5. Trình kiểm tra test {#testcase-validator}
+## 6. Trình kiểm tra test {#testcase-validator}
 
 Chương trình kiểm tra input của mỗi test có thoả ràng buộc của đề. Đọc stdin; exit `0` = hợp lệ, khác 0 = không hợp lệ (stderr được ghi lại làm feedback). Bấm **"Chạy kiểm tra"** để kiểm tra tất cả test.
 
@@ -417,7 +528,7 @@ def main():
 main()
 ```
 
-## 6. Bài Output-only {#output-only}
+## 7. Bài Output-only {#output-only}
 
 Bài *output-only* không yêu cầu người giải viết chương trình thực thi — thay vào đó họ tải file input về, tính đáp án ở máy mình (bằng bất kỳ công cụ nào), rồi chỉ nộp file kết quả. Để cấu hình, hãy tick **Output-only?** trong biểu mẫu Test Data. Trang nộp bài khi đó sẽ chấp nhận một file `.zip` (file đơn được tự động đóng gói thành zip ở phía trình duyệt) và bộ chấm được chọn sẽ áp dụng lên nội dung bên trong.
 
@@ -425,13 +536,13 @@ Bài *output-only* không yêu cầu người giải viết chương trình th�
 
 > **Phân phối input test cho người giải.** Các file trong file zip Test Data là riêng tư cho hệ thống chấm — người giải không thấy được. Để cung cấp cho người giải các input họ cần để tính đáp án ở máy (ví dụ các test cho bài output-only kiểu IOI, hoặc file CSV training/test cho bài Kaggle), hãy tải lên qua tab **Tệp đính kèm** trên trang chỉnh sửa bài. Các tệp đính kèm sẽ hiển thị ở mục "Tệp" trên trang đề bài, với liên kết tải xuống tuân theo quyền truy cập thông thường của bài.
 
-### 6.1. Output-only truyền thống (kiểu IOI) {#traditional-output-only}
+### 7.1. Output-only truyền thống (kiểu IOI) {#traditional-output-only}
 
 Với mỗi test case, đặt tên file output kỳ vọng ở cột **Output file** (ví dụ `test01.out`). File zip người dùng nộp phải chứa một file có tên trùng khớp; bộ chấm được cấu hình (thường là `Standard`, `Floats`, hoặc một bộ chấm tùy chỉnh) sẽ so sánh output trong bài nộp với output kỳ vọng, giống như bài thường.
 
 Định dạng này phù hợp khi đáp án là một file xác định cho mỗi test case (ví dụ độ dài đường đi ngắn nhất, một số nguyên, danh sách đã sắp xếp). Hãy chọn bộ chấm chuẩn hoặc tùy chỉnh phù hợp với loại output.
 
-### 6.2. Bài kiểu Kaggle (CSV) {#kaggle-style-csv-problems}
+### 7.2. Bài kiểu Kaggle (CSV) {#kaggle-style-csv-problems}
 
 Với các bài kiểu machine-learning nơi bài nộp là một file CSV chứa các dự đoán, được chấm so với đáp án ẩn bằng các chỉ số như độ chính xác hoặc RMSE, hãy chọn một trong các bộ chấm CSV có sẵn từ menu `Bộ chấm` — không cần viết code:
 
