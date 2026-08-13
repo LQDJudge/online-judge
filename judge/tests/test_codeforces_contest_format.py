@@ -148,6 +148,31 @@ class CodeforcesContestFormatTest(TestCase):
         self.assertEqual(problem_data["time"], 20 * 60)
         self.assertEqual(self.participation.score, 90)
 
+    def test_ce_only_before_freeze_does_not_create_frozen_placeholder(self):
+        self.contest.freeze_after = timezone.timedelta(hours=2)
+        self.contest.save(update_fields=["freeze_after"])
+        contest_problem = self.make_problem("cfcebeforefreeze", points=500, order=0)
+        self.make_submission(contest_problem, minute=10, points=0, result="CE")
+
+        self.participation.recompute_results()
+        self.participation.refresh_from_db()
+
+        self.assertNotIn(str(contest_problem.id), self.participation.format_data)
+
+    def test_ce_only_after_freeze_creates_frozen_placeholder(self):
+        self.contest.freeze_after = timezone.timedelta(minutes=5)
+        self.contest.save(update_fields=["freeze_after"])
+        contest_problem = self.make_problem("cfceafterfreeze", points=500, order=0)
+        self.make_submission(contest_problem, minute=10, points=0, result="CE")
+
+        self.participation.recompute_results()
+        self.participation.refresh_from_db()
+
+        self.assertEqual(
+            self.participation.format_data[str(contest_problem.id)],
+            {"time": 0, "points": 0, "frozen": True},
+        )
+
     def test_initial_ac_score_cannot_be_less_than_points(self):
         contest_problem = self.make_problem(
             "cfinvalid", points=100, initial_ac_score=150, order=0

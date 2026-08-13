@@ -176,16 +176,15 @@ class BaseContestFormat(metaclass=ABCMeta):
         )
         for result in queryset:
             problem = str(result["problem_id"])
-            if not (self.contest.freeze_after or hidden_subtasks.get(problem)):
+            is_after_freeze = (
+                self.contest.freeze_after
+                and result["time"] >= self.contest.freeze_after + participation.start
+            )
+            is_hidden_subtask = hidden_subtasks.get(problem)
+            if not (is_after_freeze or is_hidden_subtask):
                 continue
             if format_data.get(problem):
-                is_after_freeze = (
-                    self.contest.freeze_after
-                    and result["time"]
-                    >= self.contest.freeze_after + participation.start
-                )
-                if is_after_freeze or hidden_subtasks.get(problem):
-                    format_data[problem]["frozen"] = True
+                format_data[problem]["frozen"] = True
             else:
                 format_data[problem] = {"time": 0, "points": 0, "frozen": True}
 
