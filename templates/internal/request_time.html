@@ -87,7 +87,7 @@
       {% for page in pages %}
         <tr>
           <td><a href="{{ detail_path }}{{ page['detail_query'] }}">{{ page['url_name_display'] }}</a></td>
-          <td><code>{{ page['sample_path'] }}</code></td>
+          <td><code title="{{ page['sample_path'] }}">{{ page['sample_path']|truncate(80, True) }}</code></td>
           <td>{{ page['count'] }}</td>
           <td>{{ page['impact_ms'] | floatformat(2) }}</td>
           <td>{{ page['avg_time'] | floatformat(2) }}</td>
