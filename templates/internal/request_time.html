@@ -4,6 +4,23 @@
   {% include "internal/left-sidebar.html" %}
 {% endblock %}
 
+{% block two_col_media %}
+  <style>
+    .request-metrics-table .sample-path-column {
+      width: 28ch;
+      max-width: 28ch;
+    }
+
+    .request-metrics-table .sample-path {
+      display: block;
+      max-width: 28ch;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  </style>
+{% endblock %}
+
 {% block middle_content %}
   <h2>{{ title }}</h2>
 
@@ -71,11 +88,11 @@
     </tbody>
   </table>
 
-  <table class="table">
+  <table class="table request-metrics-table">
     <thead>
       <tr>
         <th>{{ _("URL Name") }}</th>
-        <th>{{ _("Example path") }}</th>
+        <th class="sample-path-column">{{ _("Example path") }}</th>
         <th><a href="{{ order_query('count') }}">{{ _("Count") }}</a></th>
         <th><a href="{{ order_query('impact_ms') }}">{{ _("Impact (ms)") }}</a></th>
         <th><a href="{{ order_query('avg_time') }}">{{ _("Avg (ms)") }}</a></th>
@@ -87,7 +104,7 @@
       {% for page in pages %}
         <tr>
           <td><a href="{{ detail_path }}{{ page['detail_query'] }}">{{ page['url_name_display'] }}</a></td>
-          <td><code title="{{ page['sample_path'] }}">{{ page['sample_path']|truncate(80, True) }}</code></td>
+          <td class="sample-path-column"><code class="sample-path" title="{{ page['sample_path'] }}">{{ page['sample_path'] }}</code></td>
           <td>{{ page['count'] }}</td>
           <td>{{ page['impact_ms'] | floatformat(2) }}</td>
           <td>{{ page['avg_time'] | floatformat(2) }}</td>
