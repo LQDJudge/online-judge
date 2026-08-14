@@ -2,7 +2,6 @@ from datetime import timedelta
 
 from django.core.exceptions import ValidationError
 from django.template.defaultfilters import floatformat
-from django.utils.html import format_html
 from django.utils.translation import gettext_lazy
 
 from judge.contest_format.base import MAX_FORMAT_BONUS_POINTS
@@ -163,16 +162,6 @@ class CodeforcesContestFormat(DefaultContestFormat):
             format_key = str(contest_problem.id)
         format_data = (participation.format_data or {}).get(format_key)
         if format_data:
-            penalty = (
-                format_html(
-                    '<small class="red"> -{penalty}</small>',
-                    penalty=floatformat(
-                        format_data["penalty"], -self.contest.points_precision
-                    ),
-                )
-                if format_data.get("is_ac") and format_data.get("penalty")
-                else ""
-            )
             return self.display_problem_cell(
                 participation,
                 contest_problem,
@@ -180,7 +169,6 @@ class CodeforcesContestFormat(DefaultContestFormat):
                 points=floatformat(
                     format_data["points"], -self.contest.points_precision
                 ),
-                extra=penalty,
                 time=nice_repr(
                     timedelta(seconds=format_data["time"]), "noday-no-seconds"
                 ),

@@ -117,6 +117,26 @@ class CodeforcesContestFormatTest(TestCase):
         self.assertAlmostEqual(problem_data["points"], 1552.1666666666667)
         self.assertEqual(self.participation.score, 1552.17)
 
+    def test_accepted_cell_does_not_display_penalty(self):
+        contest_problem = self.make_problem("cfdisplay", points=500, order=0)
+        self.make_submission(contest_problem, minute=10, points=250, result="WA")
+        self.make_submission(contest_problem, minute=20, points=500, result="AC")
+
+        self.participation.recompute_results()
+        self.participation.refresh_from_db()
+
+        problem_data = self.participation.format_data[str(contest_problem.id)]
+        self.assertEqual(problem_data["penalty"], 50)
+
+        html = str(
+            self.contest.format.display_user_problem(
+                self.participation, contest_problem
+            )
+        )
+        self.assertIn("1552", html)
+        self.assertNotIn("-50", html)
+        self.assertNotIn('class="red"', html)
+
     def test_accepted_score_uses_points_floor(self):
         contest_problem = self.make_problem("cfbase", points=500, order=0)
         self.make_submission(contest_problem, minute=100, points=0, result="WA")
