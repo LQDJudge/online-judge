@@ -137,6 +137,24 @@ class CodeforcesContestFormatTest(TestCase):
         self.assertNotIn("-50", html)
         self.assertNotIn('class="red"', html)
 
+    def test_disqualification_sets_public_and_final_scores_to_sentinel(self):
+        contest_problem = self.make_problem("cfdisqualified", points=500, order=0)
+        self.make_submission(contest_problem, minute=20, points=500, result="AC")
+
+        self.participation.set_disqualified(True)
+        self.participation.refresh_from_db()
+
+        self.assertEqual(self.participation.score, -9999)
+        self.assertEqual(self.participation.score_final, -9999)
+        self.assertIn(
+            "-9999",
+            str(
+                self.contest.format.display_participation_result(
+                    self.participation, show_final=True
+                )
+            ),
+        )
+
     def test_accepted_score_uses_points_floor(self):
         contest_problem = self.make_problem("cfbase", points=500, order=0)
         self.make_submission(contest_problem, minute=100, points=0, result="WA")

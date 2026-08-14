@@ -849,7 +849,8 @@ class ContestParticipation(models.Model):
             self.contest.format.update_participation(self)
             if self.is_disqualified:
                 self.score = -9999
-                self.save(update_fields=["score"])
+                self.score_final = -9999
+                self.save(update_fields=["score", "score_final"])
 
     recompute_results.alters_data = True
 
