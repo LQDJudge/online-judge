@@ -297,8 +297,6 @@ class ProblemCaseFormSet(
 
     def clean(self):
         super().clean()
-        if not self.enforce_total_time_limit or self.problem_time_limit is None:
-            return
         # Skip the cross-form check when individual rows already have errors;
         # their cleaned_data may be missing/inconsistent.
         if any(self.errors):
@@ -314,6 +312,12 @@ class ProblemCaseFormSet(
             # run the solution and so don't consume judging time.
             if form.cleaned_data.get("type") == "C":
                 num_tests += 1
+
+        if num_tests == 0:
+            raise ValidationError(_("At least one test case is required."))
+
+        if not self.enforce_total_time_limit or self.problem_time_limit is None:
+            return
 
         max_total = settings.DMOJ_PROBLEM_MAX_TOTAL_TIME_LIMIT
         total = self.problem_time_limit * num_tests

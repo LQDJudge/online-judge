@@ -139,6 +139,42 @@ class TotalTimeLimitValidationTest(TestCase):
 
     # ---- Problem data formset (test case save) ----
 
+    def test_data_formset_rejects_zero_cases(self):
+        formset = ProblemCaseFormSet(
+            data=self._formset_data(0),
+            prefix="cases",
+            valid_files=[],
+            problem_time_limit=1.0,
+            enforce_total_time_limit=False,
+            queryset=ProblemTestCase.objects.none(),
+        )
+        self.assertFalse(formset.is_valid())
+        self.assertIn("At least one test case is required.", formset.non_form_errors())
+
+    def test_data_formset_rejects_deleting_only_existing_case(self):
+        problem = self._make_problem(time_limit=1.0)
+        case = ProblemTestCase.objects.create(
+            dataset=problem, order=0, type="C", points=0, is_pretest=False
+        )
+        data = self._formset_data(1)
+        data.update(
+            {
+                "cases-INITIAL_FORMS": "1",
+                "cases-0-id": str(case.id),
+                "cases-0-DELETE": "on",
+            }
+        )
+        formset = ProblemCaseFormSet(
+            data=data,
+            prefix="cases",
+            valid_files=[],
+            problem_time_limit=1.0,
+            enforce_total_time_limit=False,
+            queryset=ProblemTestCase.objects.filter(id=case.id),
+        )
+        self.assertFalse(formset.is_valid())
+        self.assertIn("At least one test case is required.", formset.non_form_errors())
+
     def test_data_formset_rejects_when_total_exceeds_for_non_admin(self):
         formset = ProblemCaseFormSet(
             data=self._formset_data(3),  # 1.0 * 3 = 3 > 2
