@@ -76,6 +76,7 @@ from judge.models import (
     ContestProblem,
     ContestTag,
     ContestSubmission,
+    Language,
     Organization,
     Problem,
     Profile,
@@ -1344,6 +1345,38 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
                 for j in range(len(counter[i]))
             ]
 
+        language_count_rows = list(
+            queryset.values("language_id")
+            .annotate(count=Count("language_id"))
+            .filter(count__gt=0)
+            .order_by("-count")
+            .values_list("language_id", "count")
+        )
+        language_ac_rate_rows = list(
+            queryset.values("language_id")
+            .annotate(ac_rate=ac_rate)
+            .filter(ac_rate__gt=0)
+            .values_list("language_id", "ac_rate")
+        )
+        language_names = dict(
+            Language.objects.filter(
+                id__in={
+                    language_id
+                    for language_id, _ in language_count_rows + language_ac_rate_rows
+                }
+            ).values_list("id", "name")
+        )
+        language_count = [
+            (language_names[language_id], count)
+            for language_id, count in language_count_rows
+            if language_id in language_names
+        ]
+        language_ac_rate = [
+            (language_names[language_id], rate)
+            for language_id, rate in language_ac_rate_rows
+            if language_id in language_names
+        ]
+
         stats = {
             "problem_status_count": {
                 "labels": labels,
@@ -1367,19 +1400,8 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
             "problem_point": [
                 get_histogram(problem_points[i]) for i in range(num_problems)
             ],
-            "language_count": get_pie_chart(
-                queryset.values("language__name")
-                .annotate(count=Count("language__name"))
-                .filter(count__gt=0)
-                .order_by("-count")
-                .values_list("language__name", "count"),
-            ),
-            "language_ac_rate": get_bar_chart(
-                queryset.values("language__name")
-                .annotate(ac_rate=ac_rate)
-                .filter(ac_rate__gt=0)
-                .values_list("language__name", "ac_rate"),
-            ),
+            "language_count": get_pie_chart(language_count),
+            "language_ac_rate": get_bar_chart(language_ac_rate),
         }
 
         context["stats_script"] = json_script(stats, "contest-stats-data")
