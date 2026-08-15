@@ -45,17 +45,27 @@ class SemanticSearchApiMixin(View):
             raise Http404()
         return super().dispatch(request, *args, **kwargs)
 
+    def get_request_data(self, request):
+        return request.POST if request.method == "POST" else request.GET
+
 
 @method_decorator(
     ratelimit(key="user", rate=settings.RL_SEMANTIC_SEARCH), name="dispatch"
 )
 class SemanticSearchApi(SemanticSearchApiMixin):
     def get(self, request, *args, **kwargs):
-        query = request.GET.get("q", "").strip()
+        return self.handle_search(request)
+
+    def post(self, request, *args, **kwargs):
+        return self.handle_search(request)
+
+    def handle_search(self, request):
+        data = self.get_request_data(request)
+        query = data.get("q", "").strip()
         if not query:
             return JsonResponse({"error": _("Query is required")}, status=400)
 
-        limit = clamp_limit(request.GET.get("limit"))
+        limit = clamp_limit(data.get("limit"))
         try:
             results = search_problems(query, limit=limit)
         except SemanticSearchUnavailable as exc:
@@ -72,8 +82,15 @@ class SemanticSearchApi(SemanticSearchApiMixin):
 )
 class SimilarProblemsApi(SemanticSearchApiMixin):
     def get(self, request, *args, **kwargs):
-        problem_id = request.GET.get("problem_id", "").strip()
-        problem_code = request.GET.get("problem", "").strip()
+        return self.handle_search(request)
+
+    def post(self, request, *args, **kwargs):
+        return self.handle_search(request)
+
+    def handle_search(self, request):
+        data = self.get_request_data(request)
+        problem_id = data.get("problem_id", "").strip()
+        problem_code = data.get("problem", "").strip()
         if not problem_id and not problem_code:
             return JsonResponse({"error": _("Problem is required")}, status=400)
 
@@ -88,7 +105,7 @@ class SimilarProblemsApi(SemanticSearchApiMixin):
         if not problem.is_accessible_by(request.user):
             return JsonResponse({"error": _("Problem not found")}, status=404)
 
-        limit = clamp_limit(request.GET.get("limit"))
+        limit = clamp_limit(data.get("limit"))
         try:
             results = similar_problems(problem, limit=limit)
         except SemanticSearchUnavailable as exc:

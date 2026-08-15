@@ -68,7 +68,7 @@
           $empty.hide();
           $.ajax({
             url: url,
-            method: 'GET',
+            method: 'POST',
             data: data,
             success: function (response) {
               setStatus('', false);
@@ -127,11 +127,13 @@
     </div>
 
     <div class="semantic-search-controls">
-      <form id="semantic-query-form" class="semantic-search-card semantic-query-card">
+      <form id="semantic-query-form" class="semantic-search-card semantic-query-card" method="post">
+        {% csrf_token %}
         <textarea id="semantic-query" name="q" rows="7" placeholder="{{ _('e.g. quy hoạch động trên cây') }}"></textarea>
       </form>
 
-      <form id="semantic-similar-form" class="semantic-search-card" style="display: none">
+      <form id="semantic-similar-form" class="semantic-search-card" method="post" style="display: none">
+        {% csrf_token %}
         <select id="semantic-problem" name="problem_id"></select>
       </form>
     </div>
