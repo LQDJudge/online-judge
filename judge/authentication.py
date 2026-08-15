@@ -1,20 +1,22 @@
 from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.models import User
 from django.contrib.auth.views import PasswordChangeView
 from django.urls import reverse_lazy
 
 
 class CustomModelBackend(ModelBackend):
     def authenticate(self, request, username=None, password=None, **kwargs):
-        try:
-            # Check if the username is an email
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            # If the username is not an email, try authenticating with the username field
-            user = User.objects.filter(email=username).first()
+        if username is None or password is None:
+            return None
 
-        if user and user.check_password(password):
+        users = User.objects.only("id", "password", "is_active")
+        try:
+            user = users.get(username=username)
+        except User.DoesNotExist:
+            user = users.filter(email=username).first()
+
+        if user and user.check_password(password) and self.user_can_authenticate(user):
             return user
 
 
