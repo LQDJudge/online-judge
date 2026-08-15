@@ -45,11 +45,14 @@ __all__ = [
     "OfficialContestCategory",
     "OfficialContestLocation",
     "get_contest_problem_ids",
+    "get_recent_contest_clarification_data",
     "get_global_rating_range",
 ]
 
 
 MAX_CONTEST_WINDOW = timedelta(days=7)
+CONTEST_CLARIFICATION_POLL_MINUTES = 1
+CONTEST_CLARIFICATION_CACHE_SECONDS = 55
 
 
 class ContestTag(models.Model):
@@ -1234,6 +1237,68 @@ class ContestProblemClarification(models.Model):
     date = models.DateTimeField(
         verbose_name=_("clarification timestamp"), auto_now_add=True
     )
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        contest_id = self.contest_id
+        if contest_id is None and self.problem_id is not None:
+            contest_id = self.problem.contest_id
+        if contest_id is not None:
+            get_recent_contest_clarification_data.dirty(contest_id)
+
+    save.alters_data = True
+
+
+@cache_wrapper(
+    prefix="ccrp1",
+    timeout=CONTEST_CLARIFICATION_CACHE_SECONDS,
+    expected_type=list,
+)
+def get_recent_contest_clarification_data(contest_id):
+    last_poll_window = timezone.now() - timezone.timedelta(
+        minutes=CONTEST_CLARIFICATION_POLL_MINUTES
+    )
+    queryset = ContestProblemClarification.objects.filter(
+        Q(problem__contest_id=contest_id)
+        | Q(contest_id=contest_id, problem__isnull=True),
+        date__gte=last_poll_window,
+    ).select_related("problem__problem")
+
+    clarifications = list(queryset)
+    problem_order_by_id = {}
+    if any(clarification.problem_id for clarification in clarifications):
+        problem_order_by_id = {
+            contest_problem_id: index
+            for index, contest_problem_id in enumerate(
+                ContestProblem.objects.filter(
+                    contest_id=contest_id, problem__isnull=False
+                )
+                .order_by("order")
+                .values_list("id", flat=True)
+            )
+        }
+
+    data = []
+    for clarification in clarifications:
+        if clarification.problem_id:
+            data.append(
+                {
+                    "contest_wide": False,
+                    "problem_index": problem_order_by_id[clarification.problem_id],
+                    "problem__name": clarification.problem.problem.name,
+                    "description": clarification.description,
+                }
+            )
+        else:
+            data.append(
+                {
+                    "contest_wide": True,
+                    "problem_index": None,
+                    "problem__name": "",
+                    "description": clarification.description,
+                }
+            )
+    return data
 
 
 class ContestsSummary(models.Model):

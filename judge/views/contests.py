@@ -89,7 +89,10 @@ from judge.models import (
     CourseContest,
 )
 from judge.models.course import EDITABLE_ROLES
-from judge.models.contest import get_contest_problem_ids
+from judge.models.contest import (
+    get_contest_problem_ids,
+    get_recent_contest_clarification_data,
+)
 from judge.models.contest_review import ContestPublicRequest
 from judge.tasks import run_moss
 from judge.utils.identity import build_semantic_formset_plan
@@ -2132,27 +2135,13 @@ class ContestClarificationAjax(ContestMixin, DetailView):
         if not can_view_contest_clarifications(self.object, request):
             return JsonResponse({"error": _("Access denied")}, status=403)
 
-        polling_time = 1  # minute
-        last_one_minute = timezone.now() - timezone.timedelta(minutes=polling_time)
-
-        queryset = ContestProblemClarification.objects.filter(
-            Q(problem__contest=self.object)
-            | Q(contest=self.object, problem__isnull=True),
-            date__gte=last_one_minute,
-        ).select_related("problem__problem")
-
-        problems = list(
-            ContestProblem.objects.filter(contest=self.object, problem__isnull=False)
-            .order_by("order")
-            .values_list("problem__code", flat=True)
-        )
         res = []
-        for clarification in queryset:
-            if clarification.problem_id:
+        for clarification in get_recent_contest_clarification_data(self.object.id):
+            if not clarification["contest_wide"]:
                 order = self.object.get_label_for_problem(
-                    problems.index(clarification.problem.problem.code)
+                    clarification["problem_index"]
                 )
-                problem_name = clarification.problem.problem.name
+                problem_name = clarification["problem__name"]
                 value = {
                     "target_label": _("Problem %(order)s (%(name)s)")
                     % {
@@ -2162,7 +2151,7 @@ class ContestClarificationAjax(ContestMixin, DetailView):
                     "contest_wide": False,
                     "order": order,
                     "problem__name": problem_name,
-                    "description": clarification.description,
+                    "description": clarification["description"],
                 }
             else:
                 problem_name = _("Entire contest")
@@ -2171,7 +2160,7 @@ class ContestClarificationAjax(ContestMixin, DetailView):
                     "contest_wide": True,
                     "order": "",
                     "problem__name": problem_name,
-                    "description": clarification.description,
+                    "description": clarification["description"],
                 }
             res.append(value)
 

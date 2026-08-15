@@ -119,6 +119,21 @@ class ContestClarificationVisibilityTest(TestCase):
         self.assertContains(problems_response, self.secret)
         self.assertContains(problems_response, "/clarification/ajax")
         self.assertContains(ajax_response, self.secret)
+        ajax_data = ajax_response.json()[0]
+        self.assertFalse(ajax_data["contest_wide"])
+        self.assertEqual(ajax_data["problem__name"], "Clarification Problem")
+        self.assertIn("Clarification Problem", ajax_data["target_label"])
+
+    def test_ajax_empty_poll_returns_no_clarifications(self):
+        ContestProblemClarification.objects.filter(description=self.secret).update(
+            date=timezone.now() - timezone.timedelta(minutes=2)
+        )
+        self.client.force_login(self.participant.user)
+
+        response = self.client.get(self._ajax_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
 
     def test_contest_author_can_see_clarifications_without_joining(self):
         self.client.force_login(self.author.user)
