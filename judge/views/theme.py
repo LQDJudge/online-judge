@@ -2,7 +2,6 @@ import os
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.files import File
 from django.core.files.storage import default_storage
 from django.http import (
     HttpResponseRedirect,
@@ -20,6 +19,7 @@ from judge.models import DYNAMIC_EFFECT_CHOICES, Profile
 from judge.utils.theme import (
     get_sample_backgrounds,
     invalidate_sample_backgrounds_cache,
+    is_sample_background_path,
     SAMPLE_BACKGROUNDS_PREFIX,
 )
 from judge.utils.storage_helpers import (
@@ -63,21 +63,25 @@ class ThemeSettingsView(LoginRequiredMixin, TemplateView):
             sample_filename = request.POST.get("sample_filename")
             if sample_filename:
                 sample_path = f"{SAMPLE_BACKGROUNDS_PREFIX}/{sample_filename}"
+                if not validate_path_prefix(sample_path, SAMPLE_BACKGROUNDS_PREFIX):
+                    return HttpResponseForbidden()
                 if storage_file_exists(default_storage, sample_path):
-                    # Delete old background files BEFORE saving the new one
-                    if profile.background_image:
+                    old_background_name = (
+                        profile.background_image.name
+                        if profile.background_image
+                        else None
+                    )
+                    if old_background_name and not is_sample_background_path(
+                        old_background_name
+                    ):
                         profile.background_image.delete(save=False)
 
-                    # Copy sample to user's background using storage API
-                    with default_storage.open(sample_path, "rb") as f:
-                        profile.background_image.save(
-                            sample_filename, File(f), save=False
-                        )
-
-                    # Save the profile using update() to bypass save() method
+                    # Point at the shared sample file instead of copying bytes
+                    # through Django/object storage on every selection.
                     Profile.objects.filter(pk=profile.pk).update(
-                        background_image=profile.background_image.name
+                        background_image=sample_path
                     )
+                    Profile.dirty_cache(profile.pk)
 
         elif action == "update_effect":
             # Update dynamic effect
@@ -181,6 +185,15 @@ class SampleBackgroundDeleteView(LoginRequiredMixin, View):
         # Security: ensure the file is within the sample backgrounds directory
         if not validate_path_prefix(filepath, SAMPLE_BACKGROUNDS_PREFIX):
             return HttpResponseForbidden()
+
+        if Profile.objects.filter(background_image=filepath).exists():
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": _("This sample background is currently in use."),
+                },
+                status=400,
+            )
 
         storage_delete_file(default_storage, filepath)
         invalidate_sample_backgrounds_cache()

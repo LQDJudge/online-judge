@@ -16,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from judge.utils.ratelimit import ratelimit
+from judge.utils.theme import is_sample_background_path
 from judge.utils.upload_handler import UploadHandler
 from judge.widgets.direct_upload import get_upload_token_data, UPLOAD_TOKEN_PREFIX
 
@@ -202,7 +203,11 @@ def save_to_model(request):
             setattr(obj, field_name, file_key)
             obj.save(update_fields=[field_name])
 
-        if old_file_name and old_file_name != file_key:
+        if (
+            old_file_name
+            and old_file_name != file_key
+            and not is_sample_background_path(old_file_name)
+        ):
             try:
                 default_storage.delete(old_file_name)
             except Exception:
@@ -266,10 +271,11 @@ def delete_file(request):
         field_name = token_data["field_name"]
         old_file = getattr(obj, field_name, None)
         if old_file and old_file.name:
-            try:
-                default_storage.delete(old_file.name)
-            except Exception:
-                pass
+            if not is_sample_background_path(old_file.name):
+                try:
+                    default_storage.delete(old_file.name)
+                except Exception:
+                    pass
             if reversion.is_registered(type(obj)):
                 with reversion.create_revision():
                     setattr(obj, field_name, None)

@@ -6,6 +6,13 @@ from judge.utils.storage_helpers import storage_listdir
 SAMPLE_BACKGROUNDS_PREFIX = "sample_backgrounds"
 
 
+def is_sample_background_path(path):
+    return bool(path) and (
+        path == SAMPLE_BACKGROUNDS_PREFIX
+        or path.startswith(f"{SAMPLE_BACKGROUNDS_PREFIX}/")
+    )
+
+
 @cache_wrapper("sample_bgs", timeout=3600)
 def get_sample_backgrounds():
     """
