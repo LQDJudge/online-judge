@@ -16,12 +16,15 @@ from judge.models import (
     QuizAnswerFile,
     Profile,
 )
+from judge.utils.formsets import validate_max_active_forms
 from judge.utils.identity import SemanticIdentityInlineFormSet
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminHeavySelect2Widget,
     HeavyPreviewAdminPageDownWidget,
 )
+
+MAX_QUIZ_QUESTIONS = 200
 
 # =============================================================================
 # QuizQuestion Admin
@@ -188,11 +191,23 @@ class QuizQuestionAssignmentInlineForm(ModelForm):
 class QuizQuestionAssignmentInlineFormSet(SemanticIdentityInlineFormSet):
     semantic_identity_fields = ("question",)
 
+    def is_valid(self):
+        valid = super().is_valid()
+        if not valid:
+            return valid
+        return validate_max_active_forms(
+            self,
+            MAX_QUIZ_QUESTIONS,
+            _("A quiz may contain at most %(count)d questions.")
+            % {"count": MAX_QUIZ_QUESTIONS},
+        )
+
 
 class QuizQuestionAssignmentInline(admin.TabularInline):
     model = QuizQuestionAssignment
     form = QuizQuestionAssignmentInlineForm
     formset = QuizQuestionAssignmentInlineFormSet
+    max_num = MAX_QUIZ_QUESTIONS
     extra = 1
     fields = ("question", "points", "order")
     ordering = ("order", "id")

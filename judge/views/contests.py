@@ -92,10 +92,7 @@ from judge.models.course import EDITABLE_ROLES
 from judge.models.contest import get_contest_problem_ids
 from judge.models.contest_review import ContestPublicRequest
 from judge.tasks import run_moss
-from judge.utils.identity import (
-    count_semantic_formset_deletions,
-    save_semantic_formset,
-)
+from judge.utils.identity import build_semantic_formset_plan
 from judge.utils.celery import redirect_to_task_status
 from judge.utils.hidden_results import (
     format_data_key,
@@ -2458,6 +2455,97 @@ class ContestProblemset(ContestMixin, TitleMixin, DetailView):
         return context
 
 
+class ContestRowsUpdate:
+    identity_fields = ("problem", "quiz")
+    parent_field = "contest"
+
+    def __init__(self, contest, formset):
+        self.contest = contest
+        self.formset = formset
+        self.plan = build_semantic_formset_plan(
+            formset,
+            parent_field=self.parent_field,
+            parent=contest,
+            identity_fields=self.identity_fields,
+        )
+
+    def deleted_submission_count(self):
+        if not self.plan.deleted_objects:
+            return 0
+        return ContestSubmission.objects.filter(
+            problem__in=self.plan.deleted_objects
+        ).count()
+
+    def save(self):
+        saved_objects = []
+        self.formset.new_objects = []
+        self.formset.changed_objects = []
+
+        for obj in self.plan.deleted_objects:
+            obj.delete()
+
+        for key, form in self.plan.desired:
+            obj = self.plan.existing_by_key.get(key)
+            if obj is None:
+                obj = ContestProblem(contest=self.contest)
+                is_new = True
+            else:
+                is_new = False
+                if not self._has_model_changes(obj, form):
+                    saved_objects.append(obj)
+                    continue
+
+            self._copy_form_values(obj, form)
+            obj.contest = self.contest
+            obj.save()
+            saved_objects.append(obj)
+
+            if is_new:
+                self.formset.new_objects.append(obj)
+            else:
+                self.formset.changed_objects.append((obj, form.changed_data))
+
+        self.formset.deleted_objects = self.plan.deleted_objects
+        return saved_objects
+
+    def _form_fields(self, form):
+        fields = form._meta.fields
+        if fields is None:
+            fields = form.cleaned_data.keys()
+        return fields
+
+    def _has_model_changes(self, obj, form):
+        for field in self._form_fields(form):
+            if self._skip_form_field(field, form):
+                continue
+            model_field = obj._meta.get_field(field)
+            old_value = getattr(obj, model_field.attname)
+            new_value = form.cleaned_data[field]
+            if hasattr(new_value, "pk"):
+                new_value = new_value.pk
+            if self._normalize_form_value(old_value, model_field) != (
+                self._normalize_form_value(new_value, model_field)
+            ):
+                return True
+        return False
+
+    def _copy_form_values(self, obj, form):
+        for field in self._form_fields(form):
+            if self._skip_form_field(field, form):
+                continue
+            setattr(obj, field, form.cleaned_data[field])
+
+    def _skip_form_field(self, field, form):
+        if field == self.parent_field or field in {"id", "DELETE"}:
+            return True
+        return field not in form.cleaned_data
+
+    def _normalize_form_value(self, value, model_field):
+        if model_field.null and value == "":
+            return None
+        return value
+
+
 class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectFormView):
     """
     Unified edit page for all three contest types (public, org-private,
@@ -2571,7 +2659,8 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
                     status=400,
                 )
             try:
-                delete_count = self._deleted_contest_submission_count(rows_formset)
+                rows_update = ContestRowsUpdate(self.object, rows_formset)
+                delete_count = rows_update.deleted_submission_count()
             except ValidationError as error:
                 return self._rows_validation_error_json(error)
             return JsonResponse(
@@ -2593,7 +2682,8 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
             )
 
         try:
-            delete_count = self._deleted_contest_submission_count(rows_formset)
+            rows_update = ContestRowsUpdate(self.object, rows_formset)
+            delete_count = rows_update.deleted_submission_count()
         except ValidationError as error:
             return self._rows_validation_error_response(form, rows_formset, error)
         if delete_count > 0 and request.POST.get(self.row_delete_confirm_field) != str(
@@ -2610,12 +2700,7 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
             with transaction.atomic(), revisions.create_revision():
                 revisions.set_comment(_("Edited from site"))
                 revisions.set_user(self.request.user)
-                save_semantic_formset(
-                    rows_formset,
-                    parent_field="contest",
-                    parent=self.object,
-                    identity_fields=("problem", "quiz"),
-                )
+                rows_update.save()
                 return self.form_valid(form)
         except (IntegrityError, ValidationError) as error:
             return self._rows_validation_error_response(form, rows_formset, error)
@@ -2640,17 +2725,6 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         if hasattr(error, "messages"):
             return " ".join(str(message) for message in error.messages)
         return str(error)
-
-    def _deleted_contest_submission_count(self, rows_formset):
-        return count_semantic_formset_deletions(
-            rows_formset,
-            parent_field="contest",
-            parent=self.object,
-            identity_fields=("problem", "quiz"),
-            count_queryset=lambda deleted_rows: ContestSubmission.objects.filter(
-                problem__in=deleted_rows
-            ),
-        )
 
     def _delete_confirmation_message(self, delete_count):
         return ngettext(

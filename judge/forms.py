@@ -67,7 +67,11 @@ from judge.widgets.direct_upload import (
     DirectUploadPDFWidget,
     DirectUploadFormMixin,
 )
+from judge.utils.formsets import active_formset_forms
 from judge.utils.turnstile import TurnstileField, is_turnstile_configured
+
+MAX_CONTEST_PROBLEMS = 100
+MAX_CONTEST_QUIZZES = 100
 
 
 class HTMLDisplayWidget(forms.Widget):
@@ -1042,16 +1046,17 @@ class ContestRowModelFormSet(BaseModelFormSet):
         # Detect duplicate problems and duplicate quizzes within one save.
         seen_problems, seen_quizzes = set(), set()
         dup_problems, dup_quizzes = set(), set()
-        for form in self.forms:
-            if not form.cleaned_data or form.cleaned_data.get("DELETE"):
-                continue
+        problem_forms, quiz_forms = [], []
+        for form in active_formset_forms(self):
             problem = form.cleaned_data.get("problem")
             quiz = form.cleaned_data.get("quiz")
             if problem:
+                problem_forms.append(form)
                 (dup_problems if problem in seen_problems else seen_problems).add(
                     problem
                 )
             if quiz:
+                quiz_forms.append(form)
                 (dup_quizzes if quiz in seen_quizzes else seen_quizzes).add(quiz)
 
         if dup_problems or dup_quizzes:
@@ -1063,6 +1068,20 @@ class ContestRowModelFormSet(BaseModelFormSet):
                 if form.cleaned_data.get("quiz") in dup_quizzes:
                     form.add_error("quiz", _("This quiz is duplicated."))
             return False
+        if len(problem_forms) > MAX_CONTEST_PROBLEMS:
+            problem_forms[MAX_CONTEST_PROBLEMS].add_error(
+                None,
+                _("A contest may contain at most %(count)d problems.")
+                % {"count": MAX_CONTEST_PROBLEMS},
+            )
+            return False
+        if len(quiz_forms) > MAX_CONTEST_QUIZZES:
+            quiz_forms[MAX_CONTEST_QUIZZES].add_error(
+                None,
+                _("A contest may contain at most %(count)d quizzes.")
+                % {"count": MAX_CONTEST_QUIZZES},
+            )
+            return False
         return True
 
 
@@ -1072,6 +1091,7 @@ ContestRowFormSet = modelformset_factory(
     formset=ContestRowModelFormSet,
     extra=0,
     can_delete=True,
+    max_num=MAX_CONTEST_PROBLEMS + MAX_CONTEST_QUIZZES,
 )
 
 

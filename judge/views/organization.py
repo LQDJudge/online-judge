@@ -1,6 +1,7 @@
 import hmac
 import secrets
 import string
+from collections import defaultdict
 
 from django import forms
 from django.conf import settings
@@ -11,7 +12,7 @@ from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.utils.text import slugify
 from django.db.models import Count, Q, Subquery, OuterRef
-from django.forms import Form, modelformset_factory
+from django.forms import BaseModelFormSet, Form, modelformset_factory
 from django.http import (
     Http404,
     HttpResponsePermanentRedirect,
@@ -38,6 +39,7 @@ from django.views.generic.detail import (
 from django.contrib.sites.shortcuts import get_current_site
 from reversion import revisions
 
+from judge.caching import cache_wrapper
 from judge.forms import (
     EditOrganizationForm,
     AddOrganizationForm,
@@ -70,6 +72,7 @@ from judge.utils.views import (
     QueryStringSortMixin,
     DiggPaginatorMixin,
 )
+from judge.utils.formsets import validate_max_active_forms
 from judge.utils.problems import user_attempted_ids, user_completed_ids
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList, compute_ranks
@@ -78,8 +81,8 @@ from judge.views.submission import SubmissionsListBase
 from judge.utils.feed import build_home_feed
 from judge.views.feed import FeedView
 from judge.models.profile import get_top_rating_profile, get_top_score_profile
-from judge.caching import cache_wrapper
-from collections import defaultdict
+
+MAX_ORGANIZATION_REQUESTS = 100
 
 
 @cache_wrapper(prefix="Pgtcpi4", timeout=1800, expected_type=list)
@@ -1153,8 +1156,26 @@ class OrganizationRequestDetail(
         return object
 
 
+class OrganizationRequestModelFormSet(BaseModelFormSet):
+    def is_valid(self):
+        valid = super().is_valid()
+        if not valid:
+            return valid
+        return validate_max_active_forms(
+            self,
+            MAX_ORGANIZATION_REQUESTS,
+            _("Update at most %(count)d join requests at a time.")
+            % {"count": MAX_ORGANIZATION_REQUESTS},
+        )
+
+
 OrganizationRequestFormSet = modelformset_factory(
-    OrganizationRequest, extra=0, fields=("state",), can_delete=True
+    OrganizationRequest,
+    extra=0,
+    fields=("state",),
+    formset=OrganizationRequestModelFormSet,
+    can_delete=True,
+    max_num=MAX_ORGANIZATION_REQUESTS,
 )
 
 

@@ -14,6 +14,12 @@
     <form action="" method="post">
       {% csrf_token %}
       {{ formset.management_form }}
+      {% if formset.errors %}
+        <div class="alert alert-danger alert-dismissable">
+          <a href="#" class="close">x</a>
+          {{ _("Please fix below errors") }}
+        </div>
+      {% endif %}
       <table class="table">
         <tr>
           <th>{{ _('User') }}</th>
@@ -25,12 +31,24 @@
           {% endif %}
         </tr>
         {% for form in formset %}
+          {% if form.non_field_errors() %}
+            <tr>
+              <td colspan="{{ 5 if formset.can_delete else 4 }}">
+                <div class="field-error red">{{ form.non_field_errors() }}</div>
+              </td>
+            </tr>
+          {% endif %}
           <tr id="request-{{ form.instance.id }}">
             <td>{{ form.id }}{{ link_user(form.instance.user) }}</td>
             <td><a href="{{ url('request_organization_detail', object.id, object.slug, form.instance.id) }}">
               {{ form.instance.time|date(_("N j, Y, g:i a")) }}
             </a></td>
-            <td>{{ form.state }}</td>
+            <td>
+              {{ form.state }}
+              {% if form.state.errors %}
+                <div class="field-error red">{{ form.state.errors }}</div>
+              {% endif %}
+            </td>
             <td>{{ form.instance.reason|truncatechars(50) }}</td>
             {% if formset.can_delete %}
               <td>{{ form.DELETE }}</td>

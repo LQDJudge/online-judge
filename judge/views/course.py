@@ -10,6 +10,7 @@ from django.forms import (
     ModelForm,
     modelformset_factory,
 )
+from django.forms.models import BaseInlineFormSet
 from django.core.files.uploadedfile import UploadedFile
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -46,6 +47,7 @@ from judge.models import (
 )
 from judge.models.course import RoleInCourse, EDITABLE_ROLES
 from judge.utils.course_prerequisites import get_lesson_lock_status
+from judge.utils.formsets import validate_max_active_forms
 from judge.utils.hidden_results import (
     exclude_hidden_result_submissions,
     hidden_result_submission_ids,
@@ -70,6 +72,10 @@ from judge.utils.views import (
     generic_message,
     paginate_query_context,
 )
+
+MAX_COURSE_LESSONS = 100
+MAX_COURSE_LESSON_PROBLEMS = 100
+MAX_COURSE_LESSON_QUIZZES = 100
 
 
 def _set_problem_points(
@@ -969,8 +975,27 @@ class CourseLessonForm(forms.ModelForm):
         }
 
 
+class CourseLessonModelFormSet(BaseInlineFormSet):
+    def is_valid(self):
+        valid = super().is_valid()
+        if not valid:
+            return valid
+        return validate_max_active_forms(
+            self,
+            MAX_COURSE_LESSONS,
+            _("A course may contain at most %(count)d lessons.")
+            % {"count": MAX_COURSE_LESSONS},
+        )
+
+
 CourseLessonFormSet = inlineformset_factory(
-    Course, CourseLesson, form=CourseLessonForm, extra=1, can_delete=True
+    Course,
+    CourseLesson,
+    form=CourseLessonForm,
+    formset=CourseLessonModelFormSet,
+    extra=1,
+    can_delete=True,
+    max_num=MAX_COURSE_LESSONS,
 )
 
 
@@ -989,6 +1014,17 @@ class CourseLessonProblemForm(ModelForm):
 class CourseLessonProblemModelFormSet(SemanticIdentityModelFormSet):
     semantic_identity_fields = ("problem",)
 
+    def is_valid(self):
+        valid = super().is_valid()
+        if not valid:
+            return valid
+        return validate_max_active_forms(
+            self,
+            MAX_COURSE_LESSON_PROBLEMS,
+            _("A lesson may contain at most %(count)d problems.")
+            % {"count": MAX_COURSE_LESSON_PROBLEMS},
+        )
+
 
 CourseLessonProblemFormSet = modelformset_factory(
     CourseLessonProblem,
@@ -996,6 +1032,7 @@ CourseLessonProblemFormSet = modelformset_factory(
     formset=CourseLessonProblemModelFormSet,
     extra=0,
     can_delete=True,
+    max_num=MAX_COURSE_LESSON_PROBLEMS,
 )
 
 
@@ -1014,6 +1051,17 @@ class CourseLessonQuizForm(ModelForm):
 class CourseLessonQuizModelFormSet(SemanticIdentityModelFormSet):
     semantic_identity_fields = ("quiz",)
 
+    def is_valid(self):
+        valid = super().is_valid()
+        if not valid:
+            return valid
+        return validate_max_active_forms(
+            self,
+            MAX_COURSE_LESSON_QUIZZES,
+            _("A lesson may contain at most %(count)d quizzes.")
+            % {"count": MAX_COURSE_LESSON_QUIZZES},
+        )
+
 
 CourseLessonQuizFormSet = modelformset_factory(
     CourseLessonQuiz,
@@ -1021,6 +1069,7 @@ CourseLessonQuizFormSet = modelformset_factory(
     formset=CourseLessonQuizModelFormSet,
     extra=0,
     can_delete=True,
+    max_num=MAX_COURSE_LESSON_QUIZZES,
 )
 
 
@@ -1221,10 +1270,13 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         )
         # Create problem formset only for the current lesson
         context["problem_formsets"] = {
-            self.lesson.id: self.get_problem_formset(post=False, lesson=self.lesson)
+            self.lesson.id: kwargs.get("problem_formset")
+            or self.get_problem_formset(post=False, lesson=self.lesson)
         }
         # Create quiz formset for the current lesson
-        context["quiz_formset"] = self.get_quiz_formset(post=False, lesson=self.lesson)
+        context["quiz_formset"] = kwargs.get("quiz_formset") or self.get_quiz_formset(
+            post=False, lesson=self.lesson
+        )
 
         context["title"] = _("Edit lessons for %(course_name)s") % {
             "course_name": self.course.name
@@ -1291,6 +1343,20 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
                 else:
                     form.instance.course_id = self.course.id
                     form.instance.id = self.lesson.id
+
+                    problem_formsets = self.get_problem_formset(
+                        post=True, lesson=self.lesson
+                    )
+                    quiz_formsets = self.get_quiz_formset(post=True, lesson=self.lesson)
+                    problem_formsets_valid = problem_formsets.is_valid()
+                    quiz_formsets_valid = quiz_formsets.is_valid()
+                    if not problem_formsets_valid or not quiz_formsets_valid:
+                        return self.form_invalid(
+                            form,
+                            problem_formset=problem_formsets,
+                            quiz_formset=quiz_formsets,
+                        )
+
                     self.lesson = form.save()
 
                     # Add revision tracking details for lesson editing
@@ -1301,25 +1367,19 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
                     )
                     revisions.set_user(request.user)
 
-                    problem_formsets = self.get_problem_formset(
-                        post=True, lesson=self.lesson
+                    save_semantic_formset(
+                        problem_formsets,
+                        parent_field="lesson",
+                        parent=self.lesson,
+                        identity_fields=("problem",),
                     )
-                    if problem_formsets.is_valid():
-                        save_semantic_formset(
-                            problem_formsets,
-                            parent_field="lesson",
-                            parent=self.lesson,
-                            identity_fields=("problem",),
-                        )
 
-                    quiz_formsets = self.get_quiz_formset(post=True, lesson=self.lesson)
-                    if quiz_formsets.is_valid():
-                        save_semantic_formset(
-                            quiz_formsets,
-                            parent_field="lesson",
-                            parent=self.lesson,
-                            identity_fields=("quiz",),
-                        )
+                    save_semantic_formset(
+                        quiz_formsets,
+                        parent_field="lesson",
+                        parent=self.lesson,
+                        identity_fields=("quiz",),
+                    )
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -1330,12 +1390,18 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         else:
             return super().form_valid(form)
 
-    def form_invalid(self, form):
+    def form_invalid(self, form, *, problem_formset=None, quiz_formset=None):
         # Create a fresh form from the original instance with original values
         # but carry over the errors from the invalid form
         fresh_form = CourseLessonForm(instance=self.lesson)
         fresh_form._errors = form._errors
-        return self.render_to_response(self.get_context_data(form=fresh_form))
+        return self.render_to_response(
+            self.get_context_data(
+                form=fresh_form,
+                problem_formset=problem_formset,
+                quiz_formset=quiz_formset,
+            )
+        )
 
     def get_success_url(self):
         return reverse(

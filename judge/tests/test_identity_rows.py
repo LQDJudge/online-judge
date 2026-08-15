@@ -3,6 +3,7 @@ from django.forms import modelformset_factory
 from django.test import TestCase
 from django.utils import timezone
 
+from judge.forms import ContestRowFormSet, MAX_CONTEST_PROBLEMS
 from judge.models import (
     Contest,
     ContestProblem,
@@ -16,6 +17,10 @@ from judge.models import (
 )
 from judge.models.quiz import Quiz, QuizQuestion, QuizQuestionAssignment
 from judge.utils.identity import SemanticIdentityModelFormSet, save_semantic_formset
+from judge.views.course import (
+    CourseLessonProblemFormSet,
+    MAX_COURSE_LESSON_PROBLEMS,
+)
 
 
 class ImmutableIdentityRowsTest(TestCase):
@@ -218,4 +223,81 @@ class ImmutableIdentityRowsTest(TestCase):
         self.assertEqual(
             list(formset.forms[1].non_field_errors()),
             ["Duplicate rows are not allowed."],
+        )
+
+    def test_contest_row_formset_rejects_more_than_100_problems(self):
+        problems = [
+            self.make_problem(f"contest-limit-{index}")
+            for index in range(MAX_CONTEST_PROBLEMS + 1)
+        ]
+        data = {
+            "form-TOTAL_FORMS": str(len(problems)),
+            "form-INITIAL_FORMS": "0",
+            "form-MIN_NUM_FORMS": "0",
+            "form-MAX_NUM_FORMS": str(MAX_CONTEST_PROBLEMS * 2),
+        }
+        for index, problem in enumerate(problems):
+            prefix = f"form-{index}"
+            data.update(
+                {
+                    f"{prefix}-id": "",
+                    f"{prefix}-order": str(index + 1),
+                    f"{prefix}-problem": str(problem.id),
+                    f"{prefix}-quiz": "",
+                    f"{prefix}-points": "100",
+                    f"{prefix}-initial_ac_score": "",
+                    f"{prefix}-max_submissions": "0",
+                    f"{prefix}-hidden_subtasks": "",
+                }
+            )
+
+        formset = ContestRowFormSet(
+            data=data,
+            queryset=ContestProblem.objects.none(),
+        )
+
+        self.assertFalse(formset.is_valid())
+        self.assertEqual(
+            list(formset.forms[MAX_CONTEST_PROBLEMS].non_field_errors()),
+            ["A contest may contain at most 100 problems."],
+        )
+
+    def test_course_lesson_problem_formset_rejects_more_than_100_problems(self):
+        course = Course.objects.create(
+            name="Limit Course", slug="limit-course", about=""
+        )
+        lesson = CourseLesson.objects.create(
+            course=course, title="Lesson", content="", order=1, points=100
+        )
+        problems = [
+            self.make_problem(f"lesson-limit-{index}")
+            for index in range(MAX_COURSE_LESSON_PROBLEMS + 1)
+        ]
+        data = {
+            "form-TOTAL_FORMS": str(len(problems)),
+            "form-INITIAL_FORMS": "0",
+            "form-MIN_NUM_FORMS": "0",
+            "form-MAX_NUM_FORMS": str(MAX_COURSE_LESSON_PROBLEMS),
+        }
+        for index, problem in enumerate(problems):
+            prefix = f"form-{index}"
+            data.update(
+                {
+                    f"{prefix}-id": "",
+                    f"{prefix}-order": str(index + 1),
+                    f"{prefix}-problem": str(problem.id),
+                    f"{prefix}-score": "100",
+                    f"{prefix}-lesson": str(lesson.id),
+                }
+            )
+
+        formset = CourseLessonProblemFormSet(
+            data=data,
+            queryset=CourseLessonProblem.objects.none(),
+        )
+
+        self.assertFalse(formset.is_valid())
+        self.assertEqual(
+            list(formset.forms[MAX_COURSE_LESSON_PROBLEMS].non_field_errors()),
+            ["A lesson may contain at most 100 problems."],
         )

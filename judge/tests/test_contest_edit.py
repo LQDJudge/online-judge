@@ -14,6 +14,8 @@ Covers the fixes layered on the standalone-edit feature branch:
      this isn't new behavior but it underpins the form correctness).
 """
 
+from unittest.mock import patch
+
 from django.contrib.auth.models import Group, Permission, User
 from django.test import TestCase
 from django.urls import reverse
@@ -736,6 +738,61 @@ class ContestEditSemanticRowsTests(ContestEditTestBase):
         self.assertEqual(contest_submission.problem, second_row)
         self.assertEqual(second_row.order, 1)
         self.assertEqual(first_row.order, 2)
+
+    def test_unchanged_problem_rows_are_not_saved(self):
+        first_problem = self._make_problem("semantic-unchanged-1")
+        second_problem = self._make_problem("semantic-unchanged-2")
+        unchanged_row = ContestProblem.objects.create(
+            contest=self.public_contest,
+            problem=first_problem,
+            order=1,
+            points=100,
+            partial=True,
+        )
+        changed_row = ContestProblem.objects.create(
+            contest=self.public_contest,
+            problem=second_problem,
+            order=2,
+            points=100,
+            partial=True,
+        )
+        post = self._contest_edit_post_data(
+            self.public_contest,
+            [
+                {
+                    "id": unchanged_row.id,
+                    "problem_id": first_problem.id,
+                    "order": 1,
+                    "partial": True,
+                },
+                {
+                    "id": changed_row.id,
+                    "problem_id": second_problem.id,
+                    "order": 3,
+                    "partial": True,
+                },
+            ],
+        )
+
+        original_save = ContestProblem.save
+        saved_ids = []
+
+        def counting_save(instance, *args, **kwargs):
+            saved_ids.append(instance.id)
+            return original_save(instance, *args, **kwargs)
+
+        self.client.force_login(self.author)
+        with patch.object(ContestProblem, "save", counting_save):
+            response = self.client.post(
+                reverse("contest_edit", args=[self.public_contest.key]), post
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(saved_ids, [changed_row.id])
+        unchanged_row.refresh_from_db()
+        changed_row.refresh_from_db()
+        self.assertEqual(unchanged_row.order, 1)
+        self.assertEqual(changed_row.order, 3)
 
 
 class ContestEditRedirectTests(ContestEditTestBase):

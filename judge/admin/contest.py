@@ -26,6 +26,7 @@ from judge.models import (
     OfficialContest,
 )
 from judge.ratings import rate_contest
+from judge.utils.formsets import active_formset_forms
 from judge.utils.identity import SemanticIdentityInlineFormSet
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
@@ -38,6 +39,9 @@ from judge.widgets import (
 from judge.review.decisions import post_contest_decision_side_effects
 from judge.views.contests import recalculate_contest_summary_result
 from judge.utils.contest import maybe_trigger_contest_rescore
+
+MAX_CONTEST_PROBLEMS = 100
+MAX_CONTEST_QUIZZES = 100
 
 
 class AdminHeavySelect2Widget(AdminHeavySelect2Widget):
@@ -92,6 +96,34 @@ class ContestProblemInlineForm(ModelForm):
 class ContestProblemInlineFormSet(SemanticIdentityInlineFormSet):
     semantic_identity_fields = ("problem", "quiz")
 
+    def is_valid(self):
+        valid = super().is_valid()
+        if not valid:
+            return valid
+
+        problem_forms, quiz_forms = [], []
+        for form in active_formset_forms(self):
+            if form.cleaned_data.get("problem"):
+                problem_forms.append(form)
+            if form.cleaned_data.get("quiz"):
+                quiz_forms.append(form)
+
+        if len(problem_forms) > MAX_CONTEST_PROBLEMS:
+            problem_forms[MAX_CONTEST_PROBLEMS].add_error(
+                None,
+                _("A contest may contain at most %(count)d problems.")
+                % {"count": MAX_CONTEST_PROBLEMS},
+            )
+            return False
+        if len(quiz_forms) > MAX_CONTEST_QUIZZES:
+            quiz_forms[MAX_CONTEST_QUIZZES].add_error(
+                None,
+                _("A contest may contain at most %(count)d quizzes.")
+                % {"count": MAX_CONTEST_QUIZZES},
+            )
+            return False
+        return True
+
 
 class ContestProblemInline(admin.TabularInline):
     model = ContestProblem
@@ -113,6 +145,7 @@ class ContestProblemInline(admin.TabularInline):
     readonly_fields = ("rejudge_column",)
     form = ContestProblemInlineForm
     formset = ContestProblemInlineFormSet
+    max_num = MAX_CONTEST_PROBLEMS + MAX_CONTEST_QUIZZES
 
     def rejudge_column(self, obj):
         if obj.id is None:
