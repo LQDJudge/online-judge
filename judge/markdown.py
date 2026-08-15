@@ -1,13 +1,15 @@
 import threading
-
-import markdown as _markdown
-import bleach
-from django.utils.html import escape
-from bs4 import BeautifulSoup
-from pymdownx import superfences, arithmatex
-from django.conf import settings
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
+from django.conf import settings
+from django.utils.html import escape
+
+import bleach
+import markdown as _markdown
+from bs4 import BeautifulSoup
+from pymdownx import superfences, arithmatex
+
+from judge.caching import cache_wrapper
 from judge.markdown_extensions import (
     YouTubeExtension,
     EmoticonExtension,
@@ -259,6 +261,7 @@ def _sanitize_iframe_autoplay(soup):
 
 
 _markdown_local = threading.local()
+MARKDOWN_CACHE_TIMEOUT = 7 * 24 * 60 * 60
 
 
 def _get_markdown_instance():
@@ -271,7 +274,7 @@ def _get_markdown_instance():
     return inst
 
 
-def markdown(value, lazy_load=False):
+def _render_markdown(value, lazy_load=False):
     md = _get_markdown_instance()
     html = md.reset().convert(value)
 
@@ -291,3 +294,12 @@ def markdown(value, lazy_load=False):
     html = str(soup)
 
     return '<div class="md-typeset content-description">%s</div>' % html
+
+
+@cache_wrapper(prefix="MdHTMLv1", timeout=MARKDOWN_CACHE_TIMEOUT, expected_type=str)
+def _cached_markdown(value, lazy_load=False):
+    return _render_markdown(value, lazy_load)
+
+
+def markdown(value, lazy_load=False):
+    return _cached_markdown(value or "", lazy_load)

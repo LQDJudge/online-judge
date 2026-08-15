@@ -7,7 +7,7 @@ from django.db import models
 import xxhash
 from inspect import signature
 
-MAX_NUM_CHAR = 8
+MAX_NUM_CHAR = 20
 NONE_RESULT = "__None__"  # Placeholder for None values in caching
 
 # Registry of cache_wrapper prefixes -> "module.qualname" of the first function
@@ -48,7 +48,7 @@ def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
             args_list = filter_args(args_list)
             args_list = [arg_to_str(i) for i in args_list]
             key = prefix + ":" + ":".join(args_list)
-            key = key.replace(" ", "_")
+            key = "".join("_" if ord(char) <= 32 else char for char in key)
             return key
 
         owner = f"{func.__module__}.{func.__qualname__}"

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
-from django.db.models import Max, Sum, Q
+from django.db.models import Count, Max, Sum, Q
 from django.forms import (
     inlineformset_factory,
     ModelForm,
@@ -903,52 +903,54 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
         }
         context["lesson_problems"] = [
             {"problem": p, "score": ps["score"]}
-            for p, ps in zip(
-                self.lesson.get_problems(), self.lesson.get_problems_and_scores()
-            )
+            for p, ps in zip(problems, self.lesson.get_problems_and_scores())
         ]
 
         # Get quizzes for this lesson
-        lesson_quizzes = self.lesson.lesson_quizzes.filter(
-            is_visible=True
-        ).select_related("quiz")
+        lesson_quizzes = list(
+            self.lesson.lesson_quizzes.filter(is_visible=True).select_related("quiz")
+        )
+        lesson_quiz_ids = [lesson_quiz.id for lesson_quiz in lesson_quizzes]
+        quiz_totals = _bulk_quiz_total_points(
+            {lesson_quiz.quiz_id for lesson_quiz in lesson_quizzes}
+        )
+        best_quiz_attempts = {
+            row["lesson_quiz_id"]: row["score"]
+            for row in BestQuizAttempt.objects.filter(
+                user=profile, lesson_quiz_id__in=lesson_quiz_ids
+            ).values("lesson_quiz_id", "score")
+        }
+        attempt_counts = {
+            row["lesson_quiz_id"]: row
+            for row in QuizAttempt.objects.filter(
+                user=profile, lesson_quiz_id__in=lesson_quiz_ids
+            )
+            .values("lesson_quiz_id")
+            .annotate(
+                attempts_count=Count("id"),
+                submitted_attempts_count=Count("id", filter=Q(is_submitted=True)),
+            )
+        }
 
-        # Get quiz data with user's best scores and attempt info
-        # Show best score from ALL attempts (not just lesson-linked)
+        # Get quiz data with user's lesson-linked best scores and attempt info.
         quiz_data = []
         for lesson_quiz in lesson_quizzes:
             quiz = lesson_quiz.quiz
-
-            # Get best attempt from lesson-scoped attempts only
-            best_attempt = (
-                QuizAttempt.objects.filter(
-                    quiz=quiz,
-                    user=profile,
-                    lesson_quiz=lesson_quiz,
-                    is_submitted=True,
-                )
-                .order_by("-score")
-                .first()
+            counts = attempt_counts.get(lesson_quiz.id, {})
+            submitted_attempts_count = counts.get("submitted_attempts_count", 0)
+            attempts_count = counts.get("attempts_count", 0)
+            can_attempt = (
+                lesson_quiz.max_attempts <= 0
+                or attempts_count < lesson_quiz.max_attempts
             )
-
-            # Count lesson-linked attempts (for max_attempts enforcement)
-            attempts_count = QuizAttempt.objects.filter(
-                quiz=quiz,
-                user=profile,
-                lesson_quiz=lesson_quiz,
-                is_submitted=True,
-            ).count()
-
-            # Check if user can make more attempts
-            can_attempt = lesson_quiz.can_attempt(profile.user)
 
             quiz_data.append(
                 {
                     "lesson_quiz": lesson_quiz,
                     "quiz": quiz,
-                    "best_score": best_attempt.score if best_attempt else None,
-                    "max_score": quiz.get_total_points(),
-                    "attempts_count": attempts_count,
+                    "best_score": best_quiz_attempts.get(lesson_quiz.id),
+                    "max_score": quiz_totals.get(quiz.id, 0),
+                    "attempts_count": submitted_attempts_count,
                     "max_attempts": lesson_quiz.max_attempts,
                     "can_attempt": can_attempt,
                     "points": lesson_quiz.points,

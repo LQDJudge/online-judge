@@ -23,9 +23,11 @@ from judge.models import (
     CourseRole,
     Language,
     Profile,
+    QuizQuestion,
+    QuizQuestionAssignment,
 )
 from judge.models.course import RoleInCourse
-from judge.models.quiz import Quiz, QuizAttempt
+from judge.models.quiz import BestQuizAttempt, Quiz, QuizAttempt
 
 
 class LessonQuizPopupTest(TestCase):
@@ -52,7 +54,18 @@ class LessonQuizPopupTest(TestCase):
         )
         self.quiz = Quiz.objects.create(code="lq1", title="LQ1")
         self.lesson_quiz = CourseLessonQuiz.objects.create(
-            lesson=self.lesson, quiz=self.quiz, is_visible=True
+            lesson=self.lesson, quiz=self.quiz, is_visible=True, max_attempts=1
+        )
+        self.question = QuizQuestion.objects.create(
+            question_type="MC",
+            title="Q1",
+            content="Question 1",
+            choices=[{"id": "a", "text": "A"}],
+            correct_answers={"answers": "a"},
+            is_public=True,
+        )
+        QuizQuestionAssignment.objects.create(
+            quiz=self.quiz, question=self.question, points=10, order=1
         )
         self.attempt = QuizAttempt.objects.create(
             user=self.student,
@@ -64,6 +77,7 @@ class LessonQuizPopupTest(TestCase):
             max_score=Decimal("10"),
             end_time=timezone.now(),
         )
+        BestQuizAttempt.update_from_attempt(self.attempt)
 
         # A second lesson + lesson_quiz, to test "quiz not in this lesson".
         self.other_lesson = CourseLesson.objects.create(
@@ -125,6 +139,19 @@ class LessonQuizPopupTest(TestCase):
         resp = self.client.get(self._url(target=self.viewer))
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, "lightbox-submissions")
+
+    def test_lesson_detail_uses_bulk_quiz_attempt_data(self):
+        self.client.force_login(self.student.user)
+        resp = self.client.get(
+            reverse("course_lesson_detail", args=[self.course.slug, self.lesson.id])
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        quiz_item = resp.context["lesson_quizzes"][0]
+        self.assertEqual(quiz_item["best_score"], Decimal("10.00"))
+        self.assertEqual(quiz_item["max_score"], 10)
+        self.assertEqual(quiz_item["attempts_count"], 1)
+        self.assertFalse(quiz_item["can_attempt"])
 
     def test_result_link_shown_to_owner(self):
         self.client.force_login(self.student.user)  # owner of the attempt
