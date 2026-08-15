@@ -5,7 +5,6 @@ DjangoPagedown = (function () {
   const editors = {};
 
   const PAGEDOWN_UPLOAD_URL = '/pagedown/image-upload/';
-  const PAGEDOWN_CONFIG_URL = '/api/upload/pagedown/';
 
   const getCookie = function (name) {
     const match = document.cookie.match(new RegExp('(^|;\\s*)' + name + '=([^;]+)'));
@@ -13,60 +12,26 @@ DjangoPagedown = (function () {
   };
 
   /**
-   * Upload an image blob. Tries presigned S3 direct upload first; falls back
-   * to the Django pagedown endpoint when storage is local or presign fails.
-   * Returns a Promise resolving to the public image URL.
+   * Upload an image blob. Uses the shared presigned-upload helper when loaded,
+   * with a legacy Django upload fallback for admin/non-base contexts.
    */
   const uploadImage = function (blob) {
-    const filename = blob.name || 'image.png';
-    const contentType = blob.type || 'application/octet-stream';
-    const fileSize = blob.size;
+    if (window.uploadPagedownImage) {
+      return window.uploadPagedownImage(blob);
+    }
+
     const csrftoken = getCookie('csrftoken');
-
-    const fallbackLocal = function () {
-      const formData = new FormData();
-      formData.append('image', blob);
-      return fetch(PAGEDOWN_UPLOAD_URL, {
-        method: 'POST',
-        body: formData,
-        headers: csrftoken ? { 'X-CSRFToken': csrftoken } : {}
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (result) {
-          if (result && result.url) return result.url;
-          throw new Error((result && result.error) || 'Upload failed');
-        });
-    };
-
-    return fetch(PAGEDOWN_CONFIG_URL, {
+    const formData = new FormData();
+    formData.append('image', blob);
+    return fetch(PAGEDOWN_UPLOAD_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrftoken
-      },
-      body: JSON.stringify({
-        filename: filename,
-        content_type: contentType,
-        file_size: fileSize
-      })
+      body: formData,
+      headers: csrftoken ? { 'X-CSRFToken': csrftoken } : {}
     })
-      .then(function (resp) {
-        if (!resp.ok) throw new Error('config failed');
-        return resp.json();
-      })
-      .then(function (config) {
-        if (config.storage_type !== 's3') return fallbackLocal();
-        return fetch(config.upload_url, {
-          method: config.method || 'PUT',
-          headers: { 'Content-Type': config.content_type || contentType },
-          body: blob
-        }).then(function (putResp) {
-          if (!putResp.ok) throw new Error('direct upload failed');
-          return config.file_url;
-        });
-      })
-      .catch(function () {
-        return fallbackLocal();
+      .then(function (r) { return r.json(); })
+      .then(function (result) {
+        if (result && result.url) return result.url;
+        throw new Error((result && result.error) || 'Upload failed');
       });
   };
 

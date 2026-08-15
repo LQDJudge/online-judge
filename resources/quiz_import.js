@@ -312,37 +312,27 @@ $(function () {
                 if (item.kind === 'file' && item.type.indexOf('image/') === 0) {
                     event.preventDefault();
                     var blob = item.getAsFile();
-                    var formData = new FormData();
-                    formData.append('image', blob);
 
                     element.disabled = true;
-
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', '/pagedown/image-upload/', true);
-                    xhr.onload = function () {
-                        element.disabled = false;
-                        element.focus();
-                        if (xhr.status === 200) {
-                            try {
-                                var response = JSON.parse(xhr.responseText);
-                                var markdownImg = '![](' + response.url + ')';
-                                var start = element.selectionStart;
-                                var end = element.selectionEnd;
-                                var before = element.value.slice(0, start);
-                                var after = element.value.slice(end);
-                                if (before) before += '\n';
-                                if (after) markdownImg += '\n';
-                                element.value = before + markdownImg + after;
-                                var pos = before.length + markdownImg.length;
-                                element.setSelectionRange(pos, pos);
-                            } catch (e) {}
-                        }
-                    };
-                    xhr.onerror = function () {
-                        element.disabled = false;
-                        element.focus();
-                    };
-                    xhr.send(formData);
+                    window.uploadPagedownImage(blob)
+                        .then(function (imageUrl) {
+                            element.disabled = false;
+                            element.focus();
+                            var markdownImg = '![](' + imageUrl + ')';
+                            var start = element.selectionStart;
+                            var end = element.selectionEnd;
+                            var before = element.value.slice(0, start);
+                            var after = element.value.slice(end);
+                            if (before) before += '\n';
+                            if (after) markdownImg += '\n';
+                            element.value = before + markdownImg + after;
+                            var pos = before.length + markdownImg.length;
+                            element.setSelectionRange(pos, pos);
+                        })
+                        .catch(function () {
+                            element.disabled = false;
+                            element.focus();
+                        });
                     break;
                 }
             }

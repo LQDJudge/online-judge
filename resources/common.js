@@ -495,6 +495,65 @@ function showCopyFeedback(target, message) {
 }
 
 /**
+ * Upload a PageDown image blob. Uses presigned object-storage uploads when
+ * available, then falls back to the legacy Django upload endpoint.
+ */
+function uploadPagedownImage(blob) {
+    const filename = blob.name || 'image.png';
+    const contentType = blob.type || 'application/octet-stream';
+    const fileSize = blob.size;
+    const csrfToken = $.cookie('csrftoken');
+
+    const fallbackLocal = function () {
+        const formData = new FormData();
+        formData.append('image', blob);
+        return fetch('/pagedown/image-upload/', {
+            method: 'POST',
+            body: formData,
+            headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {}
+        })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (response) {
+                if (response && response.url) return response.url;
+                throw new Error((response && response.error) || 'Upload failed');
+            });
+    };
+
+    return fetch('/api/upload/pagedown/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            filename: filename,
+            content_type: contentType,
+            file_size: fileSize
+        })
+    })
+        .then(function (response) {
+            if (!response.ok) throw new Error('Upload configuration failed');
+            return response.json();
+        })
+        .then(function (config) {
+            if (config.storage_type !== 's3') return fallbackLocal();
+            return fetch(config.upload_url, {
+                method: config.method || 'PUT',
+                headers: { 'Content-Type': config.content_type || contentType },
+                body: blob
+            }).then(function (response) {
+                if (!response.ok) throw new Error('Direct upload failed');
+                return config.file_url;
+            });
+        })
+        .catch(function () {
+            return fallbackLocal();
+        });
+}
+
+/**
  * Register clipboard image paste handler for simple textareas.
  * Note: For full PageDown editors, use MarkdownEditor class instead,
  * which handles clipboard paste internally.
@@ -510,17 +569,7 @@ function register_copy_clipboard($elements, callback) {
                 const blob = item.getAsFile();
                 $textarea.prop('disabled', true);
 
-                const uploader = (typeof DjangoPagedown !== 'undefined' && DjangoPagedown.uploadImage)
-                    ? DjangoPagedown.uploadImage(blob)
-                    : (function () {
-                        const formData = new FormData();
-                        formData.append('image', blob);
-                        return fetch('/pagedown/image-upload/', { method: 'POST', body: formData })
-                            .then(r => r.json())
-                            .then(d => d.url);
-                    })();
-
-                uploader
+                uploadPagedownImage(blob)
                     .then(function (imageUrl) {
                         let currentMarkdown = $textarea.val();
                         const markdownImageText = '![](' + imageUrl + ')';
