@@ -12,12 +12,12 @@ from django.core.files.storage import FileSystemStorage
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.core.cache import cache
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 import logging
 
 from judge.logging import log_exception
+from judge.utils.deferred_email import deferred_send_mail
 
 debug_log = logging.getLogger("judge.debug")
 
@@ -592,7 +592,7 @@ def notify_problem_authors(
     plain_message = strip_tags(html_message)
 
     try:
-        send_mail(
+        deferred_send_mail(
             subject=subject,
             message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,

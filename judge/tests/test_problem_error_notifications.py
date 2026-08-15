@@ -134,7 +134,9 @@ class ProblemErrorNotificationTest(TestCase):
         problem.authors.add(self.author)
         problem.curators.add(curator)
 
-        with patch("judge.utils.problem_data.send_mail") as send_mail, patch(
+        with patch(
+            "judge.utils.problem_data.deferred_send_mail"
+        ) as deferred_send_mail, patch(
             "judge.utils.problem_data.log_exception"
         ) as log_exception:
             notify_problem_authors(
@@ -144,7 +146,7 @@ class ProblemErrorNotificationTest(TestCase):
             )
 
         log_exception.assert_not_called()
-        send_mail.assert_called_once()
+        deferred_send_mail.assert_called_once()
         self.assertEqual(
-            send_mail.call_args.kwargs["recipient_list"], ["c@example.com"]
+            deferred_send_mail.call_args.kwargs["recipient_list"], ["c@example.com"]
         )

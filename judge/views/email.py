@@ -1,22 +1,63 @@
-from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth.views import PasswordResetView
-from django.core.mail import send_mail
-from django.shortcuts import render, redirect
-from django.utils.decorators import method_decorator
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+import logging
+
 from django.conf import settings
 from django import forms
-from django.utils.translation import gettext_lazy as _
-from django.urls import reverse
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import PasswordResetView
+from django.db import transaction
 from django.http import Http404
+from django.shortcuts import render, redirect
+from django.template import loader
+from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.translation import gettext_lazy as _
 
 
 from judge.models import Profile, EmailChangeRequest
+from judge.utils.deferred_email import deferred_send_mail
 from judge.utils.email_render import render_email_message
 from judge.utils.ratelimit import ratelimit
+
+logger = logging.getLogger(__name__)
+
+
+class DeferredPasswordResetForm(PasswordResetForm):
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        subject = loader.render_to_string(subject_template_name, context)
+        subject = "".join(subject.splitlines())
+        body = loader.render_to_string(email_template_name, context)
+        html_email = None
+        if html_email_template_name is not None:
+            html_email = loader.render_to_string(html_email_template_name, context)
+
+        try:
+            deferred_send_mail(
+                subject,
+                body,
+                from_email,
+                [to_email],
+                fail_silently=False,
+                html_message=html_email,
+                priority=getattr(settings, "PASSWORD_RESET_EMAIL_TASK_PRIORITY", 8),
+                queue=getattr(settings, "PASSWORD_RESET_EMAIL_TASK_QUEUE", None),
+            )
+        except Exception:
+            logger.exception(
+                "Failed to enqueue password reset email to %s", context["user"].pk
+            )
 
 
 @method_decorator(
@@ -24,7 +65,7 @@ from judge.utils.ratelimit import ratelimit
     name="dispatch",
 )
 class RateLimitedPasswordResetView(PasswordResetView):
-    pass
+    form_class = DeferredPasswordResetForm
 
 
 class EmailChangeForm(forms.Form):
@@ -62,7 +103,6 @@ def email_change_view(request):
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
-        # Send the email to the user
         subject = settings.SITE_NAME + " - " + _("Email Change Request")
         email_contexts = {
             "message": _(
@@ -75,15 +115,18 @@ def email_change_view(request):
             ),
         }
         message = render_email_message(request, email_contexts)
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [new_email],
-            html_message=message,
-        )
-        EmailChangeRequest.objects.filter(profile=profile).delete()
-        EmailChangeRequest.objects.create(profile=profile, new_email=new_email)
+        with transaction.atomic():
+            EmailChangeRequest.objects.filter(profile=profile).delete()
+            EmailChangeRequest.objects.create(profile=profile, new_email=new_email)
+            deferred_send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [new_email],
+                html_message=message,
+                priority=getattr(settings, "EMAIL_CHANGE_EMAIL_TASK_PRIORITY", 8),
+                queue=getattr(settings, "EMAIL_CHANGE_EMAIL_TASK_QUEUE", None),
+            )
         return redirect("email_change_pending")
 
     return render(

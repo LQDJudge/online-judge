@@ -10,6 +10,7 @@ from registration.models import RegistrationProfile
 from judge.admin.profile import UserForm
 from judge.models import UsernameModerationCase
 from judge.social_auth import UsernameForm, slugify_username
+from judge.tasks.email import send_registration_activation_email_task
 from judge.validators import clean_username
 from judge.views.register import ActivationView, OldRegistrationView, RegistrationView
 from judge.views.register import CustomRegistrationForm
@@ -140,6 +141,76 @@ class RegistrationViewIntegrityErrorTest(SimpleTestCase):
                 view.form_valid(form)
 
         form.add_error.assert_not_called()
+
+
+@override_settings(LANGUAGE_CODE="en")
+class RegistrationActivationEmailTest(TestCase):
+    def test_send_activation_email_enqueues_high_priority_email_task(self):
+        view = RegistrationView()
+        view.request = RequestFactory().get("/", secure=True)
+
+        with patch(
+            "judge.views.register.send_registration_activation_email_task.apply_async"
+        ) as apply_async:
+            with self.captureOnCommitCallbacks(execute=True):
+                view.send_activation_email(123)
+
+        apply_async.assert_called_once()
+        user_id, site_name, site_domain, protocol = apply_async.call_args.kwargs["args"]
+        self.assertEqual(user_id, 123)
+        self.assertTrue(site_name)
+        self.assertTrue(site_domain)
+        self.assertEqual(protocol, "https")
+        self.assertEqual(apply_async.call_args.kwargs["priority"], 9)
+
+    @override_settings(
+        REGISTRATION_ACTIVATION_EMAIL_TASK_QUEUE="email_high",
+        REGISTRATION_ACTIVATION_EMAIL_TASK_PRIORITY=8,
+    )
+    def test_send_activation_email_allows_dedicated_queue(self):
+        view = RegistrationView()
+        view.request = RequestFactory().get("/")
+
+        with patch(
+            "judge.views.register.send_registration_activation_email_task.apply_async"
+        ) as apply_async:
+            with self.captureOnCommitCallbacks(execute=True):
+                view.send_activation_email(123)
+
+        self.assertEqual(apply_async.call_args.kwargs["queue"], "email_high")
+        self.assertEqual(apply_async.call_args.kwargs["priority"], 8)
+
+    @override_settings(ACCOUNT_ACTIVATION_DAYS=7, SITE_NAME="LQDOJ")
+    def test_activation_email_task_renders_existing_templates(self):
+        user = User.objects.create_user(
+            username="activation_email_user",
+            email="activation@example.com",
+            password="pw",
+            is_active=False,
+        )
+        registration_profile = RegistrationProfile.objects.create_profile(user)
+
+        with patch("judge.tasks.email.send_email") as send_email:
+            send_registration_activation_email_task(
+                user.id, "Example Site", "example.com", "https"
+            )
+
+        send_email.assert_called_once()
+        recipients, context, subject_template, body_template, html_template = (
+            send_email.call_args.args
+        )
+        self.assertEqual(recipients, [user.email])
+        self.assertEqual(context["user"], user)
+        self.assertEqual(context["activation_key"], registration_profile.activation_key)
+        self.assertEqual(context["expiration_days"], 7)
+        self.assertEqual(context["site"].name, "Example Site")
+        self.assertEqual(context["site"].domain, "example.com")
+        self.assertEqual(context["protocol"], "https")
+        self.assertEqual(context["domain"], "example.com")
+        self.assertEqual(context["SITE_NAME"], "LQDOJ")
+        self.assertEqual(subject_template, "registration/activation_email_subject.txt")
+        self.assertEqual(body_template, "registration/activation_email.txt")
+        self.assertEqual(html_template, "registration/activation_email.html")
 
 
 @override_settings(LANGUAGE_CODE="en")

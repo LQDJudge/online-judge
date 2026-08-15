@@ -17,6 +17,7 @@ from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
 
 from judge.models import Language, Profile, TIMEZONE, UsernameModerationCase
+from judge.tasks.email import send_registration_activation_email_task
 from judge.tasks.username_moderation import moderate_username_task
 from judge.utils.recaptcha import ReCaptchaField, ReCaptchaWidget
 from judge.utils.turnstile import TurnstileField, is_turnstile_configured
@@ -151,8 +152,18 @@ class RegistrationView(OldRegistrationView):
 
     def send_activation_email(self, user_id):
         site = get_current_site(self.request)
-        RegistrationProfile.objects.get(user_id=user_id).send_activation_email(
-            site, self.request
+        protocol = "https" if self.request.is_secure() else "http"
+        task_kwargs = {
+            "args": (user_id, site.name, site.domain, protocol),
+            "priority": getattr(
+                settings, "REGISTRATION_ACTIVATION_EMAIL_TASK_PRIORITY", 9
+            ),
+        }
+        task_queue = getattr(settings, "REGISTRATION_ACTIVATION_EMAIL_TASK_QUEUE", None)
+        if task_queue:
+            task_kwargs["queue"] = task_queue
+        transaction.on_commit(
+            lambda: send_registration_activation_email_task.apply_async(**task_kwargs)
         )
 
     def get_initial(self, *args, **kwargs):
