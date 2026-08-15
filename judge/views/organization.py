@@ -73,9 +73,10 @@ from judge.utils.views import (
     DiggPaginatorMixin,
 )
 from judge.utils.formsets import validate_max_active_forms
+from judge.utils.profile_ranks import build_profile_rank_map
 from judge.utils.problems import user_attempted_ids, user_completed_ids
 from judge.views.problem import ProblemList
-from judge.views.contests import ContestList, compute_ranks
+from judge.views.contests import ContestList
 from judge.views.course import CourseList
 from judge.views.submission import SubmissionsListBase
 from judge.utils.feed import build_home_feed
@@ -744,14 +745,11 @@ class OrganizationUsers(
             "organization_user_kick",
             args=[self.organization.id, self.organization.slug],
         )
-        page_ids = {u.id for u in context["users"]}
-        if page_ids:
-            full_rows = self.object_list.values_list("id", "points")
-            rank_map = compute_ranks(
-                ((pid, points, 0, 0) for pid, points in full_rows),
-                target_ids=page_ids,
+        if context["users"]:
+            rank_map = build_profile_rank_map(
+                self.object_list, context["users"], self.order, self.all_sorts
             )
-            context["users"] = [(rank_map.get(u.id, 1), u) for u in context["users"]]
+            context["users"] = [(rank_map[u.id], u) for u in context["users"]]
         else:
             context["users"] = []
 

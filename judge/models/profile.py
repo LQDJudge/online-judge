@@ -531,6 +531,9 @@ class Profile(CacheableModel):
     def get_performance_points(self):
         return self.get_cached_value("performance_points")
 
+    def get_contribution_points(self):
+        return self.get_cached_value("contribution_points")
+
     def get_last_access(self):
         return get_profile_last_access(self.id)
 
@@ -929,6 +932,7 @@ def _get_profile_batch(args_list):
             "points": profile.points,
             "problem_count": profile.problem_count,
             "performance_points": profile.performance_points,
+            "contribution_points": profile.contribution_points,
         }
         # Remove None values to save cache space
         profile_dict[profile_id] = {
@@ -946,7 +950,7 @@ def _get_profile_batch(args_list):
     return results
 
 
-@cache_wrapper(prefix="Pgbi5", expected_type=dict, batch_fn=_get_profile_batch)
+@cache_wrapper(prefix="Pgbi6", expected_type=dict, batch_fn=_get_profile_batch)
 def _get_profile(profile_id):
     results = _get_profile_batch([(profile_id,)])
     return results[0]

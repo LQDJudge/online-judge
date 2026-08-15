@@ -51,8 +51,8 @@ from judge.utils.hidden_results import (
     hidden_result_best_submission_problem_ids,
     mark_hidden_result_submissions,
 )
+from judge.utils.profile_ranks import build_profile_rank_map
 from judge.utils.problems import contest_completed_ids, user_completed_ids
-from judge.views.contests import compute_ranks
 from judge.utils.unicode import utf8text
 from judge.models.profile import get_rating_rank, get_points_rank, get_contribution_rank
 from judge.utils.users import (
@@ -531,14 +531,11 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
         Profile.get_cached_instances(*user_ids)
         Profile.prefetch_cache_about(*user_ids)
         Profile.prefetch_cache_public_identity(*user_ids)
-        page_ids = {u.id for u in context["users"]}
-        if page_ids:
-            full_rows = self.object_list.values_list("id", "points")
-            rank_map = compute_ranks(
-                ((pid, points, 0, 0) for pid, points in full_rows),
-                target_ids=page_ids,
+        if context["users"]:
+            rank_map = build_profile_rank_map(
+                self.object_list, context["users"], self.order, self.all_sorts
             )
-            context["users"] = [(rank_map.get(u.id, 1), u) for u in context["users"]]
+            context["users"] = [(rank_map[u.id], u) for u in context["users"]]
         else:
             context["users"] = []
         context["first_page_href"] = "."
