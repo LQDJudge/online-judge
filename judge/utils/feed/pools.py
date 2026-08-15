@@ -8,10 +8,11 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.db.models import BooleanField, Case, Count, Q, Value, When
+from django.db.models import BooleanField, Case, Count, Prefetch, Q, Value, When
+from django.db.models.query import prefetch_related_objects
 from django.utils import timezone
 
-from judge.models import BlogPost, Contest, Problem
+from judge.models import BlogPost, Contest, ContestProblem, Problem
 from judge.models.comment import Comment
 from judge.models.course import Course
 from judge.models.problem import Solution
@@ -295,6 +296,23 @@ class ContestPool(CachedPool):
     """Recommended contests."""
 
     pool_name = "contest"
+
+    def get(self, offset, count):
+        items = super().get(offset, count)
+        contests = [item.data for item in items]
+        if contests:
+            prefetch_related_objects(
+                contests,
+                "authors",
+                Prefetch(
+                    "contest_problems",
+                    queryset=ContestProblem.objects.select_related("problem").order_by(
+                        "order"
+                    ),
+                    to_attr="feed_contest_problems",
+                ),
+            )
+        return items
 
     def _fetch(self):
 

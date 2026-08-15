@@ -3,7 +3,7 @@
   <div style="margin-bottom: 0.5em">
     <span class="post-content-header time">
       {% if authors %}
-        <img class="user-img" style="width: 1.5em; height: 1.5em" src="{{gravatar(authors[0].id)}}" loading="lazy">
+        <img class="user-img" style="width: 1.5em; height: 1.5em" src="{{gravatar(authors[0])}}" loading="lazy">
         <span class="post-authors">{{ link_users(authors) }}</span>
       {% endif %}
       {% if contest.start_time %}
@@ -25,7 +25,7 @@
   </div>
 {% endif %}
 {% if contest.can_see_problems(request.user) %}
-  {% with contest_problems=contest.contest_problems.select_related('problem').order_by('order') %}
+  {% with contest_problems=contest.feed_contest_problems if contest.feed_contest_problems is defined else contest.contest_problems.select_related('problem').order_by('order') %}
     {% if contest_problems %}
       <table class="table striped feed-problem-table">
         <thead>

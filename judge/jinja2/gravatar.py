@@ -27,7 +27,7 @@ def get_profile_for_gravatar(user):
 
 @registry.function
 def gravatar(profile_id, size=80):
-    profile = Profile(id=profile_id)
+    profile = profile_id if isinstance(profile_id, Profile) else Profile(id=profile_id)
 
     profile_image_url = profile.get_profile_image_url()
     if profile_image_url:

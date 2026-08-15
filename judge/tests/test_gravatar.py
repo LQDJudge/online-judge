@@ -48,6 +48,11 @@ class GravatarTest(TestCase):
 
         self.assertEqual(gravatar(profile.id), expected_url)
 
+    def test_gravatar_accepts_profile_instance(self):
+        profile = self.create_profile(username="profile_instance_avatar")
+
+        self.assertEqual(gravatar(profile), gravatar(profile.id))
+
     def test_muted_profile_uses_normal_gravatar_fallback(self):
         profile = self.create_profile(username="muted_without_avatar", mute=True)
         url = gravatar(profile.id, size=120)

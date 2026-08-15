@@ -3,7 +3,7 @@
   <span class="post-content-header time">
     {% with authors=post.get_authors() %}
       {%- if authors -%}
-        <img class="user-img" style="width: 1.5em; height: 1.5em" src="{{gravatar(authors[0].id)}}" loading="lazy">
+        <img class="user-img" style="width: 1.5em; height: 1.5em" src="{{gravatar(authors[0])}}" loading="lazy">
         <span class="post-authors">{{ link_users(authors) }}</span>
       {%- endif -%}
     {% endwith %}
