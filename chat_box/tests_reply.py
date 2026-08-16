@@ -91,6 +91,16 @@ class ReplyQuotesTest(TestCase):
         child = self._msg("child", reply_to=parent)
         self.assertTrue(get_reply_quotes([child])[child.id]["unavailable"])
 
+    def test_cross_room_parent_is_unavailable(self):
+        # Defense in depth: post_message blocks cross-room replies, but if a
+        # child's FK ever points at a parent in another room (data created
+        # outside that path — admin/shell/import, or a later move), rendering
+        # must NOT leak the other room's snippet. Re-check room at render time.
+        room = Room.objects.create(last_msg_id=None)
+        parent = Message.objects.create(author=self.p, body="in room", room=room)
+        child = self._msg("child in lobby", reply_to=parent)  # child.room is None
+        self.assertTrue(get_reply_quotes([child])[child.id]["unavailable"])
+
     def test_missing_parent_is_unavailable(self):
         parent = self._msg("gone")
         child = self._msg("child", reply_to=parent)

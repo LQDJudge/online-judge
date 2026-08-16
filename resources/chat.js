@@ -996,18 +996,36 @@
         if (!parentId) return;  // an "unavailable" quote has no target
         var $target = $('#message-' + parentId);
         if ($target.length) {
-          $target[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Scroll only the #chat-box container, NOT the whole page. Using
+          // Element.scrollIntoView() here also scrolls the window to bring the
+          // element into the viewport, which shoves the page up and leaves a
+          // blank area at the bottom. Set the container's scrollTop directly to
+          // center the parent inside the box (mirrors ChatUI.scrollToBottom).
+          var box = ChatElements.chatBox[0];
+          var boxTop = box.getBoundingClientRect().top;
+          var targetTop = $target[0].getBoundingClientRect().top;
+          var centerOffset = (box.clientHeight - $target[0].offsetHeight) / 2;
+          box.scrollTo({
+            top: box.scrollTop + (targetTop - boxTop) - centerOffset,
+            behavior: 'smooth',
+          });
           var $block = $('#message-block-' + parentId);
           $block.removeClass('message-highlight');
           void $block[0].offsetWidth;  // reflow so re-adding the class restarts the anim
           $block.addClass('message-highlight');
           setTimeout(function() { $block.removeClass('message-highlight'); }, 2000);
         } else {
-          // MVP: parent not in the loaded window (older than the ~50 in view).
-          // No gap-fetch (backlog); flash the quote to acknowledge the click.
+          // MVP contract: the parent is older than the loaded window (no
+          // gap-fetch yet — that's the backlog "full support" path). Give a
+          // clear, predictable cue every time instead of a silent dead click:
+          // flash the quote and show a transient "Message not loaded" tooltip.
           var $q = $(this);
-          $q.addClass('message-reply-quote-flash');
-          setTimeout(function() { $q.removeClass('message-reply-quote-flash'); }, 600);
+          $q.attr('data-hint', ChatConfig.i18n.replyNotLoaded || 'Message not loaded')
+            .addClass('message-reply-quote-flash message-reply-quote-hint');
+          setTimeout(function() {
+            $q.removeClass('message-reply-quote-flash message-reply-quote-hint')
+              .removeAttr('data-hint');
+          }, 1500);
         }
       });
     },

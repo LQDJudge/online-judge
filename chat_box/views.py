@@ -697,7 +697,7 @@ def get_reply_quotes(messages, viewer=None):
     parents = {
         row["id"]: row
         for row in Message.objects.filter(id__in=parent_ids).values(
-            "id", "author_id", "body", "hidden"
+            "id", "author_id", "body", "hidden", "room_id"
         )
     }
 
@@ -714,7 +714,10 @@ def get_reply_quotes(messages, viewer=None):
         if not pid:
             continue
         parent = parents.get(pid)
-        if parent is None or parent["hidden"]:
+        # Re-check same-room at render time: never trust the stored FK to point
+        # at a parent in this message's room (post_message enforces it on write,
+        # but rendering must not leak a cross-room parent if that ever slips).
+        if parent is None or parent["hidden"] or parent["room_id"] != message.room_id:
             quotes[message.id] = {"unavailable": True}
         else:
             quotes[message.id] = {

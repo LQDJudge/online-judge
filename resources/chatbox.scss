@@ -1755,6 +1755,7 @@ body:has(.chat-page) {
 
   // Single-level quote shown above a reply's own text.
   .message-reply-quote {
+    position: relative;  // anchor for the "not loaded" hint tooltip below
     display: flex;
     gap: 6px;
     align-items: baseline;
@@ -1793,6 +1794,26 @@ body:has(.chat-page) {
     // Brief pulse when the parent isn't in the DOM to jump to.
     &.message-reply-quote-flash {
       animation: reply-quote-flash 0.6s ease;
+    }
+
+    // Transient tooltip shown when the parent is outside the loaded window, so
+    // the failed jump reads as intentional ("Message not loaded") rather than a
+    // dead click. CSS-only via attr(data-hint) — no extra DOM node.
+    &.message-reply-quote-hint::after {
+      content: attr(data-hint);
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 4px);
+      z-index: 5;
+      padding: 2px 8px;
+      border: 1px solid $border_gray;
+      border-radius: 6px;
+      background: $background_gray;
+      color: $widget_black;
+      font-size: 0.9em;
+      font-style: normal;
+      white-space: nowrap;
+      pointer-events: none;
     }
   }
 
