@@ -50,8 +50,9 @@ from judge.models import (
     ProblemSignatureGrader,
     Language,
 )
-from judge.utils.problem_data import ProblemDataCompiler
+from judge.utils.generator_static_package import build_generator_static_package
 from judge.utils.permissions import can_use_ai_features
+from judge.utils.problem_data import ProblemDataCompiler
 from judge.utils.unicode import utf8text
 from judge.utils.views import TitleMixin
 from judge.widgets.fine_uploader import (
@@ -311,7 +312,20 @@ class ProblemCaseFormSet(
             # Only real cases (type "C") are judged; batch start/end rows don't
             # run the solution and so don't consume judging time.
             if form.cleaned_data.get("type") == "C":
+                if form.cleaned_data.get("generator_args") and (
+                    form.cleaned_data.get("input_file")
+                    or form.cleaned_data.get("output_file")
+                ):
+                    form.add_error(
+                        "generator_args",
+                        _(
+                            "Use either input/output files or generator arguments, not both."
+                        ),
+                    )
                 num_tests += 1
+
+        if any(self.errors):
+            return
 
         if num_tests == 0:
             raise ValidationError(_("At least one test case is required."))
@@ -472,6 +486,14 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
             context["cases_formset"] = self.get_case_formset(valid_files)
             context["signature_grader_formset"] = self.get_signature_grader_formset()
 
+        data = context["data_form"].instance
+        context["generator_static_case_count"] = (
+            ProblemTestCase.objects.filter(
+                dataset=self.object, type="C", generator_args__gt=""
+            ).count()
+            if data.generator
+            else 0
+        )
         context["valid_files_script"] = json_script(
             context["valid_files"], "problem-valid-files-data"
         )
@@ -592,6 +614,31 @@ def problem_init_view(request, problem):
             ),
         },
     )
+
+
+class ProblemGeneratorStaticPackageView(ProblemManagerMixin, View):
+    def get(self, request, *args, **kwargs):
+        problem = self.get_object()
+        data = get_object_or_404(ProblemData, problem=problem)
+        if not data.generator:
+            raise Http404()
+
+        cases = list(
+            ProblemTestCase.objects.filter(
+                dataset=problem, type="C", generator_args__gt=""
+            )
+            .order_by("order")
+            .values("order", "generator_args")
+        )
+        if not cases:
+            raise Http404()
+
+        package = build_generator_static_package(problem, data, cases)
+        response = HttpResponse(package, content_type="application/zip")
+        response["Content-Disposition"] = (
+            'attachment; filename="%s-generator-static-package.zip"' % problem.code
+        )
+        return response
 
 
 class ProblemZipUploadView(ProblemManagerMixin, View):

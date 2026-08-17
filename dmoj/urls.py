@@ -78,6 +78,7 @@ from judge.views.problem_attachment import (
 )
 from judge.views.problem_data import (
     ProblemDataView,
+    ProblemGeneratorStaticPackageView,
     ProblemSubmissionDiff,
     ProblemValidatorView,
     problem_data_file,
@@ -438,6 +439,11 @@ urlpatterns = [
                 ),
                 re_path(
                     r"^/test_data/init$", problem_init_view, name="problem_data_init"
+                ),
+                re_path(
+                    r"^/test_data/generator_package$",
+                    ProblemGeneratorStaticPackageView.as_view(),
+                    name="problem_generator_static_package",
                 ),
                 re_path(
                     r"^/test_data/diff$",

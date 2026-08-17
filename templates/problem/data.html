@@ -250,6 +250,19 @@
         }
 
         appendInstructionLink($generator.parent(), "#test-generator");
+        {% if generator_static_case_count %}
+          $("<div/>", {
+            "class": "generator-static-package-link",
+            style: "margin-top: 0.5em;"
+          }).append(
+            $("<i/>", {"class": "fa fa-download"}),
+            " ",
+            $("<a/>", {
+              text: "{{ _('Download local generation package') }}",
+              href: "{{ url('problem_generator_static_package', problem.code) }}"
+            })
+          ).appendTo($generator.parent());
+        {% endif %}
         appendInstructionLink($checker.parent(), "#checker");
         appendInstructionLink($custom_checker.parent(), "#custom-checker");
         appendInstructionLink($validator.parent(), "#checker");
@@ -716,12 +729,19 @@
 
       function setNormalCaseRow(row, inputFile, outputFile, points, generatorArgs) {
         $("#id_cases-"+row+"-type").val('C').change();
-        setSelectValue($("#id_cases-"+row+"-input_file"), inputFile);
-        setSelectValue($("#id_cases-"+row+"-output_file"), outputFile);
         $("#id_cases-"+row+"-points").val(points).change();
 
         var $generatorInput = $("#id_cases-"+row+"-generator_args");
-        $generatorInput.val(generatorArgs || '').change();
+        var normalizedGeneratorArgs = normalizeGeneratorArgs(generatorArgs);
+        if (normalizedGeneratorArgs) {
+          $("#id_cases-"+row+"-input_file").val('').change();
+          $("#id_cases-"+row+"-output_file").val('').change();
+          $generatorInput.val(normalizedGeneratorArgs).change();
+        } else {
+          setSelectValue($("#id_cases-"+row+"-input_file"), inputFile || '');
+          setSelectValue($("#id_cases-"+row+"-output_file"), outputFile || '');
+          $generatorInput.val('').change();
+        }
         updateGeneratorArgsDisplay($generatorInput);
       }
 
@@ -1025,12 +1045,59 @@
         return true;
       }
 
+      function parseGeneratorScriptLines(raw) {
+        if (!raw || !raw.trim()) return [];
+        return raw.trim().split('\n').map(function(line) {
+          return line.trim();
+        }).filter(function(line) {
+          return line && !line.startsWith('#') && !line.startsWith('//');
+        });
+      }
+
+      function hasMeaningfulCaseRows() {
+        var found = false;
+        $('#case-table tbody tr:visible').each(function() {
+          var $tr = $(this);
+          if ($tr.find('input[id$=DELETE]').is(':checked')) return;
+          if ($tr.find('select[id$="-type"]').val() !== 'C') return;
+
+          var inputFile = ($tr.find('select[id$="-input_file"], input[id$="-input_file"]').val() || '').trim();
+          var outputFile = ($tr.find('select[id$="-output_file"], input[id$="-output_file"]').val() || '').trim();
+          var generatorArgs = ($tr.find('input[id$="-generator_args"]').val() || '').trim();
+          if (inputFile || outputFile || generatorArgs) {
+            found = true;
+            return false;
+          }
+        });
+        return found;
+      }
+
+      function appendGeneratorScriptRows(scriptLines) {
+        if (!scriptLines.length) return false;
+        var startRow = parseInt($total.val(), 10);
+        ensureCaseRows(startRow + scriptLines.length);
+        scriptLines.forEach(function(args, index) {
+          setNormalCaseRow(startRow + index, '', '', '1', args);
+        });
+        update_select2();
+        setTimeout(function() {
+          updateAllGeneratorArgsDisplays();
+        }, 100);
+        return true;
+      }
+
       $('a#fill-testcases').click(function (e) {
         e.preventDefault();
 
         // Check if generator script is provided
         var generatorScriptField = $('#id_problem-data-generator_script');
         var hasGeneratorScript = generatorScriptField.length && generatorScriptField.val().trim();
+        var scriptLines = parseGeneratorScriptLines(generatorScriptField.val() || '');
+
+        if (scriptLines.length && hasMeaningfulCaseRows()) {
+          appendGeneratorScriptRows(scriptLines);
+          return false;
+        }
 
         // First, handle zip file mode (input/output files)
         var inFiles = [], outFiles = [];
@@ -1062,7 +1129,6 @@
           }
         });
 
-        var scriptLines = [];
         var zipFileCount = 0;
         var existingGeneratorCount = existingGeneratorArgs.length;
         var newGeneratorCount = 0;
@@ -1079,14 +1145,6 @@
         }
 
         if (hasGeneratorScript) {
-          // Filter out empty lines and comment lines (starting with # or //)
-          scriptLines = generatorScriptField.val().trim().split('\n').filter(line => {
-            var trimmed = line.trim();
-            if (!trimmed) return false;  // Skip empty lines
-            if (trimmed.startsWith('#')) return false;  // Skip # comments
-            if (trimmed.startsWith('//')) return false;  // Skip // comments
-            return true;
-          });
           newGeneratorCount = scriptLines.length;
         }
 
@@ -1174,28 +1232,14 @@
             row += 1;
           }
 
-          // Use existing generator args
-          var $generatorInput = $("#id_cases-"+row+"-generator_args");
-          $generatorInput.val(existingGeneratorArgs[i]);
-
-          // Set generated file names
-          $("#id_cases-"+row+"-input_file").val('existing_gen_case' + (i + 1) + '.in');
-          $("#id_cases-"+row+"-output_file").val('existing_gen_case' + (i + 1) + '.out');
-
-          // Update display for generator args
-          var $container = $generatorInput.closest('.generator-args-container');
-          var $icon = $container.find('.generator-args-icon');
-          $icon.hide();
-          $generatorInput.removeClass('generator-args-hidden').show();
-
           // Set points
           // ICPC: [0,...,0,1] — earlier cases have 0 weight.
           // SUM / MIN: [1,...,1] — equal weights, all cases contribute.
+          var points = '1';
           if ($("#problem-type").val() == "ICPC") {
-            $("#id_cases-"+row+"-points").val('0').change();
-          } else {
-            $("#id_cases-"+row+"-points").val('1').change();
+            points = '0';
           }
+          setNormalCaseRow(row, '', '', points, existingGeneratorArgs[i]);
 
           row += 1;
           caseIndex += 1;
@@ -1221,31 +1265,17 @@
             row += 1;
           }
 
-          // Set generated file names
-          $("#id_cases-"+row+"-input_file").val('new_gen_case' + (i + 1) + '.in');
-          $("#id_cases-"+row+"-output_file").val('new_gen_case' + (i + 1) + '.out');
-
           // Set generator args from script
           var args = scriptLines[i].trim();
-          if (args) {
-            var $generatorInput = $("#id_cases-"+row+"-generator_args");
-            $generatorInput.val(args);
-
-            // Update display for generator args
-            var $container = $generatorInput.closest('.generator-args-container');
-            var $icon = $container.find('.generator-args-icon');
-            $icon.hide();
-            $generatorInput.removeClass('generator-args-hidden').show();
-          }
 
           // Set points
           // ICPC: [0,...,0,1] — earlier cases have 0 weight.
           // SUM / MIN: [1,...,1] — equal weights, all cases contribute.
+          var points = '1';
           if ($("#problem-type").val() == "ICPC") {
-            $("#id_cases-"+row+"-points").val('0').change();
-          } else {
-            $("#id_cases-"+row+"-points").val('1').change();
+            points = '0';
           }
+          setNormalCaseRow(row, '', '', points, args);
 
           row += 1;
           caseIndex += 1;

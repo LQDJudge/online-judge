@@ -12380,6 +12380,10 @@ msgstr "Mỗi mục testcase phải là một chuỗi hoặc một đối tượ
 msgid "Use either testcase or generator_args for each row, not both."
 msgstr "Mỗi dòng chỉ dùng testcase hoặc generator_args, không dùng cả hai."
 
+#: judge/views/problem_data.py:322
+msgid "Use either input/output files or generator arguments, not both."
+msgstr "Chỉ dùng file input/output hoặc tham số generator, không dùng cả hai."
+
 #: templates/problem/data.html:756
 msgid "Every row must have either testcase or generator_args."
 msgstr "Mỗi dòng phải có testcase hoặc generator_args."
@@ -12429,6 +12433,10 @@ msgstr "Cách tạo Test Data"
 #: templates/problem/data.html:1560
 msgid "View Instructions"
 msgstr "Xem hướng dẫn"
+
+#: templates/problem/data.html:253
+msgid "Download local generation package"
+msgstr "Tải gói sinh test cục bộ"
 
 #: templates/problem/data.html:1577
 msgid "Autofill testcases"
