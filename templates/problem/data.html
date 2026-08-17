@@ -108,6 +108,15 @@
         });
       }
 
+      function reset_case_row_order() {
+        order = 0;
+        $table.find('tbody:first tr:visible').each(function () {
+          var $order = $(this).find('input[id$=order]');
+          $order.val(++order).siblings('span.order').text(order);
+        });
+        handle_table_reorder();
+      }
+
       function try_parse_json(json) {
         try {
           return JSON.parse(json);
@@ -430,6 +439,7 @@
           var n = parseInt($total.val(), 10);
           if (n > 0) $total.val(n - 1);
         }
+        reset_case_row_order();
       });
 
       function attachInlineDelete($tr) {
@@ -1054,38 +1064,6 @@
         });
       }
 
-      function hasMeaningfulCaseRows() {
-        var found = false;
-        $('#case-table tbody tr:visible').each(function() {
-          var $tr = $(this);
-          if ($tr.find('input[id$=DELETE]').is(':checked')) return;
-          if ($tr.find('select[id$="-type"]').val() !== 'C') return;
-
-          var inputFile = ($tr.find('select[id$="-input_file"], input[id$="-input_file"]').val() || '').trim();
-          var outputFile = ($tr.find('select[id$="-output_file"], input[id$="-output_file"]').val() || '').trim();
-          var generatorArgs = ($tr.find('input[id$="-generator_args"]').val() || '').trim();
-          if (inputFile || outputFile || generatorArgs) {
-            found = true;
-            return false;
-          }
-        });
-        return found;
-      }
-
-      function appendGeneratorScriptRows(scriptLines) {
-        if (!scriptLines.length) return false;
-        var startRow = parseInt($total.val(), 10);
-        ensureCaseRows(startRow + scriptLines.length);
-        scriptLines.forEach(function(args, index) {
-          setNormalCaseRow(startRow + index, '', '', '1', args);
-        });
-        update_select2();
-        setTimeout(function() {
-          updateAllGeneratorArgsDisplays();
-        }, 100);
-        return true;
-      }
-
       function removeCaseRowsFrom(visibleRowIndex) {
         $("#case-table tbody:first tr:visible").each(function(index) {
           if (index < visibleRowIndex) return;
@@ -1103,6 +1081,19 @@
             if (n > 0) $total.val(n - 1);
           }
         });
+        reset_case_row_order();
+      }
+
+      function restoreCaseRowsForRebuild() {
+        $("#case-table tbody:first tr").each(function() {
+          var $tr = $(this);
+          var $delete = $tr.find('input[id$=DELETE]');
+          if ($delete.length) {
+            $delete.prop('checked', false);
+            $tr.show();
+          }
+        });
+        reset_case_row_order();
       }
 
       $('a#fill-testcases').click(function (e) {
@@ -1114,11 +1105,6 @@
         var generatorScriptField = $('#id_problem-data-generator_script');
         var scriptLines = parseGeneratorScriptLines(generatorScriptField.val() || '');
         var hasGeneratorScript = scriptLines.length > 0;
-
-        if (scriptLines.length && hasMeaningfulCaseRows()) {
-          appendGeneratorScriptRows(scriptLines);
-          return false;
-        }
 
         // First, handle zip file mode (input/output files)
         var inFiles = [], outFiles = [];
@@ -1140,20 +1126,7 @@
           return false;
         }
 
-        // Find existing test cases with generator args
-        var existingGeneratorArgs = [];
-        if (hasGeneratorScript) {
-          $('#case-table tbody tr').each(function() {
-            var $generatorArgs = $(this).find('input[name*="generator_args"]');
-            var args = $generatorArgs.val().trim();
-            if (args) {
-              existingGeneratorArgs.push(args);
-            }
-          });
-        }
-
         var zipFileCount = 0;
-        var existingGeneratorCount = existingGeneratorArgs.length;
         var newGeneratorCount = 0;
 
         if (hasZipFiles) {
@@ -1171,7 +1144,7 @@
           newGeneratorCount = scriptLines.length;
         }
 
-        var totalTestCases = zipFileCount + existingGeneratorCount + newGeneratorCount;
+        var totalTestCases = zipFileCount + newGeneratorCount;
 
         if (totalTestCases === 0) {
           return false;
@@ -1187,6 +1160,7 @@
         batch_starts.add(totalTestCases + 1);
 
         var totalRowsNeeded = totalTestCases + 2 * batch_starts.size - 2;
+        restoreCaseRowsForRebuild();
         while ($total.val() < totalRowsNeeded) {
           $('a#add-case-row').click();
         }
@@ -1225,37 +1199,7 @@
           }
         }
 
-        // Second: Use existing test cases with generator args
-        for (var i = 0; i < existingGeneratorCount; i++) {
-          if (batch_starts.has(caseIndex)) {
-            // Set batch_scoring mode from the selected problem type
-            var batchMode = $("#problem-type").val();
-            setBatchStartRow(row, '', batchMode);
-            row += 1;
-          }
-
-          // Set points
-          // ICPC: [0,...,0,1] — earlier cases have 0 weight.
-          // SUM / MIN: [1,...,1] — equal weights, all cases contribute.
-          var points = '1';
-          if ($("#problem-type").val() == "ICPC") {
-            points = '0';
-          }
-          setNormalCaseRow(row, '', '', points, existingGeneratorArgs[i]);
-
-          row += 1;
-          caseIndex += 1;
-
-          if (batch_starts.has(caseIndex)) {
-            if ($("#problem-type").val() == "ICPC") {
-              $("#id_cases-"+(row-1)+"-points").val('1').change();
-            }
-            setBatchEndRow(row);
-            row += 1;
-          }
-        }
-
-        // Third: Create test cases from generator script (without test files)
+        // Second: Create test cases from generator script (without test files)
         for (var i = 0; i < newGeneratorCount; i++) {
           if (batch_starts.has(caseIndex)) {
             // Set batch_scoring mode from the selected problem type
@@ -1344,6 +1288,7 @@
             }
           }
         });
+        reset_case_row_order();
       });
 
       // Auto-detect batch mode from existing rows:
