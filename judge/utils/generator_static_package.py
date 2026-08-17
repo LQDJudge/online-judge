@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shlex
 from io import BytesIO
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -15,15 +16,16 @@ def build_generator_static_package(problem, data, cases):
     except FileNotFoundError:
         raise Http404()
 
+    extra_cxx_flags = _gcc_target_flags(generator_source)
     package = BytesIO()
     with ZipFile(package, "w", ZIP_DEFLATED) as zf:
         zf.writestr("README.md", _readme(problem, generator_name, len(cases)))
         zf.writestr(generator_name, generator_source)
         zf.writestr("cases.tsv", _cases_tsv(cases))
         zf.writestr("cases.json", _cases_json(cases))
-        zf.writestr("generate.py", _python_runner(generator_name))
-        zf.writestr("generate.sh", _shell_runner(generator_name))
-        zf.writestr("generate.bat", _batch_runner(generator_name))
+        zf.writestr("generate.py", _python_runner(generator_name, extra_cxx_flags))
+        zf.writestr("generate.sh", _shell_runner(generator_name, extra_cxx_flags))
+        zf.writestr("generate.bat", _batch_runner(generator_name, extra_cxx_flags))
 
     package.seek(0)
     return package.getvalue()
@@ -113,7 +115,36 @@ def _cases_json(cases):
     return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
 
 
-def _python_runner(generator_name):
+def _gcc_target_flags(generator_source):
+    try:
+        source = generator_source.decode("utf-8", errors="ignore")
+    except AttributeError:
+        source = generator_source
+
+    flags = []
+    seen = set()
+    for match in re.finditer(
+        r'#\s*pragma\s+GCC\s+target\s*\(\s*"([^"]+)"\s*\)', source
+    ):
+        for target in match.group(1).split(","):
+            target = target.strip()
+            if not target:
+                continue
+            if target.startswith("arch="):
+                flag = "-march=" + target.split("=", 1)[1]
+            elif target.startswith("tune="):
+                flag = "-mtune=" + target.split("=", 1)[1]
+            elif target.startswith("no-"):
+                flag = "-mno-" + target[3:]
+            else:
+                flag = "-m" + target
+            if flag not in seen:
+                flags.append(flag)
+                seen.add(flag)
+    return flags
+
+
+def _python_runner(generator_name, extra_cxx_flags):
     return """#!/usr/bin/env python3
 import json
 import os
@@ -124,6 +155,7 @@ import zipfile
 
 GENERATOR_SOURCE = {generator_name!r}
 GENERATOR_EXE = "generator.exe" if os.name == "nt" else "generator"
+EXTRA_CXX_FLAGS = {extra_cxx_flags!r}
 TEST_DIR = "tests"
 ZIP_NAME = "static_tests.zip"
 
@@ -135,7 +167,7 @@ def run(cmd, **kwargs):
 
 def compile_generator():
     cxx = os.environ.get("CXX", "g++")
-    run([cxx, "-std=c++17", "-O2", GENERATOR_SOURCE, "-o", GENERATOR_EXE])
+    run([cxx, "-std=c++17", "-O2", *EXTRA_CXX_FLAGS, GENERATOR_SOURCE, "-o", GENERATOR_EXE])
 
 
 def materialize():
@@ -170,10 +202,10 @@ def main():
 
 if __name__ == "__main__":
     main()
-""".format(generator_name=generator_name)
+""".format(generator_name=generator_name, extra_cxx_flags=extra_cxx_flags)
 
 
-def _shell_runner(generator_name):
+def _shell_runner(generator_name, extra_cxx_flags):
     return """#!/usr/bin/env bash
 set -euo pipefail
 
@@ -182,13 +214,14 @@ GENERATOR_EXE=generator
 TEST_DIR=tests
 ZIP_NAME=static_tests.zip
 CXX="${{CXX:-g++}}"
+EXTRA_CXX_FLAGS=({quoted_extra_cxx_flags})
 
 command -v "$CXX" >/dev/null 2>&1 || {{
   echo "g++ not found. Install a C++ compiler or set CXX=/path/to/compiler." >&2
   exit 1
 }}
 
-"$CXX" -std=c++17 -O2 "$GENERATOR_SOURCE" -o "$GENERATOR_EXE"
+"$CXX" -std=c++17 -O2 "${{EXTRA_CXX_FLAGS[@]}}" "$GENERATOR_SOURCE" -o "$GENERATOR_EXE"
 mkdir -p "$TEST_DIR"
 
 while IFS=$'\\t' read -r name args; do
@@ -209,10 +242,13 @@ else
 fi
 
 echo "wrote $ZIP_NAME"
-""".format(quoted_generator_name=shlex.quote(generator_name))
+""".format(
+        quoted_generator_name=shlex.quote(generator_name),
+        quoted_extra_cxx_flags=" ".join(shlex.quote(flag) for flag in extra_cxx_flags),
+    )
 
 
-def _batch_runner(generator_name):
+def _batch_runner(generator_name, extra_cxx_flags):
     return r"""@echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
@@ -220,6 +256,7 @@ set "GENERATOR_SOURCE=%s"
 set "GENERATOR_EXE=generator.exe"
 set "TEST_DIR=tests"
 set "ZIP_NAME=static_tests.zip"
+set "EXTRA_CXX_FLAGS=%s"
 if "%%CXX%%"=="" set "CXX=g++"
 
 where "%%CXX%%" >nul 2>nul
@@ -228,7 +265,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-"%%CXX%%" -std=c++17 -O2 "%%GENERATOR_SOURCE%%" -o "%%GENERATOR_EXE%%"
+"%%CXX%%" -std=c++17 -O2 %%EXTRA_CXX_FLAGS%% "%%GENERATOR_SOURCE%%" -o "%%GENERATOR_EXE%%"
 if not exist "%%TEST_DIR%%" mkdir "%%TEST_DIR%%"
 
 for /f "usebackq tokens=1,* delims=	" %%%%A in ("cases.tsv") do (
@@ -248,4 +285,4 @@ if errorlevel 1 (
 )
 
 echo wrote %%ZIP_NAME%%
-""" % generator_name
+""" % (generator_name, " ".join(extra_cxx_flags))
