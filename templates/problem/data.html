@@ -1086,13 +1086,34 @@
         return true;
       }
 
+      function removeCaseRowsFrom(visibleRowIndex) {
+        $("#case-table tbody:first tr:visible").each(function(index) {
+          if (index < visibleRowIndex) return;
+
+          var $tr = $(this);
+          var $delete = $tr.find('input[id$=DELETE]');
+          if (!$delete.length) return;
+
+          if ($tr.find('.remove-row-btn').attr('data-has-pk') === 'true') {
+            $delete.prop('checked', true);
+            $tr.hide();
+          } else {
+            $tr.remove();
+            var n = parseInt($total.val(), 10);
+            if (n > 0) $total.val(n - 1);
+          }
+        });
+      }
+
       $('a#fill-testcases').click(function (e) {
         e.preventDefault();
 
-        // Check if generator script is provided
+        // Check if generator script is provided. Empty/comment-only scripts
+        // should behave like no generator script, so zip autofill can replace
+        // generator rows with file-backed rows.
         var generatorScriptField = $('#id_problem-data-generator_script');
-        var hasGeneratorScript = generatorScriptField.length && generatorScriptField.val().trim();
         var scriptLines = parseGeneratorScriptLines(generatorScriptField.val() || '');
+        var hasGeneratorScript = scriptLines.length > 0;
 
         if (scriptLines.length && hasMeaningfulCaseRows()) {
           appendGeneratorScriptRows(scriptLines);
@@ -1121,13 +1142,15 @@
 
         // Find existing test cases with generator args
         var existingGeneratorArgs = [];
-        $('#case-table tbody tr').each(function() {
-          var $generatorArgs = $(this).find('input[name*="generator_args"]');
-          var args = $generatorArgs.val().trim();
-          if (args) {
-            existingGeneratorArgs.push(args);
-          }
-        });
+        if (hasGeneratorScript) {
+          $('#case-table tbody tr').each(function() {
+            var $generatorArgs = $(this).find('input[name*="generator_args"]');
+            var args = $generatorArgs.val().trim();
+            if (args) {
+              existingGeneratorArgs.push(args);
+            }
+          });
+        }
 
         var zipFileCount = 0;
         var existingGeneratorCount = existingGeneratorArgs.length;
@@ -1174,38 +1197,20 @@
         // First: Create test cases from zip files (without generator args)
         for (var i = 0; i < zipFileCount; i++) {
           if (batch_starts.has(caseIndex)) {
-            var $sRow = $("#id_cases-"+row+"-type").val('S').change().closest('tr');
             // Set batch_scoring mode from the selected problem type
             var batchMode = $("#problem-type").val();
-            $sRow.find('select[id$=batch_scoring]').val(
-              batchMode === 'MIN' ? 'min' : 'sum'
-            ).change();
+            setBatchStartRow(row, '', batchMode);
             row += 1;
           }
-
-          // Set input/output files from zip. In big_input mode Select2 was
-          // never initialized on these selects — re-set option list directly.
-          setSelectValue($("#id_cases-"+row+"-input_file"), inFiles[i]);
-          setSelectValue($("#id_cases-"+row+"-output_file"), outFiles[i]);
-
-          // Clear any existing generator args for file-based test cases
-          var $generatorInput = $("#id_cases-"+row+"-generator_args");
-          $generatorInput.val('');
-
-          // Update display for cleared generator args
-          var $container = $generatorInput.closest('.generator-args-container');
-          var $icon = $container.find('.generator-args-icon');
-          $icon.show();
-          $generatorInput.addClass('generator-args-hidden');
 
           // Set points
           // ICPC: [0,...,0,1] — earlier cases have 0 weight.
           // SUM / MIN: [1,...,1] — equal weights, all cases contribute.
+          var points = '1';
           if ($("#problem-type").val() == "ICPC") {
-            $("#id_cases-"+row+"-points").val('0').change();
-          } else {
-            $("#id_cases-"+row+"-points").val('1').change();
+            points = '0';
           }
+          setNormalCaseRow(row, inFiles[i], outFiles[i], points, '');
 
           row += 1;
           caseIndex += 1;
@@ -1215,7 +1220,7 @@
             if ($("#problem-type").val() == "ICPC") {
               $("#id_cases-"+(row-1)+"-points").val('1').change();
             }
-            $("#id_cases-"+row+"-type").val('E').change();
+            setBatchEndRow(row);
             row += 1;
           }
         }
@@ -1223,12 +1228,9 @@
         // Second: Use existing test cases with generator args
         for (var i = 0; i < existingGeneratorCount; i++) {
           if (batch_starts.has(caseIndex)) {
-            var $sRow = $("#id_cases-"+row+"-type").val('S').change().closest('tr');
             // Set batch_scoring mode from the selected problem type
             var batchMode = $("#problem-type").val();
-            $sRow.find('select[id$=batch_scoring]').val(
-              batchMode === 'MIN' ? 'min' : 'sum'
-            ).change();
+            setBatchStartRow(row, '', batchMode);
             row += 1;
           }
 
@@ -1248,7 +1250,7 @@
             if ($("#problem-type").val() == "ICPC") {
               $("#id_cases-"+(row-1)+"-points").val('1').change();
             }
-            $("#id_cases-"+row+"-type").val('E').change();
+            setBatchEndRow(row);
             row += 1;
           }
         }
@@ -1256,12 +1258,9 @@
         // Third: Create test cases from generator script (without test files)
         for (var i = 0; i < newGeneratorCount; i++) {
           if (batch_starts.has(caseIndex)) {
-            var $sRow = $("#id_cases-"+row+"-type").val('S').change().closest('tr');
             // Set batch_scoring mode from the selected problem type
             var batchMode = $("#problem-type").val();
-            $sRow.find('select[id$=batch_scoring]').val(
-              batchMode === 'MIN' ? 'min' : 'sum'
-            ).change();
+            setBatchStartRow(row, '', batchMode);
             row += 1;
           }
 
@@ -1284,11 +1283,12 @@
             if ($("#problem-type").val() == "ICPC") {
               $("#id_cases-"+(row-1)+"-points").val('1').change();
             }
-            $("#id_cases-"+row+"-type").val('E').change();
+            setBatchEndRow(row);
             row += 1;
           }
         }
 
+        removeCaseRowsFrom(row);
         update_select2();
 
         // Update generator args displays for all newly created rows
