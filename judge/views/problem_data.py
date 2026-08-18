@@ -289,6 +289,7 @@ class ProblemCaseFormSet(
         self.valid_files = kwargs.pop("valid_files", None)
         self.problem_time_limit = kwargs.pop("problem_time_limit", None)
         self.enforce_total_time_limit = kwargs.pop("enforce_total_time_limit", False)
+        self.require_test_cases = kwargs.pop("require_test_cases", False)
         super(ProblemCaseFormSet, self).__init__(*args, **kwargs)
 
     def _construct_form(self, i, **kwargs):
@@ -327,7 +328,7 @@ class ProblemCaseFormSet(
         if any(self.errors):
             return
 
-        if num_tests == 0:
+        if self.require_test_cases and num_tests == 0:
             raise ValidationError(_("At least one test case is required."))
 
         if not self.enforce_total_time_limit or self.problem_time_limit is None:
@@ -430,13 +431,23 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
         form.request = self.request
         return form
 
-    def get_case_formset(self, files, post=False):
+    def has_data_zip(self, data, post=False):
+        if post and "problem-data-zipfile-clear" in self.request.POST:
+            return False
+        if post and "problem-data-zipfile" in self.request.FILES:
+            return True
+        return bool(data.zipfile)
+
+    def get_case_formset(self, files, post=False, data=None):
+        if data is None:
+            data = ProblemData.objects.get_or_create(problem=self.object)[0]
         return ProblemCaseFormSet(
             data=self.request.POST if post else None,
             prefix="cases",
             valid_files=files,
             problem_time_limit=self.object.time_limit,
             enforce_total_time_limit=not self.request.user.is_superuser,
+            require_test_cases=self.has_data_zip(data, post=post),
             queryset=ProblemTestCase.objects.filter(dataset_id=self.object.pk).order_by(
                 "order"
             ),
@@ -483,7 +494,9 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
                 context["data_form"].instance
             )
             context["data_form"].zip_valid = valid_files is not False
-            context["cases_formset"] = self.get_case_formset(valid_files)
+            context["cases_formset"] = self.get_case_formset(
+                valid_files, data=context["data_form"].instance
+            )
             context["signature_grader_formset"] = self.get_signature_grader_formset()
 
         data = context["data_form"].instance
@@ -514,7 +527,9 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
         data_form = self.get_data_form(post=True)
         valid_files = self.get_valid_files(data_form.instance, post=True)
         data_form.zip_valid = valid_files is not False
-        cases_formset = self.get_case_formset(valid_files, post=True)
+        cases_formset = self.get_case_formset(
+            valid_files, post=True, data=data_form.instance
+        )
         signature_grader_formset = self.get_signature_grader_formset(post=True)
 
         if (
