@@ -1,6 +1,29 @@
+User-agent: Claude-SearchBot
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: coccocbot-web
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: meta-webindexer
+Disallow: /
+
 User-agent: *
+Crawl-delay: 10
 Disallow: /admin/
 Disallow: /accounts/
+Disallow: /login/
 Disallow: /problem/*/pdf
 Disallow: /problem/*/raw
 Disallow: /problem/*/submit
@@ -12,10 +35,15 @@ Disallow: /user/*/solved/
 Disallow: /submission/
 Disallow: /submissions/
 Disallow: /single_submission
+Disallow: /widgets/
+Disallow: /chat/
+Disallow: /toggle_darkmode/
 Disallow: /edit/profile/
 Disallow: /src/
 Disallow: /comments/
 Disallow: /api/
+Disallow: /contest/*/ranking/
+Disallow: /contest/*/clarification/ajax
 Disallow: /contest/*/submissions/*/*/
 Disallow: /contest/*/join
 Disallow: /contest/*/leave
