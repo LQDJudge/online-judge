@@ -446,10 +446,15 @@ def get_file_cachekey(file):
 
 
 def get_problem_case(problem, files):
+    result, _ = get_problem_case_with_missing_files(problem, files)
+    return result
+
+
+def get_problem_case_with_missing_files(problem, files):
     result = {}
     unique_files = list(dict.fromkeys(files))
     if not unique_files:
-        return result
+        return result, []
 
     file_to_key = {
         file: "problem_archive:%s:%s" % (problem.code, get_file_cachekey(file))
@@ -465,22 +470,34 @@ def get_problem_case(problem, files):
             uncached_files.append(file)
 
     if not uncached_files:
-        return result
+        return result, []
 
     archive_path = os.path.join(
         settings.DMOJ_PROBLEM_DATA_ROOT, str(problem.data_files.zipfile)
     )
     if not os.path.exists(archive_path):
         log_exception('archive file "%s" does not exist' % archive_path)
-        return {}
+        return result, uncached_files
     try:
         archive = zipfile.ZipFile(archive_path, "r")
     except zipfile.BadZipfile:
         log_exception('bad archive: "%s"' % archive_path)
-        return {}
+        return result, uncached_files
+
+    archive_files = set(archive.namelist())
+    missing_files = [file for file in uncached_files if file not in archive_files]
+    if missing_files:
+        debug_log.warning(
+            'archive "%s" is missing %d requested preview file(s): %s',
+            archive_path,
+            len(missing_files),
+            ", ".join(missing_files[:10]),
+        )
 
     to_set = {}
     for file in uncached_files:
+        if file not in archive_files:
+            continue
         with archive.open(file) as f:
             s = f.read(settings.TESTCASE_VISIBLE_LENGTH + 3)
             qs = get_visible_content(s)
@@ -490,7 +507,7 @@ def get_problem_case(problem, files):
     if to_set:
         cache.set_many(to_set, 86400)
 
-    return result
+    return result, missing_files
 
 
 def _get_latest_cpp_key():

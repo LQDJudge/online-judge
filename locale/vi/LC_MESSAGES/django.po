@@ -14933,6 +14933,30 @@ msgid "Batch "
 msgstr "Nhóm "
 
 #: templates/submission/status-testcases.html:58
+#, python-format
+msgid "This problem's test data has an error: %(error)s"
+msgstr "Lỗi dữ liệu test của bài này: %(error)s"
+
+#: templates/submission/status-testcases.html:60
+msgid ""
+"Some testcase files referenced by this problem are missing from the archive."
+msgstr "Một số file test case được bài này tham chiếu không có trong file nén."
+
+#: templates/submission/status-testcases.html:63
+#, python-format
+msgid "Missing files: %(files)s"
+msgstr "File còn thiếu: %(files)s"
+
+#: templates/submission/status-testcases.html:65
+#, python-format
+msgid "Showing first %(shown)s of %(count)s missing files."
+msgstr "Đang hiển thị %(shown)s file đầu tiên trong %(count)s file còn thiếu."
+
+#: templates/submission/status-testcases.html:68
+msgid "Fix test data"
+msgstr "Sửa dữ liệu test"
+
+#: templates/submission/status-testcases.html:76
 msgid "Overall: "
 msgstr "Tổng cộng: "
 

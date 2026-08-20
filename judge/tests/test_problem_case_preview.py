@@ -6,7 +6,10 @@ from types import SimpleNamespace
 from django.core.cache import cache
 from django.test import SimpleTestCase
 
-from judge.utils.problem_data import get_problem_case
+from judge.utils.problem_data import (
+    get_problem_case,
+    get_problem_case_with_missing_files,
+)
 
 
 class ProblemCasePreviewTests(SimpleTestCase):
@@ -50,3 +53,30 @@ class ProblemCasePreviewTests(SimpleTestCase):
                 result = get_problem_case(problem, ["answer.txt"])
 
         self.assertEqual(result["answer.txt"], "a...")
+
+    def test_missing_archive_member_is_omitted_from_preview(self):
+        with tempfile.TemporaryDirectory() as root:
+            problem = self._problem_with_zip(root)
+            self._write_zip(root, problem, {"input.txt": b"available"})
+
+            with self.settings(
+                DMOJ_PROBLEM_DATA_ROOT=root, TESTCASE_VISIBLE_LENGTH=300
+            ):
+                result = get_problem_case(problem, ["input.txt", "missing.txt"])
+
+        self.assertEqual(result, {"input.txt": "available"})
+
+    def test_missing_archive_member_is_reported_for_preview_warning(self):
+        with tempfile.TemporaryDirectory() as root:
+            problem = self._problem_with_zip(root)
+            self._write_zip(root, problem, {"input.txt": b"available"})
+
+            with self.settings(
+                DMOJ_PROBLEM_DATA_ROOT=root, TESTCASE_VISIBLE_LENGTH=300
+            ):
+                result, missing_files = get_problem_case_with_missing_files(
+                    problem, ["input.txt", "missing.txt"]
+                )
+
+        self.assertEqual(result, {"input.txt": "available"})
+        self.assertEqual(missing_files, ["missing.txt"])

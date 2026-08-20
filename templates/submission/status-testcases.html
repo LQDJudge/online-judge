@@ -51,6 +51,24 @@
       {% endfor %}
       <br>
 
+      {% if can_manage_test_data and (test_data_feedback or testcase_preview_missing_files) %}
+        <div class="alert alert-warning">
+          <i class="fa fa-exclamation-triangle"></i>
+          {% if test_data_feedback %}
+            {{ _("This problem's test data has an error: %(error)s") % {'error': test_data_feedback} }}
+          {% else %}
+            {{ _("Some testcase files referenced by this problem are missing from the archive.") }}
+          {% endif %}
+          {% if testcase_preview_missing_files %}
+            {{ _("Missing files: %(files)s") % {'files': testcase_preview_missing_files|join(', ')} }}
+            {% if testcase_preview_missing_file_count > testcase_preview_missing_files|length %}
+              {{ _("Showing first %(shown)s of %(count)s missing files.") % {'shown': testcase_preview_missing_files|length, 'count': testcase_preview_missing_file_count} }}
+            {% endif %}
+          {% endif %}
+          <a href="{{ url('problem_data', submission.problem.code) }}">{{ _("Fix test data") }}</a>
+        </div>
+      {% endif %}
+
       <table class="testcases-table">
         {% if submission.is_graded and submission.result != 'AB' and not hidden_subtasks and not is_full_result_hidden %}
           <thead>

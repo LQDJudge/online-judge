@@ -56,7 +56,7 @@ from judge.utils.hidden_results import (
     mark_hidden_result_submissions,
 )
 from judge.utils.problems import _get_result_data
-from judge.utils.problem_data import get_problem_case
+from judge.utils.problem_data import get_problem_case_with_missing_files
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin, paginate_query_context
 from judge.utils.infinite_paginator import InfinitePaginationMixin
@@ -222,6 +222,11 @@ def group_test_cases(submission, hidden_subtasks, include_cases=True):
 
 
 def get_cases_data(submission):
+    problem_data, _ = get_cases_data_with_missing_files(submission)
+    return problem_data
+
+
+def get_cases_data_with_missing_files(submission):
     testcases = ProblemTestCase.objects.filter(dataset=submission.problem).order_by(
         "order"
     )
@@ -231,7 +236,7 @@ def get_cases_data(submission):
 
     submitted_cases = {c.case for c in submission.test_cases.all()}
     if not submitted_cases:
-        return {}
+        return {}, []
 
     # Only fetch files for type-C cases the submission actually ran.
     files = []
@@ -246,7 +251,9 @@ def get_cases_data(submission):
             files.append(case.input_file)
         if case.output_file:
             files.append(case.output_file)
-    case_data = get_problem_case(submission.problem, files)
+    case_data, missing_files = get_problem_case_with_missing_files(
+        submission.problem, files
+    )
 
     # Build case list and identify which need generator cache fallback
     problem_data = {}
@@ -279,12 +286,19 @@ def get_cases_data(submission):
                 if not problem_data[c]["answer"]:
                     problem_data[c]["answer"] = cached[key].get("answer", "")
 
-    return problem_data
+    return problem_data, missing_files
 
 
 class SubmissionStatus(SubmissionDetailBase):
     template_name = "submission/status.html"
     highlight_source = True
+
+    def can_manage_test_data(self):
+        if not hasattr(self, "_can_manage_test_data"):
+            self._can_manage_test_data = self.object.problem.is_editable_by(
+                self.request.user
+            )
+        return self._can_manage_test_data
 
     def can_see_testcases(self):
         contest_submission = self.object.contest_or_none
@@ -297,7 +311,7 @@ class SubmissionStatus(SubmissionDetailBase):
 
         if contest_problem.show_testcases:
             return True
-        if problem.is_editable_by(self.request.user):
+        if self.can_manage_test_data():
             return True
         if contest.is_editable_by(self.request.user):
             return True
@@ -327,6 +341,10 @@ class SubmissionStatus(SubmissionDetailBase):
         )
         context["time_limit"] = submission.problem.time_limit
         context["can_see_testcases"] = False
+        context["can_manage_test_data"] = self.can_manage_test_data()
+        context["test_data_feedback"] = ""
+        context["testcase_preview_missing_files"] = []
+        context["testcase_preview_missing_file_count"] = 0
         if self.highlight_source:
             context["highlighted_source"] = highlight_code(
                 submission.source.source,
@@ -336,8 +354,16 @@ class SubmissionStatus(SubmissionDetailBase):
             )
 
         if self.can_see_testcases():
-            context["cases_data"] = get_cases_data(submission)
+            cases_data, missing_files = get_cases_data_with_missing_files(submission)
+            context["cases_data"] = cases_data
             context["can_see_testcases"] = True
+            context["testcase_preview_missing_files"] = missing_files[:10]
+            context["testcase_preview_missing_file_count"] = len(missing_files)
+        if context["can_manage_test_data"]:
+            try:
+                context["test_data_feedback"] = submission.problem.data_files.feedback
+            except ObjectDoesNotExist:
+                pass
         try:
             lang_limit = submission.problem.language_limits.get(
                 language=submission.language
