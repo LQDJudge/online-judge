@@ -16,6 +16,7 @@ from judge.models import (
 )
 from judge.models.comment import get_user_vote_on_comment, get_top_level_comment_ids
 from judge.models.pagevote import PageVoteVoter
+from judge.utils.voting import make_vote_token
 
 
 class CommentVotingTestCase(TransactionTestCase):
@@ -77,11 +78,16 @@ class CommentVotingTestCase(TransactionTestCase):
     def tearDown(self):
         cache.clear()
 
+    def _comment_vote_data(self, comment=None, profile=None):
+        comment = comment or self.comment
+        profile = profile or self.profile
+        return {"token": make_vote_token(profile, "comment", comment.id)}
+
     def test_upvote_requires_login(self):
         """Test that voting requires authentication."""
         response = self.client.post(
             reverse("comment_upvote"),
-            {"id": self.comment.id},
+            {"token": "invalid"},
         )
         # Should redirect to login
         self.assertIn(response.status_code, [302, 403])
@@ -92,7 +98,7 @@ class CommentVotingTestCase(TransactionTestCase):
 
         response = self.client.post(
             reverse("comment_upvote"),
-            {"id": self.comment.id},
+            self._comment_vote_data(),
         )
 
         self.assertEqual(response.status_code, 200)
@@ -112,7 +118,7 @@ class CommentVotingTestCase(TransactionTestCase):
 
         response = self.client.post(
             reverse("comment_downvote"),
-            {"id": self.comment.id},
+            self._comment_vote_data(),
         )
 
         self.assertEqual(response.status_code, 200)
@@ -131,12 +137,12 @@ class CommentVotingTestCase(TransactionTestCase):
         self.client.login(username="test_user", password="password123")
 
         # First vote
-        self.client.post(reverse("comment_upvote"), {"id": self.comment.id})
+        self.client.post(reverse("comment_upvote"), self._comment_vote_data())
 
         # Second vote should fail
         response = self.client.post(
             reverse("comment_upvote"),
-            {"id": self.comment.id},
+            self._comment_vote_data(),
         )
 
         self.assertEqual(response.status_code, 400)
@@ -148,12 +154,12 @@ class CommentVotingTestCase(TransactionTestCase):
         self.client.login(username="test_user", password="password123")
 
         # Upvote
-        self.client.post(reverse("comment_upvote"), {"id": self.comment.id})
+        self.client.post(reverse("comment_upvote"), self._comment_vote_data())
         self.comment.refresh_from_db()
         self.assertEqual(self.comment.score, 1)
 
         # Downvote should undo upvote
-        self.client.post(reverse("comment_downvote"), {"id": self.comment.id})
+        self.client.post(reverse("comment_downvote"), self._comment_vote_data())
         self.comment.refresh_from_db()
         self.assertEqual(self.comment.score, 0)
 
@@ -171,7 +177,7 @@ class CommentVotingTestCase(TransactionTestCase):
 
         response = self.client.post(
             reverse("comment_upvote"),
-            {"id": self.comment.id},
+            self._comment_vote_data(profile=self.author_profile),
         )
 
         self.assertEqual(response.status_code, 400)
@@ -184,10 +190,31 @@ class CommentVotingTestCase(TransactionTestCase):
 
         response = self.client.post(
             reverse("comment_upvote"),
-            {"id": 99999},
+            {"token": make_vote_token(self.profile, "comment", 99999)},
         )
 
         self.assertEqual(response.status_code, 404)
+
+    def test_vote_requires_valid_token(self):
+        self.client.login(username="test_user", password="password123")
+
+        response = self.client.post(reverse("comment_upvote"), {"id": self.comment.id})
+
+        self.assertEqual(response.status_code, 400)
+        self.comment.refresh_from_db()
+        self.assertEqual(self.comment.score, 0)
+
+    def test_vote_token_is_bound_to_user(self):
+        self.client.login(username="test_user", password="password123")
+
+        response = self.client.post(
+            reverse("comment_upvote"),
+            self._comment_vote_data(profile=self.author_profile),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.comment.refresh_from_db()
+        self.assertEqual(self.comment.score, 0)
 
     def test_vote_requires_post_method(self):
         """Test that voting requires POST method."""
@@ -195,7 +222,7 @@ class CommentVotingTestCase(TransactionTestCase):
 
         response = self.client.get(
             reverse("comment_upvote"),
-            {"id": self.comment.id},
+            self._comment_vote_data(),
         )
 
         self.assertEqual(response.status_code, 403)
@@ -255,7 +282,7 @@ class CommentVotingPermissionTestCase(TestCase):
 
         response = self.client.post(
             reverse("comment_upvote"),
-            {"id": self.comment.id},
+            {"token": make_vote_token(self.new_profile, "comment", self.comment.id)},
         )
 
         # Should return 400 Bad Request (message may be in different language)
@@ -324,10 +351,21 @@ class VotingParentAccessTestCase(TestCase):
     def tearDown(self):
         cache.clear()
 
+    def _comment_vote_data(self):
+        return {
+            "token": make_vote_token(self.voter_profile, "comment", self.comment.id)
+        }
+
+    def _pagevote_vote_data(self, pagevote, delta):
+        return {
+            "token": make_vote_token(self.voter_profile, "pagevote", pagevote.id),
+            "delta": delta,
+        }
+
     def test_cannot_vote_on_comment_when_parent_is_inaccessible(self):
         response = self.client.post(
             reverse("comment_downvote"),
-            {"id": self.comment.id},
+            self._comment_vote_data(),
         )
 
         self.assertEqual(response.status_code, 404)
@@ -344,10 +382,47 @@ class VotingParentAccessTestCase(TestCase):
 
         response = self.client.post(
             reverse("pagevote_vote"),
-            {"id": pagevote.id, "delta": -1},
+            self._pagevote_vote_data(pagevote, -1),
         )
 
         self.assertEqual(response.status_code, 404)
+        pagevote.refresh_from_db()
+        self.assertEqual(pagevote.score, 0)
+        self.assertFalse(
+            PageVoteVoter.objects.filter(
+                pagevote=pagevote, voter=self.voter_profile
+            ).exists()
+        )
+
+    def test_pagevote_requires_valid_token(self):
+        pagevote = self.problem.get_or_create_pagevote()
+
+        response = self.client.post(
+            reverse("pagevote_vote"),
+            {"id": pagevote.id, "delta": -1},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        pagevote.refresh_from_db()
+        self.assertEqual(pagevote.score, 0)
+        self.assertFalse(
+            PageVoteVoter.objects.filter(
+                pagevote=pagevote, voter=self.voter_profile
+            ).exists()
+        )
+
+    def test_pagevote_token_is_bound_to_user(self):
+        pagevote = self.problem.get_or_create_pagevote()
+
+        response = self.client.post(
+            reverse("pagevote_vote"),
+            {
+                "token": make_vote_token(self.author_profile, "pagevote", pagevote.id),
+                "delta": -1,
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
         pagevote.refresh_from_db()
         self.assertEqual(pagevote.score, 0)
         self.assertFalse(
@@ -361,7 +436,7 @@ class VotingParentAccessTestCase(TestCase):
 
         response = self.client.post(
             reverse("comment_downvote"),
-            {"id": self.comment.id},
+            self._comment_vote_data(),
         )
 
         self.assertEqual(response.status_code, 200)
@@ -374,7 +449,7 @@ class VotingParentAccessTestCase(TestCase):
 
         response = self.client.post(
             reverse("pagevote_vote"),
-            {"id": pagevote.id, "delta": -1},
+            self._pagevote_vote_data(pagevote, -1),
         )
 
         self.assertEqual(response.status_code, 200)
@@ -390,7 +465,9 @@ class VoteCommentCacheDirtyTest(CommentVotingTestCase):
 
         # Upvote via the view
         self.client.login(username="test_user", password="password123")
-        response = self.client.post(reverse("comment_upvote"), {"id": self.comment.id})
+        response = self.client.post(
+            reverse("comment_upvote"), self._comment_vote_data()
+        )
         self.assertEqual(response.status_code, 200)
 
         # Cache must reflect the new vote
@@ -406,7 +483,7 @@ class VoteCommentCacheDirtyTest(CommentVotingTestCase):
 
         # Upvote via the view
         self.client.login(username="test_user", password="password123")
-        self.client.post(reverse("comment_upvote"), {"id": self.comment.id})
+        self.client.post(reverse("comment_upvote"), self._comment_vote_data())
 
         # Cache key must no longer be present
         from django.core.cache import cache

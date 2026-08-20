@@ -42,7 +42,7 @@ from judge.models.profile import Profile, get_contribution_rank
 from judge.review.comment_notify import notify_review_comment
 from judge.utils.contribution import is_content_public
 from judge.utils.ratelimit import ratelimit
-from judge.utils.voting import can_user_access_votable
+from judge.utils.voting import can_user_access_votable, decrypt_vote_token
 from judge.views.comment.forms import CommentForm
 from judge.views.comment.mixins import is_comment_locked
 from judge.views.comment.utils import (
@@ -62,7 +62,7 @@ def vote_comment(request, delta):
     if request.method != "POST":
         return HttpResponseForbidden()
 
-    if "id" not in request.POST:
+    if "token" not in request.POST:
         return HttpResponseBadRequest()
 
     if (
@@ -76,17 +76,16 @@ def vote_comment(request, delta):
             content_type="text/plain",
         )
 
-    try:
-        comment_id = int(request.POST["id"])
-    except ValueError:
+    comment_id = decrypt_vote_token(request.profile, "comment", request.POST["token"])
+    if comment_id is None:
         return HttpResponseBadRequest()
-    else:
-        try:
-            comment = Comment.objects.select_related("content_type").get(
-                id=comment_id, hidden=False
-            )
-        except Comment.DoesNotExist:
-            raise Http404()
+
+    try:
+        comment = Comment.objects.select_related("content_type").get(
+            id=comment_id, hidden=False
+        )
+    except Comment.DoesNotExist:
+        raise Http404()
 
     if not can_user_access_votable(request.user, comment.linked_object):
         raise Http404()

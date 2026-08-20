@@ -66,12 +66,12 @@
               <i class="icofont-arrow-down"></i>
             </span>
           {% elif profile %}
-            <a href="javascript:comment_upvote({{ item.id }})"
+            <a href="javascript:comment_upvote('{{ vote_token(profile, 'comment', item.id)|escapejs }}', {{ item.id }})"
                class="upvote-link {% if item.vote_score == 1 %} voted{% endif %}">
               <i class="icofont-arrow-up"></i>
             </a>
             <span class="comment-score">{{ item.score }}</span>
-            <a href="javascript:comment_downvote({{ item.id }})"
+            <a href="javascript:comment_downvote('{{ vote_token(profile, 'comment', item.id)|escapejs }}', {{ item.id }})"
                class="downvote-link{% if item.vote_score == -1 %} voted{% endif %}">
               <i class="icofont-arrow-down"></i>
             </a>

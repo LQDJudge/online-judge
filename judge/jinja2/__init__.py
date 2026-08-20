@@ -26,6 +26,7 @@ from . import (
     timedelta,
     comment,
     upload,
+    voting,
 )
 from . import registry
 
