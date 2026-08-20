@@ -42,6 +42,7 @@ from judge.models.profile import Profile, get_contribution_rank
 from judge.review.comment_notify import notify_review_comment
 from judge.utils.contribution import is_content_public
 from judge.utils.ratelimit import ratelimit
+from judge.utils.voting import can_user_access_votable
 from judge.views.comment.forms import CommentForm
 from judge.views.comment.mixins import is_comment_locked
 from judge.views.comment.utils import (
@@ -81,9 +82,14 @@ def vote_comment(request, delta):
         return HttpResponseBadRequest()
     else:
         try:
-            comment = Comment.objects.get(id=comment_id)
+            comment = Comment.objects.select_related("content_type").get(
+                id=comment_id, hidden=False
+            )
         except Comment.DoesNotExist:
             raise Http404()
+
+    if not can_user_access_votable(request.user, comment.linked_object):
+        raise Http404()
 
     # Prevent self-voting
     if comment.author_id == request.profile.id:

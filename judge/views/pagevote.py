@@ -14,6 +14,7 @@ from django.http import JsonResponse
 
 from judge.utils.ratelimit import ratelimit
 from judge.utils.contribution import get_content_author_profile_ids
+from judge.utils.voting import can_user_access_votable
 from judge.models.pagevote import (
     PageVote,
     VoteService,
@@ -70,12 +71,14 @@ def vote_page(request):
         )
 
     try:
-        pagevote = PageVote.objects.get(id=pagevote_id)
+        pagevote = PageVote.objects.select_related("content_type").get(id=pagevote_id)
     except PageVote.DoesNotExist:
         raise Http404(_("The specified PageVote does not exist."))
 
     # Get the linked object
     linked_object = pagevote.linked_object
+    if not can_user_access_votable(request.user, linked_object):
+        raise Http404(_("The specified PageVote does not exist."))
 
     # Prevent self-voting
     author_ids = get_content_author_profile_ids(

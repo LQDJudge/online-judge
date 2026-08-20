@@ -11,8 +11,11 @@ from judge.models import (
     BlogPost,
     Comment,
     CommentVote,
+    Problem,
+    ProblemGroup,
 )
 from judge.models.comment import get_user_vote_on_comment, get_top_level_comment_ids
+from judge.models.pagevote import PageVoteVoter
 
 
 class CommentVotingTestCase(TransactionTestCase):
@@ -257,6 +260,126 @@ class CommentVotingPermissionTestCase(TestCase):
 
         # Should return 400 Bad Request (message may be in different language)
         self.assertEqual(response.status_code, 400)
+
+
+class VotingParentAccessTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.language, _ = Language.objects.get_or_create(
+            key="PY3",
+            defaults={
+                "name": "Python 3",
+                "short_name": "PY3",
+                "common_name": "Python",
+                "ace": "python",
+                "pygments": "python3",
+                "template": "",
+            },
+        )
+        cls.problem_group, _ = ProblemGroup.objects.get_or_create(
+            name="test",
+            defaults={"full_name": "Test Group"},
+        )
+
+    def setUp(self):
+        cache.clear()
+        self.client = Client()
+
+        self.voter_user = User.objects.create_user(
+            username="access_voter", password="password123", is_staff=True
+        )
+        self.voter_profile, _ = Profile.objects.get_or_create(
+            user=self.voter_user, defaults={"language": self.language}
+        )
+
+        self.author_user = User.objects.create_user(
+            username="private_author", password="password123", is_staff=True
+        )
+        self.author_profile, _ = Profile.objects.get_or_create(
+            user=self.author_user, defaults={"language": self.language}
+        )
+
+        self.problem = Problem.objects.create(
+            code="privatevote",
+            name="Private Vote Problem",
+            group=self.problem_group,
+            time_limit=1.0,
+            memory_limit=262144,
+            points=1.0,
+            is_public=False,
+            is_organization_private=False,
+        )
+        self.problem.authors.add(self.author_profile)
+
+        content_type = ContentType.objects.get_for_model(Problem)
+        self.comment = Comment.objects.create(
+            content_type=content_type,
+            object_id=self.problem.id,
+            author=self.author_profile,
+            body="Private problem comment",
+        )
+
+        self.client.login(username="access_voter", password="password123")
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_cannot_vote_on_comment_when_parent_is_inaccessible(self):
+        response = self.client.post(
+            reverse("comment_downvote"),
+            {"id": self.comment.id},
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.comment.refresh_from_db()
+        self.assertEqual(self.comment.score, 0)
+        self.assertFalse(
+            CommentVote.objects.filter(
+                comment=self.comment, voter=self.voter_profile
+            ).exists()
+        )
+
+    def test_cannot_vote_on_pagevote_when_parent_is_inaccessible(self):
+        pagevote = self.problem.get_or_create_pagevote()
+
+        response = self.client.post(
+            reverse("pagevote_vote"),
+            {"id": pagevote.id, "delta": -1},
+        )
+
+        self.assertEqual(response.status_code, 404)
+        pagevote.refresh_from_db()
+        self.assertEqual(pagevote.score, 0)
+        self.assertFalse(
+            PageVoteVoter.objects.filter(
+                pagevote=pagevote, voter=self.voter_profile
+            ).exists()
+        )
+
+    def test_can_vote_on_comment_when_parent_is_accessible(self):
+        self.problem.testers.add(self.voter_profile)
+
+        response = self.client.post(
+            reverse("comment_downvote"),
+            {"id": self.comment.id},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.comment.refresh_from_db()
+        self.assertEqual(self.comment.score, -1)
+
+    def test_can_vote_on_pagevote_when_parent_is_accessible(self):
+        self.problem.testers.add(self.voter_profile)
+        pagevote = self.problem.get_or_create_pagevote()
+
+        response = self.client.post(
+            reverse("pagevote_vote"),
+            {"id": pagevote.id, "delta": -1},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        pagevote.refresh_from_db()
+        self.assertEqual(pagevote.score, -1)
 
 
 class VoteCommentCacheDirtyTest(CommentVotingTestCase):
