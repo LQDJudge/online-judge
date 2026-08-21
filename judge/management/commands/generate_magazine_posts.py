@@ -488,6 +488,9 @@ Văn phong:
 - Tự nhiên, ngắn, rõ.
 - Không giáo trình hóa.
 - Viết theo kiểu bài báo dễ đọc: mở bằng một cảnh/tình huống/ví dụ cụ thể, rồi mới mở rộng sang ý chính.
+- Viết theo lối wiki giáo dục dễ đọc: định nghĩa đối tượng trong 1-2 câu, cho ngay một ví dụ nhỏ, rồi mới nói cách trực tiếp vướng ở đâu.
+- Khi giới thiệu cấu trúc dữ liệu hoặc kỹ thuật, hãy nêu “mỗi phần lưu gì” và “một thao tác đọc/cập nhật dùng thông tin đó ra sao”.
+- Nếu có nhiều hướng giải, chỉ so sánh 2 hướng rõ nhất: cách trực tiếp và cách đáng thử hơn. Không liệt kê dài.
 - Mỗi đoạn nên có 1-3 câu. Đoạn đầu sau tóm tắt phải đủ cụ thể để người đọc hình dung được ngay.
 - Dùng nhịp “chi tiết cụ thể -> bối cảnh -> vì sao đáng chú ý -> bước tiếp theo”. Đừng mở đầu bằng nhận xét chung.
 - Không bịa lời trích dẫn, tên người, sự kiện, số liệu, hoặc cảm xúc không có trong SOURCE_CONTEXT.
@@ -538,10 +541,9 @@ Ràng buộc:
 - Không nói lời khuyên chung chung.
 - Mỗi bài chủ đề phải có một “mẩu làm việc” cụ thể: một dòng ghi chú mẫu, một bộ kiểm thử nhỏ, một công thức ngắn, một danh sách kiểm tra 2-3 bước, hoặc một ví dụ số.
 - Nếu viết về đọc lời giải mẫu, phải có một ví dụ nhỏ về thứ cần chép lại, như `dp[i]` nghĩa là gì, thứ tự duyệt, hoặc một điều luôn đúng trong một dòng. Không chỉ nói “đọc ý chính”.
-- Giữ cùng một ví dụ xuyên suốt bài. Nếu mở bằng lưới, các ghi chú sau cũng phải nói về lưới, ví dụ `dp[x][y] = dp[x-1][y] + dp[x][y-1]` hoặc $C(dx+dy, dx)$. Không chuyển đột ngột sang một bài toán khác.
+- Giữ cùng một ví dụ xuyên suốt bài. Nếu mở bằng mảng thì các ghi chú sau cũng phải nói về mảng; nếu mở bằng đồ thị thì các ghi chú sau cũng phải nói về đồ thị. Không chuyển đột ngột sang một bài toán khác.
 - Không trộn hai kỹ thuật cho cùng một ví dụ ngắn, như vừa dùng tổ hợp $C(n,k)$ vừa chuyển sang quy hoạch động, trừ khi bài giải thích rõ vì sao hai cách nhìn tương đương.
-- Với ví dụ lưới, chọn một hệ hướng duy nhất. Nếu đã nói “sang phải hoặc xuống dưới” thì không được gọi bước đó là “đi lên” ở câu sau.
-- Nếu viết về toán, phải cho người đọc thấy ít nhất một phép tính nhỏ trước khi gọi tên công thức. Ví dụ: từ `(0,0)` đến `(2,1)` có 3 bước, chọn vị trí cho 1 bước đi lên nên có $C(3,1)=3$ cách.
+- Nếu viết về toán, phải cho người đọc thấy ít nhất một phép tính nhỏ trước khi gọi tên công thức. Ví dụ: chọn 2 vị trí trong 4 vị trí thì có $C(4,2)=6$ cách.
 - Nếu nhắc tính tổ hợp với modulo, phải nói “nghịch đảo modulo” hoặc giữ ví dụ ở số nhỏ. Không viết “chia modulo”.
 - Nếu bài chỉ còn đúng các thao tác “mở tài liệu, ghi chú, đọc lại” mà không có ví dụ kỹ thuật nhỏ, hãy viết lại cho cụ thể hơn.
 - Ví dụ phải hợp lý như một tình huống thật. Đừng viết những mẩu mã lạ như thể đó là toàn bộ bài; nếu nhắc mã, nói rõ đó là biến, dòng in để kiểm tra, hoặc đoạn xử lý nhỏ.
@@ -558,6 +560,9 @@ Văn phong:
 - Tự nhiên, có nhịp đọc như một chuyên mục kỹ thuật nhỏ.
 - Không giáo trình hóa.
 - Viết theo kiểu bài báo dễ đọc: mở bằng một cảnh/tình huống/ví dụ cụ thể, rồi mới mở rộng sang ý chính.
+- Viết theo lối wiki giáo dục dễ đọc: định nghĩa đối tượng trong 1-2 câu, cho ngay một ví dụ nhỏ, rồi mới nói cách trực tiếp vướng ở đâu.
+- Khi giới thiệu cấu trúc dữ liệu hoặc kỹ thuật, hãy nêu “mỗi phần lưu gì” và “một thao tác đọc/cập nhật dùng thông tin đó ra sao”.
+- Nếu có nhiều hướng giải, chỉ so sánh 2 hướng rõ nhất: cách trực tiếp và cách đáng thử hơn. Không liệt kê dài.
 - Mỗi đoạn nên có 1-3 câu. Đoạn đầu sau tóm tắt phải đủ cụ thể để người đọc hình dung được ngay.
 - Dùng nhịp “chi tiết cụ thể -> bối cảnh -> vì sao đáng chú ý -> bước tiếp theo”. Đừng mở đầu bằng nhận xét chung.
 - Không bịa lời trích dẫn, tên người, sự kiện, số liệu, hoặc cảm xúc không có trong SOURCE_CONTEXT.
@@ -583,6 +588,8 @@ CONTEST_SYSTEM_PROMPT = r"""Bạn viết một bài ngắn cho chuyên mục c�
 Ràng buộc:
 - Không có giới hạn độ dài cứng, nhưng đừng thành một đoạn dài khó đọc.
 - Viết theo kiểu bài báo dễ đọc: mở bằng một bài/tình huống cụ thể trong kỳ thi, rồi mới nói vì sao cả kỳ thi đáng đọc.
+- Viết theo lối wiki giáo dục dễ đọc: mô tả bài đầu tiên thật cụ thể, nêu cách trực tiếp người đọc dễ nghĩ tới, rồi gợi ý vì sao cần một ý tưởng tốt hơn.
+- Nếu nhắc kỹ thuật của một bài, giải thích bằng ví dụ hoặc thao tác nhỏ trước khi gọi tên kỹ thuật.
 - Mỗi đoạn nên có 1-3 câu. Đoạn đầu sau tóm tắt phải đủ cụ thể để người đọc hình dung được ngay.
 - Dùng nhịp “chi tiết cụ thể -> bối cảnh -> vì sao đáng chú ý -> bước tiếp theo”. Đừng mở đầu bằng nhận xét chung.
 - Không bịa lời trích dẫn, tên người, sự kiện, số liệu, hoặc cảm xúc không có trong SOURCE_CONTEXT.
@@ -618,6 +625,8 @@ Tiêu chí:
 - Câu dễ hiểu với học sinh đúng cấp. Nếu phải đọc lại mới hiểu, publishable phải là false.
 - Có nhịp bài báo dễ đọc: chi tiết cụ thể trước, bối cảnh sau, rồi mới nói ý nghĩa hoặc bước tiếp theo.
 - Đoạn đầu sau tóm tắt không được chung chung. Phải có cảnh/tình huống/ví dụ cụ thể.
+- Có mạch giải thích kiểu wiki giáo dục khi nói kỹ thuật: định nghĩa ngắn, ví dụ nhỏ, cách trực tiếp, rồi nhu cầu dùng cách tốt hơn.
+- Nếu bài nhắc cấu trúc dữ liệu/kỹ thuật mà không nói rõ nó lưu gì hoặc thao tác chính làm gì, publishable phải là false.
 - Không bịa lời trích dẫn, tên người, sự kiện, số liệu, hoặc cảm xúc không có trong SOURCE_CONTEXT.
 - Không bắt lỗi các thuật ngữ quen thuộc như DP, DFS, code, test, input, output, contest, editorial nếu dùng tự nhiên.
 - Nếu có tên như DFS, DP, Fenwick, phải giải thích ngay bằng tiếng Việt trong cùng câu hoặc câu kế tiếp.
@@ -737,8 +746,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--max-attempts",
             type=int,
-            default=8,
-            help="Maximum LLM write/rewrite attempts per post",
+            default=10,
+            help="Maximum LLM write/rewrite attempts per post, capped at 10",
         )
         parser.add_argument(
             "--skip-review",
@@ -748,7 +757,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--review-threshold",
             type=int,
-            default=9,
+            default=8,
             help="Minimum reviewer score required when review is enabled",
         )
         parser.add_argument(
@@ -761,7 +770,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         org = self._get_org(options["org"])
         self.target_org = org
-        self.max_llm_attempts = max(1, options["max_attempts"])
+        self.max_llm_attempts = min(max(1, options["max_attempts"]), 10)
         self.enable_llm_review = not options["skip_review"]
         self.review_threshold = min(max(options["review_threshold"], 1), 10)
         self.candidate_drafts = max(1, options["candidate_drafts"])
@@ -1394,6 +1403,9 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
 
     def _topic_example_guide(self, topic, org):
         level = self._audience_level(org)
+        specific_guide = self._specific_topic_example_guide(topic, level)
+        if specific_guide:
+            return specific_guide
         if level == "primary":
             hints = self._primary_topic_example_guides()
         elif level == "advanced":
@@ -1420,6 +1432,35 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
             required_markers=guide["required_markers"],
             label=guide["label"],
         )
+
+    def _specific_topic_example_guide(self, topic, level):
+        lower = topic.lower()
+        is_dp_topic = "dp" in lower or "quy hoạch động" in lower
+        is_optimization_topic = "tối ưu" in lower or "cấu trúc dữ liệu" in lower
+        if is_dp_topic and is_optimization_topic:
+            if level == "middle":
+                return TopicExampleGuide(
+                    instruction=(
+                        "Dùng ví dụ nhảy trên dãy điểm: tại vị trí `i`, chỉ được nhảy từ "
+                        "một trong 3 vị trí trước đó, nên `dp[i]` cần lấy giá trị lớn nhất "
+                        "trong một cửa sổ nhỏ. Trước hết thử duyệt 3 vị trí, rồi hỏi nếu cửa "
+                        "sổ tăng lên 50 hoặc 100 vị trí thì cần lưu gì để lấy nhanh. "
+                        "Chỉ nhắc deque/hàng đợi hai đầu ở phiên bản cửa sổ lớn."
+                    ),
+                    required_markers=("dp[i]", "3 vị trí", "lớn nhất", "cửa sổ"),
+                    label="quy hoạch động cửa sổ nhỏ",
+                )
+            return TopicExampleGuide(
+                instruction=(
+                    "Dùng ví dụ tối ưu quy hoạch động: `dp[i]` cần lấy giá trị nhỏ nhất "
+                    "trên các trạng thái `j` nằm trong một đoạn trước `i`. Thử cách duyệt "
+                    "hết các `j`, rồi chuyển sang câu hỏi: cấu trúc nào giữ được giá trị "
+                    "nhỏ nhất hiện tại khi cửa sổ trượt?"
+                ),
+                required_markers=("dp[i]", "nhỏ nhất", "đoạn", "cửa sổ"),
+                label="tối ưu quy hoạch động bằng cửa sổ",
+            )
+        return None
 
     def _default_topic_example_guides(self):
         return (
@@ -1635,8 +1676,15 @@ Viết một bài ngắn theo thứ tự:
             level = self._audience_level(org)
             level_hints = {
                 "primary": "Ưu tiên câu ngắn, ví dụ thật cụ thể, rất ít thuật ngữ.",
-                "middle": "Có thể có bài thử thách, nhưng phải đi từ ví dụ cụ thể trước.",
-                "high": "Có thể dùng thuật ngữ thuật toán, nhưng vẫn cần giải thích mạch suy nghĩ.",
+                "middle": (
+                    "Có thể có bài thử thách, nhưng phải đi từ ví dụ cụ thể trước. "
+                    "Ưu tiên mảng, xâu, đếm, sắp xếp, mảng cộng dồn, queue/deque đơn giản; "
+                    "tránh cây phân đoạn/Fenwick nếu không giải thích rất chậm."
+                ),
+                "high": (
+                    "Có thể dùng thuật ngữ thuật toán, nhưng vẫn cần giải thích mạch suy nghĩ. "
+                    "Nếu dùng cấu trúc dữ liệu khó, phải có ví dụ nhỏ và thao tác lưu/cập nhật rõ."
+                ),
                 "advanced": "Có thể dùng thuật ngữ nâng cao, nhưng phải nói rõ điều luôn đúng/trạng thái/bước chuyển.",
                 "general": "Điều chỉnh độ sâu theo điểm bài và mô tả cộng đồng.",
             }
@@ -1900,6 +1948,7 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
             errors.append("Cần ít nhất 3 đoạn sau phần tóm tắt")
 
         errors.extend(self._opening_style_errors(paragraphs))
+        errors.extend(self._wiki_style_learning_path_errors(body_after_summary))
 
         sentences = self._split_sentences(" ".join(paragraphs))
         long_sentences = [
@@ -1911,7 +1960,7 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
         dense_sentences = [
             sentence
             for sentence in sentences
-            if len(sentence.split()) > 30 and sentence.count(",") >= 3
+            if len(sentence.split()) > 32 and sentence.count(",") >= 4
         ]
         if dense_sentences:
             errors.append(
@@ -1924,7 +1973,7 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
             hits = sum(1 for word in ABSTRACT_WORDS if word in lower_sentence) + len(
                 re.findall(r"`[^`]+`|\$[^$]+\$", sentence)
             )
-            if hits >= 4:
+            if len(sentence.split()) > 30 and hits >= 5:
                 hard_term_sentences += 1
         if hard_term_sentences:
             errors.append(
@@ -1971,6 +2020,60 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
                 "Đoạn đầu sau tóm tắt cần mở bằng cảnh/tình huống/ví dụ cụ thể, không mở chung chung"
             ]
         return []
+
+    def _wiki_style_learning_path_errors(self, body):
+        lower = body.lower()
+        technical_markers = (
+            "dp",
+            "quy hoạch động",
+            "dfs",
+            "bfs",
+            "fenwick",
+            "segment tree",
+            "cây phân đoạn",
+            "cấu trúc dữ liệu",
+            "tham lam",
+            "chặt nhị phân",
+            "đồ thị",
+            "truy vấn",
+        )
+        if not any(marker in lower for marker in technical_markers):
+            return []
+
+        has_example = bool(re.search(r"`[^`]+`|\$[^$]+\$|\b\d+\b", body)) or any(
+            marker in lower for marker in ("ví dụ", "chẳng hạn", "giả sử")
+        )
+        has_state_or_operation = any(
+            marker in lower
+            for marker in (
+                "lưu",
+                "theo dõi",
+                "cập nhật",
+                "truy vấn",
+                "mỗi nút",
+                "mỗi đoạn",
+                "mỗi trạng thái",
+                "gọi",
+                "đặt",
+            )
+        )
+        has_direct_comparison = any(
+            marker in lower
+            for marker in (
+                "cách trực tiếp",
+                "duyệt hết",
+                "làm lại",
+                "chậm",
+                "không khả thi",
+                "thay vì",
+            )
+        )
+        if has_example and (has_state_or_operation or has_direct_comparison):
+            return []
+
+        return [
+            "Bài có thuật ngữ kỹ thuật nhưng chưa đi theo mạch dễ đọc: ví dụ nhỏ, cách trực tiếp, rồi thứ cần lưu/thao tác chính"
+        ]
 
     def _ending_errors(self, body):
         errors = []
@@ -2292,7 +2395,12 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
             full_prompt = prompt
             if feedback:
                 full_prompt += (
-                    f"\n\nLần trước chưa đạt: {feedback}\nHãy trả lại bản đã sửa."
+                    "\n\nLần trước chưa đạt vì các lỗi sau:\n"
+                    f"{feedback}\n\n"
+                    "Hãy viết lại từ đầu, sửa trực tiếp từng góp ý. "
+                    "Không chỉ đổi câu chữ ở đoạn cuối; nếu reviewer nói ví dụ sai, "
+                    "phải đổi ví dụ hoặc đổi kỹ thuật cho khớp. "
+                    "Chỉ trả lại Markdown cuối cùng."
                 )
             body = service.call_llm(full_prompt, system_prompt=system_prompt)
             if not body:
@@ -2326,7 +2434,10 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
                 )
                 continue
 
-            feedback = f"Reviewer chưa duyệt: {review['feedback']}"
+            feedback = (
+                f"Reviewer chưa duyệt ở ngưỡng {self.review_threshold}/10: "
+                f"{review['feedback']}"
+            )
             self.stdout.write(self.style.WARNING(f"validation failed: {feedback}"))
         if approved:
             approved.sort(key=lambda item: item[0], reverse=True)
