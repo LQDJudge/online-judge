@@ -2067,6 +2067,11 @@ urlpatterns = [
         document_library.library_api_list,
         name="library_api_list",
     ),
+    re_path(
+        r"^library/api/outline/(?P<path>.+)$",
+        document_library.library_api_outline,
+        name="library_api_outline",
+    ),
     # Superuser management API (distinct prefix; listed before the manage page)
     re_path(
         r"^library/api/manage/create-folder/$",

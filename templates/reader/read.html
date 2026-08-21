@@ -10,7 +10,8 @@
 {% block body %}
   <div id="doc-reader"
        data-viewer-url="{{ static('libs/pdfjs/web/viewer.html') }}"
-       data-raw-url="{{ raw_url }}">
+       data-raw-url="{{ raw_url }}"
+       data-outline-url="{{ outline_url }}">
     <aside class="doc-reader-outline">
       <div class="doc-reader-outline-header">
         <button type="button" id="doc-reader-toggle-outline" class="doc-reader-icon-btn"

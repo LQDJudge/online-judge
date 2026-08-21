@@ -8,6 +8,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
+from pypdf import PdfReader
 
 from judge.caching import cache_wrapper
 from judge.utils.storage_helpers import (
@@ -75,9 +76,60 @@ def library_document(request, path):
     context = {
         "title": os.path.basename(path),
         "raw_url": reverse("library_raw", args=[path]),
+        "outline_url": reverse("library_api_outline", args=[path]),
         "layout": "no_wrapper",  # full-bleed reader (no wrapper padding/max-width)
     }
     return render(request, "reader/read.html", context)
+
+
+def _outline_page(reader, item):
+    try:
+        return reader.get_destination_page_number(item) + 1
+    except Exception:
+        return None
+
+
+def _serialize_pdf_outline(reader, outline):
+    nodes = []
+    last_node = None
+    for item in outline or []:
+        if isinstance(item, list):
+            children = _serialize_pdf_outline(reader, item)
+            if last_node is not None:
+                last_node["items"].extend(children)
+            else:
+                nodes.extend(children)
+            continue
+
+        title = getattr(item, "title", "")
+        node = {
+            "title": str(title),
+            "page": _outline_page(reader, item),
+            "items": [],
+        }
+        nodes.append(node)
+        last_node = node
+    return nodes
+
+
+@cache_wrapper(prefix="lib_outline", expected_type=list)
+def _cached_pdf_outline(path):
+    file_path = get_validated_library_pdf(path)
+    with default_storage.open(file_path, "rb") as pdf_file:
+        reader = PdfReader(pdf_file)
+        return _serialize_pdf_outline(reader, reader.outline)
+
+
+def _dirty_outline(*paths):
+    for path in paths:
+        rel = (path or "").strip("/")
+        if rel.lower().endswith(".pdf"):
+            _cached_pdf_outline.dirty(rel)
+
+
+def library_api_outline(request, path):
+    """Return a cached PDF outline for the document reader."""
+    return JsonResponse({"outline": _cached_pdf_outline(path)})
 
 
 def get_library_listing(path=""):
@@ -220,10 +272,19 @@ def _relocate_folder(old_full, new_full):
     if not keys:
         return JsonResponse({"error": _("Folder not found")}, status=404)
     failed = []
+    dirty_paths = []
     for key in keys:
         suffix = key[len(old_full) :].lstrip("/")
-        if not storage_rename_file(default_storage, key, f"{new_full}/{suffix}"):
+        new_key = f"{new_full}/{suffix}"
+        if not storage_rename_file(default_storage, key, new_key):
             failed.append(suffix)
+        else:
+            dirty_paths.extend(
+                [
+                    key[len(LIBRARY_ROOT) :].lstrip("/"),
+                    new_key[len(LIBRARY_ROOT) :].lstrip("/"),
+                ]
+            )
     if failed:
         return JsonResponse(
             {
@@ -232,6 +293,7 @@ def _relocate_folder(old_full, new_full):
             },
             status=500,
         )
+    _dirty_outline(*dirty_paths)
     return JsonResponse({"success": True})
 
 
@@ -280,7 +342,9 @@ def library_manage_upload(request):
             {"error": _("A file with this name already exists")}, status=400
         )
     default_storage.save(key, f)
-    _dirty_listing((request.POST.get("path") or "").strip("/"))
+    parent_rel = (request.POST.get("path") or "").strip("/")
+    _dirty_listing(parent_rel)
+    _dirty_outline(f"{parent_rel}/{name}".strip("/"))
     return JsonResponse({"success": True})
 
 
@@ -312,6 +376,7 @@ def library_manage_rename(request):
     if not storage_rename_file(default_storage, full, new_full):
         return JsonResponse({"error": _("Rename failed")}, status=500)
     _dirty_listing(_parent_path(rel))
+    _dirty_outline(rel, new_full[len(LIBRARY_ROOT) :].lstrip("/"))
     return JsonResponse({"success": True})
 
 
@@ -343,6 +408,7 @@ def library_manage_move(request):
     if not storage_rename_file(default_storage, full, new_full):
         return JsonResponse({"error": _("Move failed")}, status=500)
     _dirty_listing(_parent_path(rel), dest)
+    _dirty_outline(rel, new_full[len(LIBRARY_ROOT) :].lstrip("/"))
     return JsonResponse({"success": True})
 
 
@@ -369,6 +435,7 @@ def library_manage_delete(request):
     if not storage_file_exists(default_storage, full):
         return JsonResponse({"error": _("File not found")}, status=404)
     storage_delete_file(default_storage, full)
+    _dirty_outline(rel)
     # Keep the (now-empty) folder alive so it doesn't vanish (Drive-like); the
     # user removes an empty folder explicitly via delete-folder.
     parent = _parent_path(rel)

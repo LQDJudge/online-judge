@@ -7,6 +7,7 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 from django.urls import reverse
+from pypdf import PdfWriter
 
 from judge.models import Profile, Language
 
@@ -60,6 +61,40 @@ class LibraryReaderBackendTestCase(TestCase):
         self.assertTrue(
             raw_url.encode() in resp.content
             or quote(raw_url, safe="").encode() in resp.content
+        )
+        outline_url = reverse("library_api_outline", args=["Math/Algebra/book.pdf"])
+        self.assertIn(outline_url.encode(), resp.content)
+
+    def test_outline_api_returns_cached_pdf_outline(self):
+        pdf = BytesIO()
+        writer = PdfWriter()
+        writer.add_blank_page(width=72, height=72)
+        writer.add_blank_page(width=72, height=72)
+        parent = writer.add_outline_item("Chapter 1", 0)
+        writer.add_outline_item("Section 1.1", 1, parent=parent)
+        writer.write(pdf)
+        pdf_bytes = pdf.getvalue()
+
+        with patch(
+            "judge.views.document_library.storage_file_exists", return_value=True
+        ), patch("judge.views.document_library.default_storage") as mock_storage:
+            mock_storage.open.side_effect = lambda *_args, **_kwargs: BytesIO(pdf_bytes)
+            url = reverse("library_api_outline", args=["Math/Algebra/book.pdf"])
+            first = self.client.get(url)
+            second = self.client.get(url)
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(mock_storage.open.call_count, 1)
+        self.assertEqual(
+            first.json()["outline"],
+            [
+                {
+                    "title": "Chapter 1",
+                    "page": 1,
+                    "items": [{"title": "Section 1.1", "page": 2, "items": []}],
+                }
+            ],
         )
 
 
