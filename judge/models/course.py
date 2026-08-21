@@ -102,9 +102,6 @@ class Course(models.Model):
         if not profile:
             return False
 
-        if profile.user.is_superuser:
-            return False  # Admins don't need to join courses
-
         # User must not already be enrolled
         if CourseRole.objects.filter(course=course, user=profile).exists():
             return False
