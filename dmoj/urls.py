@@ -1865,6 +1865,11 @@ urlpatterns = [
                     name="internal_problem_queue",
                 ),
                 re_path(
+                    r"^community_blog_queue$",
+                    internal.InternalCommunityBlogQueue.as_view(),
+                    name="internal_community_blog_queue",
+                ),
+                re_path(
                     r"^problem_duplicates$",
                     internal.InternalProblemDuplicates.as_view(),
                     name="internal_problem_duplicates",

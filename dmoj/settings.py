@@ -649,6 +649,18 @@ PERIODIC_RECOMPUTE_CONTRIBUTIONS_ENABLED = True
 PERIODIC_RECOMPUTE_CONTRIBUTIONS_LOCK_TIMEOUT = 7200
 PERIODIC_FIX_ORGANIZATION_PRIVATE_ENABLED = True
 PERIODIC_FIX_ORGANIZATION_PRIVATE_LOCK_TIMEOUT = 3600
+PERIODIC_GENERATE_MAGAZINE_POSTS_ENABLED = True
+PERIODIC_GENERATE_MAGAZINE_POSTS_LOCK_TIMEOUT = 12 * 3600
+MAGAZINE_POSTS_PER_COMMUNITY_PER_RUN = 1
+MAGAZINE_MAX_PENDING_PER_COMMUNITY = 5
+MAGAZINE_AUTHOR_USERNAME = "admin"
+MAGAZINE_POST_TYPE = "mixed"
+MAGAZINE_LLM_BOT = "Gemini-3.5-Flash-Lite"
+MAGAZINE_MAX_ATTEMPTS = 12
+MAGAZINE_CANDIDATE_DRAFTS = 1
+MAGAZINE_REVIEW_THRESHOLD = 9
+MAGAZINE_COMMUNITY_ORG_SLUGS = ()
+MAGAZINE_EXCLUDED_COMMUNITY_ORG_SLUGS = ("hoi-dap-thac-mac", "off-topic")
 
 # Celery Beat schedule. Application-level periodic jobs belong here so the
 # cadence is versioned with the codebase. This schedule is only active when
@@ -701,6 +713,10 @@ CELERY_BEAT_SCHEDULE = {
     "recompute-contributions": {
         "task": "judge.tasks.maintenance.recompute_contributions",
         "schedule": crontab(minute=18, hour=4),
+    },
+    "generate-daily-magazine-posts": {
+        "task": "judge.tasks.magazine.generate_daily_magazine_posts",
+        "schedule": crontab(minute=30, hour=4),
     },
 }
 
