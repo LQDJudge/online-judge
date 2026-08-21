@@ -185,6 +185,21 @@ ABSTRACT_WORDS = (
     "tối ưu",
 )
 
+CONCRETE_OPENING_MARKERS = (
+    "ví dụ",
+    "chẳng hạn",
+    "giả sử",
+    "với",
+    "khi",
+    "nếu",
+    "trong",
+    "một",
+    "hai",
+    "ba",
+    "bạn",
+    "mình",
+)
+
 ENGLISH_PROSE_TERMS = (
     "workflow",
     "magazine",
@@ -472,6 +487,10 @@ Văn phong:
 - Thân thiện nhưng không trẻ con.
 - Tự nhiên, ngắn, rõ.
 - Không giáo trình hóa.
+- Viết theo kiểu bài báo dễ đọc: mở bằng một cảnh/tình huống/ví dụ cụ thể, rồi mới mở rộng sang ý chính.
+- Mỗi đoạn nên có 1-3 câu. Đoạn đầu sau tóm tắt phải đủ cụ thể để người đọc hình dung được ngay.
+- Dùng nhịp “chi tiết cụ thể -> bối cảnh -> vì sao đáng chú ý -> bước tiếp theo”. Đừng mở đầu bằng nhận xét chung.
+- Không bịa lời trích dẫn, tên người, sự kiện, số liệu, hoặc cảm xúc không có trong SOURCE_CONTEXT.
 - Một câu chỉ nên chứa một ý.
 - Ưu tiên động từ cụ thể: “đếm”, “đánh dấu”, “đi theo cạnh”, “cắt đoạn số”.
 - Nếu bài có một thao tác cài đặt đáng học, nên có 1-2 mẩu mã ngắn trong dấu `...` để người đọc thấy thao tác chính.
@@ -538,6 +557,10 @@ Ràng buộc:
 Văn phong:
 - Tự nhiên, có nhịp đọc như một chuyên mục kỹ thuật nhỏ.
 - Không giáo trình hóa.
+- Viết theo kiểu bài báo dễ đọc: mở bằng một cảnh/tình huống/ví dụ cụ thể, rồi mới mở rộng sang ý chính.
+- Mỗi đoạn nên có 1-3 câu. Đoạn đầu sau tóm tắt phải đủ cụ thể để người đọc hình dung được ngay.
+- Dùng nhịp “chi tiết cụ thể -> bối cảnh -> vì sao đáng chú ý -> bước tiếp theo”. Đừng mở đầu bằng nhận xét chung.
+- Không bịa lời trích dẫn, tên người, sự kiện, số liệu, hoặc cảm xúc không có trong SOURCE_CONTEXT.
 - Câu ngắn. Nếu một câu có hơn 30 từ, hãy tách thành hai câu.
 - Không kết bằng châm ngôn.
 - Giữ giọng đời thường và chính xác. Không văn chương hóa quá mức, không làm căng cảm xúc bằng hình ảnh như “rêu phong”, “thước phim”, “góc khuất”.
@@ -559,6 +582,10 @@ CONTEST_SYSTEM_PROMPT = r"""Bạn viết một bài ngắn cho chuyên mục c�
 
 Ràng buộc:
 - Không có giới hạn độ dài cứng, nhưng đừng thành một đoạn dài khó đọc.
+- Viết theo kiểu bài báo dễ đọc: mở bằng một bài/tình huống cụ thể trong kỳ thi, rồi mới nói vì sao cả kỳ thi đáng đọc.
+- Mỗi đoạn nên có 1-3 câu. Đoạn đầu sau tóm tắt phải đủ cụ thể để người đọc hình dung được ngay.
+- Dùng nhịp “chi tiết cụ thể -> bối cảnh -> vì sao đáng chú ý -> bước tiếp theo”. Đừng mở đầu bằng nhận xét chung.
+- Không bịa lời trích dẫn, tên người, sự kiện, số liệu, hoặc cảm xúc không có trong SOURCE_CONTEXT.
 - Không dùng khối mã.
 - Không dùng HTML thô.
 - Không link tuyệt đối.
@@ -589,6 +616,9 @@ Tiêu chí:
 - Không bịa chi tiết ngoài SOURCE_CONTEXT.
 - Văn tự nhiên, không AI-like, không sáo rỗng.
 - Câu dễ hiểu với học sinh đúng cấp. Nếu phải đọc lại mới hiểu, publishable phải là false.
+- Có nhịp bài báo dễ đọc: chi tiết cụ thể trước, bối cảnh sau, rồi mới nói ý nghĩa hoặc bước tiếp theo.
+- Đoạn đầu sau tóm tắt không được chung chung. Phải có cảnh/tình huống/ví dụ cụ thể.
+- Không bịa lời trích dẫn, tên người, sự kiện, số liệu, hoặc cảm xúc không có trong SOURCE_CONTEXT.
 - Không bắt lỗi các thuật ngữ quen thuộc như DP, DFS, code, test, input, output, contest, editorial nếu dùng tự nhiên.
 - Nếu có tên như DFS, DP, Fenwick, phải giải thích ngay bằng tiếng Việt trong cùng câu hoặc câu kế tiếp.
 - Có ví dụ/tình huống cụ thể trước thuật ngữ.
@@ -1869,6 +1899,8 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
         if len(paragraphs) < 3:
             errors.append("Cần ít nhất 3 đoạn sau phần tóm tắt")
 
+        errors.extend(self._opening_style_errors(paragraphs))
+
         sentences = self._split_sentences(" ".join(paragraphs))
         long_sentences = [
             sentence for sentence in sentences if len(sentence.split()) > 44
@@ -1913,6 +1945,32 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
             errors.append("Cần đưa ví dụ nhỏ trước khi gọi tên kỹ thuật")
 
         return errors
+
+    def _opening_style_errors(self, paragraphs):
+        if not paragraphs:
+            return []
+
+        first = paragraphs[0].lower()
+        has_concrete_marker = (
+            bool(re.search(r"`[^`]+`|\$[^$]+\$|\b\d+\b", paragraphs[0]))
+            or any(marker in first for marker in CONCRETE_OPENING_MARKERS)
+            or " - " in paragraphs[0]
+        )
+        generic_openers = (
+            "bài viết này",
+            "chủ đề này",
+            "bài toán này",
+            "kỳ thi này",
+            "trong bài viết này",
+            "khi học thuật toán",
+            "đây là một",
+            "có một điều",
+        )
+        if not has_concrete_marker or first.startswith(generic_openers):
+            return [
+                "Đoạn đầu sau tóm tắt cần mở bằng cảnh/tình huống/ví dụ cụ thể, không mở chung chung"
+            ]
+        return []
 
     def _ending_errors(self, body):
         errors = []
