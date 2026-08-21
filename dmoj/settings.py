@@ -660,7 +660,11 @@ MAGAZINE_MAX_ATTEMPTS = 12
 MAGAZINE_CANDIDATE_DRAFTS = 1
 MAGAZINE_REVIEW_THRESHOLD = 9
 MAGAZINE_COMMUNITY_ORG_SLUGS = ()
-MAGAZINE_EXCLUDED_COMMUNITY_ORG_SLUGS = ("hoi-dap-thac-mac", "off-topic")
+MAGAZINE_EXCLUDED_COMMUNITY_ORG_SLUGS = (
+    "hoi-ap-thac-mac",
+    "hoi-dap-thac-mac",
+    "off-topic",
+)
 
 # Celery Beat schedule. Application-level periodic jobs belong here so the
 # cadence is versioned with the codebase. This schedule is only active when
