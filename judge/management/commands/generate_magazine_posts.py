@@ -328,7 +328,7 @@ MATH_TOPIC_EXAMPLE_HINTS = (
 
 ADVANCED_TOPIC_BANK = (
     "Từ một lời giải IOI, nên đọc invariant nào trước?",
-    "Khi nào một transition DP đáng được tối ưu bằng cấu trúc dữ liệu?",
+    "Khi nào công thức DP cần hỏi min/max thật nhanh?",
     "Một lỗi nhỏ trong bài khó: invariant đúng nhưng thứ tự duyệt sai",
     "Đọc lại một bài đồ thị khó bằng câu hỏi: cạnh nào thật sự thay đổi?",
 )
