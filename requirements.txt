@@ -23,6 +23,7 @@ requests
 django-fernet-fields-v2
 pyotp
 qrcode[pil]
+pypdf
 pymoss
 packaging
 celery
