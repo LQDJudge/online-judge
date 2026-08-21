@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-21 15:49+0700\n"
+"POT-Creation-Date: 2026-08-21 17:08+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -51,7 +51,7 @@ msgstr "Tin nhắn"
 #: chat_box/models.py:195 chat_box/models.py:229 chat_box/models.py:240
 #: chat_box/models.py:256 judge/admin/interface.py:149
 #: judge/models/contest.py:817 judge/models/contest.py:1173
-#: judge/models/course.py:222 judge/models/course.py:492
+#: judge/models/course.py:219 judge/models/course.py:489
 #: judge/models/profile.py:763 judge/models/profile.py:826
 #: judge/models/profile.py:1430 judge/models/quiz.py:1080
 #: judge/models/submission.py:421
@@ -1169,7 +1169,7 @@ msgid "Editorial for "
 msgstr "Hướng dẫn cho {0}"
 
 #: judge/models/comment.py:206 judge/models/comment.py:525
-#: judge/views/internal.py:1240 templates/contest/contest-list-tabs.html:7
+#: judge/views/internal.py:1248 templates/contest/contest-list-tabs.html:7
 #: templates/contest/contest-tabs.html:50 templates/contest/review.html:34
 #: templates/internal/problem_duplicates.html:202
 #: templates/problem/edit_base.html:20 templates/problem/left-sidebar.html:17
@@ -1347,7 +1347,7 @@ msgstr ""
 "hãy nhập 02:00:00"
 
 #: judge/models/contest.py:165 judge/models/course.py:39
-#: judge/models/course.py:273 judge/models/problem.py:239
+#: judge/models/course.py:270 judge/models/problem.py:239
 #: judge/models/quiz.py:322
 msgid "publicly visible"
 msgstr "công khai"
@@ -1636,7 +1636,7 @@ msgstr "kỳ thi"
 msgid "associated contest"
 msgstr "kỳ thi liên quan"
 
-#: judge/models/contest.py:824 judge/models/course.py:370
+#: judge/models/contest.py:824 judge/models/course.py:367
 #: judge/models/quiz.py:1098
 msgid "score"
 msgstr "điểm"
@@ -1705,7 +1705,7 @@ msgid "contest participations"
 msgstr "lần tham gia kỳ thi"
 
 #: judge/models/contest.py:952 judge/models/contest.py:1115
-#: judge/models/contest.py:1209 judge/models/course.py:366
+#: judge/models/contest.py:1209 judge/models/course.py:363
 #: judge/models/problem.py:767 judge/models/problem.py:774
 #: judge/models/problem.py:807 judge/models/problem.py:851
 #: judge/models/problem_attachment.py:24 judge/models/problem_data.py:77
@@ -1719,7 +1719,7 @@ msgid "quiz"
 msgstr "câu hỏi lý thuyết"
 
 #: judge/models/contest.py:973 judge/models/contest.py:1127
-#: judge/models/course.py:270 judge/models/course.py:401
+#: judge/models/course.py:267 judge/models/course.py:398
 #: judge/models/problem.py:223 judge/models/submission.py:437
 #: templates/quiz/detail.html:113 templates/quiz/result.html:101
 #: templates/quiz/result.html:104 templates/quiz/take.html:370
@@ -1743,8 +1743,8 @@ msgstr "thành phần"
 msgid "is pretested"
 msgstr "dùng pretest"
 
-#: judge/models/contest.py:986 judge/models/course.py:268
-#: judge/models/course.py:368 judge/models/course.py:399
+#: judge/models/contest.py:986 judge/models/course.py:265
+#: judge/models/course.py:365 judge/models/course.py:396
 #: judge/models/interface.py:47
 msgid "order"
 msgstr "thứ tự"
@@ -2193,97 +2193,97 @@ msgstr "Cho phép đăng ký"
 msgid "course image"
 msgstr "hình ảnh khóa học"
 
-#: judge/models/course.py:216 judge/models/course.py:262
-#: judge/models/course.py:435
+#: judge/models/course.py:213 judge/models/course.py:259
+#: judge/models/course.py:432
 msgid "course"
 msgstr "khóa học"
 
-#: judge/models/course.py:235
+#: judge/models/course.py:232
 msgid "needs progress recalculation"
 msgstr "cần tính lại tiến độ"
 
-#: judge/models/course.py:237
+#: judge/models/course.py:234
 msgid ""
 "Whether the user's lesson progress and unlock states need to be recalculated"
 msgstr ""
 "Tiến độ bài học và trạng thái mở khóa của người dùng có cần được tính lại "
 "không"
 
-#: judge/models/course.py:266
+#: judge/models/course.py:263
 msgid "lesson title"
 msgstr "tiêu đề bài học"
 
-#: judge/models/course.py:267
+#: judge/models/course.py:264
 msgid "lesson content"
 msgstr "nội dung bài học"
 
-#: judge/models/course.py:286
+#: judge/models/course.py:283
 #, python-format
 msgid "A course cannot have more than %(max)s lessons."
 msgstr "Một khóa học không thể có nhiều hơn %(max)s bài học."
 
-#: judge/models/course.py:438
+#: judge/models/course.py:435
 msgid "source lesson order"
 msgstr "thứ tự bài học yêu cầu"
 
-#: judge/models/course.py:439
+#: judge/models/course.py:436
 msgid "Order of the prerequisite lesson"
 msgstr "Thứ tự của bài học yêu cầu"
 
-#: judge/models/course.py:442
+#: judge/models/course.py:439
 msgid "target lesson order"
 msgstr "thứ tự bài học mở khóa"
 
-#: judge/models/course.py:443
+#: judge/models/course.py:440
 msgid "Order of the lesson to unlock"
 msgstr "Thứ tự của bài học mở khóa"
 
-#: judge/models/course.py:448
+#: judge/models/course.py:445
 msgid "required percentage"
 msgstr "phần trăm yêu cầu"
 
-#: judge/models/course.py:449
+#: judge/models/course.py:446
 msgid "Minimum grade percentage required in source lesson (0-100)"
 msgstr "Phần trăm điểm tối thiểu yêu cầu trong bài học yêu cầu (0-100)"
 
-#: judge/models/course.py:454
+#: judge/models/course.py:451
 msgid "Lesson Prerequisite"
 msgstr "Điều kiện tiên quyết bài học"
 
-#: judge/models/course.py:455
+#: judge/models/course.py:452
 msgid "Lesson Prerequisites"
 msgstr "Điều kiện tiên quyết bài học"
 
-#: judge/models/course.py:461 judge/views/course.py:1506
+#: judge/models/course.py:458 judge/views/course.py:1506
 #: templates/course/edit_lesson.html:269 templates/course/edit_lesson.html:430
 msgid "Source lesson order must be less than target lesson order."
 msgstr "Thứ tự bài học yêu cầu phải nhỏ hơn thứ tự bài học mở khóa."
 
-#: judge/models/course.py:498
+#: judge/models/course.py:495
 msgid "lesson"
 msgstr "bài học"
 
-#: judge/models/course.py:502
+#: judge/models/course.py:499
 msgid "is unlocked"
 msgstr "đã mở khóa"
 
-#: judge/models/course.py:503
+#: judge/models/course.py:500
 msgid "Whether the user has unlocked this lesson"
 msgstr "Người dùng đã mở khóa bài học này chưa"
 
-#: judge/models/course.py:507
+#: judge/models/course.py:504
 msgid "percentage"
 msgstr "phần trăm"
 
-#: judge/models/course.py:508
+#: judge/models/course.py:505
 msgid "User's grade percentage for this lesson"
 msgstr "Phần trăm điểm của người dùng cho bài học này"
 
-#: judge/models/course.py:513
+#: judge/models/course.py:510
 msgid "Lesson Progress"
 msgstr "Tiến độ bài học"
 
-#: judge/models/course.py:514
+#: judge/models/course.py:511
 msgid "Lesson Progress Records"
 msgstr "Bản ghi tiến độ bài học"
 
@@ -5403,15 +5403,15 @@ msgstr "Bạn phải giải ít nhất một bài trước khi được phép b�
 msgid "Contest auto-review is currently disabled."
 msgstr "Tự động đánh giá kỳ thi hoàn tất"
 
-#: judge/views/contest_review.py:341 judge/views/internal.py:1082
+#: judge/views/contest_review.py:341 judge/views/internal.py:1090
 msgid "Review currently running, please wait."
 msgstr "Phiên xem xét đang chạy, vui lòng chờ."
 
-#: judge/views/contest_review.py:360 judge/views/internal.py:1101
+#: judge/views/contest_review.py:360 judge/views/internal.py:1109
 msgid "No changes since your last review — edit something and try again."
 msgstr "Không có thay đổi kể từ lần xem xét trước — hãy sửa gì đó rồi thử lại."
 
-#: judge/views/contest_review.py:383 judge/views/internal.py:1130
+#: judge/views/contest_review.py:383 judge/views/internal.py:1138
 #, python-format
 msgid "Please wait %(mmss)s before requesting review again."
 msgstr "Vui lòng chờ %(mmss)s trước khi yêu cầu xem xét lại."
@@ -6526,12 +6526,12 @@ msgstr "Bài trong hàng đợi nội bộ"
 msgid "Community blog review queue"
 msgstr "Hàng đợi duyệt bài cộng đồng"
 
-#: judge/views/internal.py:949
+#: judge/views/internal.py:957
 #, python-format
 msgid "**[System]** This problem was approved by %(name)s. It is now public."
 msgstr "**[Hệ thống]** Đề đã được %(name)s chấp nhận và công khai."
 
-#: judge/views/internal.py:989
+#: judge/views/internal.py:997
 #, python-format
 msgid ""
 "**[System]** This problem was rejected by %(name)s.\n"
@@ -6542,114 +6542,114 @@ msgstr ""
 "\n"
 "**Lý do:** %(reason)s"
 
-#: judge/views/internal.py:993
+#: judge/views/internal.py:1001
 #, python-format
 msgid ""
 "**[System]** This problem was rejected by %(name)s. No reason was provided."
 msgstr "**[Hệ thống]** Đề bị %(name)s từ chối. Không có lý do được cung cấp."
 
-#: judge/views/internal.py:1208
+#: judge/views/internal.py:1216
 msgid "A pending request already exists."
 msgstr "Yêu cầu đang chờ xử lý đã tồn tại."
 
-#: judge/views/internal.py:1413
+#: judge/views/internal.py:1421
 msgid "1 hour"
 msgstr ""
 
-#: judge/views/internal.py:1414
+#: judge/views/internal.py:1422
 #, fuzzy
 #| msgid "Course"
 msgid "6 hours"
 msgstr "Khóa học"
 
-#: judge/views/internal.py:1415
+#: judge/views/internal.py:1423
 msgid "24 hours"
 msgstr ""
 
-#: judge/views/internal.py:1416
+#: judge/views/internal.py:1424
 #, fuzzy
 #| msgid "%d day"
 #| msgid_plural "%d days"
 msgid "7 days"
 msgstr "%d ngày"
 
-#: judge/views/internal.py:1417
+#: judge/views/internal.py:1425
 msgid "Retained"
 msgstr ""
 
-#: judge/views/internal.py:1627
+#: judge/views/internal.py:1635
 msgid "Request times"
 msgstr "thời gian đăng ký"
 
-#: judge/views/internal.py:1683 judge/views/internal.py:1835
+#: judge/views/internal.py:1691 judge/views/internal.py:1843
 msgid "Unresolved"
 msgstr "Không xác định"
 
-#: judge/views/internal.py:1845
+#: judge/views/internal.py:1853
 msgid "Request profile"
 msgstr "Hồ sơ request"
 
-#: judge/views/internal.py:1871 judge/views/internal.py:1881
+#: judge/views/internal.py:1879 judge/views/internal.py:1889
 #: templates/internal/left-sidebar.html:12
 msgid "Slow requests"
 msgstr "Requests chậm"
 
-#: judge/views/internal.py:1890 templates/internal/left-sidebar.html:7
+#: judge/views/internal.py:1898 templates/internal/left-sidebar.html:7
 msgid "Chat Moderation"
 msgstr "Kiểm duyệt chat"
 
-#: judge/views/internal.py:1965
+#: judge/views/internal.py:1973
 msgid "Chat moderation case kept."
 msgstr "Đã giữ lại trường hợp kiểm duyệt chat."
 
-#: judge/views/internal.py:1974
+#: judge/views/internal.py:1982
 msgid "Chat message hidden."
 msgstr "Tin nhắn chat đã bị ẩn."
 
-#: judge/views/internal.py:1991 judge/views/internal.py:2159
+#: judge/views/internal.py:1999 judge/views/internal.py:2167
 msgid "User temporarily muted."
 msgstr "Người dùng đã bị cấm chat tạm thời."
 
-#: judge/views/internal.py:2008 judge/views/internal.py:2176
+#: judge/views/internal.py:2016 judge/views/internal.py:2184
 msgid "User permanently muted."
 msgstr "Người dùng đã bị cấm chat vĩnh viễn."
 
-#: judge/views/internal.py:2010 judge/views/internal.py:2178
-#: judge/views/internal.py:2276
+#: judge/views/internal.py:2018 judge/views/internal.py:2186
+#: judge/views/internal.py:2284
 msgid "Unknown moderation action."
 msgstr "Hành động kiểm duyệt không xác định."
 
-#: judge/views/internal.py:2038 templates/internal/comment_moderation.html:106
+#: judge/views/internal.py:2046 templates/internal/comment_moderation.html:106
 #: templates/internal/left-sidebar.html:8
 msgid "Comment Moderation"
 msgstr "Kiểm duyệt bình luận"
 
-#: judge/views/internal.py:2128
+#: judge/views/internal.py:2136
 msgid "Comment moderation case kept."
 msgstr "Đã giữ lại trường hợp kiểm duyệt bình luận."
 
-#: judge/views/internal.py:2142
+#: judge/views/internal.py:2150
 msgid "Comment hidden."
 msgstr "Đã ẩn bình luận."
 
-#: judge/views/internal.py:2213 templates/internal/left-sidebar.html:9
+#: judge/views/internal.py:2221 templates/internal/left-sidebar.html:9
 #: templates/internal/username_moderation.html:9
 msgid "Username Moderation"
 msgstr "Kiểm duyệt tên người dùng"
 
-#: judge/views/internal.py:2265
+#: judge/views/internal.py:2273
 msgid "Username moderation case allowed."
 msgstr "Đã cho phép trường hợp kiểm duyệt tên người dùng."
 
-#: judge/views/internal.py:2268
+#: judge/views/internal.py:2276
 msgid "User disabled and public identity hidden."
 msgstr "Đã vô hiệu hóa người dùng và ẩn danh tính công khai."
 
-#: judge/views/internal.py:2271
+#: judge/views/internal.py:2279
 msgid "Public identity hidden."
 msgstr "Đã ẩn danh tính công khai."
 
-#: judge/views/internal.py:2274
+#: judge/views/internal.py:2282
 msgid "Public identity restored."
 msgstr "Đã khôi phục danh tính công khai."
 
