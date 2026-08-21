@@ -22,6 +22,7 @@
     drafts: {},
     messageLoadToken: 0,
     chatInfoToken: 0,
+    replyToId: null,
 
     init: function() {
       this.roomId = ChatConfig.room.id;
@@ -190,11 +191,12 @@
       return $.get(ChatConfig.urls.chat + ChatState.roomId, params);
     },
 
-    postMessage: function(body, roomId, tmpId) {
+    postMessage: function(body, roomId, tmpId, replyToId) {
       return $.post(ChatConfig.urls.postMessage, {
         body: body,
         room: roomId,
-        tmp_id: tmpId
+        tmp_id: tmpId,
+        reply_to: replyToId || ''
       });
     },
 
@@ -683,7 +685,7 @@
       });
     },
 
-    addFromTemplate: function(body, tmpId) {
+    addFromTemplate: function(body, tmpId, replyToId) {
       if (ChatState.roomId) {
         $('#last_msg-' + ChatState.roomId).html(body);
       }
@@ -691,7 +693,55 @@
       html = html.replace(/\$body/g, body).replace(/\$id/g, tmpId);
       var $html = $(html);
       $html.find('.time-with-rel').attr('data-iso', (new Date()).toISOString());
+      if (replyToId) {
+        var $parent = $('#message-' + replyToId);
+        if ($parent.length) {
+          var author = $parent.find('.message-header a').first().text().trim();
+          var text = $parent.find('.message-text').first().text().trim();
+          if (text.length > 60) text = text.substring(0, 60) + '…';
+          var $quote = $(
+            '<div class="message-reply-quote" role="button" tabindex="0" data-reply-target="' +
+            replyToId + '"><span class="message-reply-quote-author"></span>' +
+            '<span class="message-reply-quote-text"></span></div>'
+          );
+          $quote.find('.message-reply-quote-author').text(author);
+          $quote.find('.message-reply-quote-text').text(text || '[image]');
+          // Insert ABOVE the bubble row (matches the server template layout).
+          $html.find('.message-bubble-wrapper').before($quote);
+        }
+      }
       ChatUI.addMessage($html[0].outerHTML, true);
+    },
+
+    showReplyBanner: function(messageId, authorName, snippet) {
+      ChatState.replyToId = messageId;
+      var $banner = $('#chat-reply-banner');
+      if (!$banner.length) {
+        $banner = $(
+          '<div id="chat-reply-banner" class="chat-reply-banner">' +
+          '<div class="chat-reply-banner-body">' +
+          '<span class="chat-reply-banner-label"></span>' +
+          '<span class="chat-reply-banner-snippet"></span>' +
+          '</div>' +
+          '<button type="button" class="chat-reply-banner-cancel" aria-label="' +
+          (ChatConfig.i18n.cancel || 'Cancel') + '">&times;</button>' +
+          '</div>'
+        );
+        $('#chat-input-container').before($banner);
+      }
+      var label = interpolate(
+        ChatConfig.i18n.replyingTo || 'Replying to %(user)s',
+        { user: authorName }, true
+      );
+      $banner.find('.chat-reply-banner-label').text(label);
+      $banner.find('.chat-reply-banner-snippet').text(snippet);
+      $banner.show();
+      ChatElements.chatInput.focus();
+    },
+
+    clearReplyBanner: function() {
+      ChatState.replyToId = null;
+      $('#chat-reply-banner').hide();
     },
 
     submit: function() {
@@ -701,13 +751,15 @@
       if (!body) return;
 
       var tmpId = Date.now();
+      var replyToId = ChatState.replyToId;
 
       ChatDrafts.clearCurrent();
       $('#chat-input-container').height('auto');
 
-      this.addFromTemplate(body, tmpId);
+      this.addFromTemplate(body, tmpId, replyToId);
+      this.clearReplyBanner();
 
-      ChatAPI.postMessage(body, ChatState.roomId, tmpId)
+      ChatAPI.postMessage(body, ChatState.roomId, tmpId, replyToId)
         .done(function() {
           $('#empty_msg').hide();
           ChatElements.chatInput.focus();
@@ -884,6 +936,7 @@
       this.bindMessageActionMenus();
       this.bindMessageActions();
       this.bindReactions();
+      this.bindReply();
       this.bindRoomSelection();
       this.bindEmojiPicker();
       this.bindVisibilityChange();
@@ -917,6 +970,64 @@
           ChatElements.chatInput.trigger('input');
         });
       }
+    },
+
+    bindReply: function() {
+      $(document).on('click', '.message-reply-toggle', function(e) {
+        e.stopPropagation();
+        var messageId = $(this).data('id');
+        var $msg = $('#message-' + messageId);
+        var author = $msg.find('.message-header a').first().text().trim();
+        var text = $msg.find('.message-text').first().text().trim();
+        if (text.length > 60) text = text.substring(0, 60) + '…';
+        ChatMessages.showReplyBanner(messageId, author, text || '[image]');
+      });
+
+      $(document).on('click', '.chat-reply-banner-cancel', function(e) {
+        e.stopPropagation();
+        ChatMessages.clearReplyBanner();
+      });
+
+      $(document).on('click', '.message-reply-quote', function(e) {
+        // Let clicks on the inner author link navigate normally.
+        if ($(e.target).closest('a').length) return;
+        e.stopPropagation();
+        var parentId = $(this).data('reply-target');
+        if (!parentId) return;  // an "unavailable" quote has no target
+        var $target = $('#message-' + parentId);
+        if ($target.length) {
+          // Scroll only the #chat-box container, NOT the whole page. Using
+          // Element.scrollIntoView() here also scrolls the window to bring the
+          // element into the viewport, which shoves the page up and leaves a
+          // blank area at the bottom. Set the container's scrollTop directly to
+          // center the parent inside the box (mirrors ChatUI.scrollToBottom).
+          var box = ChatElements.chatBox[0];
+          var boxTop = box.getBoundingClientRect().top;
+          var targetTop = $target[0].getBoundingClientRect().top;
+          var centerOffset = (box.clientHeight - $target[0].offsetHeight) / 2;
+          box.scrollTo({
+            top: box.scrollTop + (targetTop - boxTop) - centerOffset,
+            behavior: 'smooth',
+          });
+          var $block = $('#message-block-' + parentId);
+          $block.removeClass('message-highlight');
+          void $block[0].offsetWidth;  // reflow so re-adding the class restarts the anim
+          $block.addClass('message-highlight');
+          setTimeout(function() { $block.removeClass('message-highlight'); }, 2000);
+        } else {
+          // MVP contract: the parent is older than the loaded window (no
+          // gap-fetch yet — that's the backlog "full support" path). Give a
+          // clear, predictable cue every time instead of a silent dead click:
+          // flash the quote and show a transient "Message not loaded" tooltip.
+          var $q = $(this);
+          $q.attr('data-hint', ChatConfig.i18n.replyNotLoaded || 'Message not loaded')
+            .addClass('message-reply-quote-flash message-reply-quote-hint');
+          setTimeout(function() {
+            $q.removeClass('message-reply-quote-flash message-reply-quote-hint')
+              .removeAttr('data-hint');
+          }, 1500);
+        }
+      });
     },
 
     bindInputAutoResize: function() {
@@ -1257,6 +1368,8 @@
       ChatConfig.room.id = roomId;
       ChatConfig.room.otherUserId = otherUserId;
       ChatElements.chatInput.attr('maxlength', roomId ? 5000 : 200);
+      // A pending reply belongs to the room we're leaving; don't leak it across rooms.
+      ChatMessages.clearReplyBanner();
     },
 
     loadKnownRoom: function(roomId, otherUserId, $row) {
