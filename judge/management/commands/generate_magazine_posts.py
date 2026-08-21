@@ -129,7 +129,7 @@ BANNED_PHRASES = (
     "tắt tab",
     "quăng một đống",
     "đống hỗn độn",
-    "đống code",
+    "đống mã",
     "tổng đoạn thẳng",
     "đống link",
     "đống file",
@@ -139,7 +139,7 @@ BANNED_PHRASES = (
     "trôi đi khá nhanh",
     'cout << "WA"',
     "cứu bài",
-    "code em WA hết",
+    "mã em WA hết",
     "cuộn chuột",
     "hí hửng",
     "ngợp",
@@ -184,6 +184,19 @@ ABSTRACT_WORDS = (
     "chuẩn hóa",
     "tối ưu",
 )
+
+ENGLISH_PROSE_TERMS = (
+    "workflow",
+    "magazine",
+    "column",
+    "filler",
+)
+
+UNEXPLAINED_TECHNICAL_TERMS = {
+    "dfs": ("duyệt sâu",),
+    "dp": ("quy hoạch động",),
+    "fenwick": ("cây chỉ số nhị phân", "cây fenwick"),
+}
 
 THCS_EXCLUDE_MARKERS = (
     "thta",
@@ -259,23 +272,23 @@ DEFAULT_TOPIC_BANK = (
     "Một ví dụ nhỏ có thể dẫn tới công thức như thế nào",
     "Khi nào nên gom nhiều phép tính thành một bảng phụ",
     "Đọc một bài khó bằng câu hỏi: trạng thái nào đang thay đổi?",
-    "Vì sao một quyết định tham lam cần invariant",
+    "Vì sao một quyết định tham lam cần điều luôn đúng",
     "Tối ưu bằng cách không làm lại việc đã biết",
     "Cách đặt một câu hỏi dễ được cộng đồng giúp",
-    "Đọc editorial sao cho không mất ý tưởng chính",
+    "Đọc lời giải mẫu sao cho không mất ý tưởng chính",
     "Ghi chú sau khi giải bài: nên lưu lại điều gì?",
     "Trước một kỳ thi, nên đọc lại lỗi cũ như thế nào?",
     "Chia sẻ tài liệu sao cho người sau dùng được ngay",
     "Một bài đáng thử cuối tuần này",
-    "Một lỗi nhỏ trong code có thể che giấu ý tưởng đúng",
-    "Cách đọc statement dài mà không bị lạc",
+    "Một lỗi nhỏ trong mã có thể che giấu ý tưởng đúng",
+    "Cách đọc đề dài mà không bị lạc",
     "Khi nào nên dừng tối ưu và viết bản đơn giản trước?",
-    "Một checklist trước khi bấm nút nộp bài",
-    "Cách biến một test sai thành bài học ngắn",
+    "Một danh sách kiểm tra trước khi bấm nút nộp bài",
+    "Cách biến một bộ kiểm thử sai thành bài học ngắn",
     "Một tài nguyên học thuật toán nên đọc chậm",
     "Một cuộc thảo luận hay bắt đầu từ ví dụ nào?",
     "Tuần này nên luyện một dạng bài hay một kỹ thuật?",
-    "Nhìn lại một contest: nên học gì sau bảng điểm?",
+    "Nhìn lại một kỳ thi: nên học gì sau bảng điểm?",
     "Một câu chuyện nhỏ sau giờ học",
     "Cách chia sẻ kinh nghiệm thi mà không biến thành lời khuyên chung",
 )
@@ -291,11 +304,13 @@ PRIMARY_TOPIC_EXCLUDE_MARKERS = (
     "công thức",
     "quy hoạch động",
     "tham lam",
+    "điều luôn đúng",
     "invariant",
     "tối ưu",
+    "lời giải mẫu",
     "editorial",
-    "contest",
     "kỳ thi",
+    "contest",
     "thuật toán",
     "trạng thái",
 )
@@ -308,36 +323,36 @@ TOPIC_EXAMPLE_HINTS = (
     "Dùng ví dụ đồ thị nhỏ: 5 đỉnh, các cạnh 1-2, 2-3, 4-5 để thấy hai thành phần liên thông.",
     "Dùng ví dụ ba lô nhỏ: các vật có khối lượng 2, 3, 4 và sức chứa 5.",
     "Dùng ví dụ tiền xu: tạo tổng 11 từ các đồng 1, 5, 7.",
-    "Dùng ví dụ số học: kiểm tra các ước của 18 hoặc gcd của 24 và 36.",
-    "Dùng ví dụ contest workflow: một bài bị WA ở test nhỏ vì thiếu trường hợp mảng rỗng.",
+    "Dùng ví dụ số học: kiểm tra các ước của 18 hoặc ước chung lớn nhất của 24 và 36.",
+    "Dùng ví dụ quy trình sau kỳ thi: một bài bị sai ở bộ kiểm thử nhỏ vì thiếu trường hợp mảng rỗng.",
 )
 
 PRIMARY_TOPIC_EXAMPLE_HINTS = (
     "Dùng ví dụ tính tiền mua 3 cây bút, mỗi cây 4 nghìn đồng.",
     "Dùng ví dụ đếm số lần xuất hiện của các số 1, 2, 1, 3, 2.",
-    "Dùng ví dụ Scratch/Python có biến tong_diem cộng điểm ba môn.",
+    "Dùng ví dụ lập trình khối hoặc Python có biến tong_diem cộng điểm ba môn.",
     "Dùng ví dụ đọc đề có giá bút, số lượng bút, và một câu chuyện dài ở giữa.",
 )
 
 MATH_TOPIC_EXAMPLE_HINTS = (
-    "Dùng ví dụ gcd của 24 và 36 để thấy vì sao thuật toán Euclid giảm số rất nhanh.",
-    "Dùng ví dụ parity: tổng của hai số lẻ luôn chẵn, thử với 3 + 5.",
+    "Dùng ví dụ ước chung lớn nhất của 24 và 36 để thấy vì sao thuật toán Euclid giảm số rất nhanh.",
+    "Dùng ví dụ tính chẵn lẻ: tổng của hai số lẻ luôn chẵn, thử với 3 + 5.",
     "Dùng ví dụ đếm ước của 18: 1, 2, 3, 6, 9, 18.",
     "Dùng ví dụ tổ hợp nhỏ: chọn 2 vị trí trong 4 vị trí, kết quả là 6 cách.",
 )
 
 ADVANCED_TOPIC_BANK = (
-    "Từ một lời giải IOI, nên đọc invariant nào trước?",
-    "Khi nào nên dùng cấu trúc dữ liệu để tối ưu DP?",
-    "Một lỗi nhỏ trong bài khó: invariant đúng nhưng thứ tự duyệt sai",
+    "Từ một lời giải quốc tế, nên đọc điều luôn đúng nào trước?",
+    "Khi nào nên dùng cấu trúc dữ liệu để tối ưu quy hoạch động?",
+    "Một lỗi nhỏ trong bài khó: điều luôn đúng nhưng thứ tự duyệt sai",
     "Đọc lại một bài đồ thị khó bằng câu hỏi: cạnh nào thật sự thay đổi?",
 )
 
 ADVANCED_TOPIC_EXAMPLE_HINTS = (
-    "Dùng ví dụ IOI-style trên cây: mỗi đỉnh lưu hai giá trị từ các con, rồi gộp kết quả khi quay lui DFS.",
-    "Dùng ví dụ tối ưu DP: `dp[i]` lấy min trên một đoạn các trạng thái trước đó, và cần hỏi cấu trúc nào trả lời min nhanh.",
-    "Dùng ví dụ đồ thị trọng số 0/1: dùng deque, cạnh trọng số 0 đẩy lên đầu, cạnh trọng số 1 đẩy xuống cuối.",
-    "Dùng ví dụ offline query: sắp xếp truy vấn theo ngưỡng `k`, rồi thêm dần phần tử đủ điều kiện vào Fenwick tree.",
+    "Dùng ví dụ bài quốc tế trên cây: mỗi đỉnh lưu hai giá trị từ các con, rồi gộp kết quả khi quay lui bằng duyệt sâu.",
+    "Dùng ví dụ tối ưu quy hoạch động: `dp[i]` lấy giá trị nhỏ nhất trên một đoạn trạng thái trước đó, và cần hỏi cấu trúc nào trả lời nhanh.",
+    "Dùng ví dụ đồ thị trọng số 0/1: dùng hàng đợi hai đầu, cạnh trọng số 0 đẩy lên đầu, cạnh trọng số 1 đẩy xuống cuối.",
+    "Dùng ví dụ truy vấn xử lý trước: sắp xếp truy vấn theo ngưỡng `k`, rồi thêm dần phần tử đủ điều kiện vào cây chỉ số nhị phân.",
 )
 
 TOPIC_SECTION_KEYWORDS = (
@@ -346,7 +361,7 @@ TOPIC_SECTION_KEYWORDS = (
         (
             "Cách đặt một câu hỏi dễ được cộng đồng giúp",
             "Một cuộc thảo luận hay bắt đầu từ ví dụ nào?",
-            "Cách biến một test sai thành bài học ngắn",
+            "Cách biến một bộ kiểm thử sai thành bài học ngắn",
         ),
     ),
     (
@@ -354,15 +369,15 @@ TOPIC_SECTION_KEYWORDS = (
         (
             "Chia sẻ tài liệu sao cho người sau dùng được ngay",
             "Một tài nguyên học thuật toán nên đọc chậm",
-            "Đọc editorial sao cho không mất ý tưởng chính",
+            "Đọc lời giải mẫu sao cho không mất ý tưởng chính",
         ),
     ),
     (
         ("kỳ thi", "contest", "voi", "ioi", "icpc", "hsg", "olympic"),
         (
             "Trước một kỳ thi, nên đọc lại lỗi cũ như thế nào?",
-            "Nhìn lại một contest: nên học gì sau bảng điểm?",
-            "Một checklist trước khi bấm nút nộp bài",
+            "Nhìn lại một kỳ thi: nên học gì sau bảng điểm?",
+            "Một danh sách kiểm tra trước khi bấm nút nộp bài",
         ),
     ),
     (
@@ -375,31 +390,32 @@ TOPIC_SECTION_KEYWORDS = (
     ),
 )
 
-PROBLEM_SYSTEM_PROMPT = r"""Bạn viết bài ngắn cho một magazine cộng đồng trên LQDOJ.
+PROBLEM_SYSTEM_PROMPT = r"""Bạn viết bài ngắn cho một chuyên mục cộng đồng trên LQDOJ.
 
 Độc giả được mô tả trong AUDIENCE. Viết sao cho người chưa biết thuật ngữ vẫn theo được.
 
-Mục tiêu: cho người đọc một chỗ bám để muốn thử bài. Không viết editorial đầy đủ.
+Mục tiêu: cho người đọc một chỗ bám để muốn thử bài. Không viết lời giải đầy đủ.
 
-Format bắt buộc:
+Định dạng bắt buộc:
 1. Dòng đầu PHẢI đúng: **Bài gợi ý:** [PROBLEM_TITLE](PROBLEM_URL)
 2. Dòng thứ hai PHẢI bắt đầu: **Tóm tắt:**
 3. Sau đó viết nhiều đoạn ngắn: easy/standard dùng 3-5 đoạn; challenge/stretch dùng 5-8 đoạn.
 4. Không dùng heading Markdown nào (`#`, `##`, `###`).
 
 Ràng buộc:
-- Không có word limit cứng.
-- easy/standard nên gọn nếu ý tưởng đơn giản.
-- challenge/stretch có thể dài hơn nếu cần mô phỏng, công thức, hoặc checklist cài đặt.
+- Không có giới hạn độ dài cứng.
+- Bài dễ/trung bình nên gọn nếu ý tưởng đơn giản.
+- Bài khó/rất khó có thể dài hơn nếu cần mô phỏng, công thức, hoặc danh sách kiểm tra khi cài đặt.
 - Tránh tường chữ: chia thành đoạn ngắn, mỗi đoạn có một vai trò rõ.
-- Có thể dùng 1-4 mẩu `inline code` ngắn nếu giúp người đọc thấy cách cài, ví dụ `dfs(u)`, `visited[u] = true`, `set.insert(x)`.
-- Với quy hoạch động, cấu trúc dữ liệu, số học, tham lam, tìm kiếm, đồ thị, đều có thể thêm template rất ngắn như `dp[i] = ...`, `bit.add(i, x)`, `parent[x] = find(parent[x])`, `while l < r`, `cnt[x] += 1`.
-- Không dùng code block và không chép lời giải AC vào bài.
-- Không raw HTML.
+- Có thể dùng 1-4 mẩu mã ngắn trong dấu `...` nếu giúp người đọc thấy cách cài, ví dụ `dfs(u)`, `visited[u] = true`, `set.insert(x)`.
+- Với quy hoạch động, cấu trúc dữ liệu, số học, tham lam, tìm kiếm, đồ thị, đều có thể thêm mẫu rất ngắn như `dp[i] = ...`, `bit.add(i, x)`, `parent[x] = find(parent[x])`, `while l < r`, `cnt[x] += 1`.
+- Không dùng khối mã và không chép lời giải đúng hoàn chỉnh vào bài.
+- Không dùng HTML thô.
 - Không link tuyệt đối; dùng chính PROBLEM_URL được cấp.
 - Dùng chính xác PROBLEM_TITLE trong link đầu tiên.
+- Ưu tiên tiếng Việt trong tiêu đề và câu văn. Thuật ngữ quen thuộc như DP, DFS, code, test, input, output, contest, editorial dùng được nếu tự nhiên; nếu dùng tên khó như Fenwick, giải thích ngay bằng tiếng Việt.
 - Dùng LaTeX cho biến và công thức ngắn: $N$, $x$, $k$, $dp[i] = \max(dp[i], dp[j] + w_i)$.
-- Với bài toán/DP/số học, nên có 1-3 công thức ngắn nếu công thức giúp người đọc thấy trạng thái hoặc bước chuyển. Mỗi công thức phải được giải thích bằng lời ngay trước hoặc ngay sau.
+- Với bài toán/quy hoạch động/số học, nên có 1-3 công thức ngắn nếu công thức giúp người đọc thấy trạng thái hoặc bước chuyển. Mỗi công thức phải được giải thích bằng lời ngay trước hoặc ngay sau.
 - Không thả một khối công thức dài. Nếu công thức dài hơn một dòng, hãy tách thành lời.
 - Không được nói “dùng công thức”, “tìm quy luật”, hoặc “rút gọn biểu thức” rồi không cho người đọc thấy công thức/quy luật đó.
 - Với bài tiểu học hoặc bài dễ, nếu có công thức, phải dẫn bằng 2-3 số cụ thể trước rồi mới viết công thức ngắn.
@@ -412,8 +428,8 @@ Ràng buộc:
 - Câu chuyển phải xuất phát từ ví dụ/constraint vừa nói, không hỏi cho có.
 - Bài nên mô phỏng dòng suy nghĩ tự nhiên của người giải: thử cách trực tiếp trên ví dụ nhỏ, nhận ra phần bị lặp hoặc phần cần nhớ, rồi mới đặt tên kỹ thuật.
 - Không viết “suy nghĩ nội tâm” dài. Chỉ cần 2-4 câu hỏi/câu chuyển quan sát được, như một người đang giải thích trên blog.
-- Có đúng một ví dụ nhỏ từ statement nếu có dữ liệu.
-- Nếu statement có nhiều bước ví dụ liên tiếp, không được trộn trạng thái của bước này với bước khác. Giữ đúng từng lần cập nhật, hoặc viết “chẳng hạn” cho một ví dụ tự tạo khác.
+- Có đúng một ví dụ nhỏ từ đề bài nếu có dữ liệu.
+- Nếu đề bài có nhiều bước ví dụ liên tiếp, không được trộn trạng thái của bước này với bước khác. Giữ đúng từng lần cập nhật, hoặc viết “chẳng hạn” cho một ví dụ tự tạo khác.
 - Nếu ví dụ là một dãy/hàng/bảng, nên viết ra vài phần tử đầu để người đọc thấy mẫu.
 - Không phóng đại TLE nếu constraints nhỏ.
 - Không dùng quá 2 câu liên tiếp mà không có ví dụ, biến, số cụ thể, hoặc thao tác cụ thể.
@@ -423,20 +439,20 @@ Ràng buộc:
   - Đại lượng đó thay đổi như thế nào khi đi qua một bước của bài.
   - Vì sao làm vậy giúp tránh cách trực tiếp.
   - Khi cài đặt, thao tác cốt lõi là gì.
-- Với challenge/stretch, bắt buộc có:
+- Với bài khó/rất khó, bắt buộc có:
   - Một mô phỏng rất nhỏ bằng số cụ thể.
   - Một câu định nghĩa trạng thái hoặc dữ liệu cần lưu.
   - Một bước chuyển cụ thể: từ trạng thái cũ sang trạng thái mới, có thể viết bằng công thức ngắn.
   - Vì sao cách trực tiếp chậm, nhưng nói bằng quy mô của bài, không dọa chung chung.
   - Một checklist cài đặt ngắn ở cuối hoặc gần cuối.
-- Nếu dùng cấu trúc dữ liệu hoặc chia căn, cơ chế chính thường là local-to-global:
-  - Mỗi block/node/bảng lưu gì.
+- Nếu dùng cấu trúc dữ liệu hoặc chia căn, cơ chế chính thường là từ phần nhỏ đến toàn bài:
+  - Mỗi khối/nút/bảng lưu gì.
   - Một truy vấn đọc dữ liệu đã lưu như thế nào.
-  - Một cập nhật làm bẩn phần nào và rebuild/cập nhật phần nào.
-  - Vì sao không cần rebuild toàn bộ.
-- Với bài cấu trúc dữ liệu khó, không được viết trạng thái mơ hồ như “từ nó đến hết” nếu không nói rõ phạm vi là trong block, qua block kế tiếp, hay toàn bộ dãy.
+  - Một cập nhật làm thay đổi phần nào và dựng lại/cập nhật phần nào.
+  - Vì sao không cần dựng lại toàn bộ.
+- Với bài cấu trúc dữ liệu khó, không được viết trạng thái mơ hồ như “từ nó đến hết” nếu không nói rõ phạm vi là trong khối, qua khối kế tiếp, hay toàn bộ dãy.
 - Nếu chỉ đủ dữ kiện để gợi ý hướng giải, hãy nói như một hướng đọc bài: “một cách hay là lưu ...” thay vì khẳng định lời giải chi tiết chưa được giải thích.
-- Nếu dùng DP, phải có:
+- Nếu dùng quy hoạch động, phải có:
   - $dp[...]$ nghĩa là gì.
   - Bước chuyển lấy giá trị từ đâu.
   - Thứ tự duyệt hoặc điều kiện để chuyển đúng.
@@ -458,12 +474,12 @@ Văn phong:
 - Không giáo trình hóa.
 - Một câu chỉ nên chứa một ý.
 - Ưu tiên động từ cụ thể: “đếm”, “đánh dấu”, “đi theo cạnh”, “cắt đoạn số”.
-- Nếu bài có một thao tác cài đặt đáng học, nên có 1-2 mẩu inline code ngắn để người đọc thấy thao tác chính.
+- Nếu bài có một thao tác cài đặt đáng học, nên có 1-2 mẩu mã ngắn trong dấu `...` để người đọc thấy thao tác chính.
 - Với bài hard, nếu chưa chắc ý tưởng, hãy viết thận trọng: nêu phần chắc chắn từ đề, không bịa lời giải đầy đủ.
 - Đừng chỉ gọi tên kỹ thuật rồi bỏ qua phần hay nhất. Người đọc cần thấy vì sao ý tưởng đó xuất hiện từ ví dụ.
-- Với data structure, phần hay nhất thường là invariant: “mỗi block lưu câu trả lời tạm nào” và “query nhảy qua block ra sao”. Phải viết rõ invariant đó.
-- Với mọi chủ đề, phần hay nhất là cơ chế. Với số học là công thức đến từ đâu; với DP là trạng thái chuyển ra sao; với greedy là quyết định nào được giữ; với implementation là biến/mảng nào giúp tránh nhầm.
-- Viết như một bài magazine kỹ thuật nhỏ: có nhịp đọc, có khoảnh khắc “à, hóa ra cần lưu thứ này”, nhưng vẫn chính xác.
+- Với cấu trúc dữ liệu, phần hay nhất thường là điều luôn đúng: “mỗi khối lưu câu trả lời tạm nào” và “truy vấn nhảy qua khối ra sao”. Phải viết rõ điều đó.
+- Với mọi chủ đề, phần hay nhất là cơ chế. Với số học là công thức đến từ đâu; với quy hoạch động là trạng thái chuyển ra sao; với tham lam là quyết định nào được giữ; với cài đặt là biến/mảng nào giúp tránh nhầm.
+- Viết như một bài chuyên mục kỹ thuật nhỏ: có nhịp đọc, có khoảnh khắc “à, hóa ra cần lưu thứ này”, nhưng vẫn chính xác.
 - Tránh danh từ trừu tượng khi có thể nói bằng ví dụ.
 - Không dùng các cụm: trong hành trình, chinh phục, mổ xẻ, các bạn coder, hy vọng qua bài viết, bước lên sân khấu, thực chất, tối ưu hơn, hiệu quả hơn, nhiệm vụ của chúng ta, phản xạ tự nhiên, hoàn toàn chính xác, cách nghĩ đầu tiên của học sinh, chiếc hộp.
 
@@ -479,20 +495,20 @@ Tự kiểm trước khi trả lời:
 
 Chỉ trả về Markdown cuối cùng."""
 
-TOPIC_SYSTEM_PROMPT = r"""Bạn viết một bài magazine ngắn cho cộng đồng LQDOJ.
+TOPIC_SYSTEM_PROMPT = r"""Bạn viết một bài chuyên mục ngắn cho cộng đồng LQDOJ.
 
-Đây không phải bài giới thiệu tính năng, không phải giáo trình, không phải editorial cho một problem cụ thể.
+Đây không phải bài giới thiệu tính năng, không phải giáo trình, không phải lời giải mẫu cho một bài cụ thể.
 Mục tiêu là làm một chủ đề trong cộng đồng trở nên đáng đọc trong 3-7 đoạn ngắn.
 
-Format bắt buộc:
-1. Dòng đầu PHẢI đúng: **Chủ đề:** TOPIC_TITLE
-2. Dòng thứ hai PHẢI bắt đầu: **Tóm tắt:**
+Định dạng bắt buộc:
+1. Dòng đầu PHẢI bắt đầu: **Tóm tắt:**
+2. Không nhắc lại TOPIC_TITLE thành một dòng riêng. Tiêu đề bài đã nằm ở BlogPost.title.
 3. Không dùng heading Markdown nào (`#`, `##`, `###`).
 
 Ràng buộc:
-- Không có word limit cứng.
-- Không dùng code block.
-- Có thể dùng vài mẩu `inline code` ngắn.
+- Không có giới hạn độ dài cứng.
+- Không dùng khối mã.
+- Có thể dùng vài mẩu mã ngắn trong dấu `...`.
 - Có thể dùng 1-3 công thức ngắn nếu công thức giúp chủ đề rõ hơn.
 - Đoạn đầu tiên sau tóm tắt phải dùng ngay ví dụ hoặc tình huống từ EXAMPLE_DIRECTION. Không mở bài bằng cảm giác chung chung.
 - Phải có ví dụ nhỏ hoặc tình huống cụ thể trước khi gọi tên kỹ thuật/chiến thuật.
@@ -501,25 +517,26 @@ Ràng buộc:
 - Nên có một câu chuyển tự nhiên ở điểm đổi ý tưởng, ví dụ: “Ta đang làm lại phần nào?”, “Dữ liệu nào cần được ghi nhớ?”, “Cấu trúc nào trả lời được truy vấn này?”, hoặc “Người trả lời cần thêm thông tin gì để giúp mình?”.
 - Bài nên mô phỏng dòng suy nghĩ tự nhiên của người học/người viết: thử trực tiếp, thấy chỗ vướng, chọn thứ cần lưu/hỏi/chia sẻ, rồi mới đặt tên kỹ thuật hoặc chiến thuật.
 - Không nói lời khuyên chung chung.
-- Mỗi bài topic phải có một “mẩu làm việc” cụ thể: một dòng ghi chú mẫu, một test nhỏ, một công thức ngắn, một checklist 2-3 bước, hoặc một ví dụ số.
-- Nếu viết về đọc editorial, phải có một ví dụ nhỏ về thứ cần chép lại, như `dp[i]` nghĩa là gì, thứ tự duyệt, hoặc một invariant một dòng. Không chỉ nói “đọc ý chính”.
+- Mỗi bài chủ đề phải có một “mẩu làm việc” cụ thể: một dòng ghi chú mẫu, một bộ kiểm thử nhỏ, một công thức ngắn, một danh sách kiểm tra 2-3 bước, hoặc một ví dụ số.
+- Nếu viết về đọc lời giải mẫu, phải có một ví dụ nhỏ về thứ cần chép lại, như `dp[i]` nghĩa là gì, thứ tự duyệt, hoặc một điều luôn đúng trong một dòng. Không chỉ nói “đọc ý chính”.
 - Giữ cùng một ví dụ xuyên suốt bài. Nếu mở bằng lưới, các ghi chú sau cũng phải nói về lưới, ví dụ `dp[x][y] = dp[x-1][y] + dp[x][y-1]` hoặc $C(dx+dy, dx)$. Không chuyển đột ngột sang một bài toán khác.
 - Không trộn hai kỹ thuật cho cùng một ví dụ ngắn, như vừa dùng tổ hợp $C(n,k)$ vừa chuyển sang quy hoạch động, trừ khi bài giải thích rõ vì sao hai cách nhìn tương đương.
 - Với ví dụ lưới, chọn một hệ hướng duy nhất. Nếu đã nói “sang phải hoặc xuống dưới” thì không được gọi bước đó là “đi lên” ở câu sau.
 - Nếu viết về toán, phải cho người đọc thấy ít nhất một phép tính nhỏ trước khi gọi tên công thức. Ví dụ: từ `(0,0)` đến `(2,1)` có 3 bước, chọn vị trí cho 1 bước đi lên nên có $C(3,1)=3$ cách.
 - Nếu nhắc tính tổ hợp với modulo, phải nói “nghịch đảo modulo” hoặc giữ ví dụ ở số nhỏ. Không viết “chia modulo”.
 - Nếu bài chỉ còn đúng các thao tác “mở tài liệu, ghi chú, đọc lại” mà không có ví dụ kỹ thuật nhỏ, hãy viết lại cho cụ thể hơn.
-- Ví dụ phải hợp lý như một tình huống thật. Đừng viết những mẩu code lạ như thể đó là toàn bộ bài; nếu nhắc code, nói rõ đó là biến, dòng in debug, hoặc đoạn logic nhỏ.
+- Ví dụ phải hợp lý như một tình huống thật. Đừng viết những mẩu mã lạ như thể đó là toàn bộ bài; nếu nhắc mã, nói rõ đó là biến, dòng in để kiểm tra, hoặc đoạn xử lý nhỏ.
 - Giữ một mạch lỗi/ý tưởng chính xuyên suốt. Đừng mở bằng BFS/lưới rồi chuyển sang tràn số nguyên nếu chưa giải thích mối liên hệ.
-- Với bài cộng đồng/hỏi đáp, giọng phải tôn trọng người hỏi. Không chê “code rối”, không nói người đọc sẽ bỏ đi ngay, không dùng hình ảnh nặng như “quăng một đống”.
+- Với bài cộng đồng/hỏi đáp, giọng phải tôn trọng người hỏi. Không chê “mã rối”, không nói người đọc sẽ bỏ đi ngay, không dùng hình ảnh nặng như “quăng một đống”.
 - Với Hỏi đáp/Thắc mắc, ưu tiên giọng “bạn/mình” tự nhiên. Tránh dùng “ta” quá nhiều vì dễ thành giọng bài văn.
-- Với chủ đề hỏi đáp, ví dụ tốt gồm: link bài, input nhỏ, output thực tế, output mong muốn, và đoạn logic nghi ngờ. Không bịa nguyên nhân kỹ thuật mơ hồ; nếu nói tràn số thì dùng “tràn số nguyên”, không viết “tràn bộ nhớ”.
+- Với chủ đề hỏi đáp, ví dụ tốt gồm: đường dẫn bài, dữ liệu vào nhỏ, kết quả thực tế, kết quả mong muốn, và đoạn xử lý nghi ngờ. Không bịa nguyên nhân kỹ thuật mơ hồ; nếu nói tràn số thì dùng “tràn số nguyên”, không viết “tràn bộ nhớ”.
 - Với Hỏi đáp/Thắc mắc, không mở bài bằng tình huống hài quá tay hoặc câu cầu cứu phóng đại. Hãy viết như một học sinh đang hỏi nghiêm túc nhưng chưa biết trình bày rõ.
-- Không ép từ thuật toán vào chủ đề đời sống/cộng đồng. Nếu viết cho Off-topic, Hỏi đáp, Tài liệu, hoặc Kỳ thi, dùng “điều cần chú ý”, “bước tiếp theo”, “chi tiết”, “quyết định”, không dùng “đại lượng”, “trạng thái”, “thao tác cài đặt” trừ khi thật sự nói về code.
-- Không raw HTML.
+- Không ép từ thuật toán vào chủ đề đời sống/cộng đồng. Nếu viết cho Off-topic, Hỏi đáp, Tài liệu, hoặc Kỳ thi, dùng “điều cần chú ý”, “bước tiếp theo”, “chi tiết”, “quyết định”, không dùng “đại lượng”, “trạng thái”, “thao tác cài đặt” trừ khi thật sự nói về mã.
+- Không dùng HTML thô.
+- Ưu tiên tiếng Việt trong tiêu đề và câu văn. Thuật ngữ quen thuộc như DP, DFS, code, test, input, output, contest, editorial dùng được nếu tự nhiên; nếu dùng tên khó như Fenwick, giải thích ngay bằng tiếng Việt.
 
 Văn phong:
-- Tự nhiên, có nhịp đọc như một column kỹ thuật nhỏ.
+- Tự nhiên, có nhịp đọc như một chuyên mục kỹ thuật nhỏ.
 - Không giáo trình hóa.
 - Câu ngắn. Nếu một câu có hơn 30 từ, hãy tách thành hai câu.
 - Không kết bằng châm ngôn.
@@ -529,29 +546,30 @@ Văn phong:
 
 Chỉ trả về Markdown cuối cùng."""
 
-CONTEST_SYSTEM_PROMPT = r"""Bạn viết một bài ngắn cho magazine cộng đồng trên LQDOJ về một contest.
+CONTEST_SYSTEM_PROMPT = r"""Bạn viết một bài ngắn cho chuyên mục cộng đồng trên LQDOJ về một kỳ thi.
 
-Đây KHÔNG phải editorial đầy đủ. Mục tiêu là giúp người đọc biết contest có gì đáng thử và chọn 1-2 ý tưởng để bắt đầu.
+Đây KHÔNG phải lời giải đầy đủ. Mục tiêu là giúp người đọc biết kỳ thi có gì đáng thử và chọn 1-2 ý tưởng để bắt đầu.
 Độc giả được mô tả trong AUDIENCE.
 
-Format bắt buộc:
-1. Dòng đầu PHẢI đúng: **Contest:** [CONTEST_TITLE](CONTEST_URL)
+Định dạng bắt buộc:
+1. Dòng đầu PHẢI đúng: **Kỳ thi:** [CONTEST_TITLE](CONTEST_URL)
 2. Dòng thứ hai PHẢI bắt đầu: **Tóm tắt:**
 3. Sau đó viết 3-5 đoạn ngắn.
 4. Không dùng heading Markdown nào (`#`, `##`, `###`).
 
 Ràng buộc:
-- Không có word limit cứng, nhưng đừng thành wall of text.
-- Không code block.
-- Không raw HTML.
+- Không có giới hạn độ dài cứng, nhưng đừng thành một đoạn dài khó đọc.
+- Không dùng khối mã.
+- Không dùng HTML thô.
 - Không link tuyệt đối.
-- Nhắc 2-4 bài trong contest bằng Markdown link nếu có.
-- Không giải trọn contest.
+- Nhắc 2-4 bài trong kỳ thi bằng Markdown link nếu có.
+- Không giải trọn kỳ thi.
 - Nêu rõ đây là gợi ý đọc/ôn tập, không phải đáp án đầy đủ.
-- Dùng ví dụ/tình huống cụ thể từ contest trước khi nói thuật ngữ.
+- Dùng ví dụ/tình huống cụ thể từ kỳ thi trước khi nói thuật ngữ.
 - Có một câu chuyển tự nhiên: nên thử bài nào trước, hoặc bài nào giúp mở khóa ý tưởng nào.
-- Nếu contest cơ bản, tránh từ nặng như invariant, trạng thái, tối ưu hóa. Hãy nói bằng thao tác cụ thể: duyệt chỉ số nào, so sánh biến nào, cập nhật mảng nào.
-- Không dùng câu mở kiểu quảng cáo hoặc filler như “không gian nhẹ nhàng”, “khởi động tay chân”, “sa đà”. Vào thẳng bài đầu tiên nên thử và lý do.
+- Nếu kỳ thi cơ bản, tránh từ nặng như điều luôn đúng, trạng thái, tối ưu hóa. Hãy nói bằng thao tác cụ thể: duyệt chỉ số nào, so sánh biến nào, cập nhật mảng nào.
+- Không dùng câu mở kiểu quảng cáo hoặc câu đệm như “không gian nhẹ nhàng”, “khởi động tay chân”, “sa đà”. Vào thẳng bài đầu tiên nên thử và lý do.
+- Ưu tiên tiếng Việt trong tiêu đề và câu văn. Thuật ngữ quen thuộc như DP, DFS, code, test, input, output, contest, editorial dùng được nếu tự nhiên; nếu dùng tên khó như Fenwick, giải thích ngay bằng tiếng Việt.
 
 Kết bài:
 - Không viết châm ngôn/lời khuyên chung.
@@ -559,9 +577,9 @@ Kết bài:
 
 Chỉ trả về Markdown cuối cùng."""
 
-REVIEW_SYSTEM_PROMPT = r"""Bạn là reviewer cho bài magazine cộng đồng LQDOJ.
+REVIEW_SYSTEM_PROMPT = r"""Bạn là người duyệt bài chuyên mục cộng đồng LQDOJ.
 
-Nhiệm vụ: đọc SOURCE_CONTEXT và DRAFT, rồi đánh giá liệu bài đã đủ tốt để publish chưa.
+Nhiệm vụ: đọc SOURCE_CONTEXT và DRAFT, rồi đánh giá liệu bài đã đủ tốt để đăng chưa.
 Không viết lại toàn bộ bài. Chỉ trả JSON hợp lệ.
 Hãy khó tính như biên tập viên. Nếu bài “ổn nhưng còn gượng”, publishable phải là false.
 Điểm 9-10 chỉ dành cho bài có thể đăng ngay mà không cần sửa.
@@ -570,16 +588,19 @@ Tiêu chí:
 - Đúng format Markdown bắt buộc.
 - Không bịa chi tiết ngoài SOURCE_CONTEXT.
 - Văn tự nhiên, không AI-like, không sáo rỗng.
+- Câu dễ hiểu với học sinh đúng cấp. Nếu phải đọc lại mới hiểu, publishable phải là false.
+- Không bắt lỗi các thuật ngữ quen thuộc như DP, DFS, code, test, input, output, contest, editorial nếu dùng tự nhiên.
+- Nếu có tên như DFS, DP, Fenwick, phải giải thích ngay bằng tiếng Việt trong cùng câu hoặc câu kế tiếp.
 - Có ví dụ/tình huống cụ thể trước thuật ngữ.
 - Có chuyển ý tự nhiên như người đang giải thích cách nghĩ.
 - Có cơ chế chính: theo dõi/hỏi/lưu/tính gì, thay đổi thế nào, bước tiếp theo là gì.
 - Kết bài bằng thao tác cụ thể, không châm ngôn.
 - Với bài cộng đồng/học tập, không đổ lỗi hoặc nói giọng phán xét người hỏi.
-- Không dùng giọng chê bai như “quăng code”, “đống hỗn độn”, “người đọc sẽ bỏ đi”.
+- Không dùng giọng chê bai như “quăng mã”, “đống hỗn độn”, “người đọc sẽ bỏ đi”.
 - Ví dụ phải đúng thuật ngữ cơ bản; nếu nói bài tổng đoạn con thì không được viết nhầm thành tổng đoạn thẳng.
 - Với bài hỏi đáp, nếu có lỗi kỹ thuật trong ví dụ, thuật ngữ phải đúng: “tràn số nguyên” khác “tràn bộ nhớ”.
 - Không văn chương hóa quá mức ở Off-topic; ưu tiên chi tiết đời thường, không hình ảnh kịch tính.
-- Không ép thuật ngữ thuật toán vào bài cộng đồng nếu chủ đề không nói về code.
+- Không ép thuật ngữ thuật toán vào bài cộng đồng nếu chủ đề không nói về mã.
 - Câu chuyển phải tự nhiên và có ích. Nếu câu hỏi tu từ nghe như được nhét vào cho đủ tiêu chí, hãy yêu cầu sửa.
 
 Trả về đúng JSON:
@@ -882,7 +903,9 @@ class Command(BaseCommand):
                 if normalized_topic:
                     topic_titles.add(normalized_topic)
 
-            if summary.startswith("Magazine topic:"):
+            if summary.startswith("Magazine topic:") or summary.startswith(
+                "Chủ đề chuyên mục:"
+            ):
                 normalized_topic = self._normalized_title(
                     summary.split(":", 1)[1].strip()
                 )
@@ -1313,7 +1336,7 @@ class Command(BaseCommand):
         )
         return GeneratedPost(
             title=topic[:100],
-            summary=f"Magazine topic: {topic}",
+            summary=f"Chủ đề chuyên mục: {topic}",
             content=content,
             topic=topic,
         )
@@ -1325,14 +1348,17 @@ AUDIENCE:
 EXAMPLE_DIRECTION:
 {guide.instruction}
 
-Viết một bài magazine ngắn theo thứ tự:
-1. Mở bằng một tình huống cụ thể.
-2. Cho ngay ví dụ nhỏ trong EXAMPLE_DIRECTION: số/xâu/dãy nếu là thuật toán, hoặc một tình huống thật nếu là học tập/cộng đồng.
-3. Chỉ ra điều cần chú ý: dữ liệu cần lưu, câu hỏi cần hỏi, lỗi cần ghi lại, hoặc chi tiết cần chọn.
-4. Nói điều đó thay đổi hoặc giúp quyết định bước tiếp theo như thế nào.
-5. Cho một mẩu làm việc thật nhỏ: một test, một dòng ghi chú mẫu, một công thức, một biến/invariant, hoặc checklist 2-3 bước.
-6. Nêu bước thực hiện cụ thể. Chỉ dùng `inline code` nếu thật sự đang nói về code.
-7. Kết bằng một thao tác cụ thể người đọc có thể thử, không kết luận chung chung.
+Viết một bài chuyên mục ngắn theo thứ tự:
+1. Bắt đầu bằng **Tóm tắt:** trong một câu ngắn.
+2. Mở đoạn thân bài đầu tiên bằng một tình huống cụ thể.
+3. Cho ngay ví dụ nhỏ trong EXAMPLE_DIRECTION: số/xâu/dãy nếu là thuật toán, hoặc một tình huống thật nếu là học tập/cộng đồng.
+4. Chỉ ra điều cần chú ý: dữ liệu cần lưu, câu hỏi cần hỏi, lỗi cần ghi lại, hoặc chi tiết cần chọn.
+5. Nói điều đó thay đổi hoặc giúp quyết định bước tiếp theo như thế nào.
+6. Cho một mẩu làm việc thật nhỏ: một bộ kiểm thử, một dòng ghi chú mẫu, một công thức, một biến/điều luôn đúng, hoặc danh sách kiểm tra 2-3 bước.
+7. Nêu bước thực hiện cụ thể. Chỉ dùng mẩu mã trong dấu `...` nếu thật sự đang nói về mã.
+8. Kết bằng một thao tác cụ thể người đọc có thể thử, không kết luận chung chung.
+
+Không viết dòng **Chủ đề:** TOPIC_TITLE trong nội dung. Tiêu đề đã nằm ngoài bài.
 
 Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Không thay bằng ví dụ khác tiện tay hơn."""
 
@@ -1371,7 +1397,6 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
                 "instruction": TOPIC_EXAMPLE_HINTS[0],
                 "required_markers": (
                     "2, 5, 1, 4",
-                    "prefix",
                     "cộng dồn",
                     "truy vấn tổng",
                 ),
@@ -1409,13 +1434,19 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
             },
             {
                 "instruction": TOPIC_EXAMPLE_HINTS[7],
-                "required_markers": ("18", "gcd", "24", "36", "ước"),
+                "required_markers": ("18", "24", "36", "ước chung", "ước"),
                 "label": "số học nhỏ",
             },
             {
                 "instruction": TOPIC_EXAMPLE_HINTS[8],
-                "required_markers": ("WA", "test nhỏ", "mảng rỗng", "n = 0", "`n=0`"),
-                "label": "contest workflow",
+                "required_markers": (
+                    "WA",
+                    "bộ kiểm thử nhỏ",
+                    "mảng rỗng",
+                    "n = 0",
+                    "`n=0`",
+                ),
+                "label": "quy trình sau kỳ thi",
             },
         )
 
@@ -1447,12 +1478,12 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
         return (
             {
                 "instruction": MATH_TOPIC_EXAMPLE_HINTS[0],
-                "required_markers": ("gcd", "24", "36", "Euclid", "ước chung"),
+                "required_markers": ("24", "36", "Euclid", "ước chung"),
                 "label": "gcd Euclid",
             },
             {
                 "instruction": MATH_TOPIC_EXAMPLE_HINTS[1],
-                "required_markers": ("3 + 5", "lẻ", "chẵn", "parity"),
+                "required_markers": ("3 + 5", "lẻ", "chẵn", "tính chẵn lẻ"),
                 "label": "chẵn lẻ",
             },
             {
@@ -1474,23 +1505,23 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
                     f"{ADVANCED_TOPIC_EXAMPLE_HINTS[0]} Không tự động dùng lại ví dụ "
                     "đường đi trên lưới nếu gợi ý này đã đưa ra một ngữ cảnh khác."
                 ),
-                required_markers=("dfs", "cây", "gộp", "quay lui", "hai giá trị"),
-                label="IOI-style tree invariant",
+                required_markers=("duyệt sâu", "cây", "gộp", "quay lui", "hai giá trị"),
+                label="điều luôn đúng trên cây",
             ),
             TopicExampleGuide(
                 instruction=(
                     f"{ADVANCED_TOPIC_EXAMPLE_HINTS[1]} Không tự động dùng lại ví dụ "
                     "đường đi trên lưới nếu gợi ý này đã đưa ra một ngữ cảnh khác."
                 ),
-                required_markers=("dp[i]", "min", "đoạn", "trạng thái"),
-                label="tối ưu DP bằng cấu trúc dữ liệu",
+                required_markers=("dp[i]", "nhỏ nhất", "đoạn", "trạng thái"),
+                label="tối ưu quy hoạch động bằng cấu trúc dữ liệu",
             ),
             TopicExampleGuide(
                 instruction=(
                     f"{ADVANCED_TOPIC_EXAMPLE_HINTS[2]} Không tự động dùng lại ví dụ "
                     "đường đi trên lưới nếu gợi ý này đã đưa ra một ngữ cảnh khác."
                 ),
-                required_markers=("deque", "0", "1", "trọng số"),
+                required_markers=("hàng đợi hai đầu", "0", "1", "trọng số"),
                 label="0-1 BFS",
             ),
             TopicExampleGuide(
@@ -1498,22 +1529,26 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
                     f"{ADVANCED_TOPIC_EXAMPLE_HINTS[3]} Không tự động dùng lại ví dụ "
                     "đường đi trên lưới nếu gợi ý này đã đưa ra một ngữ cảnh khác."
                 ),
-                required_markers=("offline", "k", "fenwick", "sắp xếp"),
-                label="offline query Fenwick",
+                required_markers=(
+                    "truy vấn xử lý trước",
+                    "k",
+                    "cây chỉ số nhị phân",
+                    "sắp xếp",
+                ),
+                label="truy vấn xử lý trước bằng cây chỉ số nhị phân",
             ),
         )
 
     def _validate_topic_post(self, body, topic, guide):
         errors = self._common_markdown_errors(body)
-        first_line = f"**Chủ đề:** {topic}"
         lines = body.strip().splitlines()
-        if not lines or lines[0].strip() != first_line:
-            errors.append(f"Dòng đầu phải đúng: {first_line}")
-        if not self._has_summary_after_first_line(lines):
-            errors.append("Dòng nội dung đầu sau link phải bắt đầu bằng **Tóm tắt:**")
+        if not lines or not lines[0].strip().startswith("**Tóm tắt:**"):
+            errors.append("Dòng đầu của bài chủ đề phải bắt đầu bằng **Tóm tắt:**")
+        if lines and lines[0].strip().startswith("**Chủ đề:**"):
+            errors.append("Không nhắc lại tiêu đề bằng dòng **Chủ đề:** trong nội dung")
         if "```" in body:
             errors.append(
-                "Không dùng code block trong bài magazine; chỉ dùng inline code ngắn"
+                "Không dùng khối mã trong bài chuyên mục; chỉ dùng mẩu mã ngắn trong dấu `...`"
             )
         errors.extend(self._readability_errors(body))
         errors.extend(self._ending_errors(body))
@@ -1551,7 +1586,7 @@ TYPES: {', '.join(candidate.types)}
 STATEMENT:
 {candidate.statement}
 
-Hãy tự chọn một ví dụ nhỏ từ statement nếu có.
+Hãy tự chọn một ví dụ nhỏ từ đề bài nếu có.
 AUDIENCE:
 {self._audience_prompt_text(candidate)}
 
@@ -1572,8 +1607,8 @@ Viết một bài ngắn theo thứ tự:
                 "primary": "Ưu tiên câu ngắn, ví dụ thật cụ thể, rất ít thuật ngữ.",
                 "middle": "Có thể có bài thử thách, nhưng phải đi từ ví dụ cụ thể trước.",
                 "high": "Có thể dùng thuật ngữ thuật toán, nhưng vẫn cần giải thích mạch suy nghĩ.",
-                "advanced": "Có thể dùng thuật ngữ nâng cao, nhưng phải nói rõ invariant/trạng thái/bước chuyển.",
-                "general": "Điều chỉnh độ sâu theo problem points và mô tả cộng đồng.",
+                "advanced": "Có thể dùng thuật ngữ nâng cao, nhưng phải nói rõ điều luôn đúng/trạng thái/bước chuyển.",
+                "general": "Điều chỉnh độ sâu theo điểm bài và mô tả cộng đồng.",
             }
             about = strip_tags(org.about or "").strip()
             if len(about) > 700:
@@ -1599,7 +1634,7 @@ Viết một bài ngắn theo thứ tự:
             errors.append("Dòng nội dung đầu sau link phải bắt đầu bằng **Tóm tắt:**")
         if "```" in body:
             errors.append(
-                "Không dùng code block trong bài magazine; chỉ dùng inline code ngắn"
+                "Không dùng khối mã trong bài chuyên mục; chỉ dùng mẩu mã ngắn trong dấu `...`"
             )
         errors.extend(self._code_block_errors(body))
         errors.extend(self._readability_errors(body))
@@ -1664,8 +1699,8 @@ Viết một bài ngắn theo thứ tự:
             lambda body: self._validate_contest_post(body, contest),
         )
         return GeneratedPost(
-            title=f"Gợi ý đọc contest: {contest.name}",
-            summary=f"Contest editorial preview: {contest.name}",
+            title=f"Gợi ý đọc kỳ thi: {contest.name}",
+            summary=f"Gợi ý đọc kỳ thi: {contest.name}",
             content=content,
             contest=contest,
         )
@@ -1681,13 +1716,13 @@ PROBLEMS_JSON:
 AUDIENCE:
 {self._audience_prompt_text(None)}
 
-Viết bài gợi ý đọc contest cho cộng đồng trên. Không giải trọn contest."""
+Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải trọn kỳ thi."""
 
     def _validate_contest_post(self, body, contest):
         errors = self._common_markdown_errors(body)
         if "```" in body:
-            errors.append("Không dùng code block trong bài contest")
-        first_line = f"**Contest:** [{contest.name}](/contest/{contest.key})"
+            errors.append("Không dùng khối mã trong bài kỳ thi")
+        first_line = f"**Kỳ thi:** [{contest.name}](/contest/{contest.key})"
         lines = body.strip().splitlines()
         if not lines or lines[0].strip() != first_line:
             errors.append(f"Dòng đầu phải đúng: {first_line}")
@@ -1702,6 +1737,12 @@ Viết bài gợi ý đọc contest cho cộng đồng trên. Không giải tr�
             return line.startswith("**Tóm tắt:**")
         return False
 
+    def _lines_after_summary(self, lines):
+        for index, line in enumerate(lines):
+            if line.strip().startswith("**Tóm tắt:**"):
+                return lines[index + 1 :]
+        return lines[2:] if len(lines) > 2 else []
+
     def _common_markdown_errors(self, body):
         errors = []
         body_without_code = self._body_without_code_blocks(body)
@@ -1712,12 +1753,13 @@ Viết bài gợi ý đọc contest cho cộng đồng trên. Không giải tr�
         if "https://lqdoj.edu.vn" in body:
             errors.append("Không dùng link tuyệt đối")
         if body.count("$") % 2:
-            errors.append("LaTeX inline bị thiếu dấu $ đóng/mở")
+            errors.append("LaTeX trong dòng bị thiếu dấu $ đóng/mở")
         if body.count("`") % 2:
-            errors.append("Inline code bị thiếu dấu ` đóng/mở")
+            errors.append("Mẩu mã trong dấu `...` bị thiếu dấu ` đóng/mở")
         for phrase in BANNED_PHRASES:
             if phrase.lower() in lower_body:
                 errors.append(f"Có cụm bị cấm: {phrase}")
+        errors.extend(self._language_errors(body_without_code))
         if ("xuống dưới" in lower_body or "bước xuống" in lower_body) and (
             "lên trên" in lower_body or "bước đi lên" in lower_body
         ):
@@ -1729,11 +1771,50 @@ Viết bài gợi ý đọc contest cho cộng đồng trên. Không giải tr�
             errors.append(f"Có cụm bị lặp: {repeated.group(1)}")
         return errors
 
+    def _prose_only_text(self, body):
+        text = self._body_without_code_blocks(body)
+        text = re.sub(r"`[^`]*`", "", text)
+        text = re.sub(r"\[[^\]]+\]\([^)]+\)", "", text)
+        text = re.sub(r"/(?:problem|contest)/[-a-z0-9_]+", "", text)
+        lines = text.strip().splitlines()
+        return "\n".join(self._lines_after_summary(lines))
+
+    def _language_errors(self, body):
+        errors = []
+        prose = self._prose_only_text(body)
+        lower = prose.lower()
+        found_terms = [
+            term
+            for term in ENGLISH_PROSE_TERMS
+            if re.search(rf"(?<![a-z]){re.escape(term)}(?![a-z])", lower)
+        ]
+        if found_terms:
+            errors.append(
+                "Tránh từ tiếng Anh kiểu meta/gượng trong câu văn: "
+                + ", ".join(sorted(set(found_terms))[:5])
+            )
+
+        sentences = self._split_sentences(prose)
+        for term, explanations in UNEXPLAINED_TECHNICAL_TERMS.items():
+            for index, sentence in enumerate(sentences):
+                if not re.search(
+                    rf"(?<![a-z]){re.escape(term)}(?![a-z])", sentence.lower()
+                ):
+                    continue
+                window = " ".join(sentences[index : index + 2]).lower()
+                if not any(explanation in window for explanation in explanations):
+                    errors.append(
+                        f"Nếu nhắc {term.upper()}, phải giải thích ngay bằng tiếng Việt"
+                    )
+                    break
+
+        return errors
+
     def _code_block_errors(self, body):
         errors = []
         blocks = list(self._iter_code_blocks(body))
         if len(blocks) > 2:
-            errors.append("Chỉ dùng tối đa 2 code block ngắn")
+            errors.append("Chỉ dùng tối đa 2 khối mã ngắn")
             return errors
         if not blocks:
             return errors
@@ -1741,21 +1822,21 @@ Viết bài gợi ý đọc contest cho cộng đồng trên. Không giải tr�
         languages = {language.lower() for language, _ in blocks if language}
         allowed = {"python", "py", "cpp", "c++"}
         if any(language and language.lower() not in allowed for language, _ in blocks):
-            errors.append("Code block chỉ nên dùng python/cpp")
+            errors.append("Khối mã chỉ nên dùng Python/C++")
         if len(blocks) == 2 and not (
             languages.intersection({"python", "py"})
             and languages.intersection({"cpp", "c++"})
         ):
-            errors.append("Nếu dùng 2 code block, nên là một Python và một C++")
+            errors.append("Nếu dùng 2 khối mã, nên là một Python và một C++")
 
         total_lines = 0
         for _, code in blocks:
             lines = [line for line in code.splitlines() if line.strip()]
             total_lines += len(lines)
             if len(lines) > 10:
-                errors.append("Mỗi code block chỉ nên dài tối đa 10 dòng")
+                errors.append("Mỗi khối mã chỉ nên dài tối đa 10 dòng")
         if total_lines > 18:
-            errors.append("Ví dụ code quá dài; chỉ giữ thao tác chính")
+            errors.append("Ví dụ mã quá dài; chỉ giữ thao tác chính")
         return errors
 
     def _iter_code_blocks(self, body):
@@ -1778,9 +1859,12 @@ Viết bài gợi ý đọc contest cho cộng đồng trên. Không giải tr�
         errors = []
         body = self._body_without_code_blocks(body)
         lines = [line.strip() for line in body.strip().splitlines()]
-        body_after_summary = "\n".join(lines[2:])
+        content_lines = self._lines_after_summary(lines)
+        body_after_summary = "\n".join(content_lines)
         paragraphs = [
-            line for line in lines[2:] if line and not line.startswith("**Bài gợi ý:**")
+            line
+            for line in content_lines
+            if line and not line.startswith("**Bài gợi ý:**")
         ]
         if len(paragraphs) < 3:
             errors.append("Cần ít nhất 3 đoạn sau phần tóm tắt")
@@ -1791,6 +1875,29 @@ Viết bài gợi ý đọc contest cho cộng đồng trên. Không giải tr�
         ]
         if long_sentences:
             errors.append("Có câu quá dài; mỗi câu nên dưới 44 từ")
+
+        dense_sentences = [
+            sentence
+            for sentence in sentences
+            if len(sentence.split()) > 30 and sentence.count(",") >= 3
+        ]
+        if dense_sentences:
+            errors.append(
+                "Có câu quá dày ý; hãy tách thành câu ngắn hơn để học sinh dễ theo"
+            )
+
+        hard_term_sentences = 0
+        for sentence in sentences:
+            lower_sentence = sentence.lower()
+            hits = sum(1 for word in ABSTRACT_WORDS if word in lower_sentence) + len(
+                re.findall(r"`[^`]+`|\$[^$]+\$", sentence)
+            )
+            if hits >= 4:
+                hard_term_sentences += 1
+        if hard_term_sentences:
+            errors.append(
+                "Có câu gom quá nhiều thuật ngữ/ký hiệu; cần giải thích chậm hơn"
+            )
 
         abstract_count = sum(body_after_summary.count(word) for word in ABSTRACT_WORDS)
         if abstract_count > 6:
@@ -1960,7 +2067,7 @@ Viết bài gợi ý đọc contest cho cộng đồng trên. Không giải tr�
             "ghi chú",
             "tài liệu",
             "lỗi",
-            "test",
+            "bộ kiểm thử",
             "ví dụ",
             "thông tin",
         )
@@ -2030,18 +2137,18 @@ Viết bài gợi ý đọc contest cho cộng đồng trên. Không giải tr�
             for marker in (
                 "ví dụ",
                 "chẳng hạn",
-                "checklist",
+                "danh sách kiểm tra",
                 "bước 1",
                 "bước đầu",
-                "input",
-                "output",
-                "test",
+                "dữ liệu vào",
+                "kết quả ra",
+                "bộ kiểm thử",
             )
             if marker in lower
         )
         if concrete_signals < 3:
             errors.append(
-                "Bài topic cần có mẩu làm việc cụ thể hơn: test, công thức, ghi chú mẫu, hoặc checklist ngắn"
+                "Bài chủ đề cần có mẩu làm việc cụ thể hơn: bộ kiểm thử, công thức, ghi chú mẫu, hoặc danh sách kiểm tra ngắn"
             )
 
         advice_only_markers = (
