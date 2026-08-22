@@ -23,7 +23,8 @@ from judge.views.submission import get_cases_data  # noqa: E402
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Backfill submission result.json objects from existing testcase rows."
+        allow_abbrev=False,
+        description="Backfill submission result.json objects from existing testcase rows.",
     )
     parser.add_argument("--start-id", type=int, default=0)
     parser.add_argument("--end-id", type=int)
@@ -31,6 +32,12 @@ def parse_args():
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
+
+
+def log(message, *args):
+    if args:
+        message = message % args
+    print(message, flush=True)
 
 
 def testcase_details(submission):
@@ -85,8 +92,26 @@ def main():
     written = 0
     skipped = 0
     failed = 0
+    batches = 0
+
+    log(
+        "starting submission result backfill start_id=%s end_id=%s batch_size=%s skip_existing=%s dry_run=%s",
+        args.start_id,
+        args.end_id,
+        args.batch_size,
+        args.skip_existing,
+        args.dry_run,
+    )
 
     for ids in submission_batches(args.start_id, args.end_id, args.batch_size):
+        batches += 1
+        log(
+            "batch start batch=%d count=%d first_id=%d last_id=%d",
+            batches,
+            len(ids),
+            ids[0],
+            ids[-1],
+        )
         close_old_connections()
         submissions = (
             Submission.objects.filter(id__in=ids)
@@ -107,7 +132,7 @@ def main():
             try:
                 details = testcase_details(submission)
                 if args.dry_run:
-                    print(
+                    log(
                         "would write submission=%d cases=%d"
                         % (submission.id, len(details))
                     )
@@ -121,12 +146,19 @@ def main():
                     file=sys.stderr,
                 )
 
-        print(
+        log(
             "progress processed=%d written=%d skipped=%d failed=%d last_id=%d"
             % (processed, written, skipped, failed, ids[-1]),
-            flush=True,
         )
 
+    log(
+        "done batches=%d processed=%d written=%d skipped=%d failed=%d",
+        batches,
+        processed,
+        written,
+        skipped,
+        failed,
+    )
     if failed:
         return 1
     return 0
