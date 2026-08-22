@@ -37,7 +37,15 @@ from judge.bridge.utils import VanishedSubmission
 
 from judge.caching import cache_wrapper
 from judge.tasks.submission import update_problem_stats, update_user_points
-from judge.utils.problem_data import notify_problem_authors
+from judge.utils.problem_data import (
+    get_testcase_preview_max_bytes,
+    notify_problem_authors,
+)
+from judge.utils.submission_results import (
+    delete_submission_result,
+    merge_submission_result,
+    save_submission_result,
+)
 
 logger = logging.getLogger("judge.bridge")
 json_log = logging.getLogger("judge.json.bridge")
@@ -649,6 +657,7 @@ class JudgeHandler(ZlibPacketHandler):
             SubmissionTestCase.objects.filter(
                 submission_id=packet["submission-id"]
             ).delete()
+            delete_submission_result(packet["submission-id"])
             event.post(
                 "sub_%s" % Submission.get_id_secret(packet["submission-id"]),
                 {"type": "grading-begin"},
@@ -1044,7 +1053,11 @@ class JudgeHandler(ZlibPacketHandler):
             )
             return
 
+        replace_result_json = not SubmissionTestCase.objects.filter(
+            submission_id=id
+        ).exists()
         bulk_test_case_updates = []
+        result_detail_cases = []
         for result in updates:
             test_case = SubmissionTestCase(submission_id=id, case=result["position"])
             status = result["status"]
@@ -1073,6 +1086,17 @@ class JudgeHandler(ZlibPacketHandler):
             test_case.extended_feedback = result.get("extended-feedback") or ""
             test_case.output = result["output"]
             bulk_test_case_updates.append(test_case)
+            result_detail = {
+                "case": result["position"],
+                "output": result.get("output", ""),
+                "feedback": test_case.feedback,
+                "extended_feedback": test_case.extended_feedback,
+            }
+            if "input" in result:
+                result_detail["input"] = result.get("input", "")
+            if "expected-output" in result:
+                result_detail["answer"] = result.get("expected-output", "")
+            result_detail_cases.append(result_detail)
 
             json_log.info(
                 self._make_json_log(
@@ -1115,10 +1139,23 @@ class JudgeHandler(ZlibPacketHandler):
             )
             self._post_update_submission(id, state="test-case")
 
+        try:
+            if replace_result_json:
+                save_submission_result(id, result_detail_cases)
+            else:
+                merge_submission_result(id, result_detail_cases)
+        except Exception:
+            logger.exception("Failed to write submission result JSON for %s", id)
+        else:
+            for test_case in bulk_test_case_updates:
+                test_case.feedback = ""
+                test_case.extended_feedback = ""
+                test_case.output = ""
+
         SubmissionTestCase.objects.bulk_create(bulk_test_case_updates)
 
         # Cache input/expected-output previews for generator-based problems
-        visible_len = getattr(settings, "TESTCASE_VISIBLE_LENGTH", 64)
+        visible_len = get_testcase_preview_max_bytes()
         for result in updates:
             input_preview = result.get("input", "")
             answer_preview = result.get("expected-output", "")

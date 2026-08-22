@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-21 17:08+0700\n"
+"POT-Creation-Date: 2026-08-22 12:41+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -720,11 +720,11 @@ msgstr "Bộ nhớ"
 msgid "Online Judge"
 msgstr "Hệ thống chấm bài"
 
-#: judge/bridge/judge_handler.py:58
+#: judge/bridge/judge_handler.py:66
 msgid "No error details supplied."
 msgstr "Không có chi tiết lỗi."
 
-#: judge/bridge/judge_handler.py:78
+#: judge/bridge/judge_handler.py:86
 #, python-brace-format
 msgid "Problem data error in {problem}: {summary}. Review test data."
 msgstr "Lỗi dữ liệu bài ở {problem}: {summary}. Hãy kiểm tra dữ liệu test."
@@ -5089,8 +5089,8 @@ msgstr "Vượt quá dung lượng lưu trữ. File đã bị xóa."
 msgid "Invalid file path"
 msgstr "Đường dẫn file không hợp lệ"
 
-#: judge/utils/hidden_results.py:113 judge/views/submission.py:593
-#: judge/views/submission.py:1426
+#: judge/utils/hidden_results.py:113 judge/views/submission.py:607
+#: judge/views/submission.py:1440
 #: templates/contest/contest-problem-table.html:23
 #: templates/contest/contest-problem-table.html:59
 #: templates/course/lesson_user_submissions_ajax.html:12
@@ -5130,80 +5130,80 @@ msgstr ""
 msgid "Duplicate rows are not allowed."
 msgstr "Nhóm test trống là không hợp lệ."
 
-#: judge/utils/problem_data.py:87
+#: judge/utils/problem_data.py:97
 msgid "Empty batches not allowed."
 msgstr "Nhóm test trống là không hợp lệ."
 
-#: judge/utils/problem_data.py:104
+#: judge/utils/problem_data.py:114
 #, python-format
 msgid ""
 "Per-case checker %s requires a file that's only configurable on the problem "
 "(not per test case). Set the checker at the problem level instead."
 msgstr ""
 
-#: judge/utils/problem_data.py:115 judge/utils/problem_data.py:125
-#: judge/utils/problem_data.py:140
+#: judge/utils/problem_data.py:125 judge/utils/problem_data.py:135
+#: judge/utils/problem_data.py:150
 msgid "How did you corrupt the custom checker path?"
 msgstr "How did you corrupt the custom checker path?"
 
-#: judge/utils/problem_data.py:165
+#: judge/utils/problem_data.py:175
 #, fuzzy, python-format
 #| msgid "Points must be defined for non-batch case #%d."
 msgid "Points must be defined for case #%d."
 msgstr "Ô điểm số cho test #%d phải được điền."
 
-#: judge/utils/problem_data.py:176
+#: judge/utils/problem_data.py:186
 #, python-format
 msgid "Input file for case %(case_num)d does not exist: %(filename)s"
 msgstr "File input cho test %(case_num)d không tồn tại: %(filename)s"
 
-#: judge/utils/problem_data.py:183
+#: judge/utils/problem_data.py:193
 #, python-format
 msgid "Output file for case %(case_num)d does not exist: %(filename)s"
 msgstr "File output cho test %(case_num)d không tồn tại: %(filename)s"
 
-#: judge/utils/problem_data.py:211
+#: judge/utils/problem_data.py:221
 #, python-format
 msgid "Batch start case #%d requires points."
 msgstr "Nhóm test #%d cần được điền điểm số."
 
-#: judge/utils/problem_data.py:239
+#: judge/utils/problem_data.py:249
 #, python-format
 msgid "Attempt to end batch outside of one in case #%d"
 msgstr "Nhóm test #%d kết thúc không hợp lệ"
 
-#: judge/utils/problem_data.py:258
+#: judge/utils/problem_data.py:268
 msgid "How did you corrupt the zip path?"
 msgstr "Làm sao bạn làm hỏng đường dẫn zip?"
 
-#: judge/utils/problem_data.py:264
+#: judge/utils/problem_data.py:274
 msgid "How did you corrupt the generator path?"
 msgstr "Làm sao bạn làm hỏng đường dẫn generator?"
 
-#: judge/utils/problem_data.py:282
+#: judge/utils/problem_data.py:292
 msgid "Invalid interactor judge"
 msgstr "Máy chấm tương tác không hợp lệ"
 
-#: judge/utils/problem_data.py:317
+#: judge/utils/problem_data.py:327
 msgid "Invalid validator source path"
 msgstr "Đường dẫn mã nguồn validator không hợp lệ"
 
-#: judge/utils/problem_data.py:325
+#: judge/utils/problem_data.py:335
 #, python-format
 msgid "Unsupported validator extension: %s"
 msgstr "Phần mở rộng validator không được hỗ trợ: %s"
 
-#: judge/utils/problem_data.py:342
+#: judge/utils/problem_data.py:352
 #, fuzzy
 #| msgid "Invalid Two Factor Authentication token."
 msgid "Invalid communication manager"
 msgstr "Mã Xác thực hai yếu tố không hợp lệ."
 
-#: judge/utils/problem_data.py:372
+#: judge/utils/problem_data.py:382
 msgid "Invalid signature handler"
 msgstr "Trình xử lý không hợp lệ"
 
-#: judge/utils/problem_data.py:381
+#: judge/utils/problem_data.py:391
 msgid "Invalid signature header for C/C++"
 msgstr "File định nghĩa hàm không hợp lệ"
 
@@ -6727,7 +6727,7 @@ msgstr "%s Thành viên"
 msgid "All submissions in <a href=\"{1}\">{0}</a>"
 msgstr "Bài nộp trong <a href=\"{1}\">{0}</a>"
 
-#: judge/views/organization.py:883 judge/views/submission.py:1076
+#: judge/views/organization.py:883 judge/views/submission.py:1090
 msgid "Submissions in"
 msgstr "Bài nộp trong"
 
@@ -8002,64 +8002,64 @@ msgstr "Trạng thái"
 msgid "Version matrix"
 msgstr "Ma trận phiên bản"
 
-#: judge/views/submission.py:130 judge/views/submission.py:138
+#: judge/views/submission.py:134 judge/views/submission.py:142
 #, python-format
 msgid "Submission of %(problem)s by %(user)s"
 msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 
-#: judge/views/submission.py:416 judge/views/submission.py:417
+#: judge/views/submission.py:430 judge/views/submission.py:431
 #: templates/contest/submissions.html:50 templates/problem/problem.html:217
 #: templates/problem/problem.html:230 templates/submission/list.html:386
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:744 judge/views/submission.py:749
+#: judge/views/submission.py:758 judge/views/submission.py:763
 msgid "All my submissions"
 msgstr "Tất cả bài nộp của tôi"
 
-#: judge/views/submission.py:745
+#: judge/views/submission.py:759
 #, python-format
 msgid "All submissions by %s"
 msgstr "Tất cả bài nộp của %s"
 
-#: judge/views/submission.py:751
+#: judge/views/submission.py:765
 #, python-brace-format
 msgid "All submissions by <a href=\"{1}\">{0}</a>"
 msgstr "Tất cả bài nộp của <a href=\"{1}\">{0}</a>"
 
-#: judge/views/submission.py:774
+#: judge/views/submission.py:788
 msgid "All friend submissions"
 msgstr "Bài nộp của bạn bè"
 
-#: judge/views/submission.py:803
+#: judge/views/submission.py:817
 #, python-format
 msgid "All submissions for %s"
 msgstr "Tất cả bài nộp cho %s"
 
-#: judge/views/submission.py:831
+#: judge/views/submission.py:845
 msgid "Must pass a problem"
 msgstr "Phải làm được một bài"
 
-#: judge/views/submission.py:902
+#: judge/views/submission.py:916
 #, python-format
 msgid "My submissions for %(problem)s"
 msgstr "Bài nộp của tôi cho %(problem)s"
 
-#: judge/views/submission.py:903
+#: judge/views/submission.py:917
 #, python-format
 msgid "%(user)s's submissions for %(problem)s"
 msgstr "Các bài nộp của %(user)s cho %(problem)s"
 
-#: judge/views/submission.py:1056
+#: judge/views/submission.py:1070
 msgid "Must pass a contest"
 msgstr "Phải qua một kỳ thi"
 
-#: judge/views/submission.py:1080
+#: judge/views/submission.py:1094
 #, python-brace-format
 msgid "Submissions in <a href=\"{0}\">{1}</a>"
 msgstr "Bài nộp trong <a href=\"{0}\">{1}</a>"
 
-#: judge/views/submission.py:1151
+#: judge/views/submission.py:1165
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a "
@@ -8068,7 +8068,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
 
-#: judge/views/submission.py:1163
+#: judge/views/submission.py:1177
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
@@ -8077,7 +8077,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho bài {2} trong <a href=\"{4}\">{3}"
 "</a>"
 
-#: judge/views/submission.py:1336
+#: judge/views/submission.py:1350
 msgid "You don't have permission to access."
 msgstr "Bạn không có quyền truy cập."
 
@@ -8355,7 +8355,7 @@ msgstr "Chỉnh sửa thông tin"
 
 #: templates/admin/judge/submission/change_form.html:14
 #: templates/admin/judge/submission/change_form.html:17
-#: templates/submission/status.html:158
+#: templates/submission/status.html:253
 msgid "Rejudge"
 msgstr "Chấm lại"
 
@@ -9549,7 +9549,8 @@ msgid "Memory limit:"
 msgstr "Bộ nhớ:"
 
 #: templates/contest/problemset.html:93 templates/problem/problem.html:437
-#: templates/problem/raw.html:89 templates/submission/status-testcases.html:182
+#: templates/problem/raw.html:89 templates/submission/status-testcases.html:185
+#: templates/submission/status.html:121
 msgid "Input:"
 msgstr "Input:"
 
@@ -9561,7 +9562,8 @@ msgid "stdin"
 msgstr "bàn phím"
 
 #: templates/contest/problemset.html:101 templates/problem/problem.html:444
-#: templates/problem/raw.html:96 templates/submission/status-testcases.html:186
+#: templates/problem/raw.html:96 templates/submission/status-testcases.html:189
+#: templates/submission/status.html:122
 msgid "Output:"
 msgstr "Output:"
 
@@ -15058,31 +15060,41 @@ msgstr "Pretest"
 msgid "Test case"
 msgstr "Test"
 
-#: templates/submission/status-testcases.html:190
+#: templates/submission/status-testcases.html:193
+#: templates/submission/status.html:123
 msgid "Answer:"
 msgstr "Kết quả:"
 
-#: templates/submission/status-testcases.html:195
+#: templates/submission/status-testcases.html:198
+#: templates/submission/status.html:125
 msgid "Judge feedback:"
 msgstr "Phản hồi từ máy chấm:"
 
-#: templates/submission/status-testcases.html:217
+#: templates/submission/status-testcases.html:221
 msgid "Passing pretests does not guarantee a full score on system tests."
 msgstr "AC pretest không đồng nghĩa AC cả bài nhé :))"
 
-#: templates/submission/status-testcases.html:220
+#: templates/submission/status-testcases.html:224
 msgid "Submission aborted!"
 msgstr "Đã hủy chấm bài nộp!"
 
-#: templates/submission/status.html:151
+#: templates/submission/status.html:77
+msgid "Loading..."
+msgstr "Đang tải..."
+
+#: templates/submission/status.html:78
+msgid "Details unavailable."
+msgstr "Không có chi tiết."
+
+#: templates/submission/status.html:246
 msgid "Resubmit"
 msgstr "Nộp lại"
 
-#: templates/submission/status.html:167
+#: templates/submission/status.html:262
 msgid "Source code"
 msgstr "Mã nguồn"
 
-#: templates/submission/status.html:180
+#: templates/submission/status.html:275
 msgid "Abort"
 msgstr "Hủy chấm"
 

@@ -133,7 +133,7 @@
                 </tr>
               {% endif %}
               {% for case in batch.cases %}
-                <tr id="{{ case.id }}" class="case-row toggle closed">
+                <tr id="{{ case.id }}" class="case-row toggle closed" data-case-number="{{ case.case }}">
                   <td>
                     {%- if can_see_testcases -%}
                       <i class="fa fa-chevron-right fa-fw"></i>
@@ -176,31 +176,35 @@
                 {% if can_see_testcases %}
                   <tr id="{{ case.id }}-output" style="display:none" class="case-feedback toggled">
                     <td colspan="5">
-                      <div class="case-info">
-                        {% set curr_data = cases_data[case.case] %}
-                        {% if curr_data != null %}
-                          <strong>{{ _('Input:') }}</strong>
-                        <pre class="case-output">{{ curr_data['input']|linebreaksbr }}</pre>
-                        {% endif %}
-
-                        <strong>{{ _('Output:') }}</strong>
-                      <pre class="case-output">{{ case.output|linebreaksbr }}</pre>
-
-                        {% if curr_data != null %}
-                          <strong>{{ _('Answer:') }}</strong>
-                        <pre class="case-output">{{ curr_data['answer']|linebreaksbr }}</pre>
-                        {% endif %}
-
-                        {% if case.extended_feedback or case.feedback %}
-                          <strong>{{ _('Judge feedback:') }}</strong>
-                          {% if case.feedback %}
-                          <pre class="case-output">{{ case.feedback|linebreaksbr }}</pre>
+                      {% if result_json_url %}
+                        <div class="case-info case-info-json" data-case-number="{{ case.case }}"></div>
+                      {% else %}
+                        <div class="case-info">
+                          {% set curr_data = cases_data[case.case] %}
+                          {% if curr_data != null %}
+                            <strong>{{ _('Input:') }}</strong>
+                          <pre class="case-output">{{ curr_data['input']|linebreaksbr }}</pre>
                           {% endif %}
-                          {% if case.extended_feedback %}
-                          <pre class="case-output">{{ case.extended_feedback|linebreaksbr }}</pre>
+
+                          <strong>{{ _('Output:') }}</strong>
+                        <pre class="case-output">{{ case.output|linebreaksbr }}</pre>
+
+                          {% if curr_data != null %}
+                            <strong>{{ _('Answer:') }}</strong>
+                          <pre class="case-output">{{ curr_data['answer']|linebreaksbr }}</pre>
                           {% endif %}
-                        {% endif %}
-                      </div>
+
+                          {% if case.extended_feedback or case.feedback %}
+                            <strong>{{ _('Judge feedback:') }}</strong>
+                            {% if case.feedback %}
+                            <pre class="case-output">{{ case.feedback|linebreaksbr }}</pre>
+                            {% endif %}
+                            {% if case.extended_feedback %}
+                            <pre class="case-output">{{ case.extended_feedback|linebreaksbr }}</pre>
+                            {% endif %}
+                          {% endif %}
+                        </div>
+                      {% endif %}
                     </td>
                   </tr>
                 {% endif %}

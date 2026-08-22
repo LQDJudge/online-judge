@@ -58,6 +58,10 @@ from judge.utils.hidden_results import (
 from judge.utils.problems import _get_result_data
 from judge.utils.problem_data import get_problem_case_with_missing_files
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
+from judge.utils.submission_results import (
+    submission_result_exists,
+    submission_result_url,
+)
 from judge.utils.views import DiggPaginatorMixin, paginate_query_context
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.views import TitleMixin
@@ -345,6 +349,7 @@ class SubmissionStatus(SubmissionDetailBase):
         context["test_data_feedback"] = ""
         context["testcase_preview_missing_files"] = []
         context["testcase_preview_missing_file_count"] = 0
+        context["result_json_url"] = ""
         if self.highlight_source:
             context["highlighted_source"] = highlight_code(
                 submission.source.source,
@@ -359,6 +364,14 @@ class SubmissionStatus(SubmissionDetailBase):
             context["can_see_testcases"] = True
             context["testcase_preview_missing_files"] = missing_files[:10]
             context["testcase_preview_missing_file_count"] = len(missing_files)
+            if (
+                not context["is_result_hidden"]
+                and not context["hidden_subtasks"]
+                and (
+                    submission_result_exists(submission.id) or not submission.is_graded
+                )
+            ):
+                context["result_json_url"] = submission_result_url(submission.id)
         if context["can_manage_test_data"]:
             try:
                 context["test_data_feedback"] = submission.problem.data_files.feedback

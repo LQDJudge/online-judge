@@ -10,6 +10,7 @@ from django.conf import settings
 
 from judge.highlight_code import highlight_code
 from judge.user_translations import gettext
+from judge.utils.problem_data import get_testcase_preview_max_bytes
 from . import (
     camo,
     chat,
@@ -40,6 +41,7 @@ registry.filter("roundfloat", round)
 registry.function("inlinei18n", inlinei18n)
 registry.function("mptt_tree", get_cached_trees)
 registry.function("user_trans", gettext)
+registry.function("TESTCASE_PREVIEW_MAX_BYTES", get_testcase_preview_max_bytes)
 registry.function("TESTCASE_VISIBLE_LENGTH", settings.TESTCASE_VISIBLE_LENGTH)
 registry.function("USE_ML_ENABLED", lambda: getattr(settings, "USE_ML", False))
 
