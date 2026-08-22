@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import hmac
 import json
@@ -44,11 +45,20 @@ def delete_submission_result(submission_id):
 
 
 def _write_exact(path, content):
-    if default_storage.exists(path):
-        default_storage.delete(path)
-    saved_path = default_storage.save(path, ContentFile(content))
+    storage = default_storage
+    if hasattr(storage, "file_overwrite"):
+        write_storage = copy.copy(storage)
+        if write_storage is not storage:
+            write_storage.file_overwrite = True
+        else:
+            storage_delete_file(storage, path)
+    else:
+        storage_delete_file(storage, path)
+        write_storage = storage
+
+    saved_path = write_storage.save(path, ContentFile(content))
     if saved_path != path:
-        default_storage.delete(saved_path)
+        storage_delete_file(write_storage, saved_path)
         raise RuntimeError(
             "Submission result JSON saved to unexpected path: %s" % saved_path
         )
@@ -97,17 +107,43 @@ def _normalize_case(case):
     }
 
 
+def _compact_case(case):
+    compact = {
+        "case": int(case["case"]),
+        "output": case.get("output") or "",
+    }
+    if case.get("input_available", "input" in case):
+        compact["input"] = case.get("input") or ""
+        compact["input_available"] = True
+    if case.get("answer_available", "answer" in case):
+        compact["answer"] = case.get("answer") or ""
+        compact["answer_available"] = True
+    if case.get("feedback"):
+        compact["feedback"] = case["feedback"]
+    if case.get("extended_feedback"):
+        compact["extended_feedback"] = case["extended_feedback"]
+    return compact
+
+
+def submission_result_payload(cases, compact=False):
+    normalize = _compact_case if compact else _normalize_case
+    return {
+        "version": RESULT_JSON_VERSION,
+        "cases": [normalize(case) for case in sorted(cases, key=lambda c: c["case"])],
+    }
+
+
+def submission_result_content(cases, compact=False):
+    return json.dumps(
+        submission_result_payload(cases, compact=compact),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
 def save_submission_result(submission_id, cases):
     path = submission_result_path(submission_id)
-    payload = {
-        "version": RESULT_JSON_VERSION,
-        "cases": [
-            _normalize_case(case) for case in sorted(cases, key=lambda c: c["case"])
-        ],
-    }
-    content = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
-        "utf-8"
-    )
+    content = submission_result_content(cases)
     _write_exact(path, content)
     return path
 

@@ -37,6 +37,25 @@ class BucketLikeFakeStorage(FakeStorage):
     bucket = object()
 
 
+class OverwriteCapableFakeStorage(FakeStorage):
+    file_overwrite = False
+
+    def __init__(self):
+        super().__init__()
+        self.exists_calls = 0
+        self.save_file_overwrite_values = []
+
+    def exists(self, path):
+        self.exists_calls += 1
+        return super().exists(path)
+
+    def save(self, path, content):
+        self.save_file_overwrite_values.append(self.file_overwrite)
+        if not self.file_overwrite and path in self.files:
+            path = "%s_duplicated" % path
+        return super().save(path, content)
+
+
 @override_settings(SECRET_KEY="test-secret")
 class SubmissionResultStorageTests(SimpleTestCase):
     def test_result_path_is_opaque(self):
@@ -100,6 +119,22 @@ class SubmissionResultStorageTests(SimpleTestCase):
             payload = submission_results.load_submission_result(12)
 
         self.assertEqual(payload["cases"][0]["input"], "in")
+
+    def test_overwrite_capable_storage_saves_exact_path_without_exists(self):
+        storage = OverwriteCapableFakeStorage()
+        path = submission_results.submission_result_path(13)
+        storage.files[path] = b'{"old":true}'
+        with patch.object(submission_results, "default_storage", storage):
+            saved_path = submission_results.save_submission_result(
+                13, [{"case": 1, "output": "out"}]
+            )
+            payload = submission_results.load_submission_result(13)
+
+        self.assertEqual(saved_path, path)
+        self.assertEqual(storage.exists_calls, 0)
+        self.assertEqual(storage.save_file_overwrite_values, [True])
+        self.assertFalse(storage.file_overwrite)
+        self.assertEqual(payload["cases"][0]["output"], "out")
 
     def test_delete_submission_result_removes_object(self):
         storage = FakeStorage()
