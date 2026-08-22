@@ -1,7 +1,5 @@
 import os
-from zipfile import BadZipFile, ZipFile
 
-from django.core.cache import cache
 from django.core.validators import (
     FileExtensionValidator,
     MaxValueValidator,
@@ -10,7 +8,7 @@ from django.core.validators import (
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from judge.utils.problem_data import ProblemDataStorage, get_file_cachekey
+from judge.utils.problem_data import ProblemDataStorage
 
 __all__ = [
     "problem_data_storage",
@@ -248,19 +246,7 @@ class ProblemData(models.Model):
         self.__original_zipfile = self.zipfile
 
     def save(self, *args, **kwargs):
-        # Delete caches
         if self.__original_zipfile:
-            try:
-                files = ZipFile(self.__original_zipfile.path).namelist()
-                cache_keys = [
-                    "problem_archive:%s:%s"
-                    % (self.problem.code, get_file_cachekey(file))
-                    for file in files
-                ]
-                if cache_keys:
-                    cache.delete_many(cache_keys)
-            except (BadZipFile, FileNotFoundError):
-                pass
             if self.zipfile != self.__original_zipfile:
                 self.__original_zipfile.delete(save=False)
         return super(ProblemData, self).save(*args, **kwargs)

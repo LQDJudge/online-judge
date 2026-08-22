@@ -1,14 +1,12 @@
-import hashlib
 import json
 import os
 import re
 import yaml
-import zipfile
 import shutil
 
-from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
+from django.conf import settings
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.core.cache import cache
@@ -20,15 +18,6 @@ from judge.logging import log_exception
 from judge.utils.deferred_email import deferred_send_mail
 
 debug_log = logging.getLogger("judge.debug")
-
-
-def get_testcase_preview_max_bytes():
-    preview = getattr(settings, "TESTCASE_PREVIEW_MAX_BYTES", 512)
-    visible = getattr(settings, "TESTCASE_VISIBLE_LENGTH", preview)
-    default_preview = getattr(settings, "DEFAULT_TESTCASE_PREVIEW_MAX_BYTES", 512)
-    if preview == default_preview and visible != preview:
-        return visible
-    return preview
 
 
 if os.altsep:
@@ -434,92 +423,6 @@ class ProblemDataCompiler(object):
     def generate(cls, *args, **kwargs):
         self = cls(*args, **kwargs)
         self.compile()
-
-
-def get_visible_content(data, max_bytes=None):
-    data = data or b""
-    data = data.replace(b"\r\n", b"\r").replace(b"\r", b"\n")
-    max_bytes = get_testcase_preview_max_bytes() if max_bytes is None else max_bytes
-    truncated = len(data) > max_bytes
-
-    try:
-        data = data[:max_bytes].decode("utf-8")
-    except UnicodeDecodeError as e:
-        data = data[: e.start].decode("utf-8")
-
-    if truncated:
-        data += "." * 3
-    return data
-
-
-def get_file_cachekey(file):
-    return hashlib.sha1(file.encode()).hexdigest()
-
-
-def get_problem_case(problem, files):
-    result, _ = get_problem_case_with_missing_files(problem, files)
-    return result
-
-
-def get_problem_case_with_missing_files(problem, files):
-    result = {}
-    unique_files = list(dict.fromkeys(files))
-    if not unique_files:
-        return result, []
-
-    file_to_key = {
-        file: "problem_archive:%s:%s" % (problem.code, get_file_cachekey(file))
-        for file in unique_files
-    }
-    cached = cache.get_many(list(file_to_key.values()))
-
-    uncached_files = []
-    for file, key in file_to_key.items():
-        if key in cached:
-            result[file] = cached[key]
-        else:
-            uncached_files.append(file)
-
-    if not uncached_files:
-        return result, []
-
-    archive_path = os.path.join(
-        settings.DMOJ_PROBLEM_DATA_ROOT, str(problem.data_files.zipfile)
-    )
-    if not os.path.exists(archive_path):
-        log_exception('archive file "%s" does not exist' % archive_path)
-        return result, uncached_files
-    try:
-        archive = zipfile.ZipFile(archive_path, "r")
-    except zipfile.BadZipfile:
-        log_exception('bad archive: "%s"' % archive_path)
-        return result, uncached_files
-
-    archive_files = set(archive.namelist())
-    missing_files = [file for file in uncached_files if file not in archive_files]
-    if missing_files:
-        debug_log.warning(
-            'archive "%s" is missing %d requested preview file(s): %s',
-            archive_path,
-            len(missing_files),
-            ", ".join(missing_files[:10]),
-        )
-
-    to_set = {}
-    for file in uncached_files:
-        if file not in archive_files:
-            continue
-        preview_max_bytes = get_testcase_preview_max_bytes()
-        with archive.open(file) as f:
-            s = f.read(preview_max_bytes + 1)
-            qs = get_visible_content(s, preview_max_bytes)
-        to_set[file_to_key[file]] = qs
-        result[file] = qs
-
-    if to_set:
-        cache.set_many(to_set, 86400)
-
-    return result, missing_files
 
 
 def _get_latest_cpp_key():

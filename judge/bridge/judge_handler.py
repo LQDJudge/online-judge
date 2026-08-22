@@ -8,8 +8,8 @@ from operator import itemgetter
 
 from django import db
 from django.conf import settings
-from django.core.cache import cache
 from django.db import OperationalError
+from django.db import transaction
 from django.db.models import F
 from django.urls import reverse
 from django.utils import timezone
@@ -39,13 +39,9 @@ from judge.bridge.utils import VanishedSubmission
 from judge.caching import cache_wrapper
 from judge.logging import log_exception
 from judge.tasks.submission import update_problem_stats, update_user_points
-from judge.utils.problem_data import (
-    get_testcase_preview_max_bytes,
-    notify_problem_authors,
-)
+from judge.utils.problem_data import notify_problem_authors
 from judge.utils.submission_results import (
     delete_submission_result,
-    merge_submission_result,
     save_submission_result,
 )
 
@@ -228,6 +224,7 @@ class JudgeHandler(ZlibPacketHandler):
 
         self._submission_cache_id = None
         self._submission_cache = {}
+        self._submission_result_cases = {}
 
     def on_connect(self):
         self.timeout = 15
@@ -715,6 +712,7 @@ class JudgeHandler(ZlibPacketHandler):
                 submission_id=packet["submission-id"]
             ).delete()
             delete_submission_result(packet["submission-id"])
+            self._submission_result_cases[packet["submission-id"]] = {}
             event.post(
                 "sub_%s" % Submission.get_id_secret(packet["submission-id"]),
                 {"type": "grading-begin"},
@@ -723,6 +721,7 @@ class JudgeHandler(ZlibPacketHandler):
             json_log.info(self._make_json_log(packet, action="grading-begin"))
         else:
             logger.warning("Unknown submission: %s", packet["submission-id"])
+            self._submission_result_cases.pop(packet["submission-id"], None)
             json_log.error(
                 self._make_json_log(
                     packet, action="grading-begin", info="unknown submission"
@@ -738,6 +737,7 @@ class JudgeHandler(ZlibPacketHandler):
             submission = Submission.objects.get(id=packet["submission-id"])
         except Submission.DoesNotExist:
             logger.warning("Unknown submission: %s", packet["submission-id"])
+            self._submission_result_cases.pop(packet["submission-id"], None)
             json_log.error(
                 self._make_json_log(
                     packet, action="grading-end", info="unknown submission"
@@ -749,6 +749,7 @@ class JudgeHandler(ZlibPacketHandler):
             logger.info(
                 "Ignoring grading end for aborted submission: %s", submission.id
             )
+            self._submission_result_cases.pop(submission.id, None)
             json_log.info(
                 self._make_json_log(
                     packet,
@@ -765,10 +766,12 @@ class JudgeHandler(ZlibPacketHandler):
         points = 0.0
         total = 0
         status = 0
+        test_case_count = 0
         status_codes = ["SC", "AC", "WA", "MLE", "TLE", "IR", "RTE", "OLE"]
         batches = {}  # batch number: [list of (case.points, case.total)]
 
         for case in SubmissionTestCase.objects.filter(submission=submission):
+            test_case_count += 1
             time = max(time, case.time)
             if not case.batch:
                 points += case.points
@@ -813,6 +816,35 @@ class JudgeHandler(ZlibPacketHandler):
         sub_points = round(points / total * problem.points if total > 0 else 0, 3)
         if not problem.partial and sub_points != problem.points:
             sub_points = 0
+
+        result_cases = self._submission_result_cases.get(submission.id)
+        if result_cases is None:
+            if test_case_count:
+                logger.error(
+                    "Missing buffered result JSON cases for submission %s with %d "
+                    "test case row(s); saving empty result JSON",
+                    submission.id,
+                    test_case_count,
+                )
+            result_cases = {}
+        elif len(result_cases) != test_case_count:
+            logger.error(
+                "Buffered result JSON case count mismatch for submission %s: "
+                "%d buffered, %d test case row(s); saving available details",
+                submission.id,
+                len(result_cases),
+                test_case_count,
+            )
+
+        try:
+            save_submission_result(submission.id, result_cases.values())
+        except Exception:
+            logger.exception(
+                "Failed to write submission result JSON for %s",
+                submission.id,
+            )
+            raise
+        self._submission_result_cases.pop(submission.id, None)
 
         submission.status = "D"
         submission.time = time
@@ -872,6 +904,7 @@ class JudgeHandler(ZlibPacketHandler):
             "%s: Submission failed to compile: %s", self.name, packet["submission-id"]
         )
         self._free_self(packet)
+        self._submission_result_cases.pop(packet["submission-id"], None)
 
         if Submission.objects.filter(id=packet["submission-id"]).update(
             status="CE", result="CE", error=packet["log"]
@@ -940,6 +973,7 @@ class JudgeHandler(ZlibPacketHandler):
         self._free_self(packet)
 
         id = packet["submission-id"]
+        self._submission_result_cases.pop(id, None)
         self._update_internal_error_submission(id, packet["message"])
 
         self._notify_on_internal_error(id, packet["message"])
@@ -1064,6 +1098,7 @@ class JudgeHandler(ZlibPacketHandler):
     def on_submission_terminated(self, packet):
         logger.info("%s: Submission aborted: %s", self.name, packet["submission-id"])
         self._free_self(packet)
+        self._submission_result_cases.pop(packet["submission-id"], None)
 
         if Submission.objects.filter(id=packet["submission-id"]).update(
             status="AB", result="AB"
@@ -1109,11 +1144,7 @@ class JudgeHandler(ZlibPacketHandler):
             self._make_json_log(packet, action="batch-end", batch=self.batch_id)
         )
 
-    def on_test_case(
-        self,
-        packet,
-        max_feedback=SubmissionTestCase._meta.get_field("feedback").max_length,
-    ):
+    def on_test_case(self, packet):
         logger.info(
             "%s: %d test case(s) completed on: %s",
             self.name,
@@ -1126,9 +1157,7 @@ class JudgeHandler(ZlibPacketHandler):
         max_position = max(map(itemgetter("position"), updates))
         sum_points = sum(map(itemgetter("points"), updates))
 
-        if not Submission.objects.filter(id=id).update(
-            current_testcase=max_position + 1, points=F("points") + sum_points
-        ):
+        if not Submission.objects.filter(id=id).exists():
             logger.warning("Unknown submission: %s", id)
             json_log.error(
                 self._make_json_log(
@@ -1137,11 +1166,8 @@ class JudgeHandler(ZlibPacketHandler):
             )
             return
 
-        replace_result_json = not SubmissionTestCase.objects.filter(
-            submission_id=id
-        ).exists()
         bulk_test_case_updates = []
-        result_detail_cases = []
+        result_detail_updates = {}
         for result in updates:
             test_case = SubmissionTestCase(submission_id=id, case=result["position"])
             status = result["status"]
@@ -1166,21 +1192,21 @@ class JudgeHandler(ZlibPacketHandler):
             test_case.points = result["points"]
             test_case.total = result["total-points"]
             test_case.batch = self.batch_id if self.in_batch else None
-            test_case.feedback = (result.get("feedback") or "")[:max_feedback]
-            test_case.extended_feedback = result.get("extended-feedback") or ""
-            test_case.output = result["output"]
+            feedback = result.get("feedback") or ""
+            extended_feedback = result.get("extended-feedback") or ""
+            output = result.get("output", "")
             bulk_test_case_updates.append(test_case)
             result_detail = {
                 "case": result["position"],
-                "output": result.get("output", ""),
-                "feedback": test_case.feedback,
-                "extended_feedback": test_case.extended_feedback,
+                "output": output,
+                "feedback": feedback,
+                "extended_feedback": extended_feedback,
             }
             if "input" in result:
                 result_detail["input"] = result.get("input", "")
             if "expected-output" in result:
                 result_detail["answer"] = result.get("expected-output", "")
-            result_detail_cases.append(result_detail)
+            result_detail_updates[result_detail["case"]] = result_detail
 
             json_log.info(
                 self._make_json_log(
@@ -1190,13 +1216,30 @@ class JudgeHandler(ZlibPacketHandler):
                     batch=test_case.batch,
                     time=test_case.time,
                     memory=test_case.memory,
-                    feedback=test_case.feedback,
-                    extended_feedback=test_case.extended_feedback,
-                    output=test_case.output,
+                    feedback=feedback,
+                    extended_feedback=extended_feedback,
+                    output=output,
                     points=test_case.points,
                     total=test_case.total,
                     status=test_case.status,
                 )
+            )
+
+        with transaction.atomic():
+            if not Submission.objects.filter(id=id).update(
+                current_testcase=max_position + 1, points=F("points") + sum_points
+            ):
+                logger.warning("Unknown submission: %s", id)
+                self._submission_result_cases.pop(id, None)
+                json_log.error(
+                    self._make_json_log(
+                        packet, action="test-case", info="unknown submission"
+                    )
+                )
+                return
+            SubmissionTestCase.objects.bulk_create(bulk_test_case_updates)
+            self._submission_result_cases.setdefault(id, {}).update(
+                result_detail_updates
             )
 
         do_post = True
@@ -1222,38 +1265,6 @@ class JudgeHandler(ZlibPacketHandler):
                 },
             )
             self._post_update_submission(id, state="test-case")
-
-        try:
-            if replace_result_json:
-                save_submission_result(id, result_detail_cases)
-            else:
-                merge_submission_result(id, result_detail_cases)
-        except Exception:
-            logger.exception("Failed to write submission result JSON for %s", id)
-        else:
-            for test_case in bulk_test_case_updates:
-                test_case.feedback = ""
-                test_case.extended_feedback = ""
-                test_case.output = ""
-
-        SubmissionTestCase.objects.bulk_create(bulk_test_case_updates)
-
-        # Cache input/expected-output previews for generator-based problems
-        visible_len = get_testcase_preview_max_bytes()
-        for result in updates:
-            input_preview = result.get("input", "")
-            answer_preview = result.get("expected-output", "")
-            if input_preview or answer_preview:
-                if len(input_preview) > visible_len:
-                    input_preview = input_preview[:visible_len] + "..."
-                if len(answer_preview) > visible_len:
-                    answer_preview = answer_preview[:visible_len] + "..."
-                cache_key = "submission_testdata:%s:%s" % (id, result["position"])
-                cache.set(
-                    cache_key,
-                    {"input": input_preview, "answer": answer_preview},
-                    86400,
-                )
 
     def on_validate_begin(self, packet):
         _ensure_connection()

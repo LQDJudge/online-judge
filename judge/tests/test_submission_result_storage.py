@@ -1,3 +1,4 @@
+import json
 from io import BytesIO
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -33,6 +34,12 @@ class FakeStorage:
         return BytesIO(self.files[path])
 
 
+def load_payload(storage, submission_id):
+    path = submission_results.submission_result_path(submission_id)
+    with storage.open(path, "rb") as f:
+        return json.loads(f.read().decode("utf-8"))
+
+
 class BucketLikeFakeStorage(FakeStorage):
     bucket = object()
 
@@ -65,10 +72,10 @@ class SubmissionResultStorageTests(SimpleTestCase):
         self.assertTrue(path.endswith("/result.json"))
         self.assertNotIn("12345", path)
 
-    def test_merge_writes_sorted_result_json(self):
+    def test_save_writes_sorted_result_json(self):
         storage = FakeStorage()
         with patch.object(submission_results, "default_storage", storage):
-            submission_results.merge_submission_result(
+            submission_results.save_submission_result(
                 7,
                 [
                     {"case": 2, "output": "two"},
@@ -82,7 +89,7 @@ class SubmissionResultStorageTests(SimpleTestCase):
                 ],
             )
 
-            payload = submission_results.load_submission_result(7)
+            payload = load_payload(storage, 7)
 
         self.assertEqual(payload["version"], 1)
         self.assertEqual([case["case"] for case in payload["cases"]], [1, 2])
@@ -97,11 +104,10 @@ class SubmissionResultStorageTests(SimpleTestCase):
                 path = submission_results.save_submission_result(
                     8, [{"case": 1, "input": "in", "answer": "ans", "output": "out"}]
                 )
-                self.assertTrue(submission_results.submission_result_exists(8))
                 self.assertTrue(
                     submission_results.submission_result_url(8).startswith("/media/")
                 )
-                payload = submission_results.load_submission_result(8)
+                payload = load_payload(storage, 8)
 
                 submission_results.delete_submission_result(8)
 
@@ -116,7 +122,7 @@ class SubmissionResultStorageTests(SimpleTestCase):
             submission_results.save_submission_result(
                 12, [{"case": 1, "input": "in", "answer": "ans"}]
             )
-            payload = submission_results.load_submission_result(12)
+            payload = load_payload(storage, 12)
 
         self.assertEqual(payload["cases"][0]["input"], "in")
 
@@ -128,7 +134,7 @@ class SubmissionResultStorageTests(SimpleTestCase):
             saved_path = submission_results.save_submission_result(
                 13, [{"case": 1, "output": "out"}]
             )
-            payload = submission_results.load_submission_result(13)
+            payload = load_payload(storage, 13)
 
         self.assertEqual(saved_path, path)
         self.assertEqual(storage.exists_calls, 0)
@@ -140,30 +146,58 @@ class SubmissionResultStorageTests(SimpleTestCase):
         storage = FakeStorage()
         with patch.object(submission_results, "default_storage", storage):
             submission_results.save_submission_result(9, [{"case": 1, "output": "x"}])
-            self.assertTrue(submission_results.submission_result_exists(9))
+            self.assertIn(submission_results.submission_result_path(9), storage.files)
 
             submission_results.delete_submission_result(9)
 
-            self.assertFalse(submission_results.submission_result_exists(9))
+            self.assertNotIn(
+                submission_results.submission_result_path(9), storage.files
+            )
 
-    def test_missing_input_and_answer_are_not_available(self):
+    def test_missing_input_and_answer_are_omitted(self):
         storage = FakeStorage()
         with patch.object(submission_results, "default_storage", storage):
             submission_results.save_submission_result(10, [{"case": 1, "output": "x"}])
 
-            payload = submission_results.load_submission_result(10)
+            payload = load_payload(storage, 10)
 
-        self.assertFalse(payload["cases"][0]["input_available"])
-        self.assertFalse(payload["cases"][0]["answer_available"])
+        self.assertNotIn("input", payload["cases"][0])
+        self.assertNotIn("input_available", payload["cases"][0])
+        self.assertNotIn("answer", payload["cases"][0])
+        self.assertNotIn("answer_available", payload["cases"][0])
 
-    def test_merge_does_not_overwrite_corrupt_existing_json(self):
+    def test_feedback_fields_are_capped_for_result_json(self):
         storage = FakeStorage()
-        path = submission_results.submission_result_path(11)
-        storage.files[path] = b"{"
-        with patch.object(submission_results, "default_storage", storage):
-            with self.assertRaises(ValueError):
-                submission_results.merge_submission_result(
-                    11, [{"case": 2, "output": "new"}]
-                )
+        with patch.object(submission_results, "default_storage", storage), patch.object(
+            submission_results, "RESULT_TEXT_PREVIEW_MAX_BYTES", 4
+        ):
+            submission_results.save_submission_result(
+                14,
+                [
+                    {
+                        "case": 1,
+                        "feedback": "abcdef",
+                        "extended_feedback": "ghijkl",
+                        "output": "out",
+                    },
+                ],
+            )
 
-        self.assertEqual(storage.files[path], b"{")
+            payload = load_payload(storage, 14)
+
+        self.assertEqual(payload["cases"][0]["feedback"], "abcd...")
+        self.assertEqual(payload["cases"][0]["extended_feedback"], "ghij...")
+
+    def test_feedback_cap_does_not_split_utf8(self):
+        storage = FakeStorage()
+        with patch.object(submission_results, "default_storage", storage), patch.object(
+            submission_results, "RESULT_TEXT_PREVIEW_MAX_BYTES", 3
+        ):
+            submission_results.save_submission_result(
+                15,
+                [{"case": 1, "extended_feedback": "ééé", "output": "out"}],
+            )
+
+            payload = load_payload(storage, 15)
+
+        self.assertEqual(payload["cases"][0]["extended_feedback"], "é...")

@@ -2,18 +2,17 @@ import copy
 import hashlib
 import hmac
 import json
-import logging
 
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
-from judge.utils.storage_helpers import storage_delete_file, storage_file_exists
-
-logger = logging.getLogger(__name__)
+from judge.utils.storage_helpers import storage_delete_file
 
 RESULT_JSON_VERSION = 1
 RESULT_JSON_PREFIX = "submission-results"
+RESULT_TEXT_PREVIEW_MAX_BYTES = 512
+ELLIPSIS = "..."
 
 
 def _secret():
@@ -34,10 +33,6 @@ def submission_result_path(submission_id):
 
 def submission_result_url(submission_id):
     return default_storage.url(submission_result_path(submission_id))
-
-
-def submission_result_exists(submission_id):
-    return storage_file_exists(default_storage, submission_result_path(submission_id))
 
 
 def delete_submission_result(submission_id):
@@ -64,80 +59,51 @@ def _write_exact(path, content):
         )
 
 
-def load_submission_result(submission_id):
-    path = submission_result_path(submission_id)
+def _preview_text(value):
+    text = value or ""
+    if RESULT_TEXT_PREVIEW_MAX_BYTES <= 0:
+        return ""
+
+    data = text.encode("utf-8")
+    if len(data) <= RESULT_TEXT_PREVIEW_MAX_BYTES:
+        return text
+
     try:
-        return _load_submission_result_path(path)
-    except FileNotFoundError:
-        return _empty_submission_result()
-    except Exception:
-        logger.exception("Failed to load submission result JSON: %s", path)
-        return _empty_submission_result()
-
-
-def _empty_submission_result():
-    return {"version": RESULT_JSON_VERSION, "cases": []}
-
-
-def _load_submission_result_path(path):
-    with default_storage.open(path, "rb") as f:
-        return json.loads(f.read().decode("utf-8"))
-
-
-def _load_submission_result_for_merge(submission_id):
-    path = submission_result_path(submission_id)
-    try:
-        return _load_submission_result_path(path)
-    except FileNotFoundError:
-        return _empty_submission_result()
+        return data[:RESULT_TEXT_PREVIEW_MAX_BYTES].decode("utf-8") + ELLIPSIS
+    except UnicodeDecodeError as e:
+        return data[: e.start].decode("utf-8") + ELLIPSIS
 
 
 def _normalize_case(case):
-    input_value = case.get("input") or ""
-    answer_value = case.get("answer") or ""
-    return {
-        "case": int(case["case"]),
-        "input": input_value,
-        "input_available": bool(case.get("input_available", "input" in case)),
-        "output": case.get("output") or "",
-        "answer": answer_value,
-        "answer_available": bool(case.get("answer_available", "answer" in case)),
-        "feedback": case.get("feedback") or "",
-        "extended_feedback": case.get("extended_feedback") or "",
-    }
-
-
-def _compact_case(case):
-    compact = {
+    result = {
         "case": int(case["case"]),
         "output": case.get("output") or "",
     }
     if case.get("input_available", "input" in case):
-        compact["input"] = case.get("input") or ""
-        compact["input_available"] = True
+        result["input"] = case.get("input") or ""
+        result["input_available"] = True
     if case.get("answer_available", "answer" in case):
-        compact["answer"] = case.get("answer") or ""
-        compact["answer_available"] = True
+        result["answer"] = case.get("answer") or ""
+        result["answer_available"] = True
     if case.get("feedback"):
-        compact["feedback"] = case["feedback"]
+        result["feedback"] = _preview_text(case["feedback"])
     if case.get("extended_feedback"):
-        compact["extended_feedback"] = case["extended_feedback"]
-    return compact
+        result["extended_feedback"] = _preview_text(case["extended_feedback"])
+    return result
 
 
-def submission_result_payload(cases, compact=False):
-    normalize = _compact_case if compact else _normalize_case
+def submission_result_payload(cases):
     return {
         "version": RESULT_JSON_VERSION,
-        "cases": [normalize(case) for case in sorted(cases, key=lambda c: c["case"])],
+        "cases": [
+            _normalize_case(case) for case in sorted(cases, key=lambda c: c["case"])
+        ],
     }
 
 
-def submission_result_content(cases, compact=False):
+def submission_result_content(cases):
     return json.dumps(
-        submission_result_payload(cases, compact=compact),
-        ensure_ascii=False,
-        separators=(",", ":"),
+        submission_result_payload(cases), ensure_ascii=False, separators=(",", ":")
     ).encode("utf-8")
 
 
@@ -146,16 +112,3 @@ def save_submission_result(submission_id, cases):
     content = submission_result_content(cases)
     _write_exact(path, content)
     return path
-
-
-def merge_submission_result(submission_id, cases):
-    current = _load_submission_result_for_merge(submission_id)
-    by_case = {
-        int(case["case"]): case
-        for case in current.get("cases", [])
-        if str(case.get("case", "")).isdigit()
-    }
-    for case in cases:
-        normalized = _normalize_case(case)
-        by_case[normalized["case"]] = normalized
-    return save_submission_result(submission_id, by_case.values())

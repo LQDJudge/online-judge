@@ -178,36 +178,50 @@
   </script>
   {% if not submission.is_graded and last_msg %}
     <script type="text/javascript">$(function () {
-      var blocked = false, request = false;
+      var blocked = false, request = false, requestLoadResultJson = false;
       var list = $('#test-cases');
 
-      function update() {
+      function update(loadResultJson) {
+        loadResultJson = !!loadResultJson;
         if (blocked) {
           request = true;
+          requestLoadResultJson = requestLoadResultJson || loadResultJson;
           return;
         }
         request = false;
+        requestLoadResultJson = false;
         blocked = true;
         $.ajax({
           url: '{{ url('submission_testcases_query') }}',
           data: {id: '{{ submission.id }}'}
         }).done(function (data) {
           data = $(data);
+          var resultJsonUrl = data.filter('[data-submission-result-json-url]').add(
+            data.find('[data-submission-result-json-url]')
+          ).attr('data-submission-result-json-url');
+          if (resultJsonUrl) {
+            submissionResultJsonUrl = resultJsonUrl;
+          }
           list.find(".open").each(function() {
             var id = $(this).attr("id");
             data.find("#" + id).removeClass("closed").addClass("open");
             data.find("#" + id + "-output").show();
           });
           list.empty().html(data);
-          invalidate_submission_result_json();
           setup_icons();
-          list.find('tr.case-row.open').each(function() {
-            load_case_detail($(this));
-          });
+          if (loadResultJson) {
+            invalidate_submission_result_json();
+            list.find('tr.case-row.open').each(function() {
+              load_case_detail($(this));
+            });
+          }
           setTimeout(function () {
             blocked = false;
-            if (request)
-              update();
+            if (request) {
+              var loadPendingResultJson = requestLoadResultJson;
+              requestLoadResultJson = false;
+              update(loadPendingResultJson);
+            }
           }, 500);
         }).fail(function (data) {
           console.log('Failed to update testcases!');
@@ -222,14 +236,25 @@
         ['sub_{{ submission.id_secret }}'], {{ last_msg }}, function (message) {
           switch (message.type) {
             case 'internal-error':
-            case 'grading-end':
             case 'compile-error':
               $('#abort-button').remove();
               $('#grading-label').remove();
+              update(false);
+              break;
+            case 'grading-end':
+              $('#abort-button').remove();
+              $('#grading-label').remove();
+              update(true);
+              break;
             case 'test-case':
-            case 'grading-begin':
             case 'processing':
-              update();
+              update(false);
+              break;
+            case 'grading-begin':
+              submissionResultJsonUrl = '';
+              invalidate_submission_result_json();
+              update(false);
+              break;
           }
         }
       )

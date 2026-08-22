@@ -3,7 +3,6 @@ from operator import attrgetter
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage
 from django.core.exceptions import ObjectDoesNotExist
@@ -56,12 +55,8 @@ from judge.utils.hidden_results import (
     mark_hidden_result_submissions,
 )
 from judge.utils.problems import _get_result_data
-from judge.utils.problem_data import get_problem_case_with_missing_files
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
-from judge.utils.submission_results import (
-    submission_result_exists,
-    submission_result_url,
-)
+from judge.utils.submission_results import submission_result_url
 from judge.utils.views import DiggPaginatorMixin, paginate_query_context
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.views import TitleMixin
@@ -225,74 +220,6 @@ def group_test_cases(submission, hidden_subtasks, include_cases=True):
     return result
 
 
-def get_cases_data(submission):
-    problem_data, _ = get_cases_data_with_missing_files(submission)
-    return problem_data
-
-
-def get_cases_data_with_missing_files(submission):
-    testcases = ProblemTestCase.objects.filter(dataset=submission.problem).order_by(
-        "order"
-    )
-
-    if submission.is_pretested:
-        testcases = testcases.filter(is_pretest=True)
-
-    submitted_cases = {c.case for c in submission.test_cases.all()}
-    if not submitted_cases:
-        return {}, []
-
-    # Only fetch files for type-C cases the submission actually ran.
-    files = []
-    count = 0
-    for case in testcases:
-        if case.type != "C":
-            continue
-        count += 1
-        if count not in submitted_cases:
-            continue
-        if case.input_file:
-            files.append(case.input_file)
-        if case.output_file:
-            files.append(case.output_file)
-    case_data, missing_files = get_problem_case_with_missing_files(
-        submission.problem, files
-    )
-
-    # Build case list and identify which need generator cache fallback
-    problem_data = {}
-    cases_needing_cache = []
-    count = 0
-    for case in testcases:
-        if case.type != "C":
-            continue
-        count += 1
-        if count not in submitted_cases:
-            continue
-        input_data = case_data.get(case.input_file, "") if case.input_file else ""
-        answer_data = case_data.get(case.output_file, "") if case.output_file else ""
-        problem_data[count] = {"input": input_data, "answer": answer_data}
-        if not input_data or not answer_data:
-            cases_needing_cache.append(count)
-
-    # Batch fetch cached preview data for generator-based cases
-    if cases_needing_cache:
-        cache_keys = [
-            "submission_testdata:%s:%s" % (submission.id, c)
-            for c in cases_needing_cache
-        ]
-        cached = cache.get_many(cache_keys)
-        for c in cases_needing_cache:
-            key = "submission_testdata:%s:%s" % (submission.id, c)
-            if key in cached:
-                if not problem_data[c]["input"]:
-                    problem_data[c]["input"] = cached[key].get("input", "")
-                if not problem_data[c]["answer"]:
-                    problem_data[c]["answer"] = cached[key].get("answer", "")
-
-    return problem_data, missing_files
-
-
 class SubmissionStatus(SubmissionDetailBase):
     template_name = "submission/status.html"
     highlight_source = True
@@ -347,8 +274,6 @@ class SubmissionStatus(SubmissionDetailBase):
         context["can_see_testcases"] = False
         context["can_manage_test_data"] = self.can_manage_test_data()
         context["test_data_feedback"] = ""
-        context["testcase_preview_missing_files"] = []
-        context["testcase_preview_missing_file_count"] = 0
         context["result_json_url"] = ""
         if self.highlight_source:
             context["highlighted_source"] = highlight_code(
@@ -359,17 +284,11 @@ class SubmissionStatus(SubmissionDetailBase):
             )
 
         if self.can_see_testcases():
-            cases_data, missing_files = get_cases_data_with_missing_files(submission)
-            context["cases_data"] = cases_data
             context["can_see_testcases"] = True
-            context["testcase_preview_missing_files"] = missing_files[:10]
-            context["testcase_preview_missing_file_count"] = len(missing_files)
             if (
-                not context["is_result_hidden"]
+                submission.status == "D"
+                and not context["is_result_hidden"]
                 and not context["hidden_subtasks"]
-                and (
-                    submission_result_exists(submission.id) or not submission.is_graded
-                )
             ):
                 context["result_json_url"] = submission_result_url(submission.id)
         if context["can_manage_test_data"]:

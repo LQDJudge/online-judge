@@ -1,6 +1,10 @@
 {% set is_pretest = submission.is_pretested %}
 {% set is_full_result_hidden = is_result_hidden is defined and is_result_hidden %}
 
+{% if result_json_url %}
+  <div data-submission-result-json-url="{{ result_json_url }}"></div>
+{% endif %}
+
 {% if submission.status != 'IE' %}
   {% if submission.status == 'QU' %}
     <h4>{{ _('We are waiting for a suitable judge to process your submission...') }}</h4>
@@ -51,20 +55,10 @@
       {% endfor %}
       <br>
 
-      {% if can_manage_test_data and (test_data_feedback or testcase_preview_missing_files) %}
+      {% if can_manage_test_data and test_data_feedback %}
         <div class="alert alert-warning">
           <i class="fa fa-exclamation-triangle"></i>
-          {% if test_data_feedback %}
-            {{ _("This problem's test data has an error: %(error)s") % {'error': test_data_feedback} }}
-          {% else %}
-            {{ _("Some testcase files referenced by this problem are missing from the archive.") }}
-          {% endif %}
-          {% if testcase_preview_missing_files %}
-            {{ _("Missing files: %(files)s") % {'files': testcase_preview_missing_files|join(', ')} }}
-            {% if testcase_preview_missing_file_count > testcase_preview_missing_files|length %}
-              {{ _("Showing first %(shown)s of %(count)s missing files.") % {'shown': testcase_preview_missing_files|length, 'count': testcase_preview_missing_file_count} }}
-            {% endif %}
-          {% endif %}
+          {{ _("This problem's test data has an error: %(error)s") % {'error': test_data_feedback} }}
           <a href="{{ url('problem_data', submission.problem.code) }}">{{ _("Fix test data") }}</a>
         </div>
       {% endif %}
@@ -180,29 +174,7 @@
                         <div class="case-info case-info-json" data-case-number="{{ case.case }}"></div>
                       {% else %}
                         <div class="case-info">
-                          {% set curr_data = cases_data[case.case] %}
-                          {% if curr_data != null %}
-                            <strong>{{ _('Input:') }}</strong>
-                          <pre class="case-output">{{ curr_data['input']|linebreaksbr }}</pre>
-                          {% endif %}
-
-                          <strong>{{ _('Output:') }}</strong>
-                        <pre class="case-output">{{ case.output|linebreaksbr }}</pre>
-
-                          {% if curr_data != null %}
-                            <strong>{{ _('Answer:') }}</strong>
-                          <pre class="case-output">{{ curr_data['answer']|linebreaksbr }}</pre>
-                          {% endif %}
-
-                          {% if case.extended_feedback or case.feedback %}
-                            <strong>{{ _('Judge feedback:') }}</strong>
-                            {% if case.feedback %}
-                            <pre class="case-output">{{ case.feedback|linebreaksbr }}</pre>
-                            {% endif %}
-                            {% if case.extended_feedback %}
-                            <pre class="case-output">{{ case.extended_feedback|linebreaksbr }}</pre>
-                            {% endif %}
-                          {% endif %}
+                          {{ _('Details unavailable.') }}
                         </div>
                       {% endif %}
                     </td>
