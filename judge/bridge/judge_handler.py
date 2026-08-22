@@ -26,6 +26,7 @@ from judge.models import (
     Language,
     LanguageLimit,
     Problem,
+    Profile,
     ProblemTestCase,
     ProblemValidation,
     ProblemValidationResult,
@@ -36,6 +37,7 @@ from judge.models import (
 from judge.bridge.utils import VanishedSubmission
 
 from judge.caching import cache_wrapper
+from judge.logging import log_exception
 from judge.tasks.submission import update_problem_stats, update_user_points
 from judge.utils.problem_data import (
     get_testcase_preview_max_bytes,
@@ -72,6 +74,17 @@ def _problem_owner_ids(problem):
     return owner_ids
 
 
+def _is_worker_no_response_error(error_message):
+    message = (error_message or "").lower()
+    if "worker" not in message:
+        return False
+    has_response_signal = "respond" in message or "response" in message
+    has_timeout_signal = (
+        "300" in message or "timeout" in message or "timed out" in message
+    )
+    return has_response_signal and has_timeout_signal
+
+
 def _notify_problem_owners_in_app(problem, submission, error_type, error_message):
     owner_ids = _problem_owner_ids(problem)
     if not owner_ids:
@@ -98,6 +111,50 @@ def _notify_problem_owners_in_app(problem, submission, error_type, error_message
             "submission_id": submission.id,
             "error_type": error_type,
             "error_summary": _summarize_internal_error(error_message),
+        },
+        deduplicate=True,
+    )
+    return True
+
+
+def _notify_admins_in_app(problem, submission, error_type, error_message):
+    admin_ids = list(
+        Profile.objects.filter(user__is_superuser=True).values_list("id", flat=True)
+    )
+    if not admin_ids:
+        return False
+
+    problem_link = format_html(
+        '<a href="{}">{}</a>',
+        reverse("problem_data", args=[problem.code]),
+        problem.name,
+    )
+    submission_link = format_html(
+        '<a href="{}">#{}</a>',
+        reverse("submission_status", args=[submission.id]),
+        submission.id,
+    )
+    html_link = format_html(
+        _(
+            "Judge worker timeout for {problem}, submission {submission}: "
+            "{summary}. Admin investigation needed."
+        ),
+        problem=problem_link,
+        submission=submission_link,
+        summary=_summarize_internal_error(error_message),
+    )
+    Notification.objects.bulk_create_notifications(
+        user_ids=admin_ids,
+        category=NotificationCategory.PROBLEM,
+        html_link=html_link,
+        author=None,
+        extra_data={
+            "problem_code": problem.code,
+            "problem_name": problem.name,
+            "submission_id": submission.id,
+            "error_type": error_type,
+            "error_summary": _summarize_internal_error(error_message),
+            "admin_only": True,
         },
         deduplicate=True,
     )
@@ -885,8 +942,7 @@ class JudgeHandler(ZlibPacketHandler):
         id = packet["submission-id"]
         self._update_internal_error_submission(id, packet["message"])
 
-        # Notify problem authors about judge internal error
-        self._notify_problem_authors_on_error(id, packet["message"])
+        self._notify_on_internal_error(id, packet["message"])
 
     def _update_internal_error_submission(self, id, message):
         if Submission.objects.filter(id=id).update(
@@ -918,9 +974,9 @@ class JudgeHandler(ZlibPacketHandler):
                 )
             )
 
-    def _notify_problem_authors_on_error(self, submission_id, error_message):
+    def _notify_on_internal_error(self, submission_id, error_message):
         """
-        Notify problem authors when a judge internal error occurs during submission evaluation.
+        Notify the appropriate audience when a judge internal error occurs.
         """
         try:
             submission = Submission.objects.select_related("problem").get(
@@ -935,6 +991,29 @@ class JudgeHandler(ZlibPacketHandler):
             detailed_message += f"Judge: {self.name}\n"
             detailed_message += f"Submission ID: {submission_id}\n"
             detailed_message += f"Error details:\n{error_message}"
+
+            if _is_worker_no_response_error(error_message):
+                try:
+                    _notify_admins_in_app(
+                        problem=problem,
+                        submission=submission,
+                        error_type="Judge Worker Timeout",
+                        error_message=detailed_message,
+                    )
+                except Exception:
+                    logger.exception(
+                        "Failed to create admin notification for submission %s worker timeout",
+                        submission_id,
+                    )
+
+                log_exception(
+                    f"Problem {problem.code} Judge Worker Timeout: {detailed_message}"
+                )
+                logger.info(
+                    "Notified admins for submission %s worker timeout",
+                    submission_id,
+                )
+                return
 
             try:
                 in_app_notified = _notify_problem_owners_in_app(
@@ -976,6 +1055,11 @@ class JudgeHandler(ZlibPacketHandler):
                 submission_id,
                 e,
             )
+
+    def _notify_problem_authors_on_error(self, submission_id, error_message):
+        return JudgeHandler._notify_on_internal_error(
+            self, submission_id, error_message
+        )
 
     def on_submission_terminated(self, packet):
         logger.info("%s: Submission aborted: %s", self.name, packet["submission-id"])
