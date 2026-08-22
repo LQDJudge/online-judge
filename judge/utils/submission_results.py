@@ -11,8 +11,6 @@ from judge.utils.storage_helpers import storage_delete_file
 
 RESULT_JSON_VERSION = 1
 RESULT_JSON_PREFIX = "submission-results"
-RESULT_TEXT_PREVIEW_MAX_BYTES = 512
-ELLIPSIS = "..."
 
 
 def _secret():
@@ -59,21 +57,6 @@ def _write_exact(path, content):
         )
 
 
-def _preview_text(value):
-    text = value or ""
-    if RESULT_TEXT_PREVIEW_MAX_BYTES <= 0:
-        return ""
-
-    data = text.encode("utf-8")
-    if len(data) <= RESULT_TEXT_PREVIEW_MAX_BYTES:
-        return text
-
-    try:
-        return data[:RESULT_TEXT_PREVIEW_MAX_BYTES].decode("utf-8") + ELLIPSIS
-    except UnicodeDecodeError as e:
-        return data[: e.start].decode("utf-8") + ELLIPSIS
-
-
 def _normalize_case(case):
     result = {
         "case": int(case["case"]),
@@ -86,9 +69,9 @@ def _normalize_case(case):
         result["answer"] = case.get("answer") or ""
         result["answer_available"] = True
     if case.get("feedback"):
-        result["feedback"] = _preview_text(case["feedback"])
+        result["feedback"] = case["feedback"]
     if case.get("extended_feedback"):
-        result["extended_feedback"] = _preview_text(case["extended_feedback"])
+        result["extended_feedback"] = case["extended_feedback"]
     return result
 
 

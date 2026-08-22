@@ -166,11 +166,9 @@ class SubmissionResultStorageTests(SimpleTestCase):
         self.assertNotIn("answer", payload["cases"][0])
         self.assertNotIn("answer_available", payload["cases"][0])
 
-    def test_feedback_fields_are_capped_for_result_json(self):
+    def test_feedback_fields_are_stored_as_received(self):
         storage = FakeStorage()
-        with patch.object(submission_results, "default_storage", storage), patch.object(
-            submission_results, "RESULT_TEXT_PREVIEW_MAX_BYTES", 4
-        ):
+        with patch.object(submission_results, "default_storage", storage):
             submission_results.save_submission_result(
                 14,
                 [
@@ -185,19 +183,5 @@ class SubmissionResultStorageTests(SimpleTestCase):
 
             payload = load_payload(storage, 14)
 
-        self.assertEqual(payload["cases"][0]["feedback"], "abcd...")
-        self.assertEqual(payload["cases"][0]["extended_feedback"], "ghij...")
-
-    def test_feedback_cap_does_not_split_utf8(self):
-        storage = FakeStorage()
-        with patch.object(submission_results, "default_storage", storage), patch.object(
-            submission_results, "RESULT_TEXT_PREVIEW_MAX_BYTES", 3
-        ):
-            submission_results.save_submission_result(
-                15,
-                [{"case": 1, "extended_feedback": "ééé", "output": "out"}],
-            )
-
-            payload = load_payload(storage, 15)
-
-        self.assertEqual(payload["cases"][0]["extended_feedback"], "é...")
+        self.assertEqual(payload["cases"][0]["feedback"], "abcdef")
+        self.assertEqual(payload["cases"][0]["extended_feedback"], "ghijkl")
