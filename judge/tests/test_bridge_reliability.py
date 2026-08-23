@@ -1,6 +1,8 @@
 import errno
 import json
 import zlib
+from contextlib import nullcontext
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
@@ -11,6 +13,7 @@ from judge.bridge.base_handler import Disconnect, ZlibPacketHandler
 from judge.bridge.django_handler import DjangoHandler
 from judge.bridge.judge_handler import JudgeHandler
 from judge.bridge.judge_list import JudgeList
+from judge.tasks.submission import save_submission_result_details
 
 
 class FakeSocket:
@@ -432,6 +435,7 @@ class FakeSubmissionForGradingEnd:
     id_secret = "secret"
     contest_object_id = None
     contest_object = None
+    judged_date = datetime(2026, 8, 23, 12, 0, tzinfo=timezone.utc)
 
     def __init__(self, calls):
         self.calls = calls
@@ -517,6 +521,9 @@ class JudgeHandlerGradingEndTests(TestCase):
             calls.index(("save", "D", "AC")),
             [call[0] for call in calls].index("queue-result-json"),
         )
+        queue_call = next(call for call in calls if call[0] == "queue-result-json")
+        self.assertEqual(queue_call[1][0], submission.id)
+        self.assertEqual(queue_call[1][1], submission.judged_date.isoformat())
         self.assertEqual(calls[-1], ("free",))
 
     def test_grading_end_still_frees_judge_when_result_json_enqueue_fails(self):
@@ -617,6 +624,81 @@ class JudgeHandlerGradingEndTests(TestCase):
 
         self.assertIn(("save", "D", "SC"), calls)
         self.assertEqual(calls[-1], ("free",))
+
+
+class SubmissionResultDetailsTaskTests(TestCase):
+    judged_date = datetime(2026, 8, 23, 12, 0, tzinfo=timezone.utc)
+
+    def test_current_judging_generation_writes_result(self):
+        submission = SimpleNamespace(status="D", judged_date=self.judged_date)
+        cases = [{"case": 1, "output": "out"}]
+
+        with patch(
+            "judge.tasks.submission.Submission.objects.select_for_update"
+        ) as select_for_update, patch(
+            "judge.tasks.submission.save_submission_result", return_value="result.json"
+        ) as save_result, patch(
+            "judge.tasks.submission.transaction.atomic", return_value=nullcontext()
+        ):
+            select_for_update.return_value.only.return_value.get.return_value = (
+                submission
+            )
+
+            result = save_submission_result_details.run(
+                123, self.judged_date.isoformat(), cases
+            )
+
+        self.assertEqual(result, "result.json")
+        save_result.assert_called_once_with(123, cases)
+
+    def test_stale_judging_generation_does_not_write_result(self):
+        submission = SimpleNamespace(
+            status="D",
+            judged_date=datetime(2026, 8, 23, 12, 1, tzinfo=timezone.utc),
+        )
+
+        with patch(
+            "judge.tasks.submission.Submission.objects.select_for_update"
+        ) as select_for_update, patch(
+            "judge.tasks.submission.save_submission_result"
+        ) as save_result, patch(
+            "judge.tasks.submission.transaction.atomic", return_value=nullcontext()
+        ):
+            select_for_update.return_value.only.return_value.get.return_value = (
+                submission
+            )
+
+            result = save_submission_result_details.run(
+                123,
+                self.judged_date.isoformat(),
+                [{"case": 1, "output": "old"}],
+            )
+
+        self.assertIsNone(result)
+        save_result.assert_not_called()
+
+    def test_queued_rejudge_does_not_write_previous_result(self):
+        submission = SimpleNamespace(status="QU", judged_date=self.judged_date)
+
+        with patch(
+            "judge.tasks.submission.Submission.objects.select_for_update"
+        ) as select_for_update, patch(
+            "judge.tasks.submission.save_submission_result"
+        ) as save_result, patch(
+            "judge.tasks.submission.transaction.atomic", return_value=nullcontext()
+        ):
+            select_for_update.return_value.only.return_value.get.return_value = (
+                submission
+            )
+
+            result = save_submission_result_details.run(
+                123,
+                self.judged_date.isoformat(),
+                [{"case": 1, "output": "old"}],
+            )
+
+        self.assertIsNone(result)
+        save_result.assert_not_called()
 
 
 class PacketEncodingTests(TestCase):

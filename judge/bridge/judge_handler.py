@@ -44,7 +44,6 @@ from judge.tasks.submission import (
     update_user_points,
 )
 from judge.utils.problem_data import notify_problem_authors
-from judge.utils.submission_results import delete_submission_result
 
 logger = logging.getLogger("judge.bridge")
 json_log = logging.getLogger("judge.json.bridge")
@@ -712,7 +711,6 @@ class JudgeHandler(ZlibPacketHandler):
             SubmissionTestCase.objects.filter(
                 submission_id=packet["submission-id"]
             ).delete()
-            delete_submission_result(packet["submission-id"])
             self._submission_result_cases[packet["submission-id"]] = {}
             event.post(
                 "sub_%s" % Submission.get_id_secret(packet["submission-id"]),
@@ -865,7 +863,11 @@ class JudgeHandler(ZlibPacketHandler):
             )
 
             try:
-                save_submission_result_details.delay(submission.id, result_cases)
+                save_submission_result_details.delay(
+                    submission.id,
+                    submission.judged_date.isoformat(),
+                    result_cases,
+                )
             except Exception:
                 logger.exception(
                     "Failed to queue submission result JSON write for %s",
