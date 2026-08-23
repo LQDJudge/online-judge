@@ -37,7 +37,13 @@ def update_problem_stats(problem_id):
     problem.update_stats()
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+    soft_time_limit=30,
+    time_limit=45,
+)
 def save_submission_result_details(self, submission_id, judged_date, cases):
     try:
         try:

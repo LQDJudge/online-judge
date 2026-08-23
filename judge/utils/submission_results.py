@@ -7,6 +7,8 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
+from celery import shared_task
+
 from judge.utils.storage_helpers import storage_delete_file
 
 RESULT_JSON_VERSION = 1
@@ -35,6 +37,11 @@ def submission_result_url(submission_id):
 
 def delete_submission_result(submission_id):
     storage_delete_file(default_storage, submission_result_path(submission_id))
+
+
+@shared_task(soft_time_limit=30, time_limit=45)
+def delete_submission_result_async(submission_id):
+    delete_submission_result(submission_id)
 
 
 def _write_exact(path, content):

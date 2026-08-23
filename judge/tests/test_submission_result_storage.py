@@ -154,6 +154,22 @@ class SubmissionResultStorageTests(SimpleTestCase):
                 submission_results.submission_result_path(9), storage.files
             )
 
+    def test_delete_submission_result_task_has_short_storage_time_limits(self):
+        task = submission_results.delete_submission_result_async
+        self.assertEqual(task.soft_time_limit, 30)
+        self.assertEqual(task.time_limit, 45)
+
+    def test_delete_submission_result_task_removes_object(self):
+        storage = FakeStorage()
+        with patch.object(submission_results, "default_storage", storage):
+            submission_results.save_submission_result(11, [{"case": 1, "output": "x"}])
+
+            submission_results.delete_submission_result_async.run(11)
+
+            self.assertNotIn(
+                submission_results.submission_result_path(11), storage.files
+            )
+
     def test_missing_input_and_answer_are_omitted(self):
         storage = FakeStorage()
         with patch.object(submission_results, "default_storage", storage):

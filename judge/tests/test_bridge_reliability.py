@@ -628,6 +628,10 @@ class JudgeHandlerGradingEndTests(TestCase):
 class SubmissionResultDetailsTaskTests(TestCase):
     judged_date = datetime(2026, 8, 23, 12, 0, tzinfo=timezone.utc)
 
+    def test_task_has_short_storage_time_limits(self):
+        self.assertEqual(save_submission_result_details.soft_time_limit, 30)
+        self.assertEqual(save_submission_result_details.time_limit, 45)
+
     def test_current_judging_generation_writes_result(self):
         submission = SimpleNamespace(status="D", judged_date=self.judged_date)
         cases = [{"case": 1, "output": "out"}]

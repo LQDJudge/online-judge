@@ -104,7 +104,9 @@ class JudgeSubmissionPriorityTest(TestCase):
                 "submission-id": packet["submission-id"],
             }
 
-        with patch.object(judgeapi, "judge_request", side_effect=fake_request):
+        with patch.object(
+            judgeapi, "judge_request", side_effect=fake_request
+        ), patch.object(judgeapi.delete_submission_result_async, "delay"):
             judgeapi.judge_submission(submission, **kwargs)
         return captured["priority"]
 
@@ -148,3 +150,18 @@ class JudgeSubmissionPriorityTest(TestCase):
         self.assertEqual(
             self._priority_for(sub, batch_rejudge=True), self.BATCH_REJUDGE
         )
+
+    def test_judge_submission_queues_result_json_delete(self):
+        sub = self._make_submission()
+
+        with patch.object(judgeapi, "judge_request") as judge_request, patch.object(
+            judgeapi.delete_submission_result_async, "delay"
+        ) as delete_result:
+            judge_request.return_value = {
+                "name": "submission-received",
+                "submission-id": sub.id,
+            }
+
+            judgeapi.judge_submission(sub)
+
+        delete_result.assert_called_once_with(sub.id)
