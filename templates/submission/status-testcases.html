@@ -5,6 +5,10 @@
   <div data-submission-result-json-url="{{ result_json_url }}"></div>
 {% endif %}
 
+{% if show_generator_timeout_guide %}
+  {% include "submission/generator-timeout-guide.html" %}
+{% endif %}
+
 {% if submission.status != 'IE' %}
   {% if submission.status == 'QU' %}
     <h4>{{ _('We are waiting for a suitable judge to process your submission...') }}</h4>

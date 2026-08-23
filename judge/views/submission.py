@@ -69,6 +69,10 @@ def get_submission_result_colors():
     return settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS
 
 
+def is_generator_timeout_error(error):
+    return bool(error and "generator timed out" in error.casefold())
+
+
 def submission_related(queryset):
     return queryset.select_related(
         "user", "problem", "language", "contest_object"
@@ -274,6 +278,11 @@ class SubmissionStatus(SubmissionDetailBase):
         context["can_see_testcases"] = False
         context["can_manage_test_data"] = self.can_manage_test_data()
         context["test_data_feedback"] = ""
+        context["show_generator_timeout_guide"] = (
+            context["can_manage_test_data"]
+            and submission.status == "IE"
+            and is_generator_timeout_error(submission.error)
+        )
         context["result_json_url"] = ""
         if self.highlight_source:
             context["highlighted_source"] = highlight_code(
