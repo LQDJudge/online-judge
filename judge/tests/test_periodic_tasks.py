@@ -15,8 +15,8 @@ from judge.tasks.post_moderation import moderate_pending_posts
 
 class CeleryTimeoutSettingsTest(SimpleTestCase):
     def test_default_task_time_limits_are_configured(self):
-        self.assertEqual(settings.CELERY_TASK_SOFT_TIME_LIMIT, 25 * 60)
-        self.assertEqual(settings.CELERY_TASK_TIME_LIMIT, 30 * 60)
+        self.assertEqual(settings.CELERY_TASK_SOFT_TIME_LIMIT, 10 * 60)
+        self.assertEqual(settings.CELERY_TASK_TIME_LIMIT, 15 * 60)
 
 
 class PeriodicCommandLockTest(SimpleTestCase):
