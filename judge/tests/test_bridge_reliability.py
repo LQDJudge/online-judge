@@ -1,7 +1,6 @@
 import errno
 import json
 import zlib
-from contextlib import nullcontext
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest import TestCase
@@ -633,16 +632,10 @@ class SubmissionResultDetailsTaskTests(TestCase):
         submission = SimpleNamespace(status="D", judged_date=self.judged_date)
         cases = [{"case": 1, "output": "out"}]
 
-        with patch(
-            "judge.tasks.submission.Submission.objects.select_for_update"
-        ) as select_for_update, patch(
+        with patch("judge.tasks.submission.Submission.objects.only") as only, patch(
             "judge.tasks.submission.save_submission_result", return_value="result.json"
-        ) as save_result, patch(
-            "judge.tasks.submission.transaction.atomic", return_value=nullcontext()
-        ):
-            select_for_update.return_value.only.return_value.get.return_value = (
-                submission
-            )
+        ) as save_result:
+            only.return_value.get.return_value = submission
 
             result = save_submission_result_details.run(
                 123, self.judged_date.isoformat(), cases
@@ -657,16 +650,10 @@ class SubmissionResultDetailsTaskTests(TestCase):
             judged_date=datetime(2026, 8, 23, 12, 1, tzinfo=timezone.utc),
         )
 
-        with patch(
-            "judge.tasks.submission.Submission.objects.select_for_update"
-        ) as select_for_update, patch(
+        with patch("judge.tasks.submission.Submission.objects.only") as only, patch(
             "judge.tasks.submission.save_submission_result"
-        ) as save_result, patch(
-            "judge.tasks.submission.transaction.atomic", return_value=nullcontext()
-        ):
-            select_for_update.return_value.only.return_value.get.return_value = (
-                submission
-            )
+        ) as save_result:
+            only.return_value.get.return_value = submission
 
             result = save_submission_result_details.run(
                 123,
@@ -680,16 +667,10 @@ class SubmissionResultDetailsTaskTests(TestCase):
     def test_queued_rejudge_does_not_write_previous_result(self):
         submission = SimpleNamespace(status="QU", judged_date=self.judged_date)
 
-        with patch(
-            "judge.tasks.submission.Submission.objects.select_for_update"
-        ) as select_for_update, patch(
+        with patch("judge.tasks.submission.Submission.objects.only") as only, patch(
             "judge.tasks.submission.save_submission_result"
-        ) as save_result, patch(
-            "judge.tasks.submission.transaction.atomic", return_value=nullcontext()
-        ):
-            select_for_update.return_value.only.return_value.get.return_value = (
-                submission
-            )
+        ) as save_result:
+            only.return_value.get.return_value = submission
 
             result = save_submission_result_details.run(
                 123,

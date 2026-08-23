@@ -2,7 +2,6 @@ import logging
 
 from celery import shared_task
 from django.core.cache import cache
-from django.db import transaction
 from django.utils.translation import gettext as _
 
 from judge.models import Problem, Profile, Submission
@@ -41,28 +40,25 @@ def update_problem_stats(problem_id):
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def save_submission_result_details(self, submission_id, judged_date, cases):
     try:
-        with transaction.atomic():
-            try:
-                submission = (
-                    Submission.objects.select_for_update()
-                    .only("status", "judged_date")
-                    .get(id=submission_id)
-                )
-            except Submission.DoesNotExist:
-                return None
+        try:
+            submission = Submission.objects.only("status", "judged_date").get(
+                id=submission_id
+            )
+        except Submission.DoesNotExist:
+            return None
 
-            if (
-                submission.status != "D"
-                or submission.judged_date is None
-                or submission.judged_date.isoformat() != judged_date
-            ):
-                logger.info(
-                    "Skipping stale submission result JSON write for %s",
-                    submission_id,
-                )
-                return None
+        if (
+            submission.status != "D"
+            or submission.judged_date is None
+            or submission.judged_date.isoformat() != judged_date
+        ):
+            logger.info(
+                "Skipping stale submission result JSON write for %s",
+                submission_id,
+            )
+            return None
 
-            return save_submission_result(submission_id, cases)
+        return save_submission_result(submission_id, cases)
     except Exception as exc:
         logger.exception(
             "Failed to write submission result JSON for %s",
