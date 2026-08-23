@@ -1,6 +1,7 @@
 import errno
 import json
 import zlib
+from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -414,6 +415,208 @@ class JudgeHandlerDatabaseRetryTests(TestCase):
         with patch("judge.bridge.judge_handler._ensure_connection"):
             with self.assertRaises(OperationalError):
                 handler._handle_packet({"name": "grading-end"}, packet_handler)
+
+
+class EmptyProblemTestCaseQuery:
+    def order_by(self, *args):
+        return self
+
+    def values_list(self, *args, **kwargs):
+        return []
+
+
+class FakeSubmissionForGradingEnd:
+    id = 123
+    status = "G"
+    user_id = 456
+    id_secret = "secret"
+    contest_object_id = None
+    contest_object = None
+
+    def __init__(self, calls):
+        self.calls = calls
+        self.problem = SimpleNamespace(
+            code="aplusb",
+            id=789,
+            partial=True,
+            points=100,
+        )
+
+    def save(self):
+        self.calls.append(("save", self.status, self.result))
+
+    def update_contest(self):
+        self.calls.append(("update-contest",))
+
+
+class JudgeHandlerGradingEndTests(TestCase):
+    def test_grading_end_saves_verdict_queues_result_json_then_frees_judge(self):
+        calls = []
+        submission = FakeSubmissionForGradingEnd(calls)
+        test_case = SimpleNamespace(
+            batch=None,
+            memory=64,
+            points=1,
+            status="AC",
+            time=0.1,
+            total=1,
+        )
+        handler = object.__new__(JudgeHandler)
+        handler.name = "judge"
+        handler.batch_id = None
+        handler._submission_result_cases = {
+            submission.id: {
+                1: {
+                    "case": 1,
+                    "input": "in",
+                    "answer": "ans",
+                    "output": "out",
+                },
+            },
+        }
+        handler._make_json_log = lambda *args, **kwargs: "{}"
+        handler._post_update_submission = lambda *args, **kwargs: calls.append(
+            ("post-update",)
+        )
+        handler._free_self = lambda packet: calls.append(("free",))
+
+        with patch("judge.bridge.judge_handler.Submission") as submission_model, patch(
+            "judge.bridge.judge_handler.SubmissionTestCase"
+        ) as test_case_model, patch(
+            "judge.bridge.judge_handler.ProblemTestCase"
+        ) as problem_test_case_model, patch(
+            "judge.bridge.judge_handler.save_submission_result_details.delay",
+            side_effect=lambda *args: calls.append(("queue-result-json", args)),
+        ), patch(
+            "judge.bridge.judge_handler.update_user_points.delay",
+            side_effect=lambda *args: calls.append(("update-user-points", args)),
+        ), patch(
+            "judge.bridge.judge_handler.update_problem_stats.delay",
+            side_effect=lambda *args: calls.append(("update-problem-stats", args)),
+        ), patch(
+            "judge.bridge.judge_handler.finished_submission",
+            side_effect=lambda *args: calls.append(("finished-submission",)),
+        ), patch(
+            "judge.bridge.judge_handler.event.post",
+            side_effect=lambda *args: calls.append(("event-post", args)),
+        ), patch(
+            "judge.bridge.judge_handler.json_log.info"
+        ):
+            submission_model.objects.get.return_value = submission
+            test_case_model.objects.filter.return_value = [test_case]
+            problem_test_case_model.objects.filter.return_value = (
+                EmptyProblemTestCaseQuery()
+            )
+
+            handler.on_grading_end({"submission-id": submission.id})
+
+        self.assertEqual(submission.status, "D")
+        self.assertNotIn(submission.id, handler._submission_result_cases)
+        self.assertLess(calls.index(("save", "D", "AC")), calls.index(("free",)))
+        self.assertLess(
+            calls.index(("save", "D", "AC")),
+            [call[0] for call in calls].index("queue-result-json"),
+        )
+        self.assertEqual(calls[-1], ("free",))
+
+    def test_grading_end_still_frees_judge_when_result_json_enqueue_fails(self):
+        calls = []
+        submission = FakeSubmissionForGradingEnd(calls)
+        handler = object.__new__(JudgeHandler)
+        handler.name = "judge"
+        handler.batch_id = None
+        handler._submission_result_cases = {submission.id: {}}
+        handler._make_json_log = lambda *args, **kwargs: "{}"
+        handler._post_update_submission = lambda *args, **kwargs: calls.append(
+            ("post-update",)
+        )
+        handler._free_self = lambda packet: calls.append(("free",))
+
+        with patch("judge.bridge.judge_handler.Submission") as submission_model, patch(
+            "judge.bridge.judge_handler.SubmissionTestCase"
+        ) as test_case_model, patch(
+            "judge.bridge.judge_handler.ProblemTestCase"
+        ) as problem_test_case_model, patch(
+            "judge.bridge.judge_handler.save_submission_result_details.delay",
+            side_effect=RuntimeError("broker unavailable"),
+        ), patch(
+            "judge.bridge.judge_handler.update_user_points.delay"
+        ), patch(
+            "judge.bridge.judge_handler.update_problem_stats.delay"
+        ), patch(
+            "judge.bridge.judge_handler.finished_submission"
+        ), patch(
+            "judge.bridge.judge_handler.event.post"
+        ), patch(
+            "judge.bridge.judge_handler.json_log.info"
+        ), patch(
+            "judge.bridge.judge_handler.logger.exception"
+        ):
+            submission_model.objects.get.return_value = submission
+            test_case_model.objects.filter.return_value = []
+            problem_test_case_model.objects.filter.return_value = (
+                EmptyProblemTestCaseQuery()
+            )
+
+            handler.on_grading_end({"submission-id": submission.id})
+
+        self.assertIn(("save", "D", "SC"), calls)
+        self.assertEqual(calls[-1], ("free",))
+
+    def test_grading_end_frees_judge_for_aborted_submission(self):
+        calls = []
+        submission = FakeSubmissionForGradingEnd(calls)
+        submission.status = "AB"
+        handler = object.__new__(JudgeHandler)
+        handler.name = "judge"
+        handler.batch_id = None
+        handler._submission_result_cases = {submission.id: {}}
+        handler._make_json_log = lambda *args, **kwargs: "{}"
+        handler._free_self = lambda packet: calls.append(("free",))
+
+        with patch("judge.bridge.judge_handler.Submission") as submission_model, patch(
+            "judge.bridge.judge_handler.json_log.info"
+        ):
+            submission_model.objects.get.return_value = submission
+
+            handler.on_grading_end({"submission-id": submission.id})
+
+        self.assertNotIn(submission.id, handler._submission_result_cases)
+        self.assertEqual(calls, [("free",)])
+
+    def test_grading_end_frees_judge_when_later_side_effect_raises(self):
+        calls = []
+        submission = FakeSubmissionForGradingEnd(calls)
+        handler = object.__new__(JudgeHandler)
+        handler.name = "judge"
+        handler.batch_id = None
+        handler._submission_result_cases = {submission.id: {}}
+        handler._make_json_log = lambda *args, **kwargs: "{}"
+        handler._free_self = lambda packet: calls.append(("free",))
+
+        with patch("judge.bridge.judge_handler.Submission") as submission_model, patch(
+            "judge.bridge.judge_handler.SubmissionTestCase"
+        ) as test_case_model, patch(
+            "judge.bridge.judge_handler.ProblemTestCase"
+        ) as problem_test_case_model, patch(
+            "judge.bridge.judge_handler.save_submission_result_details.delay"
+        ), patch(
+            "judge.bridge.judge_handler.update_user_points.delay",
+            side_effect=RuntimeError("broker unavailable"),
+        ), patch(
+            "judge.bridge.judge_handler.json_log.info"
+        ):
+            submission_model.objects.get.return_value = submission
+            test_case_model.objects.filter.return_value = []
+            problem_test_case_model.objects.filter.return_value = (
+                EmptyProblemTestCaseQuery()
+            )
+
+            with self.assertRaises(RuntimeError):
+                handler.on_grading_end({"submission-id": submission.id})
+
+        self.assertIn(("save", "D", "SC"), calls)
+        self.assertEqual(calls[-1], ("free",))
 
 
 class PacketEncodingTests(TestCase):

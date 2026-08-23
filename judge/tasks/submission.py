@@ -1,14 +1,20 @@
+import logging
+
 from celery import shared_task
 from django.core.cache import cache
 from django.utils.translation import gettext as _
 
 from judge.models import Problem, Profile, Submission
 from judge.utils.celery import Progress
+from judge.utils.submission_results import save_submission_result
+
+logger = logging.getLogger("judge.tasks.submission")
 
 __all__ = (
     "apply_submission_filter",
     "rejudge_problem_filter",
     "rescore_problem",
+    "save_submission_result_details",
     "update_user_points",
     "update_problem_stats",
 )
@@ -29,6 +35,18 @@ def update_problem_stats(problem_id):
     problem = Problem.objects.get(id=problem_id)
     problem._updating_stats_only = True
     problem.update_stats()
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def save_submission_result_details(self, submission_id, cases):
+    try:
+        return save_submission_result(submission_id, cases)
+    except Exception as exc:
+        logger.exception(
+            "Failed to write submission result JSON for %s",
+            submission_id,
+        )
+        raise self.retry(exc=exc)
 
 
 def apply_submission_filter(queryset, id_range, languages, results, contests):

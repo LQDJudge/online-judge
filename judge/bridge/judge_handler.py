@@ -38,12 +38,13 @@ from judge.bridge.utils import VanishedSubmission
 
 from judge.caching import cache_wrapper
 from judge.logging import log_exception
-from judge.tasks.submission import update_problem_stats, update_user_points
-from judge.utils.problem_data import notify_problem_authors
-from judge.utils.submission_results import (
-    delete_submission_result,
-    save_submission_result,
+from judge.tasks.submission import (
+    save_submission_result_details,
+    update_problem_stats,
+    update_user_points,
 )
+from judge.utils.problem_data import notify_problem_authors
+from judge.utils.submission_results import delete_submission_result
 
 logger = logging.getLogger("judge.bridge")
 json_log = logging.getLogger("judge.json.bridge")
@@ -730,174 +731,177 @@ class JudgeHandler(ZlibPacketHandler):
 
     def on_grading_end(self, packet):
         logger.info("%s: Grading has ended on: %s", self.name, packet["submission-id"])
-        self._free_self(packet)
         self.batch_id = None
 
         try:
-            submission = Submission.objects.get(id=packet["submission-id"])
-        except Submission.DoesNotExist:
-            logger.warning("Unknown submission: %s", packet["submission-id"])
-            self._submission_result_cases.pop(packet["submission-id"], None)
-            json_log.error(
-                self._make_json_log(
-                    packet, action="grading-end", info="unknown submission"
+            try:
+                submission = Submission.objects.get(id=packet["submission-id"])
+            except Submission.DoesNotExist:
+                logger.warning("Unknown submission: %s", packet["submission-id"])
+                self._submission_result_cases.pop(packet["submission-id"], None)
+                json_log.error(
+                    self._make_json_log(
+                        packet, action="grading-end", info="unknown submission"
+                    )
                 )
-            )
-            return
+                return
 
-        if submission.status == "AB":
-            logger.info(
-                "Ignoring grading end for aborted submission: %s", submission.id
+            if submission.status == "AB":
+                logger.info(
+                    "Ignoring grading end for aborted submission: %s", submission.id
+                )
+                self._submission_result_cases.pop(submission.id, None)
+                json_log.info(
+                    self._make_json_log(
+                        packet,
+                        action="grading-end",
+                        info="already aborted",
+                        finish=True,
+                        result="AB",
+                    )
+                )
+                return
+
+            time = 0
+            memory = 0
+            points = 0.0
+            total = 0
+            status = 0
+            test_case_count = 0
+            status_codes = ["SC", "AC", "WA", "MLE", "TLE", "IR", "RTE", "OLE"]
+            batches = {}  # batch number: [list of (case.points, case.total)]
+
+            for case in SubmissionTestCase.objects.filter(submission=submission):
+                test_case_count += 1
+                time = max(time, case.time)
+                if not case.batch:
+                    points += case.points
+                    total += case.total
+                else:
+                    batches.setdefault(case.batch, []).append((case.points, case.total))
+                memory = max(memory, case.memory)
+                i = status_codes.index(case.status)
+                if i > status:
+                    status = i
+
+            # Determine which batches use min-scoring.
+            # SubmissionTestCase.batch is a sequential counter (1-indexed) assigned
+            # during judging, matching the Nth type="S" ProblemTestCase row by order.
+            # This mapping is correct for all fresh judgings; it could drift if
+            # ProblemTestCase rows are reordered after old submissions were graded.
+            min_batch_numbers = set(
+                i + 1
+                for i, scoring in enumerate(
+                    ProblemTestCase.objects.filter(dataset=submission.problem, type="S")
+                    .order_by("order")
+                    .values_list("batch_scoring", flat=True)
+                )
+                if scoring == "min"
             )
+
+            for batch_id, case_pairs in batches.items():
+                batch_total = sum(t for _, t in case_pairs)
+                if batch_id in min_batch_numbers and batch_total > 0:
+                    min_fraction = min(p / t if t else 0.0 for p, t in case_pairs)
+                    points += min_fraction * batch_total
+                else:
+                    points += sum(p for p, _ in case_pairs)
+                total += batch_total
+
+            points = points
+            total = total
+            submission.case_points = points
+            submission.case_total = total
+
+            problem = submission.problem
+            sub_points = round(points / total * problem.points if total > 0 else 0, 3)
+            if not problem.partial and sub_points != problem.points:
+                sub_points = 0
+
+            result_cases = self._submission_result_cases.get(submission.id)
+            if result_cases is None:
+                if test_case_count:
+                    logger.error(
+                        "Missing buffered result JSON cases for submission %s with %d "
+                        "test case row(s); saving empty result JSON",
+                        submission.id,
+                        test_case_count,
+                    )
+                result_cases = {}
+            elif len(result_cases) != test_case_count:
+                logger.error(
+                    "Buffered result JSON case count mismatch for submission %s: "
+                    "%d buffered, %d test case row(s); saving available details",
+                    submission.id,
+                    len(result_cases),
+                    test_case_count,
+                )
+
+            result_cases = list(result_cases.values())
             self._submission_result_cases.pop(submission.id, None)
+
+            submission.status = "D"
+            submission.time = time
+            submission.memory = memory
+            submission.points = sub_points
+            submission.result = status_codes[status]
+            submission.save()
+
             json_log.info(
                 self._make_json_log(
                     packet,
                     action="grading-end",
-                    info="already aborted",
+                    time=time,
+                    memory=memory,
+                    points=sub_points,
+                    total=problem.points,
+                    result=submission.result,
+                    case_points=points,
+                    case_total=total,
+                    user=submission.user_id,
+                    problem=problem.code,
                     finish=True,
-                    result="AB",
                 )
             )
-            return
 
-        time = 0
-        memory = 0
-        points = 0.0
-        total = 0
-        status = 0
-        test_case_count = 0
-        status_codes = ["SC", "AC", "WA", "MLE", "TLE", "IR", "RTE", "OLE"]
-        batches = {}  # batch number: [list of (case.points, case.total)]
-
-        for case in SubmissionTestCase.objects.filter(submission=submission):
-            test_case_count += 1
-            time = max(time, case.time)
-            if not case.batch:
-                points += case.points
-                total += case.total
-            else:
-                batches.setdefault(case.batch, []).append((case.points, case.total))
-            memory = max(memory, case.memory)
-            i = status_codes.index(case.status)
-            if i > status:
-                status = i
-
-        # Determine which batches use min-scoring.
-        # SubmissionTestCase.batch is a sequential counter (1-indexed) assigned
-        # during judging, matching the Nth type="S" ProblemTestCase row by order.
-        # This mapping is correct for all fresh judgings; it could drift if
-        # ProblemTestCase rows are reordered after old submissions were graded.
-        min_batch_numbers = set(
-            i + 1
-            for i, scoring in enumerate(
-                ProblemTestCase.objects.filter(dataset=submission.problem, type="S")
-                .order_by("order")
-                .values_list("batch_scoring", flat=True)
-            )
-            if scoring == "min"
-        )
-
-        for batch_id, case_pairs in batches.items():
-            batch_total = sum(t for _, t in case_pairs)
-            if batch_id in min_batch_numbers and batch_total > 0:
-                min_fraction = min(p / t if t else 0.0 for p, t in case_pairs)
-                points += min_fraction * batch_total
-            else:
-                points += sum(p for p, _ in case_pairs)
-            total += batch_total
-
-        points = points
-        total = total
-        submission.case_points = points
-        submission.case_total = total
-
-        problem = submission.problem
-        sub_points = round(points / total * problem.points if total > 0 else 0, 3)
-        if not problem.partial and sub_points != problem.points:
-            sub_points = 0
-
-        result_cases = self._submission_result_cases.get(submission.id)
-        if result_cases is None:
-            if test_case_count:
-                logger.error(
-                    "Missing buffered result JSON cases for submission %s with %d "
-                    "test case row(s); saving empty result JSON",
+            try:
+                save_submission_result_details.delay(submission.id, result_cases)
+            except Exception:
+                logger.exception(
+                    "Failed to queue submission result JSON write for %s",
                     submission.id,
-                    test_case_count,
                 )
-            result_cases = {}
-        elif len(result_cases) != test_case_count:
-            logger.error(
-                "Buffered result JSON case count mismatch for submission %s: "
-                "%d buffered, %d test case row(s); saving available details",
-                submission.id,
-                len(result_cases),
-                test_case_count,
-            )
 
-        try:
-            save_submission_result(submission.id, result_cases.values())
-        except Exception:
-            logger.exception(
-                "Failed to write submission result JSON for %s",
-                submission.id,
-            )
-            raise
-        self._submission_result_cases.pop(submission.id, None)
+            update_user_points.delay(submission.user_id)
+            update_problem_stats.delay(problem.id)
+            submission.update_contest()
 
-        submission.status = "D"
-        submission.time = time
-        submission.memory = memory
-        submission.points = sub_points
-        submission.result = status_codes[status]
-        submission.save()
+            if (
+                submission.contest_object_id
+                and submission.contest_object.scoreboard_visibility
+                == Contest.SCOREBOARD_VISIBLE
+            ):
+                event.post(
+                    "contest_%s" % submission.contest_object.key,
+                    {"type": "ranking-update"},
+                )
 
-        json_log.info(
-            self._make_json_log(
-                packet,
-                action="grading-end",
-                time=time,
-                memory=memory,
-                points=sub_points,
-                total=problem.points,
-                result=submission.result,
-                case_points=points,
-                case_total=total,
-                user=submission.user_id,
-                problem=problem.code,
-                finish=True,
-            )
-        )
+            finished_submission(submission)
 
-        update_user_points.delay(submission.user_id)
-        update_problem_stats.delay(problem.id)
-        submission.update_contest()
-
-        if (
-            submission.contest_object_id
-            and submission.contest_object.scoreboard_visibility
-            == Contest.SCOREBOARD_VISIBLE
-        ):
             event.post(
-                "contest_%s" % submission.contest_object.key,
-                {"type": "ranking-update"},
+                "sub_%s" % submission.id_secret,
+                {
+                    "type": "grading-end",
+                    "time": time,
+                    "memory": memory,
+                    "points": float(points),
+                    "total": float(problem.points),
+                    "result": submission.result,
+                },
             )
-
-        finished_submission(submission)
-
-        event.post(
-            "sub_%s" % submission.id_secret,
-            {
-                "type": "grading-end",
-                "time": time,
-                "memory": memory,
-                "points": float(points),
-                "total": float(problem.points),
-                "result": submission.result,
-            },
-        )
-        self._post_update_submission(submission.id, "grading-end", done=True)
+            self._post_update_submission(submission.id, "grading-end", done=True)
+        finally:
+            self._free_self(packet)
 
     def on_compile_error(self, packet):
         logger.info(
