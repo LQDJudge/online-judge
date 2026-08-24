@@ -4,6 +4,7 @@
 {% set can_mute_message = can_mute_temp_message or can_mute_perm_message %}
 {% set mute_reason_required = not request.user.is_superuser %}
 {% set message_reaction = reactions.get(message.id) if reactions is defined and reactions else None %}
+{% set reply_quote = reply_quotes.get(message.id) if reply_quotes is defined and reply_quotes else None %}
 <li class="message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}" data-time="{{ message.time.timestamp()|int }}">
   <div class="message-avatar">
     <img loading="lazy" src="{{ public_gravatar(message.author_id, request.user, 135) }}" class="profile-pic user-img">
@@ -15,6 +16,20 @@
         {{ relative_time(message.time, abs=_('{time}'), rel=_('{time}'), format=_('g:i a d/m/Y')) }}
       </span>
     </div>
+    {# Reply quote is a sibling ABOVE the bubble row (Messenger-style), not inside
+       the flex row, so it stacks on its own line rather than beside the message. #}
+    {% if reply_quote %}
+      {% if reply_quote.unavailable %}
+        <div class="message-reply-quote message-reply-quote-unavailable">
+          <span class="message-reply-quote-text">{{ _('Original message unavailable') }}</span>
+        </div>
+      {% else %}
+        <div class="message-reply-quote" role="button" tabindex="0" data-reply-target="{{ reply_quote.parent_id }}" title="{{ _('Jump to message') }}">
+          <span class="message-reply-quote-author">{{ reply_quote.author_name }}</span>
+          <span class="message-reply-quote-text">{{ reply_quote.snippet }}</span>
+        </div>
+      {% endif %}
+    {% endif %}
     <div class="message-bubble-wrapper body-block message-block" id="message-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
       <div class="message-text message-bubble {% if request.profile.id != message.author_id %}message-text-other message-bubble-other{% else %}message-text-myself message-bubble-self{% endif %}" id="message-text-{{ message.id }}">
         {{message.body|markdown(lazy_load=False)|reference|str|safe }}
@@ -31,6 +46,12 @@
             {% endfor %}
           </div>
         </div>
+      {% endif %}
+      {% if request.profile and not (is_message_template is defined and is_message_template) %}
+        <button type="button" class="message-reply-toggle" data-id="{{ message.id }}" data-author="{{ message.author_id }}" title="{{ _('Reply') }}">
+          <i class="fas fa-reply" aria-hidden="true"></i>
+          <span class="sr-only">{{ _('Reply') }}</span>
+        </button>
       {% endif %}
       {% if can_delete_message or can_mute_message %}
         <div class="message-actions">

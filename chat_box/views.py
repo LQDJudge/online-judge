@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
 from django.db.models import Count, F
@@ -21,6 +23,7 @@ from reversion import revisions
 from judge import event_poster as event
 from judge.caching import cache_wrapper
 from judge.models.notification import Notification, NotificationCategory
+from judge.models.profile import get_profile_public_identity
 from chat_box.models import (
     ChatModerationLog,
     Ignore,
@@ -163,6 +166,7 @@ class ChatView(ListView):
                 "object_list": self.messages,
                 "has_next": self.has_next(),
                 **reaction_render_context(self.messages, request.profile),
+                **reply_render_context(self.messages, request.user),
             },
         )
 
@@ -187,6 +191,7 @@ class ChatView(ListView):
         )
         context["chat_lobby_channel"] = encrypt_channel("chat_lobby")
         context.update(reaction_render_context(self.messages, self.request.profile))
+        context.update(reply_render_context(self.messages, self.request.user))
         if self.room:
             other_user = self.room.other_user(self.request.profile)
             if other_user:
@@ -473,7 +478,24 @@ def post_message(request):
     if not check_valid_message(request, room):
         return HttpResponseBadRequest()
 
-    new_message = Message(author=request.profile, body=request.POST["body"], room=room)
+    reply_to = None
+    reply_to_raw = request.POST.get("reply_to")
+    if reply_to_raw:
+        try:
+            candidate = Message.objects.filter(hidden=False).get(id=int(reply_to_raw))
+            # Only link a parent from the SAME room (None == lobby). A cross-room
+            # or vanished/hidden parent is dropped silently so the post still lands.
+            if candidate.room_id == (room.id if room else None):
+                reply_to = candidate
+        except (ValueError, Message.DoesNotExist):
+            reply_to = None
+
+    new_message = Message(
+        author=request.profile,
+        body=request.POST["body"],
+        room=room,
+        reply_to=reply_to,
+    )
     new_message.save()
 
     if not room:
@@ -640,6 +662,81 @@ def get_reaction_image_urls():
     return {code: static(path) for code, path in CHAT_REACTION_IMAGES.items()}
 
 
+REPLY_SNIPPET_LIMIT = 60
+# A body that is ONLY a markdown image (optionally surrounded by whitespace).
+_IMAGE_ONLY_RE = re.compile(r"^\s*!\[[^\]]*\]\([^)]*\)\s*$")
+
+
+def build_reply_snippet(body):
+    """Plain-text ~60-char preview of a parent message for the reply quote.
+
+    Text only (never markdown-rendered) so the quote can't inject HTML. An
+    image-only body has no text to show, so it collapses to an "[image]" marker.
+    """
+    body = body or ""
+    if _IMAGE_ONLY_RE.match(body):
+        return "[image]"
+    text = " ".join(body.split())
+    if len(text) > REPLY_SNIPPET_LIMIT:
+        return text[:REPLY_SNIPPET_LIMIT] + "…"
+    return text
+
+
+def get_reply_quotes(messages, viewer=None):
+    """Map child message id -> quote data for its parent (single level, no N+1).
+
+    Only messages that reply appear in the result. All parents are fetched in ONE
+    query; a missing or hidden parent is marked unavailable. Warms the Profile and
+    public-identity caches in bulk so get_public_username() below stays 0-query,
+    while still masking authors who hid their identity ("Disabled user").
+    """
+    parent_ids = {m.reply_to_id for m in messages if m.reply_to_id}
+    if not parent_ids:
+        return {}
+
+    parents = {
+        row["id"]: row
+        for row in Message.objects.filter(id__in=parent_ids).values(
+            "id", "author_id", "body", "hidden", "room_id"
+        )
+    }
+
+    # Bulk-warm both caches (constant number of queries, not per-author) so the
+    # get_public_username() calls in the loop never hit the DB.
+    author_ids = {p["author_id"] for p in parents.values() if not p["hidden"]}
+    if author_ids:
+        Profile.get_cached_instances(*author_ids)
+        get_profile_public_identity.batch([(aid,) for aid in author_ids])
+
+    quotes = {}
+    for message in messages:
+        pid = message.reply_to_id
+        if not pid:
+            continue
+        parent = parents.get(pid)
+        # Re-check same-room at render time: never trust the stored FK to point
+        # at a parent in this message's room (post_message enforces it on write,
+        # but rendering must not leak a cross-room parent if that ever slips).
+        if parent is None or parent["hidden"] or parent["room_id"] != message.room_id:
+            quotes[message.id] = {"unavailable": True}
+        else:
+            quotes[message.id] = {
+                "parent_id": pid,
+                "author_id": parent["author_id"],
+                "author_name": Profile(id=parent["author_id"]).get_public_username(
+                    viewer
+                ),
+                "snippet": build_reply_snippet(parent["body"]),
+                "unavailable": False,
+            }
+    return quotes
+
+
+def reply_render_context(messages, viewer=None):
+    """Context vars for rendering reply quotes for a set of messages."""
+    return {"reply_quotes": get_reply_quotes(messages, viewer)}
+
+
 @login_required
 def reaction_list(request):
     """Render the capped list of users who reacted to a message.
@@ -745,6 +842,7 @@ def chat_message_ajax(request):
         {
             "message": message,
             **reaction_render_context([message], request.profile),
+            **reply_render_context([message], request.user),
         },
     )
 
