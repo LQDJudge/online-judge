@@ -43,6 +43,12 @@ class ProblemErrorNotificationTest(TestCase):
         cls.submitter, _ = Profile.objects.get_or_create(
             user=cls.submitter_user, defaults={"language": cls.language}
         )
+        cls.admin_user = User.objects.create_superuser(
+            "admin", "admin@example.com", "pw"
+        )
+        cls.admin, _ = Profile.objects.get_or_create(
+            user=cls.admin_user, defaults={"language": cls.language}
+        )
 
     def _make_problem(self, code="perr"):
         return Problem.objects.create(
@@ -124,6 +130,47 @@ class ProblemErrorNotificationTest(TestCase):
             )
 
         log_exception.assert_called()
+
+    def test_worker_no_response_error_notifies_admins_only(self):
+        problem = self._make_problem("perrworker")
+        problem.authors.add(self.author)
+        problem.curators.add(self.curator)
+        submission = self._make_submission(problem)
+
+        with patch("judge.bridge.judge_handler.log_exception") as log_exception, patch(
+            "judge.bridge.judge_handler.notify_problem_authors"
+        ) as notify_problem_authors:
+            JudgeHandler._notify_problem_authors_on_error(
+                SimpleNamespace(name="judge2"),
+                submission.id,
+                "Worker failed to respond in 300s while opening tests.zip",
+            )
+
+        notify_problem_authors.assert_not_called()
+        log_exception.assert_called_once()
+        self.assertFalse(
+            Notification.objects.filter(
+                owner=self.author,
+                category=NotificationCategory.PROBLEM,
+            ).exists()
+        )
+        self.assertFalse(
+            Notification.objects.filter(
+                owner=self.curator,
+                category=NotificationCategory.PROBLEM,
+            ).exists()
+        )
+        notification = Notification.objects.get(
+            owner=self.admin,
+            category=NotificationCategory.PROBLEM,
+        )
+        self.assertIn("Judge worker timeout", notification.html_link)
+        self.assertIn(
+            reverse("submission_status", args=[submission.id]),
+            notification.html_link,
+        )
+        self.assertTrue(notification.extra_data["admin_only"])
+        self.assertEqual(notification.extra_data["submission_id"], submission.id)
 
     def test_problem_owner_email_includes_curators(self):
         problem = self._make_problem("perremail")

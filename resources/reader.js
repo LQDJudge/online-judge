@@ -95,9 +95,9 @@
             this.nodes = [];
         }
 
-        async build() {
+        async build(outlineItems) {
             const pdfDocument = this.app.pdfDocument;
-            const outline = await pdfDocument.getOutline();
+            const outline = outlineItems || await pdfDocument.getOutline();
             if (!outline || !outline.length) {
                 this.emptyEl.hidden = false;
                 return;
@@ -137,7 +137,7 @@
 
                     li.appendChild(node);
 
-                    const page = await destToPage(pdfDocument, item.dest);
+                    const page = item.page || await destToPage(pdfDocument, item.dest);
                     const record = { li, page, dest: item.dest, slug, title: item.title };
                     this.nodes.push(record);
 
@@ -207,14 +207,41 @@
         }
     }
 
+    function viewerHashFromLocation() {
+        const params = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+        const viewerParams = new URLSearchParams();
+        viewerParams.set("pagemode", "none");
+
+        if (params.has("page")) {
+            const page = parseInt(params.get("page"), 10);
+            if (page > 0) viewerParams.set("page", page);
+        }
+
+        return "#" + viewerParams.toString();
+    }
+
     document.addEventListener("DOMContentLoaded", async function () {
         const root = document.getElementById("doc-reader");
         if (!root) return;
         const iframe = document.getElementById("doc-reader-frame");
         const viewerUrl = root.dataset.viewerUrl;
         const rawUrl = root.dataset.rawUrl;
+        const outlineUrl = root.dataset.outlineUrl;
 
         let app = null;  // set once the viewer initializes
+
+        async function loadBackendOutline() {
+            if (!outlineUrl) return null;
+            try {
+                const response = await fetch(outlineUrl);
+                if (!response.ok) return null;
+                const data = await response.json();
+                return Array.isArray(data.outline) ? data.outline : null;
+            } catch (e) {
+                return null;
+            }
+        }
+        const backendOutlinePromise = loadBackendOutline();
 
         // --- Bind UI immediately (independent of the PDF.js bridge) ---
         const toggleBtn = document.getElementById("doc-reader-toggle-outline");
@@ -234,7 +261,7 @@
         }
 
         // --- Load the viewer and wire the outline ---
-        iframe.src = viewerUrl + "?file=" + encodeURIComponent(rawUrl) + "#pagemode=none";
+        iframe.src = viewerUrl + "?file=" + encodeURIComponent(rawUrl) + viewerHashFromLocation();
         try {
             app = await waitForViewer(iframe);
         } catch (e) {
@@ -243,11 +270,21 @@
         }
 
         const outline = new ReaderOutline(root, app);
+        let documentHandled = false;
+        const handleDocumentLoaded = async function () {
+            if (documentHandled) return;
+            documentHandled = true;
+            await outline.build(await backendOutlinePromise);
+            applyHash(outline, app);
+            outline.highlightByPage(app.page);
+        };
         app.eventBus.on("documentloaded", async function onDoc() {
             app.eventBus.off("documentloaded", onDoc);
-            await outline.build();
-            applyHash(outline, app);
+            await handleDocumentLoaded();
         });
+        if (app.pdfDocument) {
+            await handleDocumentLoaded();
+        }
         app.eventBus.on("pagechanging", function (e) {
             if (e && e.pageNumber) outline.highlightByPage(e.pageNumber);
         });

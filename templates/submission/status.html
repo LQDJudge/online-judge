@@ -70,6 +70,94 @@
 {% block content_js_media %}
   {% include "event-load.html" %}
   <script type="text/javascript">
+    var submissionResultJsonUrl = "{{ result_json_url|default('')|escapejs }}";
+    var submissionResultJsonCache = null;
+    var submissionResultJsonRequest = null;
+    var submissionResultJsonVersion = 0;
+    var submissionResultJsonLoadingText = "{{ _('Loading...')|escapejs }}";
+    var submissionResultJsonUnavailableText = "{{ _('Details unavailable.')|escapejs }}";
+
+    function invalidate_submission_result_json() {
+      submissionResultJsonCache = null;
+      submissionResultJsonRequest = null;
+      submissionResultJsonVersion += 1;
+    }
+
+    function get_submission_result_json() {
+      if (!submissionResultJsonUrl) {
+        return $.Deferred().reject().promise();
+      }
+      if (submissionResultJsonCache) {
+        return $.Deferred().resolve(submissionResultJsonCache).promise();
+      }
+      if (submissionResultJsonRequest) {
+        return submissionResultJsonRequest;
+      }
+      var separator = submissionResultJsonUrl.indexOf('?') === -1 ? '?' : '&';
+      submissionResultJsonRequest = $.ajax({
+        url: submissionResultJsonUrl + separator + 'v=' + submissionResultJsonVersion,
+        dataType: 'json',
+        cache: false
+      }).done(function(data) {
+        submissionResultJsonCache = data;
+      }).always(function() {
+        submissionResultJsonRequest = null;
+      });
+      return submissionResultJsonRequest;
+    }
+
+    function render_case_detail($container, caseData) {
+      function addBlock(label, value, alwaysShow) {
+        if (!alwaysShow && (value === undefined || value === null || value === '')) {
+          return;
+        }
+        if (label) {
+          $('<strong>').text(label).appendTo($container);
+        }
+        $('<pre>').addClass('case-output').text(value || '').appendTo($container);
+      }
+
+      $container.empty();
+      addBlock("{{ _('Input:')|escapejs }}", caseData.input, caseData.input_available);
+      addBlock("{{ _('Output:')|escapejs }}", caseData.output, true);
+      addBlock("{{ _('Answer:')|escapejs }}", caseData.answer, caseData.answer_available);
+      if (caseData.feedback || caseData.extended_feedback) {
+        $('<strong>').text("{{ _('Judge feedback:')|escapejs }}").appendTo($container);
+        addBlock('', caseData.feedback, false);
+        addBlock('', caseData.extended_feedback, false);
+      }
+    }
+
+    function load_case_detail($row) {
+      if (!submissionResultJsonUrl) {
+        return;
+      }
+      var caseNumber = parseInt($row.data('case-number'), 10);
+      var $container = $('#' + $row.attr('id') + '-output').find('.case-info-json');
+      if (!caseNumber || !$container.length || $container.data('loaded')) {
+        return;
+      }
+      $container.text(submissionResultJsonLoadingText);
+      get_submission_result_json().done(function(data) {
+        var cases = data && data.cases ? data.cases : [];
+        var caseData = null;
+        for (var i = 0; i < cases.length; i++) {
+          if (parseInt(cases[i].case, 10) === caseNumber) {
+            caseData = cases[i];
+            break;
+          }
+        }
+        if (!caseData) {
+          $container.text(submissionResultJsonUnavailableText);
+          return;
+        }
+        render_case_detail($container, caseData);
+        $container.data('loaded', true);
+      }).fail(function() {
+        $container.text(submissionResultJsonUnavailableText);
+      });
+    }
+
     function setup_icons() {
       $(".case-icons i").each(function() {
         $(this).on("click", function() {
@@ -83,25 +171,37 @@
     }
     $(function() {
       setup_icons();
+      $(document).on('click', '#test-cases tr.case-row.toggle', function() {
+        load_case_detail($(this));
+      });
     });
   </script>
   {% if not submission.is_graded and last_msg %}
     <script type="text/javascript">$(function () {
-      var blocked = false, request = false;
+      var blocked = false, request = false, requestLoadResultJson = false;
       var list = $('#test-cases');
 
-      function update() {
+      function update(loadResultJson) {
+        loadResultJson = !!loadResultJson;
         if (blocked) {
           request = true;
+          requestLoadResultJson = requestLoadResultJson || loadResultJson;
           return;
         }
         request = false;
+        requestLoadResultJson = false;
         blocked = true;
         $.ajax({
           url: '{{ url('submission_testcases_query') }}',
           data: {id: '{{ submission.id }}'}
         }).done(function (data) {
           data = $(data);
+          var resultJsonUrl = data.filter('[data-submission-result-json-url]').add(
+            data.find('[data-submission-result-json-url]')
+          ).attr('data-submission-result-json-url');
+          if (resultJsonUrl) {
+            submissionResultJsonUrl = resultJsonUrl;
+          }
           list.find(".open").each(function() {
             var id = $(this).attr("id");
             data.find("#" + id).removeClass("closed").addClass("open");
@@ -109,10 +209,19 @@
           });
           list.empty().html(data);
           setup_icons();
+          if (loadResultJson) {
+            invalidate_submission_result_json();
+            list.find('tr.case-row.open').each(function() {
+              load_case_detail($(this));
+            });
+          }
           setTimeout(function () {
             blocked = false;
-            if (request)
-              update();
+            if (request) {
+              var loadPendingResultJson = requestLoadResultJson;
+              requestLoadResultJson = false;
+              update(loadPendingResultJson);
+            }
           }, 500);
         }).fail(function (data) {
           console.log('Failed to update testcases!');
@@ -127,14 +236,25 @@
         ['sub_{{ submission.id_secret }}'], {{ last_msg }}, function (message) {
           switch (message.type) {
             case 'internal-error':
-            case 'grading-end':
             case 'compile-error':
               $('#abort-button').remove();
               $('#grading-label').remove();
+              update(false);
+              break;
+            case 'grading-end':
+              $('#abort-button').remove();
+              $('#grading-label').remove();
+              update(true);
+              break;
             case 'test-case':
-            case 'grading-begin':
             case 'processing':
-              update();
+              update(false);
+              break;
+            case 'grading-begin':
+              submissionResultJsonUrl = '';
+              invalidate_submission_result_json();
+              update(false);
+              break;
           }
         }
       )

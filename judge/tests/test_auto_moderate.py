@@ -14,7 +14,15 @@ from judge.management.commands.auto_moderate import (
     CHAT_SYSTEM_PROMPT,
     COMMENT_SYSTEM_PROMPT,
 )
-from judge.models import BlogPost, Comment, CommentModerationLog, Language, Profile
+from judge.models import (
+    BlogPost,
+    Comment,
+    CommentModerationLog,
+    Language,
+    Organization,
+    OrganizationModerationLog,
+    Profile,
+)
 from judge.models.comment import get_comment_context_details, mute_comment_author
 
 
@@ -306,6 +314,78 @@ class AutoModerateCommandTest(TestCase):
         self.assertFalse(ChatModerationLog.objects.filter(message=second).exists())
         self.assertIn("Missing moderation results for chat messages", output.getvalue())
         self.assertIn("Errors: 1", output.getvalue())
+
+    @override_settings(POE_API_KEY="test-key", POE_BOT_NAME="Gemini-3-Flash")
+    @patch("judge.management.commands.auto_moderate.LLMService")
+    @patch("judge.management.commands.auto_moderate.get_config")
+    def test_post_moderation_skips_admin_authored_posts(self, get_config, llm_service):
+        class FakeConfig:
+            api_key = "test-key"
+            sleep_time = 0.5
+            timeout = 30
+
+            def get_bot_name_for_moderation(self):
+                return "Qwen3.7-Flash-EL"
+
+        admin_user = User.objects.create_superuser("admin_author", password="pw")
+        normal_user = User.objects.create_user("normal_post_author", password="pw")
+        admin_profile, _ = Profile.objects.get_or_create(
+            user=admin_user, defaults={"language": self.language}
+        )
+        normal_profile, _ = Profile.objects.get_or_create(
+            user=normal_user, defaults={"language": self.language}
+        )
+        org = Organization.objects.create(
+            name="Auto Mod Community",
+            slug="auto-mod-community",
+            short_name="AMC",
+            about="A test community",
+            registrant=normal_profile,
+            is_community=True,
+        )
+        admin_post = BlogPost.objects.create(
+            title="Admin pending post",
+            slug="admin-pending-post",
+            visible=False,
+            publish_on=timezone.now(),
+            content="Admin content should stay pending for manual review.",
+            is_organization_private=True,
+            is_rejected=False,
+        )
+        admin_post.authors.add(admin_profile)
+        admin_post.organizations.add(org)
+        normal_post = BlogPost.objects.create(
+            title="Normal pending post",
+            slug="normal-pending-post",
+            visible=False,
+            publish_on=timezone.now(),
+            content="Normal content can be auto moderated.",
+            is_organization_private=True,
+            is_rejected=False,
+        )
+        normal_post.authors.add(normal_profile)
+        normal_post.organizations.add(org)
+
+        get_config.return_value = FakeConfig()
+        post_service = MagicMock()
+        unused_chat_service = MagicMock()
+        post_service.call_llm.return_value = (
+            '[{"id": %d, "action": "approve"}]' % normal_post.id
+        )
+        llm_service.side_effect = [post_service, unused_chat_service]
+
+        call_command("auto_moderate", "--posts-only", stdout=StringIO())
+
+        prompt = post_service.call_llm.call_args.args[0]
+        self.assertIn("Normal pending post", prompt)
+        self.assertNotIn("Admin pending post", prompt)
+        admin_post.refresh_from_db()
+        normal_post.refresh_from_db()
+        self.assertFalse(admin_post.visible)
+        self.assertTrue(normal_post.visible)
+        self.assertFalse(
+            OrganizationModerationLog.objects.filter(object_id=admin_post.id).exists()
+        )
 
     def test_chat_moderation_search_matches_message_body(self):
         admin = User.objects.create_superuser("chat_mod_admin", password="pw")

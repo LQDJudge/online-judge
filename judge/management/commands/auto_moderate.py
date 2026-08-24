@@ -581,6 +581,7 @@ class Command(BaseCommand):
                 visible=False,
                 is_rejected=False,
             )
+            .exclude(authors__user__is_superuser=True)
             .exclude(id__in=already_reviewed)
             .prefetch_related("authors")[: self.batch_size]
         )

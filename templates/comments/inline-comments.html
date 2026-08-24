@@ -280,11 +280,11 @@
 
   // Define inline comment functions if not already defined
     if (typeof window.comment_upvote === 'undefined') {
-      window.comment_upvote = function(commentId) {
+      window.comment_upvote = function(token, commentId) {
         $.ajax({
           url: '{{ url("comment_upvote") }}',
           type: 'POST',
-          data: { id: commentId },
+          data: { token: token },
           success: function() {
             var $comment = $('#comment-' + commentId);
             var $score = $comment.find('.comment-score').first();
@@ -303,11 +303,11 @@
     }
 
     if (typeof window.comment_downvote === 'undefined') {
-      window.comment_downvote = function(commentId) {
+      window.comment_downvote = function(token, commentId) {
         $.ajax({
           url: '{{ url("comment_downvote") }}',
           type: 'POST',
-          data: { id: commentId },
+          data: { token: token },
           success: function() {
             var $comment = $('#comment-' + commentId);
             var $score = $comment.find('.comment-score').first();

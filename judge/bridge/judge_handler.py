@@ -8,8 +8,8 @@ from operator import itemgetter
 
 from django import db
 from django.conf import settings
-from django.core.cache import cache
 from django.db import OperationalError
+from django.db import transaction
 from django.db.models import F
 from django.urls import reverse
 from django.utils import timezone
@@ -26,6 +26,7 @@ from judge.models import (
     Language,
     LanguageLimit,
     Problem,
+    Profile,
     ProblemTestCase,
     ProblemValidation,
     ProblemValidationResult,
@@ -36,7 +37,12 @@ from judge.models import (
 from judge.bridge.utils import VanishedSubmission
 
 from judge.caching import cache_wrapper
-from judge.tasks.submission import update_problem_stats, update_user_points
+from judge.logging import log_exception
+from judge.tasks.submission import (
+    save_submission_result_details,
+    update_problem_stats,
+    update_user_points,
+)
 from judge.utils.problem_data import notify_problem_authors
 
 logger = logging.getLogger("judge.bridge")
@@ -62,6 +68,17 @@ def _problem_owner_ids(problem):
     owner_ids = set(problem.authors.values_list("id", flat=True))
     owner_ids.update(problem.curators.values_list("id", flat=True))
     return owner_ids
+
+
+def _is_worker_no_response_error(error_message):
+    message = (error_message or "").lower()
+    if "worker" not in message:
+        return False
+    has_response_signal = "respond" in message or "response" in message
+    has_timeout_signal = (
+        "300" in message or "timeout" in message or "timed out" in message
+    )
+    return has_response_signal and has_timeout_signal
 
 
 def _notify_problem_owners_in_app(problem, submission, error_type, error_message):
@@ -90,6 +107,50 @@ def _notify_problem_owners_in_app(problem, submission, error_type, error_message
             "submission_id": submission.id,
             "error_type": error_type,
             "error_summary": _summarize_internal_error(error_message),
+        },
+        deduplicate=True,
+    )
+    return True
+
+
+def _notify_admins_in_app(problem, submission, error_type, error_message):
+    admin_ids = list(
+        Profile.objects.filter(user__is_superuser=True).values_list("id", flat=True)
+    )
+    if not admin_ids:
+        return False
+
+    problem_link = format_html(
+        '<a href="{}">{}</a>',
+        reverse("problem_data", args=[problem.code]),
+        problem.name,
+    )
+    submission_link = format_html(
+        '<a href="{}">#{}</a>',
+        reverse("submission_status", args=[submission.id]),
+        submission.id,
+    )
+    html_link = format_html(
+        _(
+            "Judge worker timeout for {problem}, submission {submission}: "
+            "{summary}. Admin investigation needed."
+        ),
+        problem=problem_link,
+        submission=submission_link,
+        summary=_summarize_internal_error(error_message),
+    )
+    Notification.objects.bulk_create_notifications(
+        user_ids=admin_ids,
+        category=NotificationCategory.PROBLEM,
+        html_link=html_link,
+        author=None,
+        extra_data={
+            "problem_code": problem.code,
+            "problem_name": problem.name,
+            "submission_id": submission.id,
+            "error_type": error_type,
+            "error_summary": _summarize_internal_error(error_message),
+            "admin_only": True,
         },
         deduplicate=True,
     )
@@ -163,6 +224,7 @@ class JudgeHandler(ZlibPacketHandler):
 
         self._submission_cache_id = None
         self._submission_cache = {}
+        self._submission_result_cases = {}
 
     def on_connect(self):
         self.timeout = 15
@@ -649,6 +711,7 @@ class JudgeHandler(ZlibPacketHandler):
             SubmissionTestCase.objects.filter(
                 submission_id=packet["submission-id"]
             ).delete()
+            self._submission_result_cases[packet["submission-id"]] = {}
             event.post(
                 "sub_%s" % Submission.get_id_secret(packet["submission-id"]),
                 {"type": "grading-begin"},
@@ -657,6 +720,7 @@ class JudgeHandler(ZlibPacketHandler):
             json_log.info(self._make_json_log(packet, action="grading-begin"))
         else:
             logger.warning("Unknown submission: %s", packet["submission-id"])
+            self._submission_result_cases.pop(packet["submission-id"], None)
             json_log.error(
                 self._make_json_log(
                     packet, action="grading-begin", info="unknown submission"
@@ -665,147 +729,188 @@ class JudgeHandler(ZlibPacketHandler):
 
     def on_grading_end(self, packet):
         logger.info("%s: Grading has ended on: %s", self.name, packet["submission-id"])
-        self._free_self(packet)
         self.batch_id = None
 
         try:
-            submission = Submission.objects.get(id=packet["submission-id"])
-        except Submission.DoesNotExist:
-            logger.warning("Unknown submission: %s", packet["submission-id"])
-            json_log.error(
-                self._make_json_log(
-                    packet, action="grading-end", info="unknown submission"
+            try:
+                submission = Submission.objects.get(id=packet["submission-id"])
+            except Submission.DoesNotExist:
+                logger.warning("Unknown submission: %s", packet["submission-id"])
+                self._submission_result_cases.pop(packet["submission-id"], None)
+                json_log.error(
+                    self._make_json_log(
+                        packet, action="grading-end", info="unknown submission"
+                    )
                 )
-            )
-            return
+                return
 
-        if submission.status == "AB":
-            logger.info(
-                "Ignoring grading end for aborted submission: %s", submission.id
+            if submission.status == "AB":
+                logger.info(
+                    "Ignoring grading end for aborted submission: %s", submission.id
+                )
+                self._submission_result_cases.pop(submission.id, None)
+                json_log.info(
+                    self._make_json_log(
+                        packet,
+                        action="grading-end",
+                        info="already aborted",
+                        finish=True,
+                        result="AB",
+                    )
+                )
+                return
+
+            time = 0
+            memory = 0
+            points = 0.0
+            total = 0
+            status = 0
+            test_case_count = 0
+            status_codes = ["SC", "AC", "WA", "MLE", "TLE", "IR", "RTE", "OLE"]
+            batches = {}  # batch number: [list of (case.points, case.total)]
+
+            for case in SubmissionTestCase.objects.filter(submission=submission):
+                test_case_count += 1
+                time = max(time, case.time)
+                if not case.batch:
+                    points += case.points
+                    total += case.total
+                else:
+                    batches.setdefault(case.batch, []).append((case.points, case.total))
+                memory = max(memory, case.memory)
+                i = status_codes.index(case.status)
+                if i > status:
+                    status = i
+
+            # Determine which batches use min-scoring.
+            # SubmissionTestCase.batch is a sequential counter (1-indexed) assigned
+            # during judging, matching the Nth type="S" ProblemTestCase row by order.
+            # This mapping is correct for all fresh judgings; it could drift if
+            # ProblemTestCase rows are reordered after old submissions were graded.
+            min_batch_numbers = set(
+                i + 1
+                for i, scoring in enumerate(
+                    ProblemTestCase.objects.filter(dataset=submission.problem, type="S")
+                    .order_by("order")
+                    .values_list("batch_scoring", flat=True)
+                )
+                if scoring == "min"
             )
+
+            for batch_id, case_pairs in batches.items():
+                batch_total = sum(t for _, t in case_pairs)
+                if batch_id in min_batch_numbers and batch_total > 0:
+                    min_fraction = min(p / t if t else 0.0 for p, t in case_pairs)
+                    points += min_fraction * batch_total
+                else:
+                    points += sum(p for p, _ in case_pairs)
+                total += batch_total
+
+            points = points
+            total = total
+            submission.case_points = points
+            submission.case_total = total
+
+            problem = submission.problem
+            sub_points = round(points / total * problem.points if total > 0 else 0, 3)
+            if not problem.partial and sub_points != problem.points:
+                sub_points = 0
+
+            result_cases = self._submission_result_cases.get(submission.id)
+            if result_cases is None:
+                if test_case_count:
+                    logger.error(
+                        "Missing buffered result JSON cases for submission %s with %d "
+                        "test case row(s); saving empty result JSON",
+                        submission.id,
+                        test_case_count,
+                    )
+                result_cases = {}
+            elif len(result_cases) != test_case_count:
+                logger.error(
+                    "Buffered result JSON case count mismatch for submission %s: "
+                    "%d buffered, %d test case row(s); saving available details",
+                    submission.id,
+                    len(result_cases),
+                    test_case_count,
+                )
+
+            result_cases = list(result_cases.values())
+            self._submission_result_cases.pop(submission.id, None)
+
+            submission.status = "D"
+            submission.time = time
+            submission.memory = memory
+            submission.points = sub_points
+            submission.result = status_codes[status]
+            submission.save()
+
             json_log.info(
                 self._make_json_log(
                     packet,
                     action="grading-end",
-                    info="already aborted",
+                    time=time,
+                    memory=memory,
+                    points=sub_points,
+                    total=problem.points,
+                    result=submission.result,
+                    case_points=points,
+                    case_total=total,
+                    user=submission.user_id,
+                    problem=problem.code,
                     finish=True,
-                    result="AB",
                 )
             )
-            return
 
-        time = 0
-        memory = 0
-        points = 0.0
-        total = 0
-        status = 0
-        status_codes = ["SC", "AC", "WA", "MLE", "TLE", "IR", "RTE", "OLE"]
-        batches = {}  # batch number: [list of (case.points, case.total)]
+            try:
+                save_submission_result_details.delay(
+                    submission.id,
+                    submission.judged_date.isoformat(),
+                    result_cases,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to queue submission result JSON write for %s",
+                    submission.id,
+                )
 
-        for case in SubmissionTestCase.objects.filter(submission=submission):
-            time = max(time, case.time)
-            if not case.batch:
-                points += case.points
-                total += case.total
-            else:
-                batches.setdefault(case.batch, []).append((case.points, case.total))
-            memory = max(memory, case.memory)
-            i = status_codes.index(case.status)
-            if i > status:
-                status = i
+            update_user_points.delay(submission.user_id)
+            update_problem_stats.delay(problem.id)
+            submission.update_contest()
 
-        # Determine which batches use min-scoring.
-        # SubmissionTestCase.batch is a sequential counter (1-indexed) assigned
-        # during judging, matching the Nth type="S" ProblemTestCase row by order.
-        # This mapping is correct for all fresh judgings; it could drift if
-        # ProblemTestCase rows are reordered after old submissions were graded.
-        min_batch_numbers = set(
-            i + 1
-            for i, scoring in enumerate(
-                ProblemTestCase.objects.filter(dataset=submission.problem, type="S")
-                .order_by("order")
-                .values_list("batch_scoring", flat=True)
-            )
-            if scoring == "min"
-        )
+            if (
+                submission.contest_object_id
+                and submission.contest_object.scoreboard_visibility
+                == Contest.SCOREBOARD_VISIBLE
+            ):
+                event.post(
+                    "contest_%s" % submission.contest_object.key,
+                    {"type": "ranking-update"},
+                )
 
-        for batch_id, case_pairs in batches.items():
-            batch_total = sum(t for _, t in case_pairs)
-            if batch_id in min_batch_numbers and batch_total > 0:
-                min_fraction = min(p / t if t else 0.0 for p, t in case_pairs)
-                points += min_fraction * batch_total
-            else:
-                points += sum(p for p, _ in case_pairs)
-            total += batch_total
+            finished_submission(submission)
 
-        points = points
-        total = total
-        submission.case_points = points
-        submission.case_total = total
-
-        problem = submission.problem
-        sub_points = round(points / total * problem.points if total > 0 else 0, 3)
-        if not problem.partial and sub_points != problem.points:
-            sub_points = 0
-
-        submission.status = "D"
-        submission.time = time
-        submission.memory = memory
-        submission.points = sub_points
-        submission.result = status_codes[status]
-        submission.save()
-
-        json_log.info(
-            self._make_json_log(
-                packet,
-                action="grading-end",
-                time=time,
-                memory=memory,
-                points=sub_points,
-                total=problem.points,
-                result=submission.result,
-                case_points=points,
-                case_total=total,
-                user=submission.user_id,
-                problem=problem.code,
-                finish=True,
-            )
-        )
-
-        update_user_points.delay(submission.user_id)
-        update_problem_stats.delay(problem.id)
-        submission.update_contest()
-
-        if (
-            submission.contest_object_id
-            and submission.contest_object.scoreboard_visibility
-            == Contest.SCOREBOARD_VISIBLE
-        ):
             event.post(
-                "contest_%s" % submission.contest_object.key,
-                {"type": "ranking-update"},
+                "sub_%s" % submission.id_secret,
+                {
+                    "type": "grading-end",
+                    "time": time,
+                    "memory": memory,
+                    "points": float(points),
+                    "total": float(problem.points),
+                    "result": submission.result,
+                },
             )
-
-        finished_submission(submission)
-
-        event.post(
-            "sub_%s" % submission.id_secret,
-            {
-                "type": "grading-end",
-                "time": time,
-                "memory": memory,
-                "points": float(points),
-                "total": float(problem.points),
-                "result": submission.result,
-            },
-        )
-        self._post_update_submission(submission.id, "grading-end", done=True)
+            self._post_update_submission(submission.id, "grading-end", done=True)
+        finally:
+            self._free_self(packet)
 
     def on_compile_error(self, packet):
         logger.info(
             "%s: Submission failed to compile: %s", self.name, packet["submission-id"]
         )
         self._free_self(packet)
+        self._submission_result_cases.pop(packet["submission-id"], None)
 
         if Submission.objects.filter(id=packet["submission-id"]).update(
             status="CE", result="CE", error=packet["log"]
@@ -874,10 +979,10 @@ class JudgeHandler(ZlibPacketHandler):
         self._free_self(packet)
 
         id = packet["submission-id"]
+        self._submission_result_cases.pop(id, None)
         self._update_internal_error_submission(id, packet["message"])
 
-        # Notify problem authors about judge internal error
-        self._notify_problem_authors_on_error(id, packet["message"])
+        self._notify_on_internal_error(id, packet["message"])
 
     def _update_internal_error_submission(self, id, message):
         if Submission.objects.filter(id=id).update(
@@ -909,9 +1014,9 @@ class JudgeHandler(ZlibPacketHandler):
                 )
             )
 
-    def _notify_problem_authors_on_error(self, submission_id, error_message):
+    def _notify_on_internal_error(self, submission_id, error_message):
         """
-        Notify problem authors when a judge internal error occurs during submission evaluation.
+        Notify the appropriate audience when a judge internal error occurs.
         """
         try:
             submission = Submission.objects.select_related("problem").get(
@@ -926,6 +1031,29 @@ class JudgeHandler(ZlibPacketHandler):
             detailed_message += f"Judge: {self.name}\n"
             detailed_message += f"Submission ID: {submission_id}\n"
             detailed_message += f"Error details:\n{error_message}"
+
+            if _is_worker_no_response_error(error_message):
+                try:
+                    _notify_admins_in_app(
+                        problem=problem,
+                        submission=submission,
+                        error_type="Judge Worker Timeout",
+                        error_message=detailed_message,
+                    )
+                except Exception:
+                    logger.exception(
+                        "Failed to create admin notification for submission %s worker timeout",
+                        submission_id,
+                    )
+
+                log_exception(
+                    f"Problem {problem.code} Judge Worker Timeout: {detailed_message}"
+                )
+                logger.info(
+                    "Notified admins for submission %s worker timeout",
+                    submission_id,
+                )
+                return
 
             try:
                 in_app_notified = _notify_problem_owners_in_app(
@@ -968,9 +1096,15 @@ class JudgeHandler(ZlibPacketHandler):
                 e,
             )
 
+    def _notify_problem_authors_on_error(self, submission_id, error_message):
+        return JudgeHandler._notify_on_internal_error(
+            self, submission_id, error_message
+        )
+
     def on_submission_terminated(self, packet):
         logger.info("%s: Submission aborted: %s", self.name, packet["submission-id"])
         self._free_self(packet)
+        self._submission_result_cases.pop(packet["submission-id"], None)
 
         if Submission.objects.filter(id=packet["submission-id"]).update(
             status="AB", result="AB"
@@ -1016,11 +1150,7 @@ class JudgeHandler(ZlibPacketHandler):
             self._make_json_log(packet, action="batch-end", batch=self.batch_id)
         )
 
-    def on_test_case(
-        self,
-        packet,
-        max_feedback=SubmissionTestCase._meta.get_field("feedback").max_length,
-    ):
+    def on_test_case(self, packet):
         logger.info(
             "%s: %d test case(s) completed on: %s",
             self.name,
@@ -1033,9 +1163,7 @@ class JudgeHandler(ZlibPacketHandler):
         max_position = max(map(itemgetter("position"), updates))
         sum_points = sum(map(itemgetter("points"), updates))
 
-        if not Submission.objects.filter(id=id).update(
-            current_testcase=max_position + 1, points=F("points") + sum_points
-        ):
+        if not Submission.objects.filter(id=id).exists():
             logger.warning("Unknown submission: %s", id)
             json_log.error(
                 self._make_json_log(
@@ -1045,6 +1173,7 @@ class JudgeHandler(ZlibPacketHandler):
             return
 
         bulk_test_case_updates = []
+        result_detail_updates = {}
         for result in updates:
             test_case = SubmissionTestCase(submission_id=id, case=result["position"])
             status = result["status"]
@@ -1069,10 +1198,21 @@ class JudgeHandler(ZlibPacketHandler):
             test_case.points = result["points"]
             test_case.total = result["total-points"]
             test_case.batch = self.batch_id if self.in_batch else None
-            test_case.feedback = (result.get("feedback") or "")[:max_feedback]
-            test_case.extended_feedback = result.get("extended-feedback") or ""
-            test_case.output = result["output"]
+            feedback = result.get("feedback") or ""
+            extended_feedback = result.get("extended-feedback") or ""
+            output = result.get("output", "")
             bulk_test_case_updates.append(test_case)
+            result_detail = {
+                "case": result["position"],
+                "output": output,
+                "feedback": feedback,
+                "extended_feedback": extended_feedback,
+            }
+            if "input" in result:
+                result_detail["input"] = result.get("input", "")
+            if "expected-output" in result:
+                result_detail["answer"] = result.get("expected-output", "")
+            result_detail_updates[result_detail["case"]] = result_detail
 
             json_log.info(
                 self._make_json_log(
@@ -1082,13 +1222,30 @@ class JudgeHandler(ZlibPacketHandler):
                     batch=test_case.batch,
                     time=test_case.time,
                     memory=test_case.memory,
-                    feedback=test_case.feedback,
-                    extended_feedback=test_case.extended_feedback,
-                    output=test_case.output,
+                    feedback=feedback,
+                    extended_feedback=extended_feedback,
+                    output=output,
                     points=test_case.points,
                     total=test_case.total,
                     status=test_case.status,
                 )
+            )
+
+        with transaction.atomic():
+            if not Submission.objects.filter(id=id).update(
+                current_testcase=max_position + 1, points=F("points") + sum_points
+            ):
+                logger.warning("Unknown submission: %s", id)
+                self._submission_result_cases.pop(id, None)
+                json_log.error(
+                    self._make_json_log(
+                        packet, action="test-case", info="unknown submission"
+                    )
+                )
+                return
+            SubmissionTestCase.objects.bulk_create(bulk_test_case_updates)
+            self._submission_result_cases.setdefault(id, {}).update(
+                result_detail_updates
             )
 
         do_post = True
@@ -1114,25 +1271,6 @@ class JudgeHandler(ZlibPacketHandler):
                 },
             )
             self._post_update_submission(id, state="test-case")
-
-        SubmissionTestCase.objects.bulk_create(bulk_test_case_updates)
-
-        # Cache input/expected-output previews for generator-based problems
-        visible_len = getattr(settings, "TESTCASE_VISIBLE_LENGTH", 64)
-        for result in updates:
-            input_preview = result.get("input", "")
-            answer_preview = result.get("expected-output", "")
-            if input_preview or answer_preview:
-                if len(input_preview) > visible_len:
-                    input_preview = input_preview[:visible_len] + "..."
-                if len(answer_preview) > visible_len:
-                    answer_preview = answer_preview[:visible_len] + "..."
-                cache_key = "submission_testdata:%s:%s" % (id, result["position"])
-                cache.set(
-                    cache_key,
-                    {"input": input_preview, "answer": answer_preview},
-                    86400,
-                )
 
     def on_validate_begin(self, packet):
         _ensure_connection()

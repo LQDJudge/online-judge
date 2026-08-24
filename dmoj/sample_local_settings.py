@@ -265,12 +265,6 @@ DMOJ_SSL = 0
 
 # Note that PhantomJS is preferred over wkhtmltopdf and would be used when both are defined.
 
-# Used to encrypt chat url
-# Generate it in a python shell:
-# from cryptography.fernet import Fernet
-# secret_key = Fernet.generate_key()
-CHAT_SECRET_KEY = "your-chat-secret-key"
-
 # Set to True to use subdomains for organizations
 # USE_SUBDOMAIN = True
 # SITE_DOMAIN = "localhost:8000"

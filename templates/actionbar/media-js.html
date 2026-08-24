@@ -1,12 +1,12 @@
 {% compress js %}
   <script type="text/javascript">
     $(document).ready(function () {
-      function ajax_vote(url, id, delta, on_success) {
+      function ajax_vote(url, token, id, delta, on_success) {
         return $.ajax({
           url: url,
           type: 'POST',
           data: {
-            id: id,
+            token: token,
             delta: delta
           },
           success: function (data, textStatus, jqXHR) {
@@ -29,15 +29,15 @@
         };
       };
 
-      window.pagevote_upvote = function (id, e) {
+      window.pagevote_upvote = function (token, id, e) {
         e.stopPropagation();
         var $votes = get_$votes(id);
         if ($votes.upvote.hasClass('voted')) {
-          ajax_vote('{{ url('pagevote_vote') }}', id, 0, function () {
+          ajax_vote('{{ url('pagevote_vote') }}', token, id, 0, function () {
             $votes.upvote.removeClass('voted');
           });
         } else {
-          ajax_vote('{{ url('pagevote_vote') }}', id, 1, function () {
+          ajax_vote('{{ url('pagevote_vote') }}', token, id, 1, function () {
             if ($votes.downvote.hasClass('voted'))
               $votes.downvote.removeClass('voted');
             $votes.upvote.addClass('voted');
@@ -45,15 +45,15 @@
         }
       };
 
-      window.pagevote_downvote = function (id, e) {
+      window.pagevote_downvote = function (token, id, e) {
         e.stopPropagation();
         var $votes = get_$votes(id);
         if ($votes.downvote.hasClass('voted')) {
-          ajax_vote('{{ url('pagevote_vote') }}', id, 0, function () {
+          ajax_vote('{{ url('pagevote_vote') }}', token, id, 0, function () {
             $votes.downvote.removeClass('voted');
           });
         } else {
-          ajax_vote('{{ url('pagevote_vote') }}', id, -1, function () {
+          ajax_vote('{{ url('pagevote_vote') }}', token, id, -1, function () {
             if ($votes.upvote.hasClass('voted'))
               $votes.upvote.removeClass('voted'); // Remove upvote if it exists
             $votes.downvote.addClass('voted');

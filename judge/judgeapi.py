@@ -7,6 +7,7 @@ import zlib
 from django.conf import settings
 
 from judge import event_poster as event
+from judge.utils.submission_results import delete_submission_result_async
 
 logger = logging.getLogger("judge.judgeapi")
 size_pack = struct.Struct("!I")
@@ -121,6 +122,7 @@ def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=No
         return False
 
     SubmissionTestCase.objects.filter(submission_id=submission.id).delete()
+    delete_submission_result_async.delay(submission.id)
 
     try:
         response = judge_request(

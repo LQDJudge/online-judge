@@ -541,9 +541,9 @@ JUDGE_AMQP_PATH = None
 MOSS_API_KEY = None
 
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_TASK_SOFT_TIME_LIMIT = 10 * 60
+CELERY_TASK_TIME_LIMIT = 15 * 60
 
-
-TESTCASE_VISIBLE_LENGTH = 64
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2621440
@@ -563,9 +563,6 @@ SEMANTIC_SEARCH_EMBEDDING_RETRY_INITIAL_SLEEP = 5
 
 # Use subdomain for organizations
 USE_SUBDOMAIN = False
-
-# Chat
-CHAT_SECRET_KEY = "QUdVFsxk6f5-Hd8g9BXv81xMqvIZFRqMl-KbRzztW-U="
 
 # Nginx
 META_REMOTE_ADDRESS_KEY = "REMOTE_ADDR"
@@ -652,6 +649,22 @@ PERIODIC_RECOMPUTE_CONTRIBUTIONS_ENABLED = True
 PERIODIC_RECOMPUTE_CONTRIBUTIONS_LOCK_TIMEOUT = 7200
 PERIODIC_FIX_ORGANIZATION_PRIVATE_ENABLED = True
 PERIODIC_FIX_ORGANIZATION_PRIVATE_LOCK_TIMEOUT = 3600
+PERIODIC_GENERATE_MAGAZINE_POSTS_ENABLED = True
+PERIODIC_GENERATE_MAGAZINE_POSTS_LOCK_TIMEOUT = 12 * 3600
+MAGAZINE_POSTS_PER_COMMUNITY_PER_RUN = 1
+MAGAZINE_MAX_PENDING_PER_COMMUNITY = 5
+MAGAZINE_AUTHOR_USERNAME = "admin"
+MAGAZINE_POST_TYPE = "mixed"
+MAGAZINE_LLM_BOT = "Gemini-3.5-Flash-Lite"
+MAGAZINE_MAX_ATTEMPTS = 12
+MAGAZINE_CANDIDATE_DRAFTS = 1
+MAGAZINE_REVIEW_THRESHOLD = 9
+MAGAZINE_COMMUNITY_ORG_SLUGS = ()
+MAGAZINE_EXCLUDED_COMMUNITY_ORG_SLUGS = (
+    "hoi-ap-thac-mac",
+    "hoi-dap-thac-mac",
+    "off-topic",
+)
 
 # Celery Beat schedule. Application-level periodic jobs belong here so the
 # cadence is versioned with the codebase. This schedule is only active when
@@ -704,6 +717,10 @@ CELERY_BEAT_SCHEDULE = {
     "recompute-contributions": {
         "task": "judge.tasks.maintenance.recompute_contributions",
         "schedule": crontab(minute=18, hour=4),
+    },
+    "generate-daily-magazine-posts": {
+        "task": "judge.tasks.magazine.generate_daily_magazine_posts",
+        "schedule": crontab(minute=30, hour=4),
     },
 }
 

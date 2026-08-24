@@ -1,0 +1,73 @@
+{% extends "two-column-content.html" %}
+
+{% block js_media %}
+  {% include "organization/blog/pending-js.html" %}
+{% endblock %}
+
+{% block two_col_media %}
+  <style>
+    .community-blog-queue-page .queue-filter {
+      display: flex;
+      gap: 0.5em;
+      margin-bottom: 1em;
+      max-width: 36em;
+      flex-wrap: wrap;
+    }
+
+    .community-blog-queue-page .queue-filter input {
+      flex: 1;
+      min-width: 16em;
+    }
+
+    .community-blog-queue-page .queue-filter select {
+      min-width: 11em;
+    }
+  </style>
+{% endblock %}
+
+{% block left_sidebar %}
+  {% include "internal/left-sidebar.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  {% include "messages.html" %}
+
+  <div class="community-blog-queue-page">
+    <h2>{{ _('Community blog review queue') }}</h2>
+    <p class="gray">
+      {{ _('Generated and submitted community posts waiting for manual review.') }}
+      {{ pending_count }} {{ _('pending') }} · {{ community_count }} {{ _('communities') }}
+    </p>
+
+    <form class="queue-filter" method="get">
+      <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search title, content, or community') }}">
+      <select name="sort">
+        <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>{{ _('Oldest first') }}</option>
+        <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>{{ _('Newest first') }}</option>
+      </select>
+      <button type="submit" class="action-btn">
+        <i class="fa fa-search"></i>
+        {{ _('Search') }}
+      </button>
+      {% if search_query %}
+        <a href="{{ url('internal_community_blog_queue') }}" class="action-btn background-gray">{{ _('Clear') }}</a>
+      {% endif %}
+    </form>
+
+    {% if not posts %}
+      <section class="blog-box">
+        <p class="gray">{{ _('No pending community blog posts.') }}</p>
+      </section>
+    {% endif %}
+
+    {% for post in posts %}
+      {% if post.review_organization %}
+        {% with org=post.review_organization %}
+          {% include "organization/blog/pending-card.html" %}
+        {% endwith %}
+      {% endif %}
+    {% endfor %}
+
+    {% include "list-pages.html" %}
+  </div>
+{% endblock %}

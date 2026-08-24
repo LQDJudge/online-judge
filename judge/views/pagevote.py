@@ -14,6 +14,7 @@ from django.http import JsonResponse
 
 from judge.utils.ratelimit import ratelimit
 from judge.utils.contribution import get_content_author_profile_ids
+from judge.utils.voting import can_user_access_votable, decrypt_vote_token
 from judge.models.pagevote import (
     PageVote,
     VoteService,
@@ -43,12 +44,10 @@ def vote_page(request):
     if request.method != "POST":
         return HttpResponseForbidden()
 
-    pagevote_id = request.POST.get("id")
+    pagevote_token = request.POST.get("token")
 
-    if not pagevote_id:
-        return HttpResponseBadRequest(
-            _("Missing 'id' parameter."), content_type="text/plain"
-        )
+    if not pagevote_token:
+        return HttpResponseBadRequest()
 
     # Ensure the user has solved at least one problem, unless they are staff
     if (
@@ -62,20 +61,19 @@ def vote_page(request):
             content_type="text/plain",
         )
 
-    try:
-        pagevote_id = int(pagevote_id)
-    except ValueError:
-        return HttpResponseBadRequest(
-            _("Invalid ID format."), content_type="text/plain"
-        )
+    pagevote_id = decrypt_vote_token(request.profile, "pagevote", pagevote_token)
+    if pagevote_id is None:
+        return HttpResponseBadRequest()
 
     try:
-        pagevote = PageVote.objects.get(id=pagevote_id)
+        pagevote = PageVote.objects.select_related("content_type").get(id=pagevote_id)
     except PageVote.DoesNotExist:
         raise Http404(_("The specified PageVote does not exist."))
 
     # Get the linked object
     linked_object = pagevote.linked_object
+    if not can_user_access_votable(request.user, linked_object):
+        raise Http404(_("The specified PageVote does not exist."))
 
     # Prevent self-voting
     author_ids = get_content_author_profile_ids(

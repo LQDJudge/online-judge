@@ -1,16 +1,26 @@
-from cryptography.fernet import Fernet
-import hmac
+import base64
 import hashlib
+import hmac
 
 from django.conf import settings
 from django.db.models import Count
+
+from cryptography.fernet import Fernet
 
 from chat_box.models import CHAT_REACTION_CODES, Ignore, MessageReaction, UserRoom
 
 from judge.caching import cache_wrapper
 
-secret_key = settings.CHAT_SECRET_KEY
-fernet = Fernet(secret_key)
+
+def _derive_secret_bytes(purpose):
+    return hashlib.sha256((str(settings.SECRET_KEY) + ":" + purpose).encode()).digest()
+
+
+def _derive_fernet_key(purpose):
+    return base64.urlsafe_b64encode(_derive_secret_bytes(purpose))
+
+
+fernet = Fernet(_derive_fernet_key("chat.url.v1"))
 
 
 def encrypt_url(creator_id, other_id):
@@ -30,7 +40,7 @@ def decrypt_url(message_encrypted):
 def encrypt_channel(channel):
     return (
         hmac.new(
-            settings.CHAT_SECRET_KEY.encode(),
+            _derive_secret_bytes("chat.channel.v1"),
             channel.encode(),
             hashlib.sha512,
         ).hexdigest()[:16]

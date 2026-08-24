@@ -1,21 +1,5 @@
 {% extends "common-content.html" %}
 
-{% block js_media %}
-  <script type="text/javascript">
-    $(function () {
-      $('a.sub-case-status').featherlight($('.partial-output-window'), {
-        afterOpen: function () {
-          var $parent = this.$currentTarget.parent();
-          var partial = $parent.attr('data-partial-output');
-          this.$instance.find('.partial-output-window').find('code').text(partial).end().show();
-        }
-      });
-    });
-  </script>
-  <script type="text/javascript">
-  </script>
-{% endblock %}
-
 {% block media %}
   <style>
     #content-body {
@@ -48,9 +32,6 @@
       min-width: 3em;
     }
 
-    .sub-case-status {
-      text-decoration: underline;
-    }
   </style>
 {% endblock %}
 
@@ -77,17 +58,17 @@
           <td>{{ sub.language.name }}</td>
           <td><span class="time">{{ relative_time(sub.date) }}</span></td>
           {% for case in sub.test_cases.all() %}
-            <td data-partial-output="{{ case.output }}">
+            <td>
               {% if case.status == 'SC' %}
                 <span class="case-SC">---</span>
               {% else %}
-                <a href="javascript:void(0);" class="sub-case-status case-{{ case.status }}">
+                <span class="case-{{ case.status }}">
                   {% if case.status == 'AC' %}
                     {{ case.time|floatformat(2) }}
                   {% else %}
                     {{ case.status }}
                   {% endif %}
-                </a>
+                </span>
               {% endif %}
             </td>
           {% endfor %}
@@ -95,5 +76,4 @@
       {% endfor %}
     </tbody>
   </table>
-  <div style="display: none" class="partial-output-window"><pre><code></code></pre></div>
 {% endblock %}

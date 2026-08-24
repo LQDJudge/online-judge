@@ -45,7 +45,9 @@ from judge.ml.semantic_search import (
     SemanticSearchUnavailable,
 )
 from judge.models import (
+    BlogPost,
     CommentModerationLog,
+    Organization,
     Problem,
     ProblemType,
     Profile,
@@ -821,6 +823,78 @@ class InternalProblemQueue(InternalView, ListView):
             context["latest_review_runs"] = {}
             context["review_verdicts"] = {}
 
+        return context
+
+
+class InternalCommunityBlogQueue(InternalView, ListView):
+    model = BlogPost
+    title = _("Community blog review queue")
+    template_name = "internal/community_blog_queue.html"
+    paginate_by = 20
+    context_object_name = "posts"
+
+    def get_queryset(self):
+        self.search_query = self.request.GET.get("search", "").strip()
+        self.sort_order = self.request.GET.get("sort", "oldest")
+        if self.sort_order not in ("oldest", "newest"):
+            self.sort_order = "oldest"
+        queryset = (
+            BlogPost.objects.filter(
+                organizations__is_community=True,
+                visible=False,
+                is_rejected=False,
+            )
+            .prefetch_related("authors", "organizations")
+            .distinct()
+        )
+        if self.search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=self.search_query)
+                | Q(content__icontains=self.search_query)
+                | Q(organizations__name__icontains=self.search_query)
+                | Q(organizations__slug__icontains=self.search_query)
+            ).distinct()
+        if self.sort_order == "newest":
+            return queryset.order_by("-publish_on", "-id")
+        return queryset.order_by("publish_on", "id")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        posts = list(context["posts"])
+        for post in posts:
+            community_orgs = [
+                org for org in post.organizations.all() if org.is_community
+            ]
+            post.review_organization = community_orgs[0] if community_orgs else None
+            post.review_organizations = community_orgs
+        context["posts"] = posts
+        context["title"] = self.title
+        context["page_type"] = "community_blog_queue"
+        context["current_tab"] = "pending"
+        context["is_admin"] = True
+        context["is_moderator"] = True
+        context["hide_texts_on_mobile"] = False
+        context["show_organization_tags"] = True
+        context["search_query"] = self.search_query
+        context["sort_order"] = self.sort_order
+        context["pending_count"] = (
+            BlogPost.objects.filter(
+                organizations__is_community=True,
+                visible=False,
+                is_rejected=False,
+            )
+            .distinct()
+            .count()
+        )
+        context["community_count"] = (
+            Organization.objects.filter(
+                is_community=True,
+                blogpost__visible=False,
+                blogpost__is_rejected=False,
+            )
+            .distinct()
+            .count()
+        )
         return context
 
 

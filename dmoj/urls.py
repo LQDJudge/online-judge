@@ -78,6 +78,7 @@ from judge.views.problem_attachment import (
 )
 from judge.views.problem_data import (
     ProblemDataView,
+    ProblemGeneratorStaticPackageView,
     ProblemSubmissionDiff,
     ProblemValidatorView,
     problem_data_file,
@@ -438,6 +439,11 @@ urlpatterns = [
                 ),
                 re_path(
                     r"^/test_data/init$", problem_init_view, name="problem_data_init"
+                ),
+                re_path(
+                    r"^/test_data/generator_package$",
+                    ProblemGeneratorStaticPackageView.as_view(),
+                    name="problem_generator_static_package",
                 ),
                 re_path(
                     r"^/test_data/diff$",
@@ -1859,6 +1865,11 @@ urlpatterns = [
                     name="internal_problem_queue",
                 ),
                 re_path(
+                    r"^community_blog_queue$",
+                    internal.InternalCommunityBlogQueue.as_view(),
+                    name="internal_community_blog_queue",
+                ),
+                re_path(
                     r"^problem_duplicates$",
                     internal.InternalProblemDuplicates.as_view(),
                     name="internal_problem_duplicates",
@@ -2060,6 +2071,11 @@ urlpatterns = [
         r"^library/api/list/$",
         document_library.library_api_list,
         name="library_api_list",
+    ),
+    re_path(
+        r"^library/api/outline/(?P<path>.+)$",
+        document_library.library_api_outline,
+        name="library_api_outline",
     ),
     # Superuser management API (distinct prefix; listed before the manage page)
     re_path(

@@ -349,12 +349,12 @@
        * @param {number} voteValue - +1 for upvote, -1 for downvote
        * @param {Function} onSuccess - Callback function after successful vote
        */
-      function ajax_vote(url, commentId, voteValue, onSuccess) {
+      function ajax_vote(url, token, commentId, voteValue, onSuccess) {
         return $.ajax({
           url: url,
           type: 'POST',
           data: {
-            id: commentId
+            token: token
           },
           success: function (data, textStatus, jqXHR) {
             // Update the comment score display
@@ -751,8 +751,8 @@
       /**
        * Upvote a comment
        */
-      window.comment_upvote = function (commentId) {
-        ajax_vote('{{ url('comment_upvote') }}', commentId, 1, function () {
+      window.comment_upvote = function (token, commentId) {
+        ajax_vote('{{ url('comment_upvote') }}', token, commentId, 1, function () {
           var $voteButtons = getVoteElements(commentId);
           // If comment was previously downvoted, remove downvote class
           if ($voteButtons.downvote.hasClass('voted'))
@@ -766,8 +766,8 @@
       /**
        * Downvote a comment
        */
-      window.comment_downvote = function (commentId) {
-        ajax_vote('{{ url('comment_downvote') }}', commentId, -1, function () {
+      window.comment_downvote = function (token, commentId) {
+        ajax_vote('{{ url('comment_downvote') }}', token, commentId, -1, function () {
           var $voteButtons = getVoteElements(commentId);
           // If comment was previously upvoted, remove upvote class
           if ($voteButtons.upvote.hasClass('voted'))

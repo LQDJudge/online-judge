@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 from django.utils import timezone
+from django.utils.translation import override
 
 from judge.forms import ProblemEditForm
 from judge.models import Language, Problem, ProblemGroup, ProblemTestCase, Profile
@@ -139,17 +140,33 @@ class TotalTimeLimitValidationTest(TestCase):
 
     # ---- Problem data formset (test case save) ----
 
-    def test_data_formset_rejects_zero_cases(self):
+    def test_data_formset_allows_zero_cases_without_zip(self):
         formset = ProblemCaseFormSet(
             data=self._formset_data(0),
             prefix="cases",
             valid_files=[],
             problem_time_limit=1.0,
             enforce_total_time_limit=False,
+            require_test_cases=False,
             queryset=ProblemTestCase.objects.none(),
         )
-        self.assertFalse(formset.is_valid())
-        self.assertIn("At least one test case is required.", formset.non_form_errors())
+        self.assertTrue(formset.is_valid(), formset.non_form_errors())
+
+    def test_data_formset_rejects_zero_cases_with_zip(self):
+        formset = ProblemCaseFormSet(
+            data=self._formset_data(0),
+            prefix="cases",
+            valid_files=["1.in", "1.out"],
+            problem_time_limit=1.0,
+            enforce_total_time_limit=False,
+            require_test_cases=True,
+            queryset=ProblemTestCase.objects.none(),
+        )
+        with override("en"):
+            self.assertFalse(formset.is_valid())
+            self.assertIn(
+                "At least one test case is required.", formset.non_form_errors()
+            )
 
     def test_data_formset_rejects_deleting_only_existing_case(self):
         problem = self._make_problem(time_limit=1.0)
@@ -170,10 +187,14 @@ class TotalTimeLimitValidationTest(TestCase):
             valid_files=[],
             problem_time_limit=1.0,
             enforce_total_time_limit=False,
+            require_test_cases=True,
             queryset=ProblemTestCase.objects.filter(id=case.id),
         )
-        self.assertFalse(formset.is_valid())
-        self.assertIn("At least one test case is required.", formset.non_form_errors())
+        with override("en"):
+            self.assertFalse(formset.is_valid())
+            self.assertIn(
+                "At least one test case is required.", formset.non_form_errors()
+            )
 
     def test_data_formset_rejects_when_total_exceeds_for_non_admin(self):
         formset = ProblemCaseFormSet(

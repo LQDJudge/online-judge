@@ -13,6 +13,12 @@ from judge.tasks.periodic import run_locked_command
 from judge.tasks.post_moderation import moderate_pending_posts
 
 
+class CeleryTimeoutSettingsTest(SimpleTestCase):
+    def test_default_task_time_limits_are_configured(self):
+        self.assertEqual(settings.CELERY_TASK_SOFT_TIME_LIMIT, 10 * 60)
+        self.assertEqual(settings.CELERY_TASK_TIME_LIMIT, 15 * 60)
+
+
 class PeriodicCommandLockTest(SimpleTestCase):
     def test_run_locked_command_calls_command_and_releases_lock(self):
         lock_key = "test:periodic-lock:release"

@@ -305,12 +305,6 @@ For running judges on multiple servers, you can use [JuiceFS](https://juicefs.co
     mysql -u root -p -e "flush tables;" mysql
     ```
 
-6. **Missing chat secret key**: You must generate a Fernet key, and assign a variable in `local_settings.py` like this:
-
-    ```python
-    CHAT_SECRET_KEY = "81HqDtbqAywKSOumSxxxxxxxxxxxxxxxxx="
-    ```
-
 # Usage
 
 After finishing all installation steps, every time you want to run a local server, follow these steps:
@@ -973,12 +967,6 @@ $ dmoj -c judge.yml localhost
     # FLUSH PRIVILEGES;
     mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -D mysql -u root -p
     mysql -u root -p -e "flush tables;" mysql
-    ```
-
-6. **Thiếu chat secret key**: Bạn cần tạo Fernet key và gán biến trong `local_settings.py`:
-
-    ```python
-    CHAT_SECRET_KEY = "81HqDtbqAywKSOumSxxxxxxxxxxxxxxxxx="
     ```
 
 ## Sử dụng

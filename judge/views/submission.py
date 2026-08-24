@@ -3,7 +3,6 @@ from operator import attrgetter
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage
 from django.core.exceptions import ObjectDoesNotExist
@@ -56,8 +55,8 @@ from judge.utils.hidden_results import (
     mark_hidden_result_submissions,
 )
 from judge.utils.problems import _get_result_data
-from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
+from judge.utils.submission_results import submission_result_url
 from judge.utils.views import DiggPaginatorMixin, paginate_query_context
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.views import TitleMixin
@@ -68,6 +67,10 @@ from judge.models.runtime import get_all_languages
 
 def get_submission_result_colors():
     return settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS
+
+
+def is_generator_timeout_error(error):
+    return bool(error and "generator timed out" in error.casefold())
 
 
 def submission_related(queryset):
@@ -221,70 +224,16 @@ def group_test_cases(submission, hidden_subtasks, include_cases=True):
     return result
 
 
-def get_cases_data(submission):
-    testcases = ProblemTestCase.objects.filter(dataset=submission.problem).order_by(
-        "order"
-    )
-
-    if submission.is_pretested:
-        testcases = testcases.filter(is_pretest=True)
-
-    submitted_cases = {c.case for c in submission.test_cases.all()}
-    if not submitted_cases:
-        return {}
-
-    # Only fetch files for type-C cases the submission actually ran.
-    files = []
-    count = 0
-    for case in testcases:
-        if case.type != "C":
-            continue
-        count += 1
-        if count not in submitted_cases:
-            continue
-        if case.input_file:
-            files.append(case.input_file)
-        if case.output_file:
-            files.append(case.output_file)
-    case_data = get_problem_case(submission.problem, files)
-
-    # Build case list and identify which need generator cache fallback
-    problem_data = {}
-    cases_needing_cache = []
-    count = 0
-    for case in testcases:
-        if case.type != "C":
-            continue
-        count += 1
-        if count not in submitted_cases:
-            continue
-        input_data = case_data.get(case.input_file, "") if case.input_file else ""
-        answer_data = case_data.get(case.output_file, "") if case.output_file else ""
-        problem_data[count] = {"input": input_data, "answer": answer_data}
-        if not input_data or not answer_data:
-            cases_needing_cache.append(count)
-
-    # Batch fetch cached preview data for generator-based cases
-    if cases_needing_cache:
-        cache_keys = [
-            "submission_testdata:%s:%s" % (submission.id, c)
-            for c in cases_needing_cache
-        ]
-        cached = cache.get_many(cache_keys)
-        for c in cases_needing_cache:
-            key = "submission_testdata:%s:%s" % (submission.id, c)
-            if key in cached:
-                if not problem_data[c]["input"]:
-                    problem_data[c]["input"] = cached[key].get("input", "")
-                if not problem_data[c]["answer"]:
-                    problem_data[c]["answer"] = cached[key].get("answer", "")
-
-    return problem_data
-
-
 class SubmissionStatus(SubmissionDetailBase):
     template_name = "submission/status.html"
     highlight_source = True
+
+    def can_manage_test_data(self):
+        if not hasattr(self, "_can_manage_test_data"):
+            self._can_manage_test_data = self.object.problem.is_editable_by(
+                self.request.user
+            )
+        return self._can_manage_test_data
 
     def can_see_testcases(self):
         contest_submission = self.object.contest_or_none
@@ -297,7 +246,7 @@ class SubmissionStatus(SubmissionDetailBase):
 
         if contest_problem.show_testcases:
             return True
-        if problem.is_editable_by(self.request.user):
+        if self.can_manage_test_data():
             return True
         if contest.is_editable_by(self.request.user):
             return True
@@ -327,6 +276,14 @@ class SubmissionStatus(SubmissionDetailBase):
         )
         context["time_limit"] = submission.problem.time_limit
         context["can_see_testcases"] = False
+        context["can_manage_test_data"] = self.can_manage_test_data()
+        context["test_data_feedback"] = ""
+        context["show_generator_timeout_guide"] = (
+            context["can_manage_test_data"]
+            and submission.status == "IE"
+            and is_generator_timeout_error(submission.error)
+        )
+        context["result_json_url"] = ""
         if self.highlight_source:
             context["highlighted_source"] = highlight_code(
                 submission.source.source,
@@ -336,8 +293,18 @@ class SubmissionStatus(SubmissionDetailBase):
             )
 
         if self.can_see_testcases():
-            context["cases_data"] = get_cases_data(submission)
             context["can_see_testcases"] = True
+            if (
+                submission.status == "D"
+                and not context["is_result_hidden"]
+                and not context["hidden_subtasks"]
+            ):
+                context["result_json_url"] = submission_result_url(submission.id)
+        if context["can_manage_test_data"]:
+            try:
+                context["test_data_feedback"] = submission.problem.data_files.feedback
+            except ObjectDoesNotExist:
+                pass
         try:
             lang_limit = submission.problem.language_limits.get(
                 language=submission.language
