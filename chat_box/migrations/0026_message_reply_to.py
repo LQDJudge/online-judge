@@ -4,6 +4,37 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def disable_mariadb_statement_timeout(apps, schema_editor):
+    connection = schema_editor.connection
+    if connection.vendor != "mysql" or not getattr(
+        connection, "mysql_is_mariadb", False
+    ):
+        return
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SET @chat_box_0026_old_max_statement_time = "
+            "@@SESSION.max_statement_time"
+        )
+        cursor.execute("SET SESSION max_statement_time = 0")
+
+
+def restore_mariadb_statement_timeout(apps, schema_editor):
+    connection = schema_editor.connection
+    if connection.vendor != "mysql" or not getattr(
+        connection, "mysql_is_mariadb", False
+    ):
+        return
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SET SESSION max_statement_time = "
+            "COALESCE(@chat_box_0026_old_max_statement_time, "
+            "@@GLOBAL.max_statement_time)"
+        )
+        cursor.execute("SET @chat_box_0026_old_max_statement_time = NULL")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -11,6 +42,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(
+            disable_mariadb_statement_timeout,
+            reverse_code=restore_mariadb_statement_timeout,
+        ),
         migrations.AddField(
             model_name="message",
             name="reply_to",
@@ -22,5 +57,9 @@ class Migration(migrations.Migration):
                 to="chat_box.message",
                 verbose_name="reply to",
             ),
+        ),
+        migrations.RunPython(
+            restore_mariadb_statement_timeout,
+            reverse_code=disable_mariadb_statement_timeout,
         ),
     ]
