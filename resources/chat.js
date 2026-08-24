@@ -988,11 +988,10 @@
         ChatMessages.clearReplyBanner();
       });
 
-      $(document).on('click', '.message-reply-quote', function(e) {
-        // Let clicks on the inner author link navigate normally.
-        if ($(e.target).closest('a').length) return;
-        e.stopPropagation();
-        var parentId = $(this).data('reply-target');
+      var jumpToReplyQuoteParent = function(quote, event) {
+        if (event) event.stopPropagation();
+        var $q = $(quote);
+        var parentId = $q.data('reply-target');
         if (!parentId) return;  // an "unavailable" quote has no target
         var $target = $('#message-' + parentId);
         if ($target.length) {
@@ -1018,15 +1017,28 @@
           // MVP contract: the parent is older than the loaded window (no
           // gap-fetch yet — that's the backlog "full support" path). Give a
           // clear, predictable cue every time instead of a silent dead click:
-          // flash the quote and show a transient "Message not loaded" tooltip.
-          var $q = $(this);
-          $q.attr('data-hint', ChatConfig.i18n.replyNotLoaded || 'Message not loaded')
+          // flash the quote and show a transient loaded-history-limit tooltip.
+          $q.attr('data-hint', ChatConfig.i18n.replyNotLoaded || 'Original message is outside the loaded history.')
             .addClass('message-reply-quote-flash message-reply-quote-hint');
           setTimeout(function() {
             $q.removeClass('message-reply-quote-flash message-reply-quote-hint')
               .removeAttr('data-hint');
           }, 1500);
         }
+      };
+
+      $(document).on('click', '.message-reply-quote', function(e) {
+        // Let clicks on the inner author link navigate normally.
+        if ($(e.target).closest('a').length) return;
+        jumpToReplyQuoteParent(this, e);
+      });
+
+      $(document).on('keydown', '.message-reply-quote', function(e) {
+        if ($(e.target).closest('a').length) return;
+        var key = e.key || e.which;
+        if (key !== 'Enter' && key !== ' ' && key !== 'Spacebar' && key !== 13 && key !== 32) return;
+        e.preventDefault();
+        jumpToReplyQuoteParent(this, e);
       });
     },
 

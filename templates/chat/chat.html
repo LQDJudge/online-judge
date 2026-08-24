@@ -68,7 +68,7 @@
         {# Pass user='%(user)s' so newstyle gettext's `msg % vars` is a no-op that
            keeps the literal placeholder for the client's interpolate() to fill. #}
         replyingTo: "{{ _('Replying to %(user)s', user='%(user)s') }}",
-        replyNotLoaded: "{{ _('Message not loaded') }}"
+        replyNotLoaded: "{{ _('Original message is outside the loaded history.') }}"
       },
       messageTemplate: `{% with message=message_template %}{% set is_message_template = True %}{% include "chat/message.html" %}{% endwith %}`
     };

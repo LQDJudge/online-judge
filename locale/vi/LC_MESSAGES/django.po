@@ -8637,8 +8637,8 @@ msgid "Replying to %(user)s"
 msgstr "Đang trả lời %(user)s"
 
 #: templates/chat/chat.html:71
-msgid "Message not loaded"
-msgstr "Tin nhắn chưa được tải"
+msgid "Original message is outside the loaded history."
+msgstr "Tin nhắn gốc nằm ngoài phần lịch sử đã tải."
 
 #: templates/chat/chat.html:116
 msgid "Chat is disabled during contest."

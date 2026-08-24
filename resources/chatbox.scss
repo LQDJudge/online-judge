@@ -1797,8 +1797,8 @@ body:has(.chat-page) {
     }
 
     // Transient tooltip shown when the parent is outside the loaded window, so
-    // the failed jump reads as intentional ("Message not loaded") rather than a
-    // dead click. CSS-only via attr(data-hint) — no extra DOM node.
+    // the failed jump reads as intentional rather than a dead click. CSS-only
+    // via attr(data-hint) — no extra DOM node.
     &.message-reply-quote-hint::after {
       content: attr(data-hint);
       position: absolute;
