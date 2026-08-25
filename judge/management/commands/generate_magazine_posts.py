@@ -13,6 +13,7 @@ from django.db.models import Count, Max, Q
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.text import slugify
+from django.utils.translation import gettext as _
 
 from asgiref.sync import async_to_sync, sync_to_async
 import fastapi_poe as fp
@@ -25,6 +26,8 @@ from judge.models import (
     ContestProblem,
     Organization,
     Problem,
+    ProblemSolutionCode,
+    Solution,
     Submission,
 )
 from llm_service.config import get_config
@@ -106,72 +109,6 @@ DIFFICULTY_QUERIES = {
         "advanced algorithms optimization dynamic programming graph decomposition",
     ],
 }
-
-BANNED_PHRASES = (
-    "trong hành trình",
-    "chinh phục",
-    "mổ xẻ",
-    "các bạn coder",
-    "hy vọng qua bài viết",
-    "bước lên sân khấu",
-    "thực chất",
-    "tối ưu hơn",
-    "hiệu quả hơn",
-    "nhiệm vụ của chúng ta",
-    "phản xạ tự nhiên",
-    "hoàn toàn chính xác",
-    "cách nghĩ đầu tiên của học sinh",
-    "chiếc hộp",
-    "mảng nhảy cao su",
-    "nhảy cao su",
-    "cô cạn",
-    "độ hội tụ",
-    "trong vô vọng",
-    "lỗ hổng logic trong tư duy",
-    "dán nguyên khối",
-    "tắt tab",
-    "quăng một đống",
-    "đống hỗn độn",
-    "đống mã",
-    "tổng đoạn thẳng",
-    "đống link",
-    "đống file",
-    "lỗi ngớ ngẩn",
-    "tràn bộ nhớ",
-    "đọc sót",
-    "trôi đi khá nhanh",
-    'cout << "WA"',
-    "cứu bài",
-    "mã em WA hết",
-    "cuộn chuột",
-    "hí hửng",
-    "ngợp",
-    "ngộp",
-    "tư duy nào thường bị đứt gãy",
-    "đứt gãy",
-    "rêu phong",
-    "thước phim",
-    "có chiều sâu",
-    "triết lý gượng gạo",
-    "góc khuất",
-    "ma trận công thức",
-    "tự khắc",
-    "hướng đi của bài toán tự",
-    "trở nên rõ ràng hơn",
-    "đọc đúng phần logic",
-    "hiểu bản chất",
-    "phép chia modulo",
-    "chia lấy dư",
-    "chia modulo",
-    "chung chung",
-    "chằm chằm",
-    "đọc từ đầu đến cuối như đọc truyện",
-    "bộ nhớ tạm",
-    "to và tròn",
-    "không gian nhẹ nhàng",
-    "khởi động tay chân",
-    "sa đà",
-)
 
 ABSTRACT_WORDS = (
     "quan sát",
@@ -369,7 +306,7 @@ ADVANCED_TOPIC_BANK = (
 ADVANCED_TOPIC_EXAMPLE_HINTS = (
     "Dùng ví dụ bài quốc tế trên cây: mỗi đỉnh lưu hai giá trị từ các con, rồi gộp kết quả khi quay lui bằng duyệt sâu.",
     "Dùng ví dụ tối ưu quy hoạch động: `dp[i]` lấy giá trị nhỏ nhất trên một đoạn trạng thái trước đó, và cần hỏi cấu trúc nào trả lời nhanh.",
-    "Dùng ví dụ đồ thị trọng số 0/1: dùng hàng đợi hai đầu, cạnh trọng số 0 đẩy lên đầu, cạnh trọng số 1 đẩy xuống cuối.",
+    "Dùng ví dụ đồ thị trọng số 0/1: dùng deque (hàng đợi hai đầu), cạnh trọng số 0 đẩy lên đầu, cạnh trọng số 1 đẩy xuống cuối.",
     "Dùng ví dụ truy vấn xử lý trước: sắp xếp truy vấn theo ngưỡng `k`, rồi thêm dần phần tử đủ điều kiện vào cây chỉ số nhị phân.",
 )
 
@@ -432,6 +369,8 @@ Ràng buộc:
 - Không link tuyệt đối; dùng chính PROBLEM_URL được cấp.
 - Dùng chính xác PROBLEM_TITLE trong link đầu tiên.
 - Ưu tiên tiếng Việt trong tiêu đề và câu văn. Thuật ngữ quen thuộc như DP, DFS, code, test, input, output, contest, editorial dùng được nếu tự nhiên; nếu dùng tên khó như Fenwick, giải thích ngay bằng tiếng Việt.
+- Có thể dùng “code” hoặc “mã” theo ngữ cảnh; không ép thay một từ bằng từ kia.
+- Có thể dùng `stack`, `queue`, và `deque` hoặc tên tiếng Việt tương ứng theo ngữ cảnh; không ép dịch thuật ngữ quen thuộc.
 - Dùng LaTeX cho biến và công thức ngắn: $N$, $x$, $k$, $dp[i] = \max(dp[i], dp[j] + w_i)$.
 - Với bài toán/quy hoạch động/số học, nên có 1-3 công thức ngắn nếu công thức giúp người đọc thấy trạng thái hoặc bước chuyển. Mỗi công thức phải được giải thích bằng lời ngay trước hoặc ngay sau.
 - Không thả một khối công thức dài. Nếu công thức dài hơn một dòng, hãy tách thành lời.
@@ -506,13 +445,10 @@ Văn phong:
 - Với mọi chủ đề, phần hay nhất là cơ chế. Với số học là công thức đến từ đâu; với quy hoạch động là trạng thái chuyển ra sao; với tham lam là quyết định nào được giữ; với cài đặt là biến/mảng nào giúp tránh nhầm.
 - Viết như một bài chuyên mục kỹ thuật nhỏ: có nhịp đọc, có khoảnh khắc “à, hóa ra cần lưu thứ này”, nhưng vẫn chính xác.
 - Tránh danh từ trừu tượng khi có thể nói bằng ví dụ.
-- Không dùng các cụm: trong hành trình, chinh phục, mổ xẻ, các bạn coder, hy vọng qua bài viết, bước lên sân khấu, thực chất, tối ưu hơn, hiệu quả hơn, nhiệm vụ của chúng ta, phản xạ tự nhiên, hoàn toàn chính xác, cách nghĩ đầu tiên của học sinh, chiếc hộp.
-
 Tự kiểm trước khi trả lời:
 - Câu cuối có phải châm ngôn/lời khuyên chung không? Nếu có, thay bằng chi tiết cụ thể.
 - Câu cuối có chỉ là constraint/thông tin đề bài không? Nếu có, nối nó với một thao tác cài đặt cụ thể.
 - Có heading Markdown không? Nếu có, xóa.
-- Có cụm bị cấm không? Nếu có, viết lại.
 - Link đầu tiên có đúng title và URL không?
 - Có ví dụ trước thuật ngữ không?
 - Bài có nói rõ cơ chế chính chưa: theo dõi gì, chuyển/cập nhật thế nào, và cài thao tác nào?
@@ -558,6 +494,8 @@ Ràng buộc:
 - Không ép từ thuật toán vào chủ đề đời sống/cộng đồng. Nếu viết cho Off-topic, Hỏi đáp, Tài liệu, hoặc Kỳ thi, dùng “điều cần chú ý”, “bước tiếp theo”, “chi tiết”, “quyết định”, không dùng “đại lượng”, “trạng thái”, “thao tác cài đặt” trừ khi thật sự nói về mã.
 - Không dùng HTML thô.
 - Ưu tiên tiếng Việt trong tiêu đề và câu văn. Thuật ngữ quen thuộc như DP, DFS, code, test, input, output, contest, editorial dùng được nếu tự nhiên; nếu dùng tên khó như Fenwick, giải thích ngay bằng tiếng Việt.
+- Có thể dùng “code” hoặc “mã” theo ngữ cảnh; không ép thay một từ bằng từ kia.
+- Có thể dùng `stack`, `queue`, và `deque` hoặc tên tiếng Việt tương ứng theo ngữ cảnh; không ép dịch thuật ngữ quen thuộc.
 
 Văn phong:
 - Tự nhiên, có nhịp đọc như một chuyên mục kỹ thuật nhỏ.
@@ -573,19 +511,17 @@ Văn phong:
 - Không kết bằng châm ngôn.
 - Giữ giọng đời thường và chính xác. Không văn chương hóa quá mức, không làm căng cảm xúc bằng hình ảnh như “rêu phong”, “thước phim”, “góc khuất”.
 - Không chê lỗi của người học là “ngớ ngẩn” hoặc “tư duy đứt gãy”. Nói lỗi cụ thể và cách kiểm tra.
-- Không dùng các cụm: trong hành trình, chinh phục, mổ xẻ, các bạn coder, hy vọng qua bài viết, bước lên sân khấu, thực chất, tối ưu hơn, hiệu quả hơn, nhiệm vụ của chúng ta, phản xạ tự nhiên, hoàn toàn chính xác, cách nghĩ đầu tiên của học sinh, chiếc hộp, ngợp, ngộp, chia lấy dư, sa đà.
-
 Chỉ trả về Markdown cuối cùng."""
 
-CONTEST_SYSTEM_PROMPT = r"""Bạn viết một bài ngắn cho chuyên mục cộng đồng trên LQDOJ về một kỳ thi.
+CONTEST_SYSTEM_PROMPT = r"""Bạn viết một bài chuyên mục cộng đồng trên LQDOJ về một kỳ thi.
 
-Đây KHÔNG phải lời giải đầy đủ. Mục tiêu là giúp người đọc biết kỳ thi có gì đáng thử và chọn 1-2 ý tưởng để bắt đầu.
+Mục tiêu là tạo một bài đánh giá và phân tích ngắn, có thông tin cụ thể về kỳ thi.
 Độc giả được mô tả trong AUDIENCE.
 
 Định dạng bắt buộc:
 1. Dòng đầu PHẢI đúng: **Kỳ thi:** [CONTEST_TITLE](CONTEST_URL)
 2. Dòng thứ hai PHẢI bắt đầu: **Tóm tắt:**
-3. Sau đó viết 3-5 đoạn ngắn.
+3. Sau đó viết các đoạn ngắn, rõ ràng.
 4. Không dùng heading Markdown nào (`#`, `##`, `###`).
 
 Ràng buộc:
@@ -600,13 +536,26 @@ Ràng buộc:
 - Không dùng HTML thô.
 - Không link tuyệt đối.
 - Nhắc 2-4 bài trong kỳ thi bằng Markdown link nếu có.
+- Nếu ARTICLE_MODE là PER_PROBLEM_ANALYSIS,
+  phải viết đúng một đoạn cho từng bài công khai trong PROBLEMS_JSON, theo thứ tự
+  kỳ thi. Mỗi đoạn bắt đầu bằng Markdown link của bài đó và có 1-2 câu: đề yêu cầu
+  gì, sau đó mới nêu hướng suy nghĩ ban đầu. Không phân tích lại một bài ở đoạn khác.
+  Ở câu kết, chỉ gọi tên bài, không lặp lại Markdown link.
+- Chỉ khẳng định kỹ thuật/cách cài đặt khi nó được SOURCE_CONTEXT hỗ trợ trực tiếp
+  bằng đề bài, EDITORIAL, hoặc VERIFIED_REFERENCE_SOLUTION. Nếu chưa có nguồn đó,
+  mô tả yêu cầu của đề và câu hỏi cần làm rõ thay vì đoán lời giải.
+- Với bài có cả EDITORIAL và VERIFIED_REFERENCE_SOLUTION rỗng, không được nêu tên
+  thuật toán, cấu trúc dữ liệu, biến đổi đại số, hay độ phức tạp như một hướng giải.
+  Chỉ tóm tắt đúng yêu cầu/constraint của đề và điều người đọc cần quan sát khi tự làm.
+- Không bịa ví dụ, dữ liệu, hoặc kỹ thuật không có trong SOURCE_CONTEXT.
 - Không giải trọn kỳ thi.
-- Nêu rõ đây là gợi ý đọc/ôn tập, không phải đáp án đầy đủ.
 - Dùng ví dụ/tình huống cụ thể từ kỳ thi trước khi nói thuật ngữ.
 - Có một câu chuyển tự nhiên: nên thử bài nào trước, hoặc bài nào giúp mở khóa ý tưởng nào.
 - Nếu kỳ thi cơ bản, tránh từ nặng như điều luôn đúng, trạng thái, tối ưu hóa. Hãy nói bằng thao tác cụ thể: duyệt chỉ số nào, so sánh biến nào, cập nhật mảng nào.
 - Không dùng câu mở kiểu quảng cáo hoặc câu đệm như “không gian nhẹ nhàng”, “khởi động tay chân”, “sa đà”. Vào thẳng bài đầu tiên nên thử và lý do.
 - Ưu tiên tiếng Việt trong tiêu đề và câu văn. Thuật ngữ quen thuộc như DP, DFS, code, test, input, output, contest, editorial dùng được nếu tự nhiên; nếu dùng tên khó như Fenwick, giải thích ngay bằng tiếng Việt.
+- Có thể dùng “code” hoặc “mã” theo ngữ cảnh; không ép thay một từ bằng từ kia.
+- Có thể dùng `stack`, `queue`, và `deque` hoặc tên tiếng Việt tương ứng theo ngữ cảnh; không ép dịch thuật ngữ quen thuộc.
 
 Kết bài:
 - Không viết châm ngôn/lời khuyên chung.
@@ -614,39 +563,31 @@ Kết bài:
 
 Chỉ trả về Markdown cuối cùng."""
 
-REVIEW_SYSTEM_PROMPT = r"""Bạn là người duyệt bài chuyên mục cộng đồng LQDOJ.
+REVIEW_SYSTEM_PROMPT = r"""Bạn là người duyệt và soát lỗi cuối cùng cho một bài viết LQDOJ.
 
-Nhiệm vụ: đọc SOURCE_CONTEXT và DRAFT, rồi đánh giá liệu bài đã đủ tốt để đăng chưa.
-Không viết lại toàn bộ bài. Chỉ trả JSON hợp lệ.
-Hãy khó tính như biên tập viên. Nếu bài “ổn nhưng còn gượng”, publishable phải là false.
-Điểm 9-10 chỉ dành cho bài có thể đăng ngay mà không cần sửa.
+Đọc SOURCE_CONTEXT và DRAFT, rồi chỉ trả JSON hợp lệ. Không viết lại bài.
 
-Tiêu chí:
-- Đúng format Markdown bắt buộc.
-- Không bịa chi tiết ngoài SOURCE_CONTEXT.
-- Văn tự nhiên, không AI-like, không sáo rỗng.
-- Câu dễ hiểu với học sinh đúng cấp. Nếu phải đọc lại mới hiểu, publishable phải là false.
-- Có nhịp bài báo dễ đọc: chi tiết cụ thể trước, bối cảnh sau, rồi mới nói ý nghĩa hoặc bước tiếp theo.
-- Đoạn đầu sau tóm tắt không được chung chung. Phải có cảnh/tình huống/ví dụ cụ thể.
-- Có mạch giải thích kiểu wiki giáo dục khi nói kỹ thuật: định nghĩa ngắn, ví dụ nhỏ, cách trực tiếp, rồi nhu cầu dùng cách tốt hơn.
-- Nếu bài nhắc cấu trúc dữ liệu/kỹ thuật mà không nói rõ nó lưu gì hoặc thao tác chính làm gì, publishable phải là false.
-- Không bịa lời trích dẫn, tên người, sự kiện, số liệu, hoặc cảm xúc không có trong SOURCE_CONTEXT.
-- Không bắt lỗi các thuật ngữ quen thuộc như DP, DFS, code, test, input, output, contest, editorial nếu dùng tự nhiên.
-- Nếu có tên như DFS, DP, Fenwick, phải giải thích ngay bằng tiếng Việt trong cùng câu hoặc câu kế tiếp.
-- Có ví dụ/tình huống cụ thể trước thuật ngữ.
-- Có chuyển ý tự nhiên như người đang giải thích cách nghĩ.
-- Có cơ chế chính: theo dõi/hỏi/lưu/tính gì, thay đổi thế nào, bước tiếp theo là gì.
-- Kết bài bằng thao tác cụ thể, không châm ngôn.
-- Với bài cộng đồng/học tập, không đổ lỗi hoặc nói giọng phán xét người hỏi.
-- Không dùng giọng chê bai như “quăng mã”, “đống hỗn độn”, “người đọc sẽ bỏ đi”.
-- Ví dụ phải đúng thuật ngữ cơ bản; nếu nói bài tổng đoạn con thì không được viết nhầm thành tổng đoạn thẳng.
-- Với bài hỏi đáp, nếu có lỗi kỹ thuật trong ví dụ, thuật ngữ phải đúng: “tràn số nguyên” khác “tràn bộ nhớ”.
-- Không văn chương hóa quá mức ở Off-topic; ưu tiên chi tiết đời thường, không hình ảnh kịch tính.
-- Không ép thuật ngữ thuật toán vào bài cộng đồng nếu chủ đề không nói về mã.
-- Câu chuyển phải tự nhiên và có ích. Nếu câu hỏi tu từ nghe như được nhét vào cho đủ tiêu chí, hãy yêu cầu sửa.
+Kiểm tra bốn việc:
+1. Fact-check: mọi tên, link, số liệu, mô tả đề, và khẳng định thuật toán có được
+   SOURCE_CONTEXT hỗ trợ không? Đề bài chỉ hỗ trợ việc mô tả yêu cầu và constraint,
+   không tự hỗ trợ việc khẳng định thuật toán/cấu trúc dữ liệu/độ phức tạp. Một kỹ
+   thuật chỉ được nêu như kết luận khi EDITORIAL hoặc VERIFIED_REFERENCE_SOLUTION
+   trong SOURCE_CONTEXT hỗ trợ nó. Đừng chấp nhận một kỹ thuật chỉ vì nghe hợp lý.
+2. Proofread: có câu sai nghĩa, tự mâu thuẫn, hoặc khó hiểu rõ ràng không?
+3. Flow: các đoạn có đi theo một mạch tự nhiên không? Chặn khi bị lặp ý/bài, bỏ sót
+   phần mà ADMINISTRATOR_GUIDANCE yêu cầu, hoặc chuyển ý sai đến mức khó theo dõi.
+   Nếu được yêu cầu phân tích từng bài, ngay sau phần tóm tắt phải là đúng một đoạn
+   cho mỗi bài theo thứ tự PROBLEMS_JSON; không có đoạn phân tích lẻ chen vào trước,
+   không lặp bài, và không nhắc lại toàn bộ link ở phần kết.
+4. Request: bài có thực sự đáp ứng ADMINISTRATOR_GUIDANCE không?
+
+Đặt publishable=false chỉ khi có lỗi rõ ràng trong bốn việc trên. Đừng từ chối chỉ vì
+văn phong cá nhân, độ dài, một câu hơi gượng, hoặc vì bài chưa đạt mức biên tập lý tưởng.
+Nếu không duyệt, feedback nêu 1-3 lỗi cụ thể và cách sửa ngắn gọn. Nếu duyệt, feedback
+để trống.
 
 Trả về đúng JSON:
-{"publishable": true/false, "score": 1-10, "feedback": "1-3 góp ý cụ thể để sửa nếu chưa đạt"}
+{"publishable": true/false, "score": 1-10, "feedback": ""}
 
 Chỉ trả JSON."""
 
@@ -659,6 +600,9 @@ Nhiệm vụ: dùng công cụ để tự tìm và đọc đề, rồi trả JSO
   và thao tác cấu trúc dữ liệu. Giữ đủ quan hệ này trong truy vấn, không tìm bằng một
   nhãn đơn lẻ như "segment tree" hoặc "DP".
 - Bạn có công cụ get_problem_statement(code) để đọc đề bài đầy đủ.
+- Sau khi đã đọc đề, có thể gọi get_ac_solution(code) để kiểm tra cơ chế chính
+  bằng một lời giải AC tham chiếu đã được xác minh.
+- Sau khi đã đọc đề, có thể gọi get_editorial(code) để tham khảo editorial đã công khai.
 - Bắt buộc gọi get_problem_statement cho mọi mã bài bạn định chọn trước khi chọn.
 - Chọn đúng số lượng và cơ cấu độ khó được yêu cầu, ưu tiên bài có đề rõ ràng,
   phù hợp với cộng đồng, và có một ý tưởng đáng để viết bài giới thiệu.
@@ -810,7 +754,7 @@ class Command(BaseCommand):
             "--max-attempts",
             type=int,
             default=10,
-            help="Maximum LLM write/rewrite attempts per post, capped at 10",
+            help="Maximum LLM write/rewrite attempts per post, capped at 5",
         )
         parser.add_argument(
             "--skip-review",
@@ -820,7 +764,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--review-threshold",
             type=int,
-            default=8,
+            default=6,
             help="Minimum reviewer score required when review is enabled",
         )
         parser.add_argument(
@@ -833,7 +777,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         org = self._get_org(options["org"])
         self.target_org = org
-        self.max_llm_attempts = min(max(1, options["max_attempts"]), 10)
+        self.max_llm_attempts = min(max(1, options["max_attempts"]), 5)
         self.enable_llm_review = not options["skip_review"]
         self.review_threshold = min(max(options["review_threshold"], 1), 10)
         self.candidate_drafts = max(1, options["candidate_drafts"])
@@ -1509,6 +1453,53 @@ PURPOSE: {purpose}
                 },
             ),
             *self._problem_statement_tool_definitions(),
+            fp.ToolDefinition(
+                type="function",
+                function={
+                    "name": "get_ac_solution",
+                    "description": (
+                        "Get a verified reference accepted solution for a public "
+                        "problem after reading its statement. Never returns user "
+                        "submission source code."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "code": {
+                                "type": "string",
+                                "description": (
+                                    "A problem code already read with "
+                                    "get_problem_statement."
+                                ),
+                            }
+                        },
+                        "required": ["code"],
+                    },
+                },
+            ),
+            fp.ToolDefinition(
+                type="function",
+                function={
+                    "name": "get_editorial",
+                    "description": (
+                        "Get the published public editorial for a public problem "
+                        "after reading its statement."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "code": {
+                                "type": "string",
+                                "description": (
+                                    "A problem code already read with "
+                                    "get_problem_statement."
+                                ),
+                            }
+                        },
+                        "required": ["code"],
+                    },
+                },
+            ),
         ]
 
     def _public_problem_tool_executables(self, org, expected_difficulties, read_codes):
@@ -1570,9 +1561,66 @@ PURPOSE: {purpose}
             statement = self._clean_statement(problem.description)
             return self._statement_tool_result(problem, statement)
 
+        @sync_to_async
+        def get_ac_solution(code):
+            close_old_connections()
+            code = str(code).strip()
+            if code not in read_codes:
+                return "Read the public problem statement before requesting a solution."
+            solution = (
+                ProblemSolutionCode.objects.filter(
+                    problem__code=code,
+                    expected_result="AC",
+                    last_submission__result="AC",
+                )
+                .select_related("language")
+                .order_by("order", "id")
+                .first()
+            )
+            if not solution:
+                return "No verified reference AC solution is available."
+            source = solution.source_code
+            if len(source) > 12000:
+                source = source[:12000] + "\n\n... (truncated)"
+            return (
+                f"Verified reference AC solution for {code} "
+                f"(language={solution.language.key}):\n{source}"
+            )
+
+        @sync_to_async
+        def get_editorial(code):
+            close_old_connections()
+            code = str(code).strip()
+            if code not in read_codes:
+                return (
+                    "Read the public problem statement before requesting an editorial."
+                )
+            editorial = (
+                Solution.objects.filter(
+                    problem__code=code,
+                    is_public=True,
+                    publish_on__lte=timezone.now(),
+                )
+                .only("content")
+                .first()
+            )
+            if not editorial:
+                return "No published public editorial is available."
+            content = editorial.content
+            if len(content) > 16000:
+                content = content[:16000] + "\n\n... (truncated)"
+            return f"Published editorial for {code}:\n{content}"
+
         search_public_problems.__name__ = "search_public_problems"
         get_problem_statement.__name__ = "get_problem_statement"
-        return [search_public_problems, get_problem_statement]
+        get_ac_solution.__name__ = "get_ac_solution"
+        get_editorial.__name__ = "get_editorial"
+        return [
+            search_public_problems,
+            get_problem_statement,
+            get_ac_solution,
+            get_editorial,
+        ]
 
     def _statement_tool_result(self, problem, statement):
         if len(statement) > 8000:
@@ -1726,9 +1774,62 @@ PURPOSE: {purpose}
         return filtered
 
     def _generate_topic_post(self, service, topic, org):
+        return self.generate_topic_post_with_feedback(service, topic, org)
+
+    def _configure_llm_generation(self):
+        self.max_llm_attempts = getattr(
+            self,
+            "max_llm_attempts",
+            min(max(1, int(getattr(settings, "MAGAZINE_MAX_ATTEMPTS", 12))), 5),
+        )
+        self.enable_llm_review = getattr(self, "enable_llm_review", True)
+        self.review_threshold = getattr(
+            self,
+            "review_threshold",
+            min(max(int(getattr(settings, "MAGAZINE_REVIEW_THRESHOLD", 6)), 1), 10),
+        )
+        self.candidate_drafts = getattr(
+            self,
+            "candidate_drafts",
+            max(1, int(getattr(settings, "MAGAZINE_CANDIDATE_DRAFTS", 1))),
+        )
+
+    def generate_topic_post_with_feedback(
+        self,
+        service,
+        topic,
+        org,
+        feedback="",
+        current_draft=None,
+        progress_callback=None,
+    ):
+        """Generate a topic post for cron or an administrator-guided composer."""
+        self.target_org = org
+        self._configure_llm_generation()
+        if progress_callback:
+            progress_callback(_("Preparing the community writing guide"), 1, 5)
         guide = self._topic_example_guide(topic, org)
+        if progress_callback:
+            progress_callback(_("Selecting relevant practice problems"), 2, 5)
         practice_problems = self._topic_practice_problems(service, topic, org, guide)
         prompt = self._topic_prompt(topic, org, guide, practice_problems)
+        if feedback:
+            prompt += f"""
+
+ADMINISTRATOR_GUIDANCE:
+{feedback}
+"""
+        if current_draft:
+            prompt += f"""
+
+CURRENT_DRAFT:
+TITLE: {current_draft.get('title', topic)}
+SUMMARY: {current_draft.get('summary', '')}
+CONTENT:
+{current_draft.get('content', '')}
+
+Rewrite the current draft from the ground up where necessary to follow the administrator guidance. Preserve correct, relevant details, but the required magazine format, example direction, practice recommendations, and quality rules remain authoritative.
+"""
         content = self._call_with_validation(
             service,
             prompt,
@@ -1736,6 +1837,7 @@ PURPOSE: {purpose}
             lambda body: self._validate_topic_post(
                 body, topic, guide, practice_problems
             ),
+            progress_callback=progress_callback,
         )
         return GeneratedPost(
             title=topic[:100],
@@ -1909,7 +2011,7 @@ EXAMPLE_DIRECTION là yêu cầu chính xác: bài được chọn phải thực
                         "một trong 3 vị trí trước đó, nên `dp[i]` cần lấy giá trị lớn nhất "
                         "trong một cửa sổ nhỏ. Trước hết thử duyệt 3 vị trí, rồi hỏi nếu cửa "
                         "sổ tăng lên 50 hoặc 100 vị trí thì cần lưu gì để lấy nhanh. "
-                        "Chỉ nhắc deque/hàng đợi hai đầu ở phiên bản cửa sổ lớn."
+                        "Chỉ nhắc deque ở phiên bản cửa sổ lớn."
                     ),
                     required_markers=("dp[i]", "3 vị trí", "lớn nhất", "cửa sổ"),
                     label="quy hoạch động cửa sổ nhỏ",
@@ -2056,7 +2158,7 @@ EXAMPLE_DIRECTION là yêu cầu chính xác: bài được chọn phải thực
                     f"{ADVANCED_TOPIC_EXAMPLE_HINTS[2]} Không tự động dùng lại ví dụ "
                     "đường đi trên lưới nếu gợi ý này đã đưa ra một ngữ cảnh khác."
                 ),
-                required_markers=("hàng đợi hai đầu", "0", "1", "trọng số"),
+                required_markers=("deque", "hàng đợi hai đầu", "0", "1", "trọng số"),
                 label="0-1 BFS",
             ),
             TopicExampleGuide(
@@ -2464,7 +2566,14 @@ PURPOSE: Chọn một kỳ thi công khai gần đây để viết bài gợi ý
             is_in_course=False,
         )
 
-    def _generate_contest_post(self, service, contest):
+    def _generate_contest_post(
+        self,
+        service,
+        contest,
+        administrator_guidance="",
+        per_problem_analysis=False,
+    ):
+        self._configure_llm_generation()
         rows = (
             ContestProblem.objects.filter(
                 contest=contest,
@@ -2476,6 +2585,36 @@ PURPOSE: Chọn một kỳ thi công khai gần đây để viết bài gợi ý
             .prefetch_related("problem__types")
             .order_by("order")[:8]
         )
+        problem_codes = [row.problem.code for row in rows]
+        editorials = {}
+        for editorial in (
+            Solution.objects.filter(
+                problem__code__in=problem_codes,
+                is_public=True,
+                publish_on__lte=timezone.now(),
+            )
+            .order_by("problem__code", "-publish_on", "-id")
+            .values("problem__code", "content")
+        ):
+            editorials.setdefault(
+                editorial["problem__code"],
+                self._clean_statement(editorial["content"])[:3000],
+            )
+        reference_solutions = {}
+        for solution in (
+            ProblemSolutionCode.objects.filter(
+                problem__code__in=problem_codes,
+                expected_result="AC",
+                last_submission__result="AC",
+            )
+            .select_related("language", "problem")
+            .order_by("problem__code", "order", "id")
+        ):
+            reference_solutions.setdefault(
+                solution.problem.code,
+                "language=%s\n%s"
+                % (solution.language.key, solution.source_code[:6000]),
+            )
         problems = []
         for row in rows:
             problem = row.problem
@@ -2485,15 +2624,26 @@ PURPOSE: Chọn một kỳ thi công khai gần đây để viết bài gợi ý
                     "url": f"/problem/{problem.code}",
                     "points": problem.points,
                     "types": [item.full_name for item in problem.types.all()],
-                    "statement": self._clean_statement(problem.description)[:700],
+                    "statement": self._clean_statement(problem.description)[:5000],
+                    "editorial": editorials.get(problem.code, ""),
+                    "verified_reference_solution": reference_solutions.get(
+                        problem.code, ""
+                    ),
                 }
             )
-        prompt = self._contest_prompt(contest, problems)
+        prompt = self._contest_prompt(
+            contest,
+            problems,
+            administrator_guidance=administrator_guidance,
+            per_problem_analysis=per_problem_analysis,
+        )
         content = self._call_with_validation(
             service,
             prompt,
             CONTEST_SYSTEM_PROMPT,
-            lambda body: self._validate_contest_post(body, contest),
+            lambda body: self._validate_contest_post(
+                body, contest, problems, per_problem_analysis
+            ),
         )
         return GeneratedPost(
             title=f"Gợi ý đọc kỳ thi: {contest.name}",
@@ -2502,20 +2652,30 @@ PURPOSE: Chọn một kỳ thi công khai gần đây để viết bài gợi ý
             contest=contest,
         )
 
-    def _contest_prompt(self, contest, problems):
+    def _contest_prompt(
+        self, contest, problems, administrator_guidance="", per_problem_analysis=False
+    ):
         return f"""CONTEST_TITLE: {contest.name}
 CONTEST_URL: /contest/{contest.key}
 CONTEST_DESCRIPTION:
 {self._clean_statement(contest.description)[:1000]}
-PROBLEMS_JSON:
-{json.dumps(problems, ensure_ascii=False, indent=2)}
+
+ADMINISTRATOR_GUIDANCE:
+{administrator_guidance or "Write a concise contest reading recommendation."}
+
+ARTICLE_MODE: {"PER_PROBLEM_ANALYSIS" if per_problem_analysis else "READING_RECOMMENDATION"}
 
 AUDIENCE:
 {self._audience_prompt_text(None)}
 
-Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải trọn kỳ thi."""
+PROBLEMS_JSON:
+{json.dumps(problems, ensure_ascii=False, indent=2)}
 
-    def _validate_contest_post(self, body, contest):
+Viết bài đánh giá kỳ thi cho cộng đồng trên."""
+
+    def _validate_contest_post(
+        self, body, contest, problems=None, per_problem_analysis=False
+    ):
         errors = self._common_markdown_errors(body)
         if "```" in body:
             errors.append("Không dùng khối mã trong bài kỳ thi")
@@ -2525,7 +2685,42 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
             errors.append(f"Dòng đầu phải đúng: {first_line}")
         if not self._has_summary_after_first_line(lines):
             errors.append("Dòng nội dung đầu sau link phải bắt đầu bằng **Tóm tắt:**")
+        if per_problem_analysis:
+            errors.extend(self._per_problem_analysis_errors(body, problems or ()))
         return errors
+
+    def _per_problem_analysis_errors(self, body, problems):
+        lines = body.strip().splitlines()
+        summary_index = next(
+            (
+                index
+                for index, line in enumerate(lines)
+                if line.strip().startswith("**Tóm tắt:**")
+            ),
+            None,
+        )
+        if summary_index is None:
+            return []
+        first_content = next(
+            (line.strip() for line in lines[summary_index + 1 :] if line.strip()),
+            "",
+        )
+        urls = [problem["url"] for problem in problems]
+        first_problem_link = (
+            "[%s](%s)" % (problems[0]["title"], problems[0]["url"]) if problems else ""
+        )
+        if first_problem_link and not first_content.startswith(first_problem_link):
+            return [
+                "Ngay sau tóm tắt, bắt đầu từng đoạn bằng link của bài đầu tiên trong kỳ thi"
+            ]
+        positions = [body.find(url) for url in urls]
+        if any(position < 0 for position in positions):
+            return ["Bài phân tích từng bài phải có link của mọi bài công khai"]
+        if positions != sorted(positions):
+            return ["Các đoạn phân tích phải theo đúng thứ tự bài trong kỳ thi"]
+        if any(body.count(url) != 1 for url in urls):
+            return ["Mỗi bài công khai chỉ được link và phân tích đúng một lần"]
+        return []
 
     def _has_summary_after_first_line(self, lines):
         for line in lines[1:]:
@@ -2553,9 +2748,6 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
             errors.append("LaTeX trong dòng bị thiếu dấu $ đóng/mở")
         if body.count("`") % 2:
             errors.append("Mẩu mã trong dấu `...` bị thiếu dấu ` đóng/mở")
-        for phrase in BANNED_PHRASES:
-            if phrase.lower() in lower_body:
-                errors.append(f"Có cụm bị cấm: {phrase}")
         errors.extend(self._language_errors(body_without_code))
         if ("xuống dưới" in lower_body or "bước xuống" in lower_body) and (
             "lên trên" in lower_body or "bước đi lên" in lower_body
@@ -3107,10 +3299,17 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
         positions = [body.find(marker) for marker in markers if body.find(marker) != -1]
         return min(positions) if positions else None
 
-    def _call_with_validation(self, service, prompt, system_prompt, validate):
+    def _call_with_validation(
+        self, service, prompt, system_prompt, validate, progress_callback=None
+    ):
         feedback = ""
         approved = []
-        for _ in range(self.max_llm_attempts):
+        last_body = None
+        for attempt in range(min(self.max_llm_attempts, 5)):
+            if progress_callback:
+                progress_callback(
+                    _("Writing draft %(attempt)s") % {"attempt": attempt + 1}, 3, 5
+                )
             full_prompt = prompt
             if feedback:
                 full_prompt += (
@@ -3126,6 +3325,9 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
                 feedback = "Không có phản hồi"
                 continue
             body = body.strip() + "\n"
+            last_body = body
+            if progress_callback:
+                progress_callback(_("Validating the draft"), 4, 5)
             errors = validate(body)
             if errors:
                 feedback = "; ".join(errors)
@@ -3135,6 +3337,8 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
             if not getattr(self, "enable_llm_review", True):
                 return body
 
+            if progress_callback:
+                progress_callback(_("Reviewing the draft"), 5, 5)
             review = self._review_body(service, prompt, body)
             if review["passed"]:
                 approved.append((review["score"], body))
@@ -3161,6 +3365,13 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
         if approved:
             approved.sort(key=lambda item: item[0], reverse=True)
             return approved[0][1]
+        if last_body:
+            self.stdout.write(
+                self.style.WARNING(
+                    "Returning the last draft after five unsuccessful review attempts"
+                )
+            )
+            return last_body
         raise CommandError(f"LLM output failed validation: {feedback}")
 
     def _review_body(self, service, source_context, body):
@@ -3168,7 +3379,7 @@ Viết bài gợi ý đọc kỳ thi cho cộng đồng trên. Không giải tr�
             return {"passed": True, "score": 10, "feedback": ""}
 
         review_prompt = f"""SOURCE_CONTEXT:
-{source_context[:6000]}
+{source_context[:60000]}
 
 DRAFT:
 {body}

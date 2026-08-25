@@ -2,6 +2,34 @@
 
 {% block js_media %}
   {% include "organization/blog/pending-js.html" %}
+  {% if current_tab == 'composer' %}
+    <script src="{{ static('pagedown/Markdown.Converter.js') }}"></script>
+    <script src="{{ static('pagedown-extra/pagedown/Markdown.Converter.js') }}"></script>
+    <script src="{{ static('pagedown/Markdown.Sanitizer.js') }}"></script>
+    <script src="{{ static('pagedown/Markdown.Editor.js') }}"></script>
+    <script src="{{ static('pagedown-extra/Markdown.Extra.js') }}"></script>
+    <script src="{{ static('pagedown_init.js') }}"></script>
+    <script src="{{ static('blog_composer.js') }}"></script>
+    <script>
+      window.BLOG_COMPOSER = {
+        sendUrl: '{{ url("blog_composer_send") }}',
+        approveUrl: '{{ url("blog_composer_approve") }}',
+        previewUrl: '{{ url("blog_composer_preview") }}',
+        clearUrl: '{{ url("blog_composer_clear") }}',
+        taskStatusUrl: '{{ url("task_status_ajax") }}',
+        csrfToken: '{{ csrf_token }}',
+        postId: '{{ composer_post.id if composer_post else "" }}',
+        organizationId: '{{ composer_post.organizations.first().id if composer_post and composer_post.organizations.exists() else "" }}',
+        requestFailed: '{{ _("Request failed") }}',
+        generationFailed: '{{ _("The draft could not be generated.") }}',
+        approveLabel: '{{ _("Approve draft") }}',
+        approveConfirm: '{{ _("Apply this draft to the blog post?") }}',
+        startingLabel: '{{ _("Starting draft generation") }}',
+        renderedLabel: '{{ _("Rendered") }}',
+        markdownLabel: '{{ _("Markdown") }}'
+      };
+    </script>
+  {% endif %}
 {% endblock %}
 
 {% block two_col_media %}
@@ -33,41 +61,62 @@
   {% include "messages.html" %}
 
   <div class="community-blog-queue-page">
-    <h2>{{ _('Community blog review queue') }}</h2>
-    <p class="gray">
-      {{ _('Generated and submitted community posts waiting for manual review.') }}
-      {{ pending_count }} {{ _('pending') }} · {{ community_count }} {{ _('communities') }}
-    </p>
-
-    <form class="queue-filter" method="get">
-      <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search title, content, or community') }}">
-      <select name="sort">
-        <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>{{ _('Oldest first') }}</option>
-        <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>{{ _('Newest first') }}</option>
-      </select>
-      <button type="submit" class="action-btn">
-        <i class="fa fa-search"></i>
-        {{ _('Search') }}
-      </button>
-      {% if search_query %}
-        <a href="{{ url('internal_community_blog_queue') }}" class="action-btn background-gray">{{ _('Clear') }}</a>
-      {% endif %}
-    </form>
-
-    {% if not posts %}
-      <section class="blog-box">
-        <p class="gray">{{ _('No pending community blog posts.') }}</p>
-      </section>
+    <div class="queue-tabs">
+      <a class="queue-tab {% if current_tab == 'pending' %}active{% endif %}"
+         href="{{ url('internal_community_blog_queue') }}">
+        {{ _('Pending') }}
+        {% if pending_count %}
+          <span class="badge background-red white">{{ pending_count }}</span>
+        {% endif %}
+      </a>
+      <a class="queue-tab {% if current_tab == 'composer' %}active{% endif %}"
+         href="{{ url('internal_community_blog_queue') }}?tab=composer">
+        {{ _('Composer') }}
+      </a>
+    </div>
+    {% if current_tab == 'composer' %}
+      <h2>{{ _('Community blog composer') }}</h2>
+    {% else %}
+      <h2>{{ _('Community blog review queue') }}</h2>
     {% endif %}
+    {% if current_tab == 'composer' %}
+      {% include "internal/community_blog_composer.html" %}
+    {% else %}
+      <p class="gray">
+        {{ _('Generated and submitted community posts waiting for manual review.') }}
+        {{ pending_count }} {{ _('pending') }} · {{ community_count }} {{ _('communities') }}
+      </p>
 
-    {% for post in posts %}
-      {% if post.review_organization %}
-        {% with org=post.review_organization %}
-          {% include "organization/blog/pending-card.html" %}
-        {% endwith %}
+      <form class="queue-filter" method="get">
+        <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search title, content, or community') }}">
+        <select name="sort">
+          <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>{{ _('Oldest first') }}</option>
+          <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>{{ _('Newest first') }}</option>
+        </select>
+        <button type="submit" class="action-btn">
+          <i class="fa fa-search"></i>
+          {{ _('Search') }}
+        </button>
+        {% if search_query %}
+          <a href="{{ url('internal_community_blog_queue') }}" class="action-btn background-gray">{{ _('Clear') }}</a>
+        {% endif %}
+      </form>
+
+      {% if not posts %}
+        <section class="blog-box">
+          <p class="gray">{{ _('No pending community blog posts.') }}</p>
+        </section>
       {% endif %}
-    {% endfor %}
 
-    {% include "list-pages.html" %}
+      {% for post in posts %}
+        {% if post.review_organization %}
+          {% with org=post.review_organization %}
+            {% include "organization/blog/pending-card.html" %}
+          {% endwith %}
+        {% endif %}
+      {% endfor %}
+
+      {% include "list-pages.html" %}
+    {% endif %}
   </div>
 {% endblock %}

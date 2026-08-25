@@ -48,9 +48,9 @@ def _generate_daily_magazine_posts():
     author = getattr(settings, "MAGAZINE_AUTHOR_USERNAME", "admin")
     post_type = getattr(settings, "MAGAZINE_POST_TYPE", "mixed")
     llm = getattr(settings, "MAGAZINE_LLM_BOT", "Gemini-3.7-Flash")
-    max_attempts = int(getattr(settings, "MAGAZINE_MAX_ATTEMPTS", 12))
+    max_attempts = int(getattr(settings, "MAGAZINE_MAX_ATTEMPTS", 5))
     candidate_drafts = int(getattr(settings, "MAGAZINE_CANDIDATE_DRAFTS", 1))
-    review_threshold = int(getattr(settings, "MAGAZINE_REVIEW_THRESHOLD", 9))
+    review_threshold = int(getattr(settings, "MAGAZINE_REVIEW_THRESHOLD", 6))
 
     organizations = Organization.objects.filter(is_community=True)
     if configured_slugs:

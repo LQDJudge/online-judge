@@ -1,0 +1,59 @@
+<div class="blog-composer-page">
+  {% if composer_post %}<p class="gray">{{ composer_post.title }}</p>{% endif %}
+  <div class="composer-layout">
+    <section class="composer-conversation">
+      <div class="composer-messages" id="composer-messages">
+        {% for message in composer_session.messages %}
+          <article class="composer-message {{ message.role }}">{{ message.content|markdown(lazy_load=False)|safe }}</article>
+        {% endfor %}
+      </div>
+      <div class="composer-input">
+        {% if not composer_post %}
+          <label>{{ _('Organization') }}
+            <select id="composer-organization">
+              <option value="">{{ _('Choose an organization') }}</option>
+              {% for organization in composer_organizations %}
+                <option value="{{ organization.id }}" {% if composer_session.settings.get('organization_id') == organization.id %}selected{% endif %}>{{ organization.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>{{ _('Title') }}<input id="composer-title" type="text" value="{{ composer_session.settings.get('initial_title', '') }}"></label>
+          <label>{{ _('Author') }}<input id="composer-author" type="text" value="{{ composer_session.settings.get('author_username') or composer_default_author }}"></label>
+        {% endif %}
+        <textarea id="composer-feedback" rows="4" placeholder="{{ _('Describe the post or give feedback on the current draft') }}"></textarea>
+        <div class="composer-actions">
+          <button id="composer-clear" type="button" class="action-btn" title="{{ _('Clear conversation') }}"><i class="fa fa-trash"></i></button>
+          <button id="composer-send" type="button" class="action-btn" title="{{ _('Generate proposal') }}"><i class="fa fa-paper-plane"></i></button>
+          <span class="composer-status" id="composer-status" aria-live="polite"></span>
+        </div>
+      </div>
+    </section>
+    <aside class="composer-proposal" id="composer-proposal">
+      {% if composer_session.proposal %}
+        <input type="hidden" id="proposal-id" value="{{ composer_session.proposal.id }}">
+        <h3 id="proposal-title">{{ composer_session.proposal.title }}</h3>
+        <p id="proposal-summary">{{ composer_session.proposal.summary }}</p>
+        <div class="composer-preview-tabs" role="tablist">
+          <button class="composer-preview-tab active" type="button" data-composer-preview="rendered">{{ _('Rendered') }}</button>
+          <button class="composer-preview-tab" type="button" data-composer-preview="markdown">{{ _('Markdown') }}</button>
+        </div>
+        <article class="composer-rendered" id="composer-rendered">
+          {% if composer_session.proposal.rendered_content is defined %}
+            {{ composer_session.proposal.rendered_content|safe }}
+          {% else %}
+            {{ composer_session.proposal.content|markdown(lazy_load=False)|safe }}
+          {% endif %}
+        </article>
+        <div class="wmd-wrapper composer-markdown" id="composer-markdown-wrapper" hidden>
+          <div class="wmd-panel">
+            <div id="wmd-button-bar-composer"></div>
+            <textarea class="wmd-input" id="wmd-input-composer">{{ composer_session.proposal.content }}</textarea>
+          </div>
+        </div>
+        <button id="composer-approve" type="button" class="action-btn">{{ _('Approve draft') }}</button>
+      {% else %}
+        <div class="composer-empty" id="composer-empty">{{ _('No draft proposal yet.') }}</div>
+      {% endif %}
+    </aside>
+  </div>
+</div>

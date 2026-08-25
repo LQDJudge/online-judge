@@ -27,6 +27,7 @@ from chat_box.models import ChatModerationLog
 from chat_box.utils import encrypt_channel
 from chat_box.views import hide_lobby_message, mute_chat_user
 from judge import event_poster as event
+from judge.blog_composer.cache import get_session
 from judge.judgeapi import bridge_status
 from judge.ml.problem_duplicates import (
     DuplicateProblemMergePending,
@@ -834,6 +835,11 @@ class InternalCommunityBlogQueue(InternalView, ListView):
     context_object_name = "posts"
 
     def get_queryset(self):
+        self.current_tab = self.request.GET.get("tab", "pending")
+        if self.current_tab not in ("pending", "composer"):
+            self.current_tab = "pending"
+        if self.current_tab == "composer":
+            return BlogPost.objects.none()
         self.search_query = self.request.GET.get("search", "").strip()
         self.sort_order = self.request.GET.get("sort", "oldest")
         if self.sort_order not in ("oldest", "newest"):
@@ -870,13 +876,13 @@ class InternalCommunityBlogQueue(InternalView, ListView):
         context["posts"] = posts
         context["title"] = self.title
         context["page_type"] = "community_blog_queue"
-        context["current_tab"] = "pending"
+        context["current_tab"] = self.current_tab
         context["is_admin"] = True
         context["is_moderator"] = True
         context["hide_texts_on_mobile"] = False
         context["show_organization_tags"] = True
-        context["search_query"] = self.search_query
-        context["sort_order"] = self.sort_order
+        context["search_query"] = getattr(self, "search_query", "")
+        context["sort_order"] = getattr(self, "sort_order", "oldest")
         context["pending_count"] = (
             BlogPost.objects.filter(
                 organizations__is_community=True,
@@ -895,6 +901,29 @@ class InternalCommunityBlogQueue(InternalView, ListView):
             .distinct()
             .count()
         )
+        if self.current_tab == "composer":
+            try:
+                composer_post_id = int(self.request.GET.get("post", "") or 0) or None
+            except ValueError:
+                composer_post_id = None
+            context["composer_post"] = (
+                BlogPost.objects.filter(
+                    id=composer_post_id, organizations__is_community=True
+                )
+                .distinct()
+                .first()
+                if composer_post_id
+                else None
+            )
+            context["composer_session"] = get_session(
+                self.request.user.id, composer_post_id
+            )
+            context["composer_organizations"] = Organization.objects.filter(
+                is_community=True
+            ).order_by("name")
+            context["composer_default_author"] = getattr(
+                settings, "MAGAZINE_AUTHOR_USERNAME", "admin"
+            )
         return context
 
 

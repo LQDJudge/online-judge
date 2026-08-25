@@ -28,6 +28,7 @@ from judge.views import (
     TitledTemplateView,
     about,
     blog,
+    blog_composer,
     chatbot,
     comment,
     contests,
@@ -1469,6 +1470,31 @@ urlpatterns = [
     re_path(r"^runtimes/$", language.LanguageList.as_view(), name="runtime_list"),
     re_path(r"^runtimes/matrix/$", status.version_matrix, name="version_matrix"),
     re_path(r"^status/$", status.status_all, name="status_all"),
+    re_path(
+        r"^blog/composer/$",
+        blog_composer.BlogComposerView.as_view(),
+        name="blog_composer",
+    ),
+    re_path(
+        r"^blog/composer/send/$",
+        blog_composer.BlogComposerSendView.as_view(),
+        name="blog_composer_send",
+    ),
+    re_path(
+        r"^blog/composer/approve/$",
+        blog_composer.BlogComposerApproveView.as_view(),
+        name="blog_composer_approve",
+    ),
+    re_path(
+        r"^blog/composer/preview/$",
+        blog_composer.BlogComposerPreviewView.as_view(),
+        name="blog_composer_preview",
+    ),
+    re_path(
+        r"^blog/composer/clear/$",
+        blog_composer.BlogComposerClearView.as_view(),
+        name="blog_composer_clear",
+    ),
     re_path(r"^blog/", blog.PostList.as_view(), name="blog_post_list"),
     # Must come BEFORE blog_post: blog_post's slug regex (.*)$ is greedy and
     # would otherwise swallow `/edit`.
