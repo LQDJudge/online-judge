@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 10:41+0700\n"
+"POT-Creation-Date: 2026-08-25 12:24+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -177,27 +177,27 @@ msgstr "Tiếng Việt"
 msgid "English"
 msgstr "English"
 
-#: dmoj/urls.py:133
+#: dmoj/urls.py:134
 msgid "Activation key invalid"
 msgstr "Mã kích hoạt không hợp lệ"
 
-#: dmoj/urls.py:138
+#: dmoj/urls.py:139
 msgid "Register"
 msgstr "Đăng ký"
 
-#: dmoj/urls.py:145
+#: dmoj/urls.py:146
 msgid "Registration Completed"
 msgstr "Đăng ký hoàn thành"
 
-#: dmoj/urls.py:153
+#: dmoj/urls.py:154
 msgid "Registration not allowed"
 msgstr "Đăng ký không thành công"
 
-#: dmoj/urls.py:161
+#: dmoj/urls.py:162
 msgid "Login"
 msgstr "Đăng nhập"
 
-#: dmoj/urls.py:249 judge/views/blog.py:82 templates/base.html:124
+#: dmoj/urls.py:250 judge/views/blog.py:82 templates/base.html:124
 #: templates/course/grades_lesson.html:5 templates/course/left_sidebar.html:2
 #: templates/course/lesson.html:5
 #: templates/organization/org-left-sidebar.html:2
@@ -1147,6 +1147,27 @@ msgstr "Tìm thấy %(count)s dòng số liệu request đã hết hạn."
 msgid "Deleted %(count)s expired request metric rows."
 msgstr "Đã xóa %(count)s dòng số liệu request đã hết hạn."
 
+#: judge/management/commands/generate_magazine_posts.py:1810
+msgid "Preparing the community writing guide"
+msgstr "Đang chuẩn bị hướng dẫn viết bài cộng đồng"
+
+#: judge/management/commands/generate_magazine_posts.py:1813
+msgid "Selecting relevant practice problems"
+msgstr "Đang chọn bài tập áp dụng phù hợp"
+
+#: judge/management/commands/generate_magazine_posts.py:3311
+#, python-format
+msgid "Writing draft %(attempt)s"
+msgstr "Đang viết bản nháp %(attempt)s"
+
+#: judge/management/commands/generate_magazine_posts.py:3330
+msgid "Validating the draft"
+msgstr "Đang kiểm tra bản nháp"
+
+#: judge/management/commands/generate_magazine_posts.py:3341
+msgid "Reviewing the draft"
+msgstr "Đang duyệt bản nháp"
+
 #: judge/middleware.py:170 templates/course/members.html:130
 msgid "No permission"
 msgstr "Không có quyền truy cập"
@@ -1185,7 +1206,7 @@ msgid "Editorial for "
 msgstr "Hướng dẫn cho {0}"
 
 #: judge/models/comment.py:206 judge/models/comment.py:525
-#: judge/views/internal.py:1248 templates/contest/contest-list-tabs.html:7
+#: judge/views/internal.py:1277 templates/contest/contest-list-tabs.html:7
 #: templates/contest/contest-tabs.html:50 templates/contest/review.html:34
 #: templates/internal/problem_duplicates.html:202
 #: templates/problem/edit_base.html:20 templates/problem/left-sidebar.html:17
@@ -2039,6 +2060,7 @@ msgstr "các lần chạy xem xét đề"
 #: judge/models/profile.py:1387 judge/models/profile.py:1396
 #: judge/models/public_request.py:10 templates/contest/review_list.html:25
 #: templates/contest/review_list.html:129
+#: templates/internal/community_blog_queue.html:67
 #: templates/internal/problem_queue.html:654
 #: templates/organization/blog/pending.html:14
 #: templates/organization/requests/tabs.html:4
@@ -2472,6 +2494,7 @@ msgid "Mentioned you"
 msgstr "Đã nhắc đến bạn"
 
 #: judge/models/notification.py:24
+#: templates/internal/community_blog_composer.html:12
 msgid "Organization"
 msgstr "Tổ chức"
 
@@ -5061,6 +5084,18 @@ msgstr "Chọn tên đăng nhập"
 msgid "Create your profile"
 msgstr "Khởi tạo thông tin"
 
+#: judge/tasks/blog_composer.py:157
+msgid "Starting the magazine workflow"
+msgstr "Đang khởi chạy quy trình chuyên mục"
+
+#: judge/tasks/blog_composer.py:162
+msgid "Choosing a writing workflow"
+msgstr "Đang chọn hướng viết"
+
+#: judge/tasks/blog_composer.py:191
+msgid "Preparing the proposal"
+msgstr "Đang chuẩn bị bản nháp"
+
 #: judge/tasks/contest.py:20
 msgid "Recalculating contest scores"
 msgstr "Tính lại điểm kỳ thi"
@@ -5339,6 +5374,36 @@ msgstr "Chỉnh sửa từ web"
 msgid "Blog post updated."
 msgstr "Đã cập nhật bài đăng."
 
+#: judge/views/blog_composer.py:50 judge/views/blog_composer.py:86
+#: judge/views/blog_composer.py:152 judge/views/blog_composer.py:174
+msgid "Invalid post"
+msgstr "Bài viết không hợp lệ"
+
+#: judge/views/blog_composer.py:54
+msgid "Feedback is required"
+msgstr "Cần nhập phản hồi"
+
+#: judge/views/blog_composer.py:65 judge/views/blog_composer.py:117
+#: templates/internal/community_blog_composer.html:14
+msgid "Choose an organization"
+msgstr "Chọn cộng đồng"
+
+#: judge/views/blog_composer.py:92 judge/views/blog_composer.py:158
+msgid "Proposal is no longer available"
+msgstr "Bản nháp không còn khả dụng"
+
+#: judge/views/blog_composer.py:96 judge/views/blog_composer.py:162
+msgid "Markdown is too long"
+msgstr "Markdown quá dài"
+
+#: judge/views/blog_composer.py:122
+msgid "Choose an author"
+msgstr "Chọn tác giả"
+
+#: judge/views/blog_composer.py:140
+msgid "Blog proposal approved."
+msgstr "Đã duyệt bản nháp blog."
+
 #: judge/views/chatbot.py:55
 #, python-brace-format
 msgid "AI Assistant - {0}"
@@ -5407,15 +5472,15 @@ msgstr "Bạn phải giải ít nhất một bài trước khi được phép b�
 msgid "Contest auto-review is currently disabled."
 msgstr "Tự động đánh giá kỳ thi hoàn tất"
 
-#: judge/views/contest_review.py:341 judge/views/internal.py:1090
+#: judge/views/contest_review.py:341 judge/views/internal.py:1119
 msgid "Review currently running, please wait."
 msgstr "Phiên xem xét đang chạy, vui lòng chờ."
 
-#: judge/views/contest_review.py:360 judge/views/internal.py:1109
+#: judge/views/contest_review.py:360 judge/views/internal.py:1138
 msgid "No changes since your last review — edit something and try again."
 msgstr "Không có thay đổi kể từ lần xem xét trước — hãy sửa gì đó rồi thử lại."
 
-#: judge/views/contest_review.py:383 judge/views/internal.py:1138
+#: judge/views/contest_review.py:383 judge/views/internal.py:1167
 #, python-format
 msgid "Please wait %(mmss)s before requesting review again."
 msgstr "Vui lòng chờ %(mmss)s trước khi yêu cầu xem xét lại."
@@ -6446,96 +6511,96 @@ msgstr "Trang \"%s\" không tồn tại hoặc bạn không có quyền truy c�
 msgid "corrupt page %s"
 msgstr "trang bị sập %s"
 
-#: judge/views/internal.py:98 templates/internal/left-sidebar.html:5
+#: judge/views/internal.py:99 templates/internal/left-sidebar.html:5
 #: templates/internal/problem_duplicates.html:9
 msgid "Duplicate Problems"
 msgstr "Bài tập trùng lặp"
 
-#: judge/views/internal.py:118 judge/views/internal.py:414
+#: judge/views/internal.py:119 judge/views/internal.py:415
 #, python-format
 msgid "Marked %(source)s and %(target)s as not duplicated."
 msgstr "Đã đánh dấu %(source)s và %(target)s là không trùng."
 
-#: judge/views/internal.py:125
+#: judge/views/internal.py:126
 #, python-format
 msgid "No open duplicate candidate was found for %(source)s and %(target)s."
 msgstr ""
 "Không tìm thấy ứng viên trùng lặp đang mở cho %(source)s và %(target)s."
 
-#: judge/views/internal.py:139
+#: judge/views/internal.py:140
 msgid "A duplicate report refresh is already pending."
 msgstr "Đã có tác vụ làm mới báo cáo bài trùng đang chờ."
 
-#: judge/views/internal.py:141
+#: judge/views/internal.py:142
 msgid "Duplicate report refresh queued."
 msgstr "Đã đưa tác vụ làm mới báo cáo bài trùng vào hàng đợi."
 
-#: judge/views/internal.py:152
+#: judge/views/internal.py:153
 msgid "USE_ML is disabled"
 msgstr "USE_ML đang tắt"
 
-#: judge/views/internal.py:192
+#: judge/views/internal.py:193
 #: templates/internal/problem_duplicate_detail.html:70
 msgid "Duplicate Problem Review"
 msgstr "Xem xét bài tập trùng lặp"
 
-#: judge/views/internal.py:340
+#: judge/views/internal.py:341
 msgid "Problem not found."
 msgstr "Không tìm thấy bài tập."
 
-#: judge/views/internal.py:347
+#: judge/views/internal.py:348
 msgid "No accepted source submissions with stored source code were found."
 msgstr "Không tìm thấy bài nộp AC có lưu mã nguồn."
 
-#: judge/views/internal.py:368
+#: judge/views/internal.py:369
 #, python-format
 msgid "Queued %(count)s verification submissions."
 msgstr "Đã đưa %(count)s bài nộp kiểm chứng vào hàng đợi."
 
-#: judge/views/internal.py:375
+#: judge/views/internal.py:376
 msgid "Type MERGE to confirm the merge."
 msgstr "Nhập MERGE để xác nhận gộp."
 
-#: judge/views/internal.py:388
+#: judge/views/internal.py:389
 msgid "A merge for these problems is already pending."
 msgstr "Đã có yêu cầu gộp cho các bài này đang chờ."
 
-#: judge/views/internal.py:398
+#: judge/views/internal.py:399
 #, python-format
 msgid "Merge queued for %(source)s into %(target)s."
 msgstr "Đã đưa yêu cầu gộp %(source)s vào %(target)s vào hàng đợi."
 
-#: judge/views/internal.py:478 templates/internal/bridge_status.html:94
+#: judge/views/internal.py:479 templates/internal/bridge_status.html:94
 #: templates/internal/left-sidebar.html:10
 #, fuzzy
 #| msgid "Status"
 msgid "Bridge Status"
 msgstr "Trạng thái"
 
-#: judge/views/internal.py:492
+#: judge/views/internal.py:493
 msgid "Malformed bridge status response."
 msgstr ""
 
-#: judge/views/internal.py:495
+#: judge/views/internal.py:496
 #, fuzzy, python-format
 #| msgid "Semantic search unavailable: %(error)s"
 msgid "Bridge status is unavailable: %(error)s"
 msgstr "Tìm kiếm ngữ nghĩa không khả dụng: %(error)s"
 
-#: judge/views/internal.py:600
+#: judge/views/internal.py:601
 msgid "Internal problem queue"
 msgstr "Bài trong hàng đợi nội bộ"
 
-#: judge/views/internal.py:831 templates/internal/community_blog_queue.html:36
+#: judge/views/internal.py:832 templates/internal/community_blog_queue.html:80
 msgid "Community blog review queue"
 msgstr "Hàng đợi duyệt bài cộng đồng"
 
-#: judge/views/internal.py:957
+#: judge/views/internal.py:986
 #, python-format
 msgid "**[System]** This problem was approved by %(name)s. It is now public."
 msgstr "**[Hệ thống]** Đề đã được %(name)s chấp nhận và công khai."
 
-#: judge/views/internal.py:997
+#: judge/views/internal.py:1026
 #, python-format
 msgid ""
 "**[System]** This problem was rejected by %(name)s.\n"
@@ -6546,114 +6611,114 @@ msgstr ""
 "\n"
 "**Lý do:** %(reason)s"
 
-#: judge/views/internal.py:1001
+#: judge/views/internal.py:1030
 #, python-format
 msgid ""
 "**[System]** This problem was rejected by %(name)s. No reason was provided."
 msgstr "**[Hệ thống]** Đề bị %(name)s từ chối. Không có lý do được cung cấp."
 
-#: judge/views/internal.py:1216
+#: judge/views/internal.py:1245
 msgid "A pending request already exists."
 msgstr "Yêu cầu đang chờ xử lý đã tồn tại."
 
-#: judge/views/internal.py:1421
+#: judge/views/internal.py:1450
 msgid "1 hour"
 msgstr ""
 
-#: judge/views/internal.py:1422
+#: judge/views/internal.py:1451
 #, fuzzy
 #| msgid "Course"
 msgid "6 hours"
 msgstr "Khóa học"
 
-#: judge/views/internal.py:1423
+#: judge/views/internal.py:1452
 msgid "24 hours"
 msgstr ""
 
-#: judge/views/internal.py:1424
+#: judge/views/internal.py:1453
 #, fuzzy
 #| msgid "%d day"
 #| msgid_plural "%d days"
 msgid "7 days"
 msgstr "%d ngày"
 
-#: judge/views/internal.py:1425
+#: judge/views/internal.py:1454
 msgid "Retained"
 msgstr ""
 
-#: judge/views/internal.py:1635
+#: judge/views/internal.py:1664
 msgid "Request times"
 msgstr "thời gian đăng ký"
 
-#: judge/views/internal.py:1691 judge/views/internal.py:1843
+#: judge/views/internal.py:1720 judge/views/internal.py:1872
 msgid "Unresolved"
 msgstr "Không xác định"
 
-#: judge/views/internal.py:1853
+#: judge/views/internal.py:1882
 msgid "Request profile"
 msgstr "Hồ sơ request"
 
-#: judge/views/internal.py:1879 judge/views/internal.py:1889
+#: judge/views/internal.py:1908 judge/views/internal.py:1918
 #: templates/internal/left-sidebar.html:12
 msgid "Slow requests"
 msgstr "Requests chậm"
 
-#: judge/views/internal.py:1898 templates/internal/left-sidebar.html:7
+#: judge/views/internal.py:1927 templates/internal/left-sidebar.html:7
 msgid "Chat Moderation"
 msgstr "Kiểm duyệt chat"
 
-#: judge/views/internal.py:1973
+#: judge/views/internal.py:2002
 msgid "Chat moderation case kept."
 msgstr "Đã giữ lại trường hợp kiểm duyệt chat."
 
-#: judge/views/internal.py:1982
+#: judge/views/internal.py:2011
 msgid "Chat message hidden."
 msgstr "Tin nhắn chat đã bị ẩn."
 
-#: judge/views/internal.py:1999 judge/views/internal.py:2167
+#: judge/views/internal.py:2028 judge/views/internal.py:2196
 msgid "User temporarily muted."
 msgstr "Người dùng đã bị cấm chat tạm thời."
 
-#: judge/views/internal.py:2016 judge/views/internal.py:2184
+#: judge/views/internal.py:2045 judge/views/internal.py:2213
 msgid "User permanently muted."
 msgstr "Người dùng đã bị cấm chat vĩnh viễn."
 
-#: judge/views/internal.py:2018 judge/views/internal.py:2186
-#: judge/views/internal.py:2284
+#: judge/views/internal.py:2047 judge/views/internal.py:2215
+#: judge/views/internal.py:2313
 msgid "Unknown moderation action."
 msgstr "Hành động kiểm duyệt không xác định."
 
-#: judge/views/internal.py:2046 templates/internal/comment_moderation.html:106
+#: judge/views/internal.py:2075 templates/internal/comment_moderation.html:106
 #: templates/internal/left-sidebar.html:8
 msgid "Comment Moderation"
 msgstr "Kiểm duyệt bình luận"
 
-#: judge/views/internal.py:2136
+#: judge/views/internal.py:2165
 msgid "Comment moderation case kept."
 msgstr "Đã giữ lại trường hợp kiểm duyệt bình luận."
 
-#: judge/views/internal.py:2150
+#: judge/views/internal.py:2179
 msgid "Comment hidden."
 msgstr "Đã ẩn bình luận."
 
-#: judge/views/internal.py:2221 templates/internal/left-sidebar.html:9
+#: judge/views/internal.py:2250 templates/internal/left-sidebar.html:9
 #: templates/internal/username_moderation.html:9
 msgid "Username Moderation"
 msgstr "Kiểm duyệt tên người dùng"
 
-#: judge/views/internal.py:2273
+#: judge/views/internal.py:2302
 msgid "Username moderation case allowed."
 msgstr "Đã cho phép trường hợp kiểm duyệt tên người dùng."
 
-#: judge/views/internal.py:2276
+#: judge/views/internal.py:2305
 msgid "User disabled and public identity hidden."
 msgstr "Đã vô hiệu hóa người dùng và ẩn danh tính công khai."
 
-#: judge/views/internal.py:2279
+#: judge/views/internal.py:2308
 msgid "Public identity hidden."
 msgstr "Đã ẩn danh tính công khai."
 
-#: judge/views/internal.py:2282
+#: judge/views/internal.py:2311
 msgid "Public identity restored."
 msgstr "Đã khôi phục danh tính công khai."
 
@@ -9923,6 +9988,7 @@ msgid "Search reviews..."
 msgstr "Tìm lượt xem xét..."
 
 #: templates/contest/review_list.html:108
+#: templates/internal/community_blog_composer.html:21
 #: templates/internal/problem_queue.html:679
 #: templates/notification/list.html:97 templates/notification/list.html:137
 #: templates/problem/review_list.html:151 templates/problem/search-form.html:41
@@ -10260,7 +10326,7 @@ msgstr "Về khóa học này"
 #: templates/course/search-form.html:2 templates/course/search-form.html:24
 #: templates/internal/chat_moderation.html:130
 #: templates/internal/comment_moderation.html:130
-#: templates/internal/community_blog_queue.html:50
+#: templates/internal/community_blog_queue.html:98
 #: templates/internal/username_moderation.html:39
 #: templates/notification/list.html:102
 #: templates/quiz/grading/dashboard.html:55
@@ -10940,31 +11006,96 @@ msgstr "Tìm kiếm người dùng hoặc bình luận..."
 msgid "Context"
 msgstr "Ngữ cảnh"
 
-#: templates/internal/community_blog_queue.html:38
+#: templates/internal/community_blog_composer.html:20
+#: templates/quiz/import.html:136 templates/quiz/manage.html:44
+#: templates/ticket/list.html:367
+msgid "Title"
+msgstr "Tiêu đề"
+
+#: templates/internal/community_blog_composer.html:23
+msgid "Describe the post or give feedback on the current draft"
+msgstr "Mô tả bài viết hoặc góp ý cho bản nháp hiện tại"
+
+#: templates/internal/community_blog_composer.html:25
+msgid "Clear conversation"
+msgstr "Xóa cuộc trò chuyện"
+
+#: templates/internal/community_blog_composer.html:26
+msgid "Generate proposal"
+msgstr "Tạo bản nháp"
+
+#: templates/internal/community_blog_composer.html:37
+#: templates/internal/community_blog_queue.html:28
+msgid "Rendered"
+msgstr "Bản xem trước"
+
+#: templates/internal/community_blog_composer.html:38
+#: templates/internal/community_blog_queue.html:29
+msgid "Markdown"
+msgstr "Markdown"
+
+#: templates/internal/community_blog_composer.html:53
+#: templates/internal/community_blog_queue.html:25
+msgid "Approve draft"
+msgstr "Duyệt bản nháp"
+
+#: templates/internal/community_blog_composer.html:55
+msgid "No draft proposal yet."
+msgstr "Chưa có bản nháp."
+
+#: templates/internal/community_blog_queue.html:23
+#, fuzzy
+#| msgid "Request failed."
+msgid "Request failed"
+msgstr "Yêu cầu thất bại."
+
+#: templates/internal/community_blog_queue.html:24
+msgid "The draft could not be generated."
+msgstr ""
+
+#: templates/internal/community_blog_queue.html:26
+msgid "Apply this draft to the blog post?"
+msgstr ""
+
+#: templates/internal/community_blog_queue.html:27
+#, fuzzy
+#| msgid "Creating test generators"
+msgid "Starting draft generation"
+msgstr "Tạo trình sinh test"
+
+#: templates/internal/community_blog_queue.html:74
+msgid "Composer"
+msgstr "Trình soạn bài"
+
+#: templates/internal/community_blog_queue.html:78
+msgid "Community blog composer"
+msgstr "Trình soạn bài cộng đồng"
+
+#: templates/internal/community_blog_queue.html:86
 msgid "Generated and submitted community posts waiting for manual review."
 msgstr "Các bài cộng đồng đã được tạo hoặc gửi lên và đang chờ duyệt thủ công."
 
-#: templates/internal/community_blog_queue.html:39
+#: templates/internal/community_blog_queue.html:87
 msgid "pending"
 msgstr "đang chờ"
 
-#: templates/internal/community_blog_queue.html:39
+#: templates/internal/community_blog_queue.html:87
 msgid "communities"
 msgstr "cộng đồng"
 
-#: templates/internal/community_blog_queue.html:43
+#: templates/internal/community_blog_queue.html:91
 msgid "Search title, content, or community"
 msgstr "Tìm tiêu đề, nội dung hoặc cộng đồng"
 
-#: templates/internal/community_blog_queue.html:45
+#: templates/internal/community_blog_queue.html:93
 msgid "Oldest first"
 msgstr "Cũ nhất trước"
 
-#: templates/internal/community_blog_queue.html:46
+#: templates/internal/community_blog_queue.html:94
 msgid "Newest first"
 msgstr "Mới nhất trước"
 
-#: templates/internal/community_blog_queue.html:53
+#: templates/internal/community_blog_queue.html:101
 #: templates/internal/problem_queue.html:716
 #: templates/notification/list.html:109
 #: templates/quiz/grading/dashboard.html:89
@@ -10972,7 +11103,7 @@ msgstr "Mới nhất trước"
 msgid "Clear"
 msgstr "Xóa"
 
-#: templates/internal/community_blog_queue.html:59
+#: templates/internal/community_blog_queue.html:107
 msgid "No pending community blog posts."
 msgstr "Không có bài cộng đồng nào đang chờ duyệt."
 
@@ -14160,11 +14291,6 @@ msgstr "Mã quiz"
 #: templates/quiz/import.html:133
 msgid "Only lowercase letters and digits"
 msgstr "Chỉ chữ thường và chữ số"
-
-#: templates/quiz/import.html:136 templates/quiz/manage.html:44
-#: templates/ticket/list.html:367
-msgid "Title"
-msgstr "Tiêu đề"
 
 #: templates/quiz/import.html:137
 msgid "Final Exam 2024"
