@@ -1444,9 +1444,10 @@ PURPOSE: {purpose}
 
         if expected_difficulties:
             return selected[:max_count]
-        return [selected_map[code] for code in selected_codes if code in selected_map][
-            :max_count
-        ]
+        resolved = [
+            selected_map[code] for code in selected_codes if code in selected_map
+        ][:max_count]
+        return resolved if len(resolved) >= minimum_count else []
 
     def _public_problem_candidate_map(self, codes, org, expected_difficulties):
         problems = (
@@ -1778,19 +1779,23 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
             return []
         if not getattr(settings, "USE_ML", False):
             return []
-        candidates = self._select_public_problems_with_agent(
-            service=service,
-            org=org,
-            expected_difficulties=(),
-            max_count=3,
-            minimum_count=2,
-            purpose=f"""Chọn 2-3 bài áp dụng cho bài chia sẻ kiến thức.
+        candidates = []
+        for _ in range(2):
+            candidates = self._select_public_problems_with_agent(
+                service=service,
+                org=org,
+                expected_difficulties=(),
+                max_count=3,
+                minimum_count=2,
+                purpose=f"""Chọn 2-3 bài áp dụng cho bài chia sẻ kiến thức.
 TOPIC_TITLE: {topic}
 EXAMPLE_DIRECTION: {guide.instruction}
 Chỉ chọn khi đề bài thực sự cho người đọc thực hành ý chính của chủ đề.
 EXAMPLE_DIRECTION là yêu cầu chính xác: bài được chọn phải thực hành đủ mối liên hệ
 được mô tả ở đó, không chỉ một thuật ngữ hoặc một thao tác riêng lẻ.""",
-        )
+            )
+            if len(candidates) >= 2:
+                break
         return [
             PracticeProblem(
                 code=candidate.code,
@@ -2114,19 +2119,23 @@ EXAMPLE_DIRECTION là yêu cầu chính xác: bài được chọn phải thực
     def _problem_practice_problems(self, service, candidate):
         if not service or not getattr(settings, "USE_ML", False):
             return []
-        selected = self._select_public_problems_with_agent(
-            service=service,
-            org=getattr(self, "target_org", None),
-            expected_difficulties=(),
-            max_count=3,
-            minimum_count=2,
-            purpose=f"""Chọn 2-3 bài tập tương tự cho bài gợi ý này.
+        selected = []
+        for _ in range(2):
+            selected = self._select_public_problems_with_agent(
+                service=service,
+                org=getattr(self, "target_org", None),
+                expected_difficulties=(),
+                max_count=3,
+                minimum_count=2,
+                purpose=f"""Chọn 2-3 bài tập tương tự cho bài gợi ý này.
 FEATURED_PROBLEM_TITLE: {candidate.name}
 FEATURED_PROBLEM_STATEMENT:
 {candidate.statement[:4000]}
 Chỉ chọn bài thực hành cùng ý tưởng chính. Không chọn bài chỉ trùng nhãn kỹ thuật,
 và không chọn lại bài featured.""",
-        )
+            )
+            if len(selected) >= 2:
+                break
         return [
             PracticeProblem(
                 code=item.code,
