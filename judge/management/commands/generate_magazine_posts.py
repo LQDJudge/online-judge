@@ -8,11 +8,14 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
+from django.db import close_old_connections
 from django.db.models import Count, Max, Q
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.text import slugify
 
+from asgiref.sync import async_to_sync, sync_to_async
+import fastapi_poe as fp
 from reversion import revisions
 
 from judge.ml.semantic_search import SemanticSearchUnavailable, search_problems
@@ -647,6 +650,56 @@ Trả về đúng JSON:
 
 Chỉ trả JSON."""
 
+PROBLEM_SELECTION_SYSTEM_PROMPT = r"""Bạn là biên tập viên chọn bài lập trình công khai cho chuyên mục LQDOJ.
+
+Nhiệm vụ: dùng công cụ để tự tìm và đọc đề, rồi trả JSON hợp lệ.
+- Bắt đầu bằng search_public_problems để tìm ứng viên. Có thể gọi lại với truy vấn khác nếu kết quả chưa phù hợp.
+- Trước khi tìm, tách EXAMPLE_DIRECTION/PURPOSE thành quan hệ cụ thể cần luyện:
+  trạng thái hoặc dữ liệu đầu vào, các lựa chọn trước đó, đại lượng phải lấy tốt nhất,
+  và thao tác cấu trúc dữ liệu. Giữ đủ quan hệ này trong truy vấn, không tìm bằng một
+  nhãn đơn lẻ như "segment tree" hoặc "DP".
+- Bạn có công cụ get_problem_statement(code) để đọc đề bài đầy đủ.
+- Bắt buộc gọi get_problem_statement cho mọi mã bài bạn định chọn trước khi chọn.
+- Chọn đúng số lượng và cơ cấu độ khó được yêu cầu, ưu tiên bài có đề rõ ràng,
+  phù hợp với cộng đồng, và có một ý tưởng đáng để viết bài giới thiệu.
+- Không chọn bài chỉ vì cùng nhãn kỹ thuật hoặc điểm số.
+- PURPOSE và EXAMPLE_DIRECTION nêu ý kết hợp cần luyện. Một bài chỉ khớp một từ
+  khóa hay một thành phần của ý đó không đủ phù hợp.
+- Khi MINIMUM_SELECTIONS lớn hơn 1, dùng ít nhất hai truy vấn semantic khác nhau
+  trước khi kết luận không đủ bài. Mỗi truy vấn phải diễn đạt cùng quan hệ cốt lõi
+  theo một cách khác, không chỉ thay một nhãn kỹ thuật.
+- Chỉ dùng mã do search_public_problems trả về.
+
+Trả về đúng JSON:
+{"codes": ["ma-bai-1", "ma-bai-2"], "evidence": {"ma-bai-1": "bước chuyển/truy vấn cụ thể đã đọc trong đề"}}
+
+`evidence` phải nêu rõ vì sao đề bài luyện đúng quan hệ trong PURPOSE, không chỉ lặp
+lại tên nhãn kỹ thuật. Nếu không viết được evidence chính xác từ đề đã đọc, không chọn bài.
+
+Chỉ trả JSON."""
+
+CONTEST_SELECTION_SYSTEM_PROMPT = r"""Bạn chọn một kỳ thi để viết bài gợi ý đọc trên LQDOJ.
+
+Nhiệm vụ: dùng công cụ để tự tìm và đọc kỳ thi, rồi trả JSON hợp lệ.
+- Bắt đầu bằng search_public_contests để tìm ứng viên. Có thể gọi lại nếu cần.
+- Bạn có công cụ get_contest_details(key) để đọc mô tả kỳ thi và đề các bài công khai.
+- Bắt buộc gọi get_contest_details cho kỳ thi bạn định chọn trước khi chọn.
+- Chọn kỳ thi có ít nhất hai bài công khai, có chất liệu cụ thể để gợi ý người đọc bắt đầu,
+  và phù hợp với cộng đồng.
+- Chỉ dùng key do search_public_contests trả về.
+
+Trả về đúng JSON:
+{"key": "contest-key"}
+
+Chỉ trả JSON."""
+
+AGENT_TOOL_PROTOCOL = r"""
+Bạn đang làm việc qua một vòng lặp công cụ. Khi cần dùng công cụ, chỉ trả đúng JSON:
+{"tool_call": {"name": "ten_cong_cu", "arguments": {}}}
+Sau đó bạn sẽ nhận TOOL_RESULT và tiếp tục. Chỉ khi đã xong mới trả JSON kết quả cuối
+theo định dạng được yêu cầu. Không đặt tool_call và kết quả cuối trong cùng một phản hồi.
+"""
+
 
 @dataclass
 class ProblemCandidate:
@@ -682,6 +735,16 @@ class TopicExampleGuide:
     instruction: str
     required_markers: tuple
     label: str
+
+
+@dataclass
+class PracticeProblem:
+    code: str
+    name: str
+    url: str
+    points: float
+    types: list
+    score: float = 0.0
 
 
 @dataclass
@@ -740,7 +803,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--llm",
-            default="Gemini-3.5-Flash-Lite",
+            default="Gemini-3.7-Flash",
             help="Poe bot name to use for writing",
         )
         parser.add_argument(
@@ -823,14 +886,18 @@ class Command(BaseCommand):
                     rng, problem_count, options["difficulty"], org
                 )
                 candidates = self._collect_problem_candidates(
-                    difficulties, used_codes, org
+                    None, difficulties, used_codes, org
                 )
-                chosen = self._choose_problem_candidates(rng, candidates, difficulties)
+                chosen = self._choose_problem_candidates(
+                    service, rng, candidates, difficulties
+                )
             for candidate in chosen:
                 generated.append(self._generate_problem_post(service, candidate))
 
         if post_type == "contest" or "contest" in mixed_plan:
-            contest = self._select_contest(rng, options["contest"], history)
+            contest = self._select_contest(
+                service, rng, options["contest"], history, org
+            )
             generated.append(self._generate_contest_post(service, contest))
 
         if post_type == "topic" or "topic" in mixed_plan:
@@ -1006,23 +1073,25 @@ class Command(BaseCommand):
         )
         return any(marker in text or marker in slug for marker in markers)
 
-    def _collect_problem_candidates(self, difficulties, used_codes, org):
+    def _collect_problem_candidates(self, service, difficulties, used_codes, org):
         candidates = []
         seen = set(used_codes)
         for difficulty in set(difficulties):
-            candidates.extend(self._semantic_problem_candidates(difficulty, seen, org))
+            candidates.extend(
+                self._semantic_problem_candidates(service, difficulty, seen, org)
+            )
             candidates.extend(self._activity_problem_candidates(difficulty, seen, org))
             candidates.extend(
                 self._recent_contest_problem_candidates(difficulty, seen, org)
             )
         return candidates
 
-    def _semantic_problem_candidates(self, difficulty, seen, org):
+    def _semantic_problem_candidates(self, service, difficulty, seen, org):
         if not getattr(settings, "USE_ML", False):
             return []
         results = []
         low, high = self._difficulty_range(difficulty, org)
-        for query in self._queries_for_org(difficulty, org):
+        for query in self._queries_for_org(difficulty):
             try:
                 rows = search_problems(query, limit=25)
             except SemanticSearchUnavailable:
@@ -1139,7 +1208,7 @@ class Command(BaseCommand):
             is_organization_private=False,
         )
 
-    def _queries_for_org(self, difficulty, org):
+    def _queries_for_org(self, difficulty):
         return DIFFICULTY_QUERIES[difficulty]
 
     def _difficulty_range(self, difficulty, org):
@@ -1164,7 +1233,7 @@ class Command(BaseCommand):
             ac_rate=round(problem.ac_rate, 2),
             group=problem.group.full_name if problem.group else "",
             types=[item.full_name for item in problem.types.all()],
-            statement=statement[:1800],
+            statement=statement,
             source=source,
             semantic_score=float(kwargs.get("semantic_score", 0.0)),
             recent_users=int(kwargs.get("recent_users", 0)),
@@ -1284,7 +1353,281 @@ class Command(BaseCommand):
         )
         return not (image_markers >= 2 and len(statement) < 900)
 
-    def _choose_problem_candidates(self, rng, candidates, difficulties):
+    def _choose_problem_candidates(self, service, rng, candidates, difficulties):
+        fallback = self._choose_problem_candidates_fallback(
+            rng, candidates, difficulties
+        )
+        if not service:
+            return fallback
+
+        selected = self._select_public_problems_with_agent(
+            service=service,
+            org=getattr(self, "target_org", None),
+            expected_difficulties=difficulties,
+            max_count=len(difficulties),
+            minimum_count=len(difficulties),
+            purpose=(
+                "Chọn bài cho chuyên mục Bài gợi ý. Mỗi bài cần có một ý tưởng "
+                "cụ thể đáng để giải thích, không chỉ phổ biến."
+            ),
+        )
+        return selected if len(selected) == len(difficulties) else fallback
+
+    def _select_public_problems_with_agent(
+        self, service, org, expected_difficulties, max_count, minimum_count, purpose
+    ):
+        expected_difficulties = list(expected_difficulties or ())
+        prompt = f"""COMMUNITY_CONTEXT:
+{self._organization_text(org) or "general"}
+AUDIENCE_LEVEL: {self._audience_level(org)}
+REQUIRED_DIFFICULTIES: {json.dumps(expected_difficulties, ensure_ascii=False)}
+MAXIMUM_SELECTIONS: {max_count}
+MINIMUM_SELECTIONS: {minimum_count}
+PURPOSE: {purpose}
+"""
+        read_codes = set()
+        try:
+            response = self._call_agent_with_tools(
+                service=service,
+                prompt=prompt,
+                system_prompt=PROBLEM_SELECTION_SYSTEM_PROMPT,
+                tools=self._public_problem_tool_definitions(),
+                tool_executables=self._public_problem_tool_executables(
+                    org, expected_difficulties, read_codes
+                ),
+            )
+        except Exception:
+            return []
+
+        result = self._parse_review_response(response or "")
+        selected_codes = result.get("codes") if isinstance(result, dict) else None
+        if not isinstance(selected_codes, list):
+            return []
+        evidence = result.get("evidence", {})
+        if not isinstance(evidence, dict):
+            return []
+
+        selected_codes = [str(code).strip() for code in selected_codes]
+        selected_codes = list(dict.fromkeys(code for code in selected_codes if code))
+        selected_codes = [
+            code
+            for code in selected_codes
+            if code in read_codes and len(str(evidence.get(code, "")).strip()) >= 24
+        ]
+        if not selected_codes:
+            return []
+        if len(selected_codes) < minimum_count:
+            return []
+
+        selected_map = self._public_problem_candidate_map(
+            selected_codes, org, expected_difficulties
+        )
+        selected_by_difficulty = {}
+        for code in selected_codes:
+            candidate = selected_map.get(code)
+            if candidate:
+                selected_by_difficulty.setdefault(candidate.difficulty, []).append(
+                    candidate
+                )
+
+        selected = []
+        used_codes = set()
+        for difficulty in expected_difficulties:
+            options = selected_by_difficulty.get(difficulty, [])
+            candidate = next(
+                (item for item in options if item.code not in used_codes), None
+            )
+            if candidate is None:
+                return []
+            selected.append(candidate)
+            used_codes.add(candidate.code)
+
+        if expected_difficulties:
+            return selected[:max_count]
+        return [selected_map[code] for code in selected_codes if code in selected_map][
+            :max_count
+        ]
+
+    def _public_problem_candidate_map(self, codes, org, expected_difficulties):
+        problems = (
+            self._base_problem_queryset()
+            .filter(code__in=codes)
+            .select_related("group")
+            .prefetch_related("types")
+        )
+        candidates = {}
+        for problem in problems:
+            if not self._audience_problem_ok(problem, org):
+                continue
+            difficulty = (
+                self._problem_difficulty(problem, org, expected_difficulties)
+                if expected_difficulties
+                else "practice"
+            )
+            if not difficulty:
+                continue
+            candidate = self._candidate_from_problem(
+                problem, difficulty, "agentic_search", org=org
+            )
+            if candidate:
+                candidates[candidate.code] = candidate
+        return candidates
+
+    def _problem_difficulty(self, problem, org, expected_difficulties):
+        difficulties = expected_difficulties or DIFFICULTY_RANGES
+        for difficulty in difficulties:
+            low, high = self._difficulty_range(difficulty, org)
+            if low <= problem.points <= high:
+                return difficulty
+        return None
+
+    def _public_problem_tool_definitions(self):
+        return [
+            fp.ToolDefinition(
+                type="function",
+                function={
+                    "name": "search_public_problems",
+                    "description": (
+                        "Semantic-search public, non-private LQDOJ problems that fit "
+                        "the requested audience and difficulty buckets."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "A semantic search query in Vietnamese or English.",
+                            },
+                            "difficulty": {
+                                "type": "string",
+                                "description": "One required difficulty bucket, if applicable.",
+                            },
+                        },
+                        "required": ["query"],
+                    },
+                },
+            ),
+            *self._problem_statement_tool_definitions(),
+        ]
+
+    def _public_problem_tool_executables(self, org, expected_difficulties, read_codes):
+        allowed_difficulties = set(expected_difficulties or DIFFICULTY_RANGES)
+
+        @sync_to_async
+        def search_public_problems(query, difficulty=None):
+            close_old_connections()
+            difficulty = str(difficulty or "").strip()
+            difficulties = (
+                [difficulty]
+                if difficulty in allowed_difficulties
+                else allowed_difficulties
+            )
+            try:
+                rows = search_problems(str(query).strip(), limit=20)
+            except SemanticSearchUnavailable:
+                return "Semantic search is unavailable. Try another approach later."
+
+            codes = [row["code"] for row in rows]
+            score_map = {row["code"]: float(row.get("score", 0.0)) for row in rows}
+            results = []
+            for problem in self._base_problem_queryset().filter(code__in=codes):
+                if not self._audience_problem_ok(problem, org):
+                    continue
+                matched_difficulty = (
+                    self._problem_difficulty(problem, org, difficulties)
+                    if expected_difficulties
+                    else "practice"
+                )
+                if not matched_difficulty:
+                    continue
+                results.append(
+                    {
+                        "code": problem.code,
+                        "name": problem.name,
+                        "difficulty": matched_difficulty,
+                        "points": problem.points,
+                        "types": [item.full_name for item in problem.types.all()],
+                        "semantic_score": score_map.get(problem.code, 0.0),
+                    }
+                )
+            return json.dumps(results[:12], ensure_ascii=False)
+
+        @sync_to_async
+        def get_problem_statement(code):
+            close_old_connections()
+            code = str(code).strip()
+            try:
+                problem = self._base_problem_queryset().get(code=code)
+            except Problem.DoesNotExist:
+                return "Unknown or ineligible problem code."
+            if not self._audience_problem_ok(problem, org) or (
+                expected_difficulties
+                and not self._problem_difficulty(problem, org, allowed_difficulties)
+            ):
+                return "This problem is not eligible for this selection."
+            read_codes.add(code)
+            statement = self._clean_statement(problem.description)
+            return self._statement_tool_result(problem, statement)
+
+        search_public_problems.__name__ = "search_public_problems"
+        get_problem_statement.__name__ = "get_problem_statement"
+        return [search_public_problems, get_problem_statement]
+
+    def _statement_tool_result(self, problem, statement):
+        if len(statement) > 8000:
+            statement = statement[:8000] + "\n\n... (truncated)"
+        return f"Problem {problem.code}: {problem.name}\n\n{statement}"
+
+    def _call_agent_with_tools(
+        self, service, prompt, system_prompt, tools, tool_executables
+    ):
+        executable_map = {tool.__name__: tool for tool in tool_executables}
+        tool_names = ", ".join(executable_map)
+        conversation_messages = []
+        tool_system_prompt = (
+            f"{system_prompt}\n{AGENT_TOOL_PROTOCOL}\n"
+            f"Công cụ khả dụng: {tool_names}."
+        )
+        current_prompt = prompt
+
+        for _ in range(8):
+            response = service.call_llm_with_history(
+                conversation_messages=conversation_messages,
+                current_prompt=current_prompt,
+                system_prompt=tool_system_prompt,
+            )
+            if not response:
+                return None
+            result = self._parse_review_response(response)
+            tool_call = result.get("tool_call") if isinstance(result, dict) else None
+            if not isinstance(tool_call, dict):
+                return response
+
+            name = str(tool_call.get("name", "")).strip()
+            arguments = tool_call.get("arguments", {})
+            executable = executable_map.get(name)
+            if not executable or not isinstance(arguments, dict):
+                return None
+            try:
+                tool_result = async_to_sync(executable)(**arguments)
+            except (TypeError, ValueError):
+                return None
+
+            conversation_messages.extend(
+                (
+                    {"role": "assistant", "content": response},
+                    {
+                        "role": "user",
+                        "content": f"TOOL_RESULT {name}:\n{tool_result}",
+                    },
+                )
+            )
+            current_prompt = (
+                "Tiếp tục dùng công cụ nếu cần, hoặc trả JSON kết quả cuối."
+            )
+        return None
+
+    def _choose_problem_candidates_fallback(self, rng, candidates, difficulties):
         chosen = []
         used = set()
         for difficulty in difficulties:
@@ -1316,12 +1659,15 @@ class Command(BaseCommand):
 
     def _generate_problem_post(self, service, candidate):
         title = self._problem_post_title(candidate)
-        prompt = self._problem_prompt(candidate)
+        practice_problems = self._problem_practice_problems(service, candidate)
+        prompt = self._problem_prompt(candidate, practice_problems)
         content = self._call_with_validation(
             service,
             prompt,
             PROBLEM_SYSTEM_PROMPT,
-            lambda body: self._validate_problem_post(body, candidate),
+            lambda body: self._validate_problem_post(
+                body, candidate, practice_problems
+            ),
         )
         return GeneratedPost(
             title=title,
@@ -1380,12 +1726,15 @@ class Command(BaseCommand):
 
     def _generate_topic_post(self, service, topic, org):
         guide = self._topic_example_guide(topic, org)
-        prompt = self._topic_prompt(topic, org, guide)
+        practice_problems = self._topic_practice_problems(service, topic, org, guide)
+        prompt = self._topic_prompt(topic, org, guide, practice_problems)
         content = self._call_with_validation(
             service,
             prompt,
             TOPIC_SYSTEM_PROMPT,
-            lambda body: self._validate_topic_post(body, topic, guide),
+            lambda body: self._validate_topic_post(
+                body, topic, guide, practice_problems
+            ),
         )
         return GeneratedPost(
             title=topic[:100],
@@ -1394,12 +1743,19 @@ class Command(BaseCommand):
             topic=topic,
         )
 
-    def _topic_prompt(self, topic, org, guide):
+    def _topic_prompt(self, topic, org, guide, practice_problems=None):
+        practice_json = json.dumps(
+            [problem.__dict__ for problem in practice_problems or ()],
+            ensure_ascii=False,
+            indent=2,
+        )
         return f"""TOPIC_TITLE: {topic}
 AUDIENCE:
 {self._audience_prompt_text(None)}
 EXAMPLE_DIRECTION:
 {guide.instruction}
+PRACTICE_PROBLEMS_JSON:
+{practice_json}
 
 Viết một bài chuyên mục ngắn theo thứ tự:
 1. Bắt đầu bằng **Tóm tắt:** trong một câu ngắn.
@@ -1411,9 +1767,98 @@ Viết một bài chuyên mục ngắn theo thứ tự:
 7. Nêu bước thực hiện cụ thể. Chỉ dùng mẩu mã trong dấu `...` nếu thật sự đang nói về mã.
 8. Kết bằng một thao tác cụ thể người đọc có thể thử, không kết luận chung chung.
 
+Nếu PRACTICE_PROBLEMS_JSON không rỗng, thêm mục **Bài áp dụng:** gần cuối bài với 2-3 link từ đúng JSON đó. Sau mỗi link, nói ngắn bài đó luyện được phần nào của ý tưởng. Không tự bịa link bài.
+
 Không viết dòng **Chủ đề:** TOPIC_TITLE trong nội dung. Tiêu đề đã nằm ngoài bài.
 
 Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Không thay bằng ví dụ khác tiện tay hơn."""
+
+    def _topic_practice_problems(self, service, topic, org, guide):
+        if not self._topic_supports_practice_problems(topic, org, guide):
+            return []
+        if not getattr(settings, "USE_ML", False):
+            return []
+        candidates = self._select_public_problems_with_agent(
+            service=service,
+            org=org,
+            expected_difficulties=(),
+            max_count=3,
+            minimum_count=2,
+            purpose=f"""Chọn 2-3 bài áp dụng cho bài chia sẻ kiến thức.
+TOPIC_TITLE: {topic}
+EXAMPLE_DIRECTION: {guide.instruction}
+Chỉ chọn khi đề bài thực sự cho người đọc thực hành ý chính của chủ đề.
+EXAMPLE_DIRECTION là yêu cầu chính xác: bài được chọn phải thực hành đủ mối liên hệ
+được mô tả ở đó, không chỉ một thuật ngữ hoặc một thao tác riêng lẻ.""",
+        )
+        return [
+            PracticeProblem(
+                code=candidate.code,
+                name=candidate.name,
+                url=candidate.url,
+                points=candidate.points,
+                types=candidate.types,
+            )
+            for candidate in candidates
+        ]
+
+    def _problem_statement_tool_definitions(self):
+        return [
+            fp.ToolDefinition(
+                type="function",
+                function={
+                    "name": "get_problem_statement",
+                    "description": (
+                        "Get the full statement text for one candidate problem code."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "code": {
+                                "type": "string",
+                                "description": (
+                                    "A problem code returned by search_public_problems."
+                                ),
+                            }
+                        },
+                        "required": ["code"],
+                    },
+                },
+            )
+        ]
+
+    def _topic_supports_practice_problems(self, topic, org, guide):
+        if self._is_knowledge_share_org(org):
+            return True
+        org_text = self._organization_text(org).lower()
+        slug = getattr(org, "slug", "").lower()
+        excluded_markers = (
+            "off-topic",
+            "tán gẫu",
+            "tan gau",
+            "hỏi đáp",
+            "hoi dap",
+            "thắc mắc",
+            "thac mac",
+        )
+        if self._is_contest_discussion_org(org) or any(
+            marker in org_text or marker in slug for marker in excluded_markers
+        ):
+            return False
+        return True
+
+    def _is_knowledge_share_org(self, org):
+        text = self._organization_text(org).lower()
+        slug = getattr(org, "slug", "").lower()
+        markers = (
+            "tài liệu học tập",
+            "tai lieu hoc tap",
+            "tai-lieu-hoc-tap",
+            "chia sẻ kiến thức",
+            "chia se kien thuc",
+            "knowledge share",
+        )
+        return any(marker in text or marker in slug for marker in markers)
 
     def _topic_example_guide(self, topic, org):
         level = self._audience_level(org)
@@ -1624,7 +2069,7 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
             ),
         )
 
-    def _validate_topic_post(self, body, topic, guide):
+    def _validate_topic_post(self, body, topic, guide, practice_problems=None):
         errors = self._common_markdown_errors(body)
         lines = body.strip().splitlines()
         if not lines or not lines[0].strip().startswith("**Tóm tắt:**"):
@@ -1640,6 +2085,12 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
         errors.extend(self._topic_core_mechanism_errors(body))
         errors.extend(self._topic_specificity_errors(body))
         errors.extend(self._topic_example_guide_errors(body, guide))
+        if practice_problems and not any(
+            problem.url in body for problem in practice_problems
+        ):
+            errors.append(
+                "Bài topic cần gợi ý ít nhất một bài áp dụng từ PRACTICE_PROBLEMS_JSON"
+            )
         return errors
 
     def _topic_example_guide_errors(self, body, guide):
@@ -1660,7 +2111,40 @@ Bắt buộc dùng đúng EXAMPLE_DIRECTION làm ví dụ chính của bài. Kh�
     def _problem_post_title(self, candidate):
         return candidate.name
 
-    def _problem_prompt(self, candidate):
+    def _problem_practice_problems(self, service, candidate):
+        if not service or not getattr(settings, "USE_ML", False):
+            return []
+        selected = self._select_public_problems_with_agent(
+            service=service,
+            org=getattr(self, "target_org", None),
+            expected_difficulties=(),
+            max_count=3,
+            minimum_count=2,
+            purpose=f"""Chọn 2-3 bài tập tương tự cho bài gợi ý này.
+FEATURED_PROBLEM_TITLE: {candidate.name}
+FEATURED_PROBLEM_STATEMENT:
+{candidate.statement[:4000]}
+Chỉ chọn bài thực hành cùng ý tưởng chính. Không chọn bài chỉ trùng nhãn kỹ thuật,
+và không chọn lại bài featured.""",
+        )
+        return [
+            PracticeProblem(
+                code=item.code,
+                name=item.name,
+                url=item.url,
+                points=item.points,
+                types=item.types,
+            )
+            for item in selected
+            if item.code != candidate.code
+        ]
+
+    def _problem_prompt(self, candidate, practice_problems=None):
+        practice_json = json.dumps(
+            [problem.__dict__ for problem in practice_problems or ()],
+            ensure_ascii=False,
+            indent=2,
+        )
         return f"""PROBLEM_TITLE: {candidate.name}
 PROBLEM_URL: {candidate.url}
 DIFFICULTY_MODE: {candidate.difficulty}
@@ -1669,7 +2153,9 @@ POINTS: {candidate.points}
 AC_RATE: {candidate.ac_rate}
 TYPES: {', '.join(candidate.types)}
 STATEMENT:
-{candidate.statement}
+{candidate.statement[:1800]}
+SIMILAR_PRACTICE_PROBLEMS_JSON:
+{practice_json}
 
 Hãy tự chọn một ví dụ nhỏ từ đề bài nếu có.
 AUDIENCE:
@@ -1682,7 +2168,8 @@ Viết một bài ngắn theo thứ tự:
 4. Nói cách trực tiếp sẽ vướng gì bằng constraint cụ thể của bài.
 5. Gọi tên kỹ thuật sau khi đã có nhu cầu rõ ràng, rồi giải thích thuật ngữ bằng lời thường.
 6. Với bài challenge/stretch, thêm một bước chuyển cụ thể hoặc một checklist cài đặt ngắn.
-7. Dừng ở một thao tác cụ thể của bài, không kết luận chung chung."""
+7. Nếu SIMILAR_PRACTICE_PROBLEMS_JSON không rỗng, thêm mục **Bài tập tương tự:** gần cuối bài với 2-3 link từ đúng JSON đó và nói ngắn mỗi bài luyện được phần nào của ý tưởng.
+8. Dừng ở một thao tác cụ thể của bài, không kết luận chung chung."""
 
     def _audience_prompt_text(self, candidate):
         org = getattr(self, "target_org", None)
@@ -1721,7 +2208,7 @@ Viết một bài ngắn theo thứ tự:
             return "Học sinh đang luyện nghiêm túc. Có thể giải thích dài hơn, nhưng vẫn phải đi từ ví dụ cụ thể trước."
         return "Học sinh phổ thông trong cộng đồng được chọn. Giải thích vừa đủ, tránh quá nhiều thuật ngữ."
 
-    def _validate_problem_post(self, body, candidate):
+    def _validate_problem_post(self, body, candidate, practice_problems=None):
         errors = self._common_markdown_errors(body)
         first_line = f"**Bài gợi ý:** [{candidate.name}]({candidate.url})"
         lines = body.strip().splitlines()
@@ -1739,9 +2226,15 @@ Viết một bài ngắn theo thứ tự:
         errors.extend(self._formula_reference_errors(body, candidate))
         errors.extend(self._hard_post_detail_errors(body, candidate))
         errors.extend(self._core_mechanism_errors(body, candidate))
+        if practice_problems and not any(
+            problem.url in body for problem in practice_problems
+        ):
+            errors.append(
+                "Bài gợi ý cần thêm ít nhất một bài từ SIMILAR_PRACTICE_PROBLEMS_JSON"
+            )
         return errors
 
-    def _select_contest(self, rng, key, history):
+    def _select_contest(self, service, rng, key, history, org):
         queryset = self._base_public_contest_queryset()
         if key:
             try:
@@ -1773,7 +2266,186 @@ Viết một bài ngắn theo thứ tự:
         ]
         if not contests:
             raise CommandError("No recent visible public contest found")
-        return rng.choice(contests[: min(6, len(contests))])
+        fallback = rng.choice(contests[: min(6, len(contests))])
+        if not service:
+            return fallback
+
+        searched_keys = set()
+        read_keys = set()
+        prompt = f"""COMMUNITY_CONTEXT:
+{self._organization_text(org) or "general"}
+AUDIENCE_LEVEL: {self._audience_level(org)}
+PURPOSE: Chọn một kỳ thi công khai gần đây để viết bài gợi ý đọc. Kỳ thi cần có
+ít nhất hai bài công khai và có vài bài đủ cụ thể để gợi ý người đọc bắt đầu.
+"""
+        try:
+            response = self._call_agent_with_tools(
+                service=service,
+                prompt=prompt,
+                system_prompt=CONTEST_SELECTION_SYSTEM_PROMPT,
+                tools=self._public_contest_tool_definitions(),
+                tool_executables=self._public_contest_tool_executables(
+                    history, searched_keys, read_keys
+                ),
+            )
+        except Exception:
+            return fallback
+
+        result = self._parse_review_response(response or "")
+        selected_key = (
+            str(result.get("key", "")).strip() if isinstance(result, dict) else ""
+        )
+        if (
+            not selected_key
+            or selected_key not in searched_keys
+            or selected_key not in read_keys
+        ):
+            return fallback
+        contest_map = {contest.key: contest for contest in contests}
+        return contest_map.get(selected_key, fallback)
+
+    def _public_contest_tool_definitions(self):
+        return [
+            fp.ToolDefinition(
+                type="function",
+                function={
+                    "name": "search_public_contests",
+                    "description": (
+                        "List recent public LQDOJ contests with at least two public "
+                        "problems. An optional query filters title and description."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "Optional Vietnamese or English keywords.",
+                            }
+                        },
+                    },
+                },
+            ),
+            fp.ToolDefinition(
+                type="function",
+                function={
+                    "name": "get_contest_details",
+                    "description": (
+                        "Get a searched contest's description and full public problem "
+                        "statements before deciding whether to select it."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "key": {
+                                "type": "string",
+                                "description": "A key returned by search_public_contests.",
+                            }
+                        },
+                        "required": ["key"],
+                    },
+                },
+            ),
+        ]
+
+    def _public_contest_tool_executables(self, history, searched_keys, read_keys):
+        @sync_to_async
+        def search_public_contests(query=""):
+            close_old_connections()
+            cutoff = timezone.now() - timedelta(days=45)
+            contests = self._eligible_recent_contests(cutoff, history.contest_keys)
+            query = str(query).strip()
+            if query:
+                normalized_query = query.lower()
+                contests = [
+                    contest
+                    for contest in contests
+                    if normalized_query in contest.name.lower()
+                    or normalized_query
+                    in self._clean_statement(contest.description).lower()
+                ]
+            results = []
+            for contest in contests:
+                searched_keys.add(contest.key)
+                results.append(
+                    {
+                        "key": contest.key,
+                        "name": contest.name,
+                        "end_time": contest.end_time.isoformat(),
+                        "problem_count": contest.problem_count,
+                    }
+                )
+            return json.dumps(results[:12], ensure_ascii=False)
+
+        @sync_to_async
+        def get_contest_details(key):
+            close_old_connections()
+            key = str(key).strip()
+            if key not in searched_keys or key in history.contest_keys:
+                return "Unknown or ineligible contest key."
+            try:
+                contest = self._base_public_contest_queryset().get(key=key)
+            except Contest.DoesNotExist:
+                return "Unknown or ineligible contest key."
+            rows = (
+                ContestProblem.objects.filter(
+                    contest=contest,
+                    problem__isnull=False,
+                    problem__is_public=True,
+                    problem__is_organization_private=False,
+                )
+                .select_related("problem")
+                .prefetch_related("problem__types")
+                .order_by("order")[:8]
+            )
+            problems = []
+            for row in rows:
+                statement = self._clean_statement(row.problem.description)
+                if len(statement) > 5000:
+                    statement = statement[:5000] + "\n\n... (truncated)"
+                problems.append(
+                    {
+                        "code": row.problem.code,
+                        "name": row.problem.name,
+                        "points": row.problem.points,
+                        "types": [item.full_name for item in row.problem.types.all()],
+                        "statement": statement,
+                    }
+                )
+            if len(problems) < 2:
+                return "Contest no longer has enough eligible public problems."
+            read_keys.add(key)
+            description = self._clean_statement(contest.description)[:3000]
+            return json.dumps(
+                {
+                    "key": contest.key,
+                    "name": contest.name,
+                    "description": description,
+                    "problems": problems,
+                },
+                ensure_ascii=False,
+            )
+
+        search_public_contests.__name__ = "search_public_contests"
+        get_contest_details.__name__ = "get_contest_details"
+        return [search_public_contests, get_contest_details]
+
+    def _eligible_recent_contests(self, cutoff, excluded_keys=()):
+        contests = (
+            self._base_public_contest_queryset()
+            .filter(end_time__lte=timezone.now(), end_time__gte=cutoff)
+            .annotate(
+                problem_count=Count(
+                    "contest_problems",
+                    filter=Q(
+                        contest_problems__problem__is_public=True,
+                        contest_problems__problem__is_organization_private=False,
+                    ),
+                )
+            )
+            .filter(problem_count__gte=2)
+            .order_by("-end_time")[:12]
+        )
+        return [contest for contest in contests if contest.key not in excluded_keys]
 
     def _base_public_contest_queryset(self):
         return Contest.objects.filter(

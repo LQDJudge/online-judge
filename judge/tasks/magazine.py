@@ -47,7 +47,7 @@ def _generate_daily_magazine_posts():
     max_pending = int(getattr(settings, "MAGAZINE_MAX_PENDING_PER_COMMUNITY", 5))
     author = getattr(settings, "MAGAZINE_AUTHOR_USERNAME", "admin")
     post_type = getattr(settings, "MAGAZINE_POST_TYPE", "mixed")
-    llm = getattr(settings, "MAGAZINE_LLM_BOT", "Gemini-3.5-Flash-Lite")
+    llm = getattr(settings, "MAGAZINE_LLM_BOT", "Gemini-3.7-Flash")
     max_attempts = int(getattr(settings, "MAGAZINE_MAX_ATTEMPTS", 12))
     candidate_drafts = int(getattr(settings, "MAGAZINE_CANDIDATE_DRAFTS", 1))
     review_threshold = int(getattr(settings, "MAGAZINE_REVIEW_THRESHOLD", 9))
