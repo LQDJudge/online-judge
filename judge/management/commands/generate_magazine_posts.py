@@ -8,7 +8,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Count, Max
+from django.db.models import Count, Max, Q
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.text import slugify
@@ -796,7 +796,9 @@ class Command(BaseCommand):
         post_type = options["post_type"]
         generated = []
         mixed_plan = (
-            self._mixed_post_plan(options["count"], rng) if post_type == "mixed" else []
+            self._mixed_post_plan(options["count"], rng, org)
+            if post_type == "mixed"
+            else []
         )
 
         if post_type in ("problem", "mixed"):
@@ -978,9 +980,11 @@ class Command(BaseCommand):
             difficulties[2] = names[min(2, len(names) - 1)]
         return difficulties
 
-    def _mixed_post_plan(self, count, rng):
+    def _mixed_post_plan(self, count, rng, org=None):
         if count <= 0:
             return []
+        if self._is_contest_discussion_org(org):
+            return ["contest"] * count
         base = ["problem", "topic", "contest"]
         if count == 1:
             return rng.choices(base, weights=(45, 45, 10), k=1)
@@ -990,6 +994,17 @@ class Command(BaseCommand):
         plan.extend(rng.choice(("problem", "topic")) for _ in range(count - len(base)))
         rng.shuffle(plan)
         return plan
+
+    def _is_contest_discussion_org(self, org):
+        text = self._organization_text(org).lower()
+        slug = getattr(org, "slug", "").lower()
+        markers = (
+            "thảo luận kỳ thi",
+            "thao luan ky thi",
+            "thao-luan-ky-thi",
+            "contest discussion",
+        )
+        return any(marker in text or marker in slug for marker in markers)
 
     def _collect_problem_candidates(self, difficulties, used_codes, org):
         candidates = []
@@ -1074,12 +1089,9 @@ class Command(BaseCommand):
         low, high = self._difficulty_range(difficulty, org)
         cutoff = timezone.now() - timedelta(days=45)
         contest_ids = list(
-            Contest.objects.filter(
-                is_visible=True,
-                is_organization_private=False,
-                end_time__lte=timezone.now(),
-                end_time__gte=cutoff,
-            ).values_list("id", flat=True)[:10]
+            self._base_public_contest_queryset()
+            .filter(end_time__lte=timezone.now(), end_time__gte=cutoff)
+            .values_list("id", flat=True)[:10]
         )
         rows = (
             ContestProblem.objects.filter(
@@ -1112,14 +1124,19 @@ class Command(BaseCommand):
 
     def _base_problem_queryset(self):
         return (
-            Problem.objects.filter(
-                is_public=True,
-                is_organization_private=False,
+            self._base_public_problem_queryset()
+            .filter(
                 description__gt="",
                 user_count__gte=10,
             )
             .select_related("group")
             .prefetch_related("types")
+        )
+
+    def _base_public_problem_queryset(self):
+        return Problem.objects.filter(
+            is_public=True,
+            is_organization_private=False,
         )
 
     def _queries_for_org(self, difficulty, org):
@@ -1158,11 +1175,8 @@ class Command(BaseCommand):
     def _fixed_problem_candidate(self, code, difficulty, org):
         try:
             problem = (
-                Problem.objects.filter(
-                    is_public=True,
-                    is_organization_private=False,
-                    description__gt="",
-                )
+                self._base_public_problem_queryset()
+                .filter(description__gt="")
                 .select_related("group")
                 .prefetch_related("types")
                 .get(code=code)
@@ -1696,6 +1710,11 @@ Viết một bài ngắn theo thứ tự:
                 f"Mô tả/about: {about or 'Không có mô tả.'}\n"
                 f"Gợi ý mức đọc: {level_hints[level]}"
             )
+        if candidate is None:
+            return (
+                "Học sinh phổ thông trong cộng đồng được chọn. "
+                "Điều chỉnh độ sâu theo nội dung bài viết."
+            )
         if "tiểu học" in candidate.group.lower() or "bảng a" in candidate.group.lower():
             return "Học sinh tiểu học hoặc Tin học trẻ bảng A. Cần câu ngắn, ví dụ thật cụ thể, thuật ngữ rất ít."
         if candidate.difficulty in ("challenge", "stretch"):
@@ -1723,9 +1742,7 @@ Viết một bài ngắn theo thứ tự:
         return errors
 
     def _select_contest(self, rng, key, history):
-        queryset = Contest.objects.filter(
-            is_visible=True, is_organization_private=False
-        )
+        queryset = self._base_public_contest_queryset()
         if key:
             try:
                 contest = queryset.get(key=key)
@@ -1739,7 +1756,15 @@ Viết một bài ngắn theo thứ tự:
         cutoff = timezone.now() - timedelta(days=45)
         contests = list(
             queryset.filter(end_time__lte=timezone.now(), end_time__gte=cutoff)
-            .annotate(problem_count=Count("contest_problems"))
+            .annotate(
+                problem_count=Count(
+                    "contest_problems",
+                    filter=Q(
+                        contest_problems__problem__is_public=True,
+                        contest_problems__problem__is_organization_private=False,
+                    ),
+                )
+            )
             .filter(problem_count__gte=2)
             .order_by("-end_time")[:12]
         )
@@ -1750,9 +1775,22 @@ Viết một bài ngắn theo thứ tự:
             raise CommandError("No recent visible public contest found")
         return rng.choice(contests[: min(6, len(contests))])
 
+    def _base_public_contest_queryset(self):
+        return Contest.objects.filter(
+            is_visible=True,
+            is_private=False,
+            is_organization_private=False,
+            is_in_course=False,
+        )
+
     def _generate_contest_post(self, service, contest):
         rows = (
-            ContestProblem.objects.filter(contest=contest, problem__isnull=False)
+            ContestProblem.objects.filter(
+                contest=contest,
+                problem__isnull=False,
+                problem__is_public=True,
+                problem__is_organization_private=False,
+            )
             .select_related("problem", "problem__group")
             .prefetch_related("problem__types")
             .order_by("order")[:8]
