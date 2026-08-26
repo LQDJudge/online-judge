@@ -73,7 +73,6 @@ class ProfileAdmin(VersionAdmin):
         "user",
         "display_rank",
         "about",
-        "organizations",
         "timezone",
         "language",
         "ace_theme",
