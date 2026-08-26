@@ -2,10 +2,10 @@ from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import F
+from django.db.models import Exists, OuterRef
 from django.utils import timezone
 
-from judge.models import UsernameModerationCase
+from judge.models import ProfileModerationCase
 from judge.tasks.username_moderation import moderate_username_task
 
 
@@ -54,7 +54,15 @@ class Command(BaseCommand):
         if inactive_only:
             users = users.filter(is_active=False)
 
-        users = users.exclude(username_moderation_cases__username=F("username"))
+        users = users.annotate(
+            has_current_username_case=Exists(
+                ProfileModerationCase.objects.filter(
+                    user_id=OuterRef("id"),
+                    target=ProfileModerationCase.TARGET_USERNAME,
+                    username=OuterRef("username"),
+                )
+            )
+        ).filter(has_current_username_case=False)
 
         candidates = []
         for user in users.iterator():
@@ -75,13 +83,15 @@ class Command(BaseCommand):
             )
             if not should_apply:
                 continue
-            case = UsernameModerationCase.objects.create(
+            case = ProfileModerationCase.objects.create(
                 user=user,
+                target=ProfileModerationCase.TARGET_USERNAME,
                 username=user.username,
                 normalized_username=user.username.casefold(),
-                source=UsernameModerationCase.SOURCE_AUDIT,
-                decision=UsernameModerationCase.DECISION_PENDING,
-                category=UsernameModerationCase.CATEGORY_OTHER,
+                value_snapshot=user.username,
+                source=ProfileModerationCase.SOURCE_AUDIT,
+                decision=ProfileModerationCase.DECISION_PENDING,
+                category=ProfileModerationCase.CATEGORY_OTHER,
                 confidence=None,
                 reason="Queued for AI username moderation audit.",
                 is_automated=False,

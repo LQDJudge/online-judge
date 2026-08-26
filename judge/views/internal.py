@@ -52,9 +52,9 @@ from judge.models import (
     Problem,
     ProblemType,
     Profile,
+    ProfileModerationCase,
     RequestMetric,
     Submission,
-    UsernameModerationCase,
     get_comment_context_details,
     hide_comment_for_moderation,
     mute_comment_author,
@@ -2245,9 +2245,9 @@ class InternalCommentModeration(InternalView, ListView):
         return context
 
 
-class InternalUsernameModeration(InternalView, ListView):
-    model = UsernameModerationCase
-    title = _("Username Moderation")
+class InternalProfileModeration(InternalView, ListView):
+    model = ProfileModerationCase
+    title = _("Profile Moderation")
     template_name = "internal/username_moderation.html"
     paginate_by = 50
     context_object_name = "cases"
@@ -2266,9 +2266,13 @@ class InternalUsernameModeration(InternalView, ListView):
         )
 
     def get_queryset(self):
-        queryset = UsernameModerationCase.objects.select_related(
+        queryset = ProfileModerationCase.objects.select_related(
             "user", "user__profile", "moderator__user"
         )
+
+        target_filter = self.request.GET.get("target", "")
+        if target_filter:
+            queryset = queryset.filter(target=target_filter)
 
         status_filter = self.request.GET.get("status", "")
         if status_filter:
@@ -2278,7 +2282,7 @@ class InternalUsernameModeration(InternalView, ListView):
         if decision_filter:
             queryset = queryset.filter(decision=decision_filter)
         else:
-            queryset = queryset.exclude(decision=UsernameModerationCase.DECISION_ALLOW)
+            queryset = queryset.exclude(decision=ProfileModerationCase.DECISION_ALLOW)
 
         category_filter = self.request.GET.get("category", "")
         if category_filter:
@@ -2287,19 +2291,21 @@ class InternalUsernameModeration(InternalView, ListView):
         search = self.request.GET.get("search", "").strip()
         if search:
             queryset = queryset.filter(
-                Q(username__icontains=search) | Q(user__username__icontains=search)
+                Q(username__icontains=search)
+                | Q(user__username__icontains=search)
+                | Q(value_snapshot__icontains=search)
             )
 
         return queryset.order_by("-created_at")
 
     def post(self, request, *args, **kwargs):
-        case = get_object_or_404(UsernameModerationCase, id=request.POST.get("case"))
+        case = get_object_or_404(ProfileModerationCase, id=request.POST.get("case"))
         action = request.POST.get("action")
         moderator = request.profile
 
         if action == "allow":
             case.allow(moderator=moderator)
-            messages.success(request, _("Username moderation case allowed."))
+            messages.success(request, _("Profile moderation case allowed."))
         elif action == "disable":
             case.disable_user(moderator=moderator, hide_identity=True)
             messages.success(request, _("User disabled and public identity hidden."))
@@ -2313,20 +2319,22 @@ class InternalUsernameModeration(InternalView, ListView):
             messages.error(request, _("Unknown moderation action."))
 
         return HttpResponseRedirect(
-            request.META.get("HTTP_REFERER", reverse("internal_username_moderation"))
+            request.META.get("HTTP_REFERER", reverse("internal_profile_moderation"))
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_type"] = "username_moderation"
+        context["page_type"] = "profile_moderation"
         context["title"] = self.title
+        context["target_filter"] = self.request.GET.get("target", "")
         context["status_filter"] = self.request.GET.get("status", "")
         context["decision_filter"] = self.request.GET.get("decision", "")
         context["category_filter"] = self.request.GET.get("category", "")
         context["search_query"] = self.request.GET.get("search", "")
-        context["status_choices"] = UsernameModerationCase.STATUS_CHOICES
-        context["decision_choices"] = UsernameModerationCase.DECISION_CHOICES
-        context["category_choices"] = UsernameModerationCase.CATEGORY_CHOICES
+        context["target_choices"] = ProfileModerationCase.TARGET_CHOICES
+        context["status_choices"] = ProfileModerationCase.STATUS_CHOICES
+        context["decision_choices"] = ProfileModerationCase.DECISION_CHOICES
+        context["category_choices"] = ProfileModerationCase.CATEGORY_CHOICES
 
         query_params = self.request.GET.copy()
         if "page" in query_params:
@@ -2339,6 +2347,9 @@ class InternalUsernameModeration(InternalView, ListView):
             context["page_prefix"] = self.request.path + "?page="
             context["first_page_href"] = self.request.path
         return context
+
+
+InternalUsernameModeration = InternalProfileModeration
 
 
 @require_POST

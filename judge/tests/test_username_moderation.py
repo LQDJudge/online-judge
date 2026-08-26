@@ -14,9 +14,16 @@ from django.utils import timezone
 
 from judge.admin.profile import UserAdmin
 import judge.models.profile as profile_models
-from judge.models import Language, Profile, RequestMetric, UsernameModerationCase
+from judge.models import (
+    Language,
+    Profile,
+    ProfileModerationCase,
+    RequestMetric,
+    UsernameModerationCase,
+)
 from judge.models.profile import get_profile_public_identity
 from judge.tasks.username_moderation import (
+    moderate_profile_case_task,
     moderate_username_task,
     parse_username_moderation_response,
 )
@@ -147,6 +154,93 @@ class UsernameModerationTaskTest(TestCase):
         self.assertEqual(result["status"], "deleted")
         self.assertFalse(UsernameModerationCase.objects.filter(id=case.id).exists())
 
+    @override_settings(POE_API_KEY="test-key")
+    @patch("judge.tasks.username_moderation.LLMService.call_llm")
+    def test_about_moderation_uses_profile_prompt(self, call_llm):
+        call_llm.return_value = (
+            '{"decision":"allow","category":"safe","confidence":0.94,'
+            '"reason":"Normal profile"}'
+        )
+        user = User.objects.create_user(username="about_safe_user")
+        Profile.objects.create(
+            user=user,
+            language=self.language,
+            about="I like Python and share my GitHub projects.",
+        )
+        case = ProfileModerationCase.objects.create(
+            user=user,
+            target=ProfileModerationCase.TARGET_ABOUT,
+            username=user.username,
+            value_snapshot="I like Python and share my GitHub projects.",
+            source=ProfileModerationCase.SOURCE_PROFILE_EDIT,
+        )
+
+        result = moderate_profile_case_task(case.id)
+
+        self.assertEqual(result["decision"], ProfileModerationCase.DECISION_ALLOW)
+        prompt = call_llm.call_args.kwargs["system_prompt"]
+        self.assertIn("Default to allow", prompt)
+        self.assertIn("public self-description", prompt)
+
+    @override_settings(POE_API_KEY="test-key")
+    @patch("judge.tasks.username_moderation.LLMService.call_llm")
+    def test_about_block_hides_identity_without_disabling_user(self, call_llm):
+        call_llm.return_value = (
+            '{"decision":"block","category":"spam","confidence":0.96,'
+            '"reason":"Scam profile text"}'
+        )
+        user = User.objects.create_user(username="about_block_user", is_active=True)
+        Profile.objects.create(
+            user=user,
+            language=self.language,
+            about="Click this fake support login to win prizes",
+        )
+        case = ProfileModerationCase.objects.create(
+            user=user,
+            target=ProfileModerationCase.TARGET_ABOUT,
+            username=user.username,
+            value_snapshot="Click this fake support login to win prizes",
+            source=ProfileModerationCase.SOURCE_PROFILE_EDIT,
+        )
+
+        moderate_profile_case_task(case.id)
+
+        user.refresh_from_db()
+        case.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertTrue(case.public_identity_hidden)
+        self.assertEqual(case.status, ProfileModerationCase.STATUS_REVIEWED)
+        self.assertEqual(case.decision, ProfileModerationCase.DECISION_BLOCK)
+
+    @override_settings(POE_API_KEY="test-key")
+    @patch("judge.tasks.username_moderation.LLMService.call_llm")
+    def test_stale_about_case_does_not_hide_identity(self, call_llm):
+        user = User.objects.create_user(username="about_stale_user", is_active=True)
+        profile = Profile.objects.create(
+            user=user,
+            language=self.language,
+            about="Fixed safe profile text",
+        )
+        case = ProfileModerationCase.objects.create(
+            user=user,
+            target=ProfileModerationCase.TARGET_ABOUT,
+            username=user.username,
+            value_snapshot="Old unsafe profile text",
+            source=ProfileModerationCase.SOURCE_PROFILE_EDIT,
+        )
+
+        result = moderate_profile_case_task(case.id)
+
+        call_llm.assert_not_called()
+        case.refresh_from_db()
+        self.assertEqual(
+            result, {"skipped": True, "reason": "stale profile self-description"}
+        )
+        self.assertEqual(case.status, ProfileModerationCase.STATUS_REVIEWED)
+        self.assertEqual(case.decision, ProfileModerationCase.DECISION_ALLOW)
+        self.assertFalse(case.public_identity_hidden)
+        self.assertEqual(profile.get_public_username(), user.username)
+
 
 @override_settings(LANGUAGE_CODE="en")
 class UsernameModerationDisplayTest(TestCase):
@@ -201,6 +295,39 @@ class UsernameModerationDisplayTest(TestCase):
         self.assertContains(response, "Disabled user")
         self.assertNotContains(response, "public profile text")
         self.assertEqual(profile.get_public_username(), "Disabled user")
+
+    @patch("judge.views.user.moderate_profile_case_task.delay")
+    def test_profile_edit_creates_about_moderation_case(self, delay):
+        user = User.objects.create_user(username="profile_edit_user", password="pw")
+        profile = Profile.objects.create(user=user, language=self.language)
+        self.client.login(username="profile_edit_user", password="pw")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse("user_edit_profile"),
+                {
+                    "first_name": "",
+                    "last_name": "",
+                    "about": "Visit my GitHub for programming projects.",
+                    "timezone": profile.timezone,
+                    "language": self.language.id,
+                    "ace_theme": profile.ace_theme,
+                    "profile_image": "",
+                    "background_image": "",
+                    "tshirt_size": "",
+                    "date_of_birth": "",
+                    "address": "",
+                },
+            )
+
+        self.assertEqual(response.status_code, 302)
+        case = ProfileModerationCase.objects.get(user=user)
+        self.assertEqual(case.target, ProfileModerationCase.TARGET_ABOUT)
+        self.assertEqual(
+            case.value_snapshot, "Visit my GitHub for programming projects."
+        )
+        self.assertEqual(case.source, ProfileModerationCase.SOURCE_PROFILE_EDIT)
+        delay.assert_called_once_with(case.id)
 
     def test_user_active_change_invalidates_public_identity_cache(self):
         user = User.objects.create_user(username="cache_active_user", is_active=True)
@@ -492,6 +619,41 @@ class UsernameModerationUserAdminTest(TestCase):
         get_profile_public_identity.dirty(profile.id)
         self.assertEqual(profile.get_public_username(), user.username)
 
+    def test_user_admin_hide_identity_does_not_reuse_about_case(self):
+        user = User.objects.create_user(username="admin_about_case_user")
+        profile = Profile.objects.create(user=user, language=self.language)
+        about_case = ProfileModerationCase.objects.create(
+            user=user,
+            target=ProfileModerationCase.TARGET_ABOUT,
+            username=user.username,
+            value_snapshot="Queued profile text",
+            source=ProfileModerationCase.SOURCE_PROFILE_EDIT,
+            decision=ProfileModerationCase.DECISION_REVIEW,
+            category=ProfileModerationCase.CATEGORY_OTHER,
+        )
+
+        self.model_admin.save_model(
+            self.request,
+            user,
+            SimpleNamespace(cleaned_data={"hide_public_identity": True}),
+            change=True,
+        )
+
+        about_case.refresh_from_db()
+        identity_case = ProfileModerationCase.objects.get(
+            user=user,
+            target=ProfileModerationCase.TARGET_USERNAME,
+            public_identity_hidden=True,
+        )
+        self.assertFalse(about_case.public_identity_hidden)
+        self.assertEqual(identity_case.source, ProfileModerationCase.SOURCE_MANUAL)
+        self.assertEqual(profile.get_public_username(), "Disabled user")
+
+        about_case.allow(moderator=self.admin_profile)
+
+        get_profile_public_identity.dirty(profile.id)
+        self.assertEqual(profile.get_public_username(), "Disabled user")
+
 
 class UsernameModerationAuditCommandTest(TestCase):
     @patch(
@@ -534,6 +696,53 @@ class UsernameModerationAuditCommandTest(TestCase):
                 "--inactive-only",
                 stdout=StringIO(),
             )
+
+
+class ProfileModerationAuditCommandTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.language, _ = Language.objects.get_or_create(
+            key="PY3",
+            defaults={
+                "name": "Python 3",
+                "short_name": "PY3",
+                "common_name": "Python",
+                "ace": "python",
+                "pygments": "python3",
+                "template": "",
+            },
+        )
+
+    @patch(
+        "judge.management.commands.audit_profile_moderation."
+        "moderate_profile_case_task.delay"
+    )
+    def test_about_target_creates_pending_case_and_queues_ai_task(self, delay):
+        user = User.objects.create_user(username="about_audit_user")
+        Profile.objects.create(
+            user=user,
+            language=self.language,
+            about="I am learning competitive programming.",
+        )
+        out = StringIO()
+
+        call_command(
+            "audit_profile_moderation",
+            "--target",
+            "about",
+            "--apply",
+            "--limit",
+            "10",
+            stdout=out,
+        )
+
+        case = ProfileModerationCase.objects.get(user=user)
+        self.assertEqual(case.target, ProfileModerationCase.TARGET_ABOUT)
+        self.assertEqual(case.source, ProfileModerationCase.SOURCE_AUDIT)
+        self.assertEqual(case.decision, ProfileModerationCase.DECISION_PENDING)
+        self.assertEqual(case.value_snapshot, "I am learning competitive programming.")
+        delay.assert_called_once_with(case.id, delete_safe_case=True)
+        self.assertIn("Created 1 case(s); queued 1 AI task(s)", out.getvalue())
 
 
 @override_settings(LANGUAGE_CODE="en")

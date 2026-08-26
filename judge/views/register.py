@@ -16,9 +16,9 @@ from registration.backends.default.views import (
 from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
 
-from judge.models import Language, Profile, TIMEZONE, UsernameModerationCase
+from judge.models import Language, Profile, ProfileModerationCase, TIMEZONE
 from judge.tasks.email import send_registration_activation_email_task
-from judge.tasks.username_moderation import moderate_username_task
+from judge.tasks.username_moderation import moderate_profile_case_task
 from judge.utils.recaptcha import ReCaptchaField, ReCaptchaWidget
 from judge.utils.turnstile import TurnstileField, is_turnstile_configured
 from judge.validators import (
@@ -134,11 +134,13 @@ class RegistrationView(OldRegistrationView):
         profile.language = cleaned_data["language"]
         profile.save()
 
-        moderation_case = UsernameModerationCase.objects.create(
+        moderation_case = ProfileModerationCase.objects.create(
             user=user,
+            target=ProfileModerationCase.TARGET_USERNAME,
             username=user.username,
             normalized_username=user.username.casefold(),
-            source=UsernameModerationCase.SOURCE_REGISTRATION,
+            value_snapshot=user.username,
+            source=ProfileModerationCase.SOURCE_REGISTRATION,
         )
         transaction.on_commit(
             lambda: self.enqueue_username_moderation(moderation_case.id)
@@ -148,7 +150,7 @@ class RegistrationView(OldRegistrationView):
         return user
 
     def enqueue_username_moderation(self, case_id):
-        moderate_username_task.delay(case_id)
+        moderate_profile_case_task.delay(case_id)
 
     def send_activation_email(self, user_id):
         site = get_current_site(self.request)
@@ -186,9 +188,10 @@ class ActivationView(OldActivationView):
         )
         if (
             registration_profile
-            and UsernameModerationCase.objects.filter(
+            and ProfileModerationCase.objects.filter(
                 user=registration_profile.user,
-                decision=UsernameModerationCase.DECISION_BLOCK,
+                target=ProfileModerationCase.TARGET_USERNAME,
+                decision=ProfileModerationCase.DECISION_BLOCK,
             ).exists()
         ):
             self.blocked_by_username_moderation = True

@@ -60,6 +60,7 @@ from judge.models.profile import (
     OrganizationProfile,
     ProfileInfo,
     OrganizationModerationLog,
+    ProfileModerationCase,
     UsernameModerationCase,
     DYNAMIC_EFFECT_CHOICES,
 )

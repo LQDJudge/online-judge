@@ -31,6 +31,7 @@ __all__ = [
     "OrganizationRequest",
     "Friend",
     "OrganizationModerationLog",
+    "ProfileModerationCase",
     "UsernameModerationCase",
     "DYNAMIC_EFFECT_CHOICES",
 ]
@@ -1381,6 +1382,13 @@ class OrganizationModerationLog(models.Model):
 
 
 class UsernameModerationCase(models.Model):
+    TARGET_USERNAME = "username"
+    TARGET_ABOUT = "about"
+    TARGET_CHOICES = (
+        (TARGET_USERNAME, _("Username")),
+        (TARGET_ABOUT, _("Self-description")),
+    )
+
     STATUS_PENDING = "P"
     STATUS_REVIEWED = "R"
     STATUS_CHOICES = (
@@ -1417,10 +1425,12 @@ class UsernameModerationCase(models.Model):
     )
 
     SOURCE_REGISTRATION = "registration"
+    SOURCE_PROFILE_EDIT = "profile_edit"
     SOURCE_AUDIT = "audit"
     SOURCE_MANUAL = "manual"
     SOURCE_CHOICES = (
         (SOURCE_REGISTRATION, _("Registration")),
+        (SOURCE_PROFILE_EDIT, _("Profile edit")),
         (SOURCE_AUDIT, _("Audit")),
         (SOURCE_MANUAL, _("Manual")),
     )
@@ -1431,9 +1441,19 @@ class UsernameModerationCase(models.Model):
         related_name="username_moderation_cases",
         on_delete=CASCADE,
     )
+    target = models.CharField(
+        max_length=20,
+        choices=TARGET_CHOICES,
+        default=TARGET_USERNAME,
+        db_index=True,
+        verbose_name=_("target"),
+    )
     username = models.CharField(max_length=150, verbose_name=_("username"))
     normalized_username = models.CharField(
         max_length=150, blank=True, verbose_name=_("normalized username")
+    )
+    value_snapshot = models.TextField(
+        null=True, blank=True, verbose_name=_("value snapshot")
     )
     status = models.CharField(
         max_length=1,
@@ -1493,17 +1513,27 @@ class UsernameModerationCase(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["status", "decision", "created_at"]),
+            models.Index(fields=["target", "status", "decision", "created_at"]),
             models.Index(fields=["user", "created_at"]),
             models.Index(fields=["category", "created_at"]),
         ]
-        verbose_name = _("username moderation case")
-        verbose_name_plural = _("username moderation cases")
+        verbose_name = _("profile moderation case")
+        verbose_name_plural = _("profile moderation cases")
 
     def __str__(self):
-        return f"{self.username} - {self.get_decision_display()}"
+        return (
+            f"{self.get_target_display()} - {self.username} - "
+            f"{self.get_decision_display()}"
+        )
+
+    @property
+    def display_value(self):
+        return self.value_snapshot or self.username
 
     def save(self, *args, **kwargs):
-        if not self.normalized_username:
+        if not self.value_snapshot and self.target == self.TARGET_USERNAME:
+            self.value_snapshot = self.username
+        if self.target == self.TARGET_USERNAME and not self.normalized_username:
             self.normalized_username = self.username.casefold()
         super().save(*args, **kwargs)
         dirty_profile_public_identity_for_user(self.user_id)
@@ -1571,3 +1601,6 @@ class UsernameModerationCase(models.Model):
         self.public_identity_hidden = False
         self.moderator = moderator or self.moderator
         self.save(update_fields=["public_identity_hidden", "moderator", "updated_at"])
+
+
+ProfileModerationCase = UsernameModerationCase

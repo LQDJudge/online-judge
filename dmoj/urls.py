@@ -1961,8 +1961,13 @@ urlpatterns = [
                     name="internal_comment_moderation",
                 ),
                 re_path(
+                    r"^profile_moderation$",
+                    internal.InternalProfileModeration.as_view(),
+                    name="internal_profile_moderation",
+                ),
+                re_path(
                     r"^username_moderation$",
-                    internal.InternalUsernameModeration.as_view(),
+                    internal.InternalProfileModeration.as_view(),
                     name="internal_username_moderation",
                 ),
                 re_path(

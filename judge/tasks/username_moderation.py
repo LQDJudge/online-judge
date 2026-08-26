@@ -3,8 +3,9 @@ import logging
 import re
 
 from celery import shared_task
+from django.utils.timezone import now
 
-from judge.models import UsernameModerationCase
+from judge.models import ProfileModerationCase
 from llm_service.config import get_config
 from llm_service.llm_api import LLMService
 
@@ -31,7 +32,36 @@ Return exactly one JSON object with:
 """.strip()
 
 
-def parse_username_moderation_response(response):
+PROFILE_ABOUT_MODERATION_SYSTEM_PROMPT = """
+You are moderating a public self-description on an educational programming site.
+
+Default to allow. Users may share normal personal introductions, real names,
+school/class information, achievements, programming interests, GitHub/social
+links, harmless jokes, and harmless self-promotion.
+
+Flag only clearly unsafe public content:
+- gambling, casino, betting, or adult-service spam
+- phishing, malware, scam links, fake login/support links, or credential requests
+- obscene or sexually explicit content
+- hateful, threatening, or targeted harassment
+- unrelated commercial spam or mass promotion
+- harmful impersonation, such as claiming to be site admin/staff/support or
+  speaking as the official site/team
+
+Do not block normal personal information, school information, social links,
+portfolio links, programming achievements, or ordinary self-expression.
+
+Return exactly one JSON object with:
+{
+  "decision": "allow" | "review" | "block",
+  "category": "safe" | "gambling" | "offensive" | "obscene" | "impersonation" | "spam" | "other",
+  "confidence": 0.0-1.0,
+  "reason": "short explanation"
+}
+""".strip()
+
+
+def parse_profile_moderation_response(response):
     if not response:
         return None
     match = re.search(r"\{.*\}", response, flags=re.S)
@@ -45,13 +75,13 @@ def parse_username_moderation_response(response):
     decision = str(data.get("decision", "")).lower()
     category = str(data.get("category", "")).lower()
     if decision not in {
-        UsernameModerationCase.DECISION_ALLOW,
-        UsernameModerationCase.DECISION_REVIEW,
-        UsernameModerationCase.DECISION_BLOCK,
+        ProfileModerationCase.DECISION_ALLOW,
+        ProfileModerationCase.DECISION_REVIEW,
+        ProfileModerationCase.DECISION_BLOCK,
     }:
         return None
-    if category not in dict(UsernameModerationCase.CATEGORY_CHOICES):
-        category = UsernameModerationCase.CATEGORY_OTHER
+    if category not in dict(ProfileModerationCase.CATEGORY_CHOICES):
+        category = ProfileModerationCase.CATEGORY_OTHER
 
     try:
         confidence = float(data.get("confidence", 0))
@@ -68,13 +98,59 @@ def parse_username_moderation_response(response):
     }
 
 
+parse_username_moderation_response = parse_profile_moderation_response
+
+
+def get_profile_moderation_prompt(case):
+    if case.target == ProfileModerationCase.TARGET_ABOUT:
+        return (
+            "Profile self-description to classify:\n%s" % case.display_value,
+            PROFILE_ABOUT_MODERATION_SYSTEM_PROMPT,
+        )
+    return (
+        "Username to classify:\n%s" % case.display_value,
+        USERNAME_MODERATION_SYSTEM_PROMPT,
+    )
+
+
+def mark_stale_profile_moderation_case(case):
+    case.status = ProfileModerationCase.STATUS_REVIEWED
+    case.decision = ProfileModerationCase.DECISION_ALLOW
+    case.category = ProfileModerationCase.CATEGORY_SAFE
+    case.reason = (
+        "Skipped because the profile self-description changed before moderation "
+        "completed."
+    )
+    case.is_automated = True
+    case.decided_at = now()
+    case.save(
+        update_fields=[
+            "status",
+            "decision",
+            "category",
+            "reason",
+            "is_automated",
+            "decided_at",
+            "updated_at",
+        ]
+    )
+
+
 @shared_task(bind=True)
-def moderate_username_task(self, case_id, delete_safe_case=False):
-    case = UsernameModerationCase.objects.select_related("user").get(id=case_id)
-    if case.status == UsernameModerationCase.STATUS_REVIEWED:
+def moderate_profile_case_task(self, case_id, delete_safe_case=False):
+    case = ProfileModerationCase.objects.select_related("user", "user__profile").get(
+        id=case_id
+    )
+    if case.status == ProfileModerationCase.STATUS_REVIEWED:
         return {"skipped": True, "reason": "already reviewed"}
 
-    prompt = "Username to classify:\n%s" % case.username
+    if case.target == ProfileModerationCase.TARGET_ABOUT and (
+        case.user.profile.about or ""
+    ) != (case.value_snapshot or ""):
+        mark_stale_profile_moderation_case(case)
+        return {"skipped": True, "reason": "stale profile self-description"}
+
+    prompt, system_prompt = get_profile_moderation_prompt(case)
 
     try:
         config = get_config()
@@ -84,18 +160,18 @@ def moderate_username_task(self, case_id, delete_safe_case=False):
             sleep_time=config.sleep_time,
             timeout=min(config.timeout, 60),
         )
-        response = llm.call_llm(prompt, system_prompt=USERNAME_MODERATION_SYSTEM_PROMPT)
-        result = parse_username_moderation_response(response)
+        response = llm.call_llm(prompt, system_prompt=system_prompt)
+        result = parse_profile_moderation_response(response)
     except Exception as exc:
-        logger.exception("Username moderation failed for case %s", case_id)
-        case.decision = UsernameModerationCase.DECISION_REVIEW
-        case.reason = "AI moderation failed: %s" % exc
+        logger.exception("Profile moderation failed for case %s", case_id)
+        case.decision = ProfileModerationCase.DECISION_REVIEW
+        case.reason = "AI profile moderation failed: %s" % exc
         case.is_automated = True
         case.save(update_fields=["decision", "reason", "is_automated", "updated_at"])
         return {"error": str(exc), "decision": case.decision}
 
     if result is None:
-        case.decision = UsernameModerationCase.DECISION_REVIEW
+        case.decision = ProfileModerationCase.DECISION_REVIEW
         case.reason = "AI moderation returned an unparsable response."
         case.raw_response = {"response": response}
         case.is_automated = True
@@ -117,10 +193,29 @@ def moderate_username_task(self, case_id, delete_safe_case=False):
     case.raw_response = result["raw_response"]
     case.is_automated = True
 
-    if result["decision"] == UsernameModerationCase.DECISION_BLOCK:
-        case.disable_user(hide_identity=True)
-    elif result["decision"] == UsernameModerationCase.DECISION_ALLOW:
-        if delete_safe_case and case.source == UsernameModerationCase.SOURCE_AUDIT:
+    if result["decision"] == ProfileModerationCase.DECISION_BLOCK:
+        if case.target == ProfileModerationCase.TARGET_USERNAME:
+            case.disable_user(hide_identity=True)
+        else:
+            case.status = ProfileModerationCase.STATUS_REVIEWED
+            case.public_identity_hidden = True
+            case.decided_at = now()
+            case.save(
+                update_fields=[
+                    "status",
+                    "decision",
+                    "category",
+                    "confidence",
+                    "reason",
+                    "raw_response",
+                    "public_identity_hidden",
+                    "is_automated",
+                    "decided_at",
+                    "updated_at",
+                ]
+            )
+    elif result["decision"] == ProfileModerationCase.DECISION_ALLOW:
+        if delete_safe_case and case.source == ProfileModerationCase.SOURCE_AUDIT:
             case.delete()
             return {
                 "decision": result["decision"],
@@ -130,7 +225,7 @@ def moderate_username_task(self, case_id, delete_safe_case=False):
             }
         case.allow()
     else:
-        case.status = UsernameModerationCase.STATUS_PENDING
+        case.status = ProfileModerationCase.STATUS_PENDING
         case.save(
             update_fields=[
                 "decision",
@@ -149,3 +244,8 @@ def moderate_username_task(self, case_id, delete_safe_case=False):
         "confidence": case.confidence,
         "status": case.status,
     }
+
+
+@shared_task(bind=True)
+def moderate_username_task(self, case_id, delete_safe_case=False):
+    return moderate_profile_case_task(case_id, delete_safe_case=delete_safe_case)

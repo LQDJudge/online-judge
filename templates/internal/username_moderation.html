@@ -6,26 +6,37 @@
 
 {% block middle_content %}
   <div class="internal-username-moderation-page">
-    <h2>{{ _("Username Moderation") }}</h2>
+    <h2>{{ _("Profile Moderation") }}</h2>
 
     <div class="chat-moderation-controls">
-      <a class="action-btn small {% if not status_filter and not decision_filter and not category_filter %}background-gray{% endif %}"
-         href="{{ url('internal_username_moderation') }}{% if search_query %}?search={{ search_query }}{% endif %}">
+      <a class="action-btn small {% if not target_filter and not status_filter and not decision_filter and not category_filter %}background-gray{% endif %}"
+         href="{{ url('internal_profile_moderation') }}{% if search_query %}?search={{ search_query }}{% endif %}">
         {{ _("All") }}
       </a>
+      <a class="action-btn small {% if target_filter == 'username' %}background-gray{% endif %}"
+         href="{{ url('internal_profile_moderation') }}?target=username{% if search_query %}&search={{ search_query }}{% endif %}">
+        {{ _("Username") }}
+      </a>
+      <a class="action-btn small {% if target_filter == 'about' %}background-gray{% endif %}"
+         href="{{ url('internal_profile_moderation') }}?target=about{% if search_query %}&search={{ search_query }}{% endif %}">
+        {{ _("Self-description") }}
+      </a>
       <a class="action-btn small {% if decision_filter == 'pending' %}background-gray{% endif %}"
-         href="{{ url('internal_username_moderation') }}?decision=pending{% if search_query %}&search={{ search_query }}{% endif %}">
+         href="{{ url('internal_profile_moderation') }}?decision=pending{% if target_filter %}&target={{ target_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
         {{ _("Queued") }}
       </a>
       <a class="action-btn small {% if decision_filter == 'review' %}background-gray{% endif %}"
-         href="{{ url('internal_username_moderation') }}?decision=review{% if search_query %}&search={{ search_query }}{% endif %}">
+         href="{{ url('internal_profile_moderation') }}?decision=review{% if target_filter %}&target={{ target_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
         {{ _("Needs review") }}
       </a>
       <a class="action-btn small {% if decision_filter == 'block' %}background-gray{% endif %}"
-         href="{{ url('internal_username_moderation') }}?decision=block{% if search_query %}&search={{ search_query }}{% endif %}">
-        {{ _("Blocked accounts") }}
+         href="{{ url('internal_profile_moderation') }}?decision=block{% if target_filter %}&target={{ target_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+        {{ _("Blocked cases") }}
       </a>
       <form method="get">
+        {% if target_filter %}
+          <input type="hidden" name="target" value="{{ target_filter }}">
+        {% endif %}
         {% if status_filter %}
           <input type="hidden" name="status" value="{{ status_filter }}">
         {% endif %}
@@ -35,7 +46,7 @@
         {% if category_filter %}
           <input type="hidden" name="category" value="{{ category_filter }}">
         {% endif %}
-        <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search username...') }}">
+        <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search profile moderation...') }}">
         <button type="submit" class="action-btn small">{{ _("Search") }}</button>
       </form>
     </div>
@@ -49,7 +60,8 @@
         <thead>
           <tr>
             <th class="username-time-column">{{ _("Time") }}</th>
-            <th class="username-name-column">{{ _("Username") }}</th>
+            <th class="username-name-column">{{ _("Target") }}</th>
+            <th>{{ _("Snapshot") }}</th>
             <th class="username-result-column">{{ _("Result") }}</th>
             <th class="username-state-column">{{ _("State") }}</th>
             <th class="username-source-column">{{ _("Source") }}</th>
@@ -61,7 +73,12 @@
             <tr>
               <td><span class="gray">{{ case.created_at | date(_("N j, Y, g:i a")) }}</span></td>
               <td>
-                <a href="{{ url('user_page', case.user.username) }}">{{ case.username }}</a>
+                {{ case.get_target_display() }}
+                <br>
+                <a href="{{ url('user_page', case.user.username) }}">{{ case.user.username }}</a>
+              </td>
+              <td>
+                <div class="profile-moderation-snapshot">{{ case.display_value }}</div>
               </td>
               <td title="{{ case.reason }}">
                 {% if case.decision == 'block' %}
@@ -123,14 +140,14 @@
                   <form method="post" class="username-moderation-action-form">
                     {% csrf_token %}
                     <input type="hidden" name="case" value="{{ case.id }}">
-                    <button type="submit" name="action" value="hide" class="action-btn small">{{ _("Hide name") }}</button>
+                    <button type="submit" name="action" value="hide" class="action-btn small">{{ _("Hide") }}</button>
                   </form>
                 {% endif %}
               </td>
             </tr>
           {% else %}
             <tr>
-              <td colspan="6" class="gray">{{ _("No username moderation cases found") }}</td>
+              <td colspan="7" class="gray">{{ _("No profile moderation cases found") }}</td>
             </tr>
           {% endfor %}
         </tbody>

@@ -8,6 +8,7 @@ from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.http import (
     Http404,
     HttpResponseRedirect,
@@ -38,6 +39,7 @@ from judge.models import (
     Contest,
     Solution,
     BestSubmission,
+    ProfileModerationCase,
 )
 from judge.models.contest import get_global_rating_range
 from judge.models.submission import (
@@ -47,6 +49,7 @@ from judge.models.submission import (
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import import_users
+from judge.tasks.username_moderation import moderate_profile_case_task
 from judge.utils.hidden_results import (
     hidden_result_best_submission_problem_ids,
     mark_hidden_result_submissions,
@@ -448,6 +451,7 @@ class UserPerformancePointsAjax(UserProblemsPage):
 def edit_profile(request):
     profile = request.profile
     profile_info, created = ProfileInfo.objects.get_or_create(profile=profile)
+    old_about = profile.about or ""
     if request.method == "POST":
         form_user = UserForm(request.POST, instance=request.user)
         form = ProfileForm(
@@ -455,12 +459,28 @@ def edit_profile(request):
         )
         form_info = ProfileInfoForm(request.POST, instance=profile_info)
         if form_user.is_valid() and form.is_valid():
+            new_about = form.cleaned_data.get("about") or ""
+            about_changed = new_about != old_about
             with revisions.create_revision():
                 form_user.save()
                 form.save()
                 form_info.save()
                 revisions.set_user(request.user)
                 revisions.set_comment(_("Updated on site"))
+                if about_changed and new_about.strip():
+                    moderation_case = ProfileModerationCase.objects.create(
+                        user=request.user,
+                        target=ProfileModerationCase.TARGET_ABOUT,
+                        username=request.user.username,
+                        value_snapshot=new_about,
+                        source=ProfileModerationCase.SOURCE_PROFILE_EDIT,
+                        decision=ProfileModerationCase.DECISION_PENDING,
+                        category=ProfileModerationCase.CATEGORY_OTHER,
+                        reason=_("Queued for AI profile self-description moderation."),
+                    )
+                    transaction.on_commit(
+                        lambda: moderate_profile_case_task.delay(moderation_case.id)
+                    )
             return HttpResponseRedirect(request.path)
     else:
         form_user = UserForm(instance=request.user)

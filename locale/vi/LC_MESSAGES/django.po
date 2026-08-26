@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-25 12:24+0700\n"
+"POT-Creation-Date: 2026-08-26 16:17+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -52,8 +52,8 @@ msgstr "Tin nhắn"
 #: chat_box/models.py:264 judge/admin/interface.py:149
 #: judge/models/contest.py:817 judge/models/contest.py:1173
 #: judge/models/course.py:219 judge/models/course.py:489
-#: judge/models/profile.py:763 judge/models/profile.py:826
-#: judge/models/profile.py:1430 judge/models/quiz.py:1080
+#: judge/models/profile.py:764 judge/models/profile.py:827
+#: judge/models/profile.py:1440 judge/models/quiz.py:1080
 #: judge/models/submission.py:414
 msgid "user"
 msgstr "người dùng"
@@ -342,7 +342,7 @@ msgid "Recalculate results"
 msgstr "Tính toán lại kết quả"
 
 #: judge/admin/contest.py:573 judge/admin/organization.py:103
-#: judge/models/profile.py:1434 judge/models/request_metric.py:19
+#: judge/models/profile.py:1451 judge/models/request_metric.py:19
 msgid "username"
 msgstr "tên đăng nhập"
 
@@ -548,10 +548,10 @@ msgid "Recalculate scores"
 msgstr "Tính điểm lại"
 
 #: judge/admin/profile.py:184 judge/admin/profile.py:250
-msgid "Hide username"
-msgstr "Ẩn tên đăng nhập"
+msgid "Hide public identity"
+msgstr "Ẩn danh tính công khai"
 
-#: judge/admin/profile.py:186 judge/models/profile.py:1475
+#: judge/admin/profile.py:186 judge/models/profile.py:1495
 msgid "Show this account as Disabled user to normal visitors."
 msgstr ""
 "Hiển thị tài khoản này là Người dùng đã bị vô hiệu hóa với người xem thông "
@@ -638,7 +638,7 @@ msgid "Capabilities"
 msgstr "Khả năng"
 
 #: judge/admin/submission.py:31 judge/admin/submission.py:53
-#: judge/admin/submission.py:340 judge/models/profile.py:48
+#: judge/admin/submission.py:340 judge/models/profile.py:49
 #: judge/views/ticket.py:757 templates/internal/bridge_status.html:157
 #: templates/internal/bridge_status.html:208
 #: templates/internal/bridge_status.html:406
@@ -694,7 +694,7 @@ msgstr "Tính điểm lại cái bài nộp"
 #: templates/internal/comment_moderation.html:142
 #: templates/internal/request_metric_profile.html:16
 #: templates/internal/request_time_detail.html:104
-#: templates/internal/username_moderation.html:51
+#: templates/internal/username_moderation.html:62
 #: templates/notification/list.html:139
 #: templates/organization/moderation_log.html:46
 #: templates/organization/requests/log.html:10
@@ -1233,7 +1233,7 @@ msgstr "bình luận"
 msgid "comments"
 msgstr "bình luận"
 
-#: judge/models/comment.py:596 judge/models/profile.py:1242
+#: judge/models/comment.py:596 judge/models/profile.py:1243
 msgid "Hide Comment"
 msgstr "Ẩn bình luận"
 
@@ -1290,7 +1290,7 @@ msgid "contest tags"
 msgstr "nhãn kỳ thi"
 
 #: judge/models/contest.py:104 judge/models/quiz.py:598
-#: templates/internal/username_moderation.html:94
+#: templates/internal/username_moderation.html:111
 msgid "Visible"
 msgstr "Hiển thị"
 
@@ -1498,7 +1498,7 @@ msgstr "riêng tư với các nhóm"
 
 #: judge/models/contest.py:255 judge/models/course.py:45
 #: judge/models/interface.py:92 judge/models/problem.py:295
-#: judge/models/profile.py:307
+#: judge/models/profile.py:308
 msgid "organizations"
 msgstr "nhóm"
 
@@ -1535,7 +1535,7 @@ msgstr "tổng kết kỳ thi"
 msgid "Plain-text, shown in meta description tag, e.g. for social media."
 msgstr "Văn bản thuần, hiển thị trong thẻ mô tả meta, ví dụ cho mạng xã hội."
 
-#: judge/models/contest.py:289 judge/models/profile.py:140
+#: judge/models/contest.py:289 judge/models/profile.py:141
 msgid "access code"
 msgstr "mật khẩu truy cập"
 
@@ -1999,7 +1999,7 @@ msgstr "kích hoạt bởi"
 
 #: judge/models/contest_review.py:53 judge/models/contest_review.py:155
 #: judge/models/contest_review.py:202 judge/models/problem_review.py:35
-#: judge/models/problem_review.py:110 judge/models/profile.py:1443
+#: judge/models/problem_review.py:110 judge/models/profile.py:1463
 #: judge/models/public_request.py:31 judge/models/submission.py:90
 msgid "status"
 msgstr "trạng thái"
@@ -2057,7 +2057,7 @@ msgstr "các lần chạy xem xét đề"
 #: judge/models/contest_review.py:136 judge/models/contest_review.py:181
 #: judge/models/problem_data.py:422 judge/models/problem_duplicate.py:12
 #: judge/models/problem_duplicate.py:114 judge/models/problem_review.py:92
-#: judge/models/profile.py:1387 judge/models/profile.py:1396
+#: judge/models/profile.py:1395 judge/models/profile.py:1404
 #: judge/models/public_request.py:10 templates/contest/review_list.html:25
 #: templates/contest/review_list.html:129
 #: templates/internal/community_blog_queue.html:67
@@ -2096,7 +2096,7 @@ msgid "Warning"
 msgstr "còn lại"
 
 #: judge/models/contest_review.py:140 judge/models/problem_review.py:95
-#: judge/models/profile.py:1247 templates/organization/moderation_log.html:94
+#: judge/models/profile.py:1248 templates/organization/moderation_log.html:94
 msgid "Skipped"
 msgstr "Bỏ qua"
 
@@ -2109,8 +2109,8 @@ msgid "check id"
 msgstr "id kiểm tra"
 
 #: judge/models/contest_review.py:157 judge/models/problem_review.py:112
-#: judge/models/profile.py:783 judge/models/profile.py:1282
-#: judge/models/profile.py:1460
+#: judge/models/profile.py:784 judge/models/profile.py:1283
+#: judge/models/profile.py:1480
 msgid "reason"
 msgstr "lý do"
 
@@ -2161,13 +2161,13 @@ msgid "reviewed by"
 msgstr "duyệt bởi"
 
 #: judge/models/contest_review.py:217 judge/models/problem_review.py:174
-#: judge/models/profile.py:1292 judge/models/profile.py:1486
+#: judge/models/profile.py:1293 judge/models/profile.py:1506
 #: judge/models/public_request.py:46
 msgid "created at"
 msgstr "tạo lúc"
 
 #: judge/models/contest_review.py:218 judge/models/problem_review.py:175
-#: judge/models/profile.py:1487 judge/models/public_request.py:47
+#: judge/models/profile.py:1507 judge/models/public_request.py:47
 msgid "updated at"
 msgstr "cập nhật lúc"
 
@@ -2219,7 +2219,7 @@ msgstr "URL khóa học"
 msgid "Course name shown in URL"
 msgstr "Tên được hiển thị trong đường dẫn"
 
-#: judge/models/course.py:54 judge/models/profile.py:96
+#: judge/models/course.py:54 judge/models/profile.py:97
 msgid "Only alphanumeric and hyphens"
 msgstr "Chỉ chứa chữ cái và dấu gạch ngang (-)"
 
@@ -2325,7 +2325,7 @@ msgstr "Tiến độ bài học"
 msgid "Lesson Progress Records"
 msgstr "Bản ghi tiến độ bài học"
 
-#: judge/models/email_change.py:8 judge/models/profile.py:682
+#: judge/models/email_change.py:8 judge/models/profile.py:683
 msgid "user profile"
 msgstr "thông tin người dùng"
 
@@ -2441,7 +2441,7 @@ msgstr "nội dung tin nhắn"
 msgid "sender"
 msgstr "người gửi"
 
-#: judge/models/message.py:21
+#: judge/models/message.py:21 judge/models/profile.py:1449
 msgid "target"
 msgstr "người nhận"
 
@@ -2566,7 +2566,7 @@ msgstr "Đã bị cấm chat"
 msgid "owner"
 msgstr "chủ sở hữu"
 
-#: judge/models/notification.py:340 judge/models/profile.py:1457
+#: judge/models/notification.py:340 judge/models/profile.py:1477
 msgid "category"
 msgstr "danh mục"
 
@@ -2690,7 +2690,7 @@ msgstr "đường dẫn"
 msgid "full name"
 msgstr "tên đầy đủ"
 
-#: judge/models/problem.py:110 judge/models/profile.py:101
+#: judge/models/problem.py:110 judge/models/profile.py:102
 #: judge/models/runtime.py:35
 msgid "short name"
 msgstr "tên ngắn"
@@ -3433,429 +3433,451 @@ msgstr "tag bài nộp xem xét"
 msgid "problem review submission tags"
 msgstr "các tag bài nộp xem xét"
 
-#: judge/models/profile.py:49
+#: judge/models/profile.py:50
 msgid "Snowflakes"
 msgstr "Bông tuyết"
 
-#: judge/models/profile.py:50
+#: judge/models/profile.py:51
 msgid "Snow"
 msgstr "Tuyết rơi"
 
-#: judge/models/profile.py:51
+#: judge/models/profile.py:52
 msgid "Cherry Blossoms"
 msgstr "Hoa anh đào"
 
-#: judge/models/profile.py:52
+#: judge/models/profile.py:53
 msgid "Red Poinciana"
 msgstr "Hoa phượng đỏ"
 
-#: judge/models/profile.py:53
+#: judge/models/profile.py:54
 msgid "Rain"
 msgstr "Mưa"
 
-#: judge/models/profile.py:54
+#: judge/models/profile.py:55
 msgid "Fireflies"
 msgstr "Đom đóm"
 
-#: judge/models/profile.py:55
+#: judge/models/profile.py:56
 msgid "Lunar New Year"
 msgstr "Tết Nguyên Đán"
 
-#: judge/models/profile.py:89
+#: judge/models/profile.py:90
 msgid "organization title"
 msgstr "tiêu đề nhóm"
 
-#: judge/models/profile.py:92
+#: judge/models/profile.py:93
 msgid "organization slug"
 msgstr "URL nhóm"
 
-#: judge/models/profile.py:93
+#: judge/models/profile.py:94
 msgid "Organization name shown in URL"
 msgstr "Tên được hiển thị trong đường dẫn"
 
-#: judge/models/profile.py:102
+#: judge/models/profile.py:103
 msgid "Displayed beside user name during contests"
 msgstr "Hiển thị bên cạnh tên người dùng trong kỳ thi"
 
-#: judge/models/profile.py:105
+#: judge/models/profile.py:106
 msgid "organization description"
 msgstr "mô tả nhóm"
 
-#: judge/models/profile.py:109
+#: judge/models/profile.py:110
 msgid "registrant"
 msgstr "người tạo"
 
-#: judge/models/profile.py:112
+#: judge/models/profile.py:113
 msgid "User who registered this organization"
 msgstr "Người tạo nhóm"
 
-#: judge/models/profile.py:116
+#: judge/models/profile.py:117
 msgid "administrators"
 msgstr "người quản lý"
 
-#: judge/models/profile.py:118
+#: judge/models/profile.py:119
 msgid "Those who can edit this organization"
 msgstr "Những người có thể chỉnh sửa nhóm"
 
-#: judge/models/profile.py:121
+#: judge/models/profile.py:122
 msgid "creation date"
 msgstr "ngày tạo"
 
-#: judge/models/profile.py:124
+#: judge/models/profile.py:125
 msgid "is open organization?"
 msgstr "nhóm mở?"
 
-#: judge/models/profile.py:125
+#: judge/models/profile.py:126
 msgid "Allow joining organization"
 msgstr "Cho phép mọi người tham gia nhóm"
 
-#: judge/models/profile.py:129
+#: judge/models/profile.py:130
 msgid "maximum size"
 msgstr "số lượng thành viên tối đa"
 
-#: judge/models/profile.py:133
+#: judge/models/profile.py:134
 msgid ""
 "Maximum amount of users in this organization, only applicable to private "
 "organizations"
 msgstr "Số người tối đa trong nhóm, chỉ áp dụng với nhóm riêng tư"
 
-#: judge/models/profile.py:139
+#: judge/models/profile.py:140
 msgid "Student access code"
 msgstr "Mã truy cập cho học sinh"
 
-#: judge/models/profile.py:148
+#: judge/models/profile.py:149
 msgid "Organization image"
 msgstr "Ảnh nhóm"
 
-#: judge/models/profile.py:154
+#: judge/models/profile.py:155
 msgid "Cover image"
 msgstr "Ảnh bìa"
 
-#: judge/models/profile.py:158
+#: judge/models/profile.py:159
 msgid "community"
 msgstr "cộng đồng"
 
-#: judge/models/profile.py:160
+#: judge/models/profile.py:161
 msgid ""
 "Communities are always open and focus on discussions rather than contests/"
 "problems"
 msgstr "Cộng đồng luôn mở và tập trung vào thảo luận hơn là kỳ thi/bài tập"
 
-#: judge/models/profile.py:165
+#: judge/models/profile.py:166
 msgid "moderators"
 msgstr "người kiểm duyệt"
 
-#: judge/models/profile.py:168
+#: judge/models/profile.py:169
 msgid "Moderators can approve/reject posts and manage comments"
 msgstr "Người kiểm duyệt có thể duyệt/từ chối bài đăng và quản lý bình luận"
 
-#: judge/models/profile.py:306 judge/models/profile.py:341
-#: judge/models/profile.py:769 judge/models/profile.py:833
-#: judge/models/profile.py:1254
+#: judge/models/profile.py:307 judge/models/profile.py:342
+#: judge/models/profile.py:770 judge/models/profile.py:834
+#: judge/models/profile.py:1255
 msgid "organization"
 msgstr "tổ chức"
 
-#: judge/models/profile.py:313
+#: judge/models/profile.py:314
 msgid "user associated"
 msgstr "người dùng liên kết"
 
-#: judge/models/profile.py:316
+#: judge/models/profile.py:317
 msgid "self-description"
 msgstr "mô tả bản thân"
 
-#: judge/models/profile.py:320
+#: judge/models/profile.py:321
 msgid "location"
 msgstr "vị trí"
 
-#: judge/models/profile.py:326
+#: judge/models/profile.py:327
 msgid "preferred language"
 msgstr "ngôn ngữ ưa thích"
 
-#: judge/models/profile.py:336
+#: judge/models/profile.py:337
 msgid "last access time"
 msgstr "lần truy cập cuối"
 
-#: judge/models/profile.py:338
+#: judge/models/profile.py:339
 msgid "last IP"
 msgstr "IP cuối"
 
-#: judge/models/profile.py:349
+#: judge/models/profile.py:350
 msgid "display rank"
 msgstr "hiển thị xếp hạng"
 
-#: judge/models/profile.py:358
+#: judge/models/profile.py:359
 msgid "chat mute"
 msgstr "cấm chat"
 
-#: judge/models/profile.py:359
+#: judge/models/profile.py:360
 msgid "Prevents the user from using chat and comments."
 msgstr "Ngăn người dùng sử dụng chat và bình luận."
 
-#: judge/models/profile.py:363
+#: judge/models/profile.py:364
 msgid "muted until"
 msgstr "cấm chat đến"
 
-#: judge/models/profile.py:367
+#: judge/models/profile.py:368
 msgid "If set, the mute expires at this time."
 msgstr "Nếu được đặt, lệnh cấm chat hết hạn vào thời điểm này."
 
-#: judge/models/profile.py:370
+#: judge/models/profile.py:371
 msgid "mute reason"
 msgstr "lý do cấm chat"
 
-#: judge/models/profile.py:372
+#: judge/models/profile.py:373
 msgid "Reason shown to the muted user."
 msgstr "Lý do hiển thị cho người dùng bị cấm chat."
 
-#: judge/models/profile.py:375
+#: judge/models/profile.py:376
 msgid "unlisted user"
 msgstr "người dùng không liệt kê"
 
-#: judge/models/profile.py:376
+#: judge/models/profile.py:377
 msgid "User will not be ranked."
 msgstr "Người dùng sẽ không được xếp hạng."
 
-#: judge/models/profile.py:382
+#: judge/models/profile.py:383
 msgid "current contest"
 msgstr "kỳ thi hiện tại"
 
-#: judge/models/profile.py:389
+#: judge/models/profile.py:390
 msgid "2FA enabled"
 msgstr "2FA được bật"
 
-#: judge/models/profile.py:391
+#: judge/models/profile.py:392
 msgid "check to enable TOTP-based two factor authentication"
 msgstr "đánh dấu để sử dụng TOTP-based two factor authentication"
 
-#: judge/models/profile.py:397
+#: judge/models/profile.py:398
 msgid "TOTP key"
 msgstr "mã TOTP"
 
-#: judge/models/profile.py:398
+#: judge/models/profile.py:399
 msgid "32 character base32-encoded key for TOTP"
 msgstr "Khóa 32 ký tự mã hóa base32 cho TOTP"
 
-#: judge/models/profile.py:400
+#: judge/models/profile.py:401
 msgid "TOTP key must be empty or base32"
 msgstr "Khóa TOTP phải để trống hoặc là base32"
 
-#: judge/models/profile.py:404
+#: judge/models/profile.py:405
 msgid "internal notes"
 msgstr "ghi chú nội bộ"
 
-#: judge/models/profile.py:407
+#: judge/models/profile.py:408
 msgid "Notes for administrators regarding this user."
 msgstr "Ghi chú riêng cho quản trị viên."
 
-#: judge/models/profile.py:413
+#: judge/models/profile.py:414
 msgid "Profile image"
 msgstr "Ảnh đại diện"
 
-#: judge/models/profile.py:419
+#: judge/models/profile.py:420
 msgid "Background image"
 msgstr "Ảnh nền"
 
-#: judge/models/profile.py:425
+#: judge/models/profile.py:426
 msgid "Dynamic effect"
 msgstr "Hiệu ứng động"
 
-#: judge/models/profile.py:497
+#: judge/models/profile.py:498
 msgid "Disabled user"
 msgstr "Người dùng đã bị vô hiệu hóa"
 
-#: judge/models/profile.py:683
+#: judge/models/profile.py:684
 msgid "user profiles"
 msgstr "thông tin người dùng"
 
-#: judge/models/profile.py:733
+#: judge/models/profile.py:734
 msgid "profile associated"
 msgstr "trang tương ứng"
 
-#: judge/models/profile.py:740
+#: judge/models/profile.py:741
 msgid "t-shirt size"
 msgstr "size áo"
 
-#: judge/models/profile.py:745
+#: judge/models/profile.py:746
 msgid "date of birth"
 msgstr "sinh nhật"
 
-#: judge/models/profile.py:751
+#: judge/models/profile.py:752
 msgid "address"
 msgstr "địa chỉ"
 
-#: judge/models/profile.py:773
+#: judge/models/profile.py:774
 msgid "request time"
 msgstr "thời gian đăng ký"
 
-#: judge/models/profile.py:776
+#: judge/models/profile.py:777
 msgid "state"
 msgstr "trạng thái"
 
-#: judge/models/profile.py:786
+#: judge/models/profile.py:787
 msgid "organization join request"
 msgstr "đơn đăng ký tham gia"
 
-#: judge/models/profile.py:787
+#: judge/models/profile.py:788
 msgid "organization join requests"
 msgstr "đơn đăng ký tham gia"
 
-#: judge/models/profile.py:838
+#: judge/models/profile.py:839
 msgid "last visit"
 msgstr "truy cập gần nhất"
 
-#: judge/models/profile.py:1243
+#: judge/models/profile.py:1244
 msgid "Unhide Comment"
 msgstr "Hiện bình luận"
 
-#: judge/models/profile.py:1244
+#: judge/models/profile.py:1245
 msgid "Keep Comment"
 msgstr "Giữ bình luận"
 
-#: judge/models/profile.py:1245 templates/organization/blog/pending-js.html:27
+#: judge/models/profile.py:1246 templates/organization/blog/pending-js.html:27
 msgid "Approve Post"
 msgstr "Chấp thuận bài đăng"
 
-#: judge/models/profile.py:1246 templates/organization/blog/pending-js.html:29
+#: judge/models/profile.py:1247 templates/organization/blog/pending-js.html:29
 msgid "Reject Post"
 msgstr "Từ chối bài đăng"
 
-#: judge/models/profile.py:1262 judge/models/profile.py:1484
+#: judge/models/profile.py:1263 judge/models/profile.py:1504
 msgid "moderator"
 msgstr "người kiểm duyệt"
 
-#: judge/models/profile.py:1263
+#: judge/models/profile.py:1264
 msgid "Null if action was automated by LLM"
 msgstr "Null nếu hành động được thực hiện bởi AI"
 
-#: judge/models/profile.py:1270
+#: judge/models/profile.py:1271
 msgid "content type"
 msgstr "loại nội dung"
 
-#: judge/models/profile.py:1272
+#: judge/models/profile.py:1273
 msgid "object ID"
 msgstr "ID đối tượng"
 
-#: judge/models/profile.py:1278
+#: judge/models/profile.py:1279
 msgid "action"
 msgstr "hành động"
 
-#: judge/models/profile.py:1283
+#: judge/models/profile.py:1284
 msgid "LLM explanation or moderator note"
 msgstr "Ghi chú của AI hoặc người kiểm duyệt"
 
-#: judge/models/profile.py:1287 judge/models/profile.py:1477
+#: judge/models/profile.py:1288 judge/models/profile.py:1497
 msgid "automated"
 msgstr "tự động"
 
-#: judge/models/profile.py:1288
+#: judge/models/profile.py:1289
 msgid "True if action was taken by LLM"
 msgstr "True nếu hành động được thực hiện bởi AI"
 
-#: judge/models/profile.py:1301
+#: judge/models/profile.py:1302
 msgid "moderation log"
 msgstr "nhật ký kiểm duyệt"
 
-#: judge/models/profile.py:1302
+#: judge/models/profile.py:1303
 msgid "moderation logs"
 msgstr "nhật ký kiểm duyệt"
 
-#: judge/models/profile.py:1388
+#: judge/models/profile.py:1388 judge/views/contests.py:1637
+#: judge/views/register.py:36 templates/internal/username_moderation.html:18
+#: templates/notification/list.html:98
+#: templates/registration/registration_form.html:34
+#: templates/user/base-users-table.html:5
+#: templates/user/import/table_csv.html:4
+msgid "Username"
+msgstr "Tên đăng nhập"
+
+#: judge/models/profile.py:1389 templates/internal/username_moderation.html:22
+#: templates/user/edit-profile.html:146
+msgid "Self-description"
+msgstr "Tự giới thiệu"
+
+#: judge/models/profile.py:1396
 msgid "Reviewed"
 msgstr "Đã xem xét"
 
-#: judge/models/profile.py:1397 templates/internal/username_moderation.html:109
+#: judge/models/profile.py:1405 templates/internal/username_moderation.html:126
 msgid "Allow"
 msgstr "Cho phép"
 
-#: judge/models/profile.py:1398 templates/internal/chat_moderation.html:119
+#: judge/models/profile.py:1406 templates/internal/chat_moderation.html:119
 #: templates/internal/chat_moderation.html:176
 #: templates/internal/comment_moderation.html:115
 #: templates/internal/comment_moderation.html:184
-#: templates/internal/username_moderation.html:22
+#: templates/internal/username_moderation.html:30
 msgid "Needs review"
 msgstr "Đang chờ duyệt"
 
-#: judge/models/profile.py:1399
+#: judge/models/profile.py:1407
 msgid "Block"
 msgstr "Chặn"
 
-#: judge/models/profile.py:1410
+#: judge/models/profile.py:1418
 msgid "Safe"
 msgstr "An toàn"
 
-#: judge/models/profile.py:1411
+#: judge/models/profile.py:1419
 msgid "Gambling"
 msgstr "Cờ bạc"
 
-#: judge/models/profile.py:1412
+#: judge/models/profile.py:1420
 msgid "Offensive"
 msgstr "Xúc phạm"
 
-#: judge/models/profile.py:1413
+#: judge/models/profile.py:1421
 msgid "Obscene"
 msgstr "Tục tĩu"
 
-#: judge/models/profile.py:1414
+#: judge/models/profile.py:1422
 msgid "Impersonation"
 msgstr "Giả danh"
 
-#: judge/models/profile.py:1415
+#: judge/models/profile.py:1423
 msgid "Spam"
 msgstr "Spam"
 
-#: judge/models/profile.py:1416
+#: judge/models/profile.py:1424
 msgid "Other"
 msgstr "Khác"
 
-#: judge/models/profile.py:1423 judge/views/register.py:88
-#: judge/views/register.py:177
+#: judge/models/profile.py:1432 judge/views/register.py:88
+#: judge/views/register.py:179
 msgid "Registration"
 msgstr "Đăng ký"
 
-#: judge/models/profile.py:1424
+#: judge/models/profile.py:1433
+msgid "Profile edit"
+msgstr "Chỉnh sửa hồ sơ"
+
+#: judge/models/profile.py:1434
 msgid "Audit"
 msgstr "Kiểm tra"
 
-#: judge/models/profile.py:1425 templates/internal/chat_moderation.html:205
+#: judge/models/profile.py:1435 templates/internal/chat_moderation.html:205
 #: templates/internal/comment_moderation.html:213
 msgid "Manual"
 msgstr "Thủ công"
 
-#: judge/models/profile.py:1436
+#: judge/models/profile.py:1453
 msgid "normalized username"
 msgstr "tên người dùng đã chuẩn hóa"
 
-#: judge/models/profile.py:1450
+#: judge/models/profile.py:1456
+msgid "value snapshot"
+msgstr "giá trị đã ghi nhận"
+
+#: judge/models/profile.py:1470
 msgid "decision"
 msgstr "quyết định"
 
-#: judge/models/profile.py:1459
+#: judge/models/profile.py:1479
 msgid "confidence"
 msgstr "độ tin cậy"
 
-#: judge/models/profile.py:1462
+#: judge/models/profile.py:1482
 msgid "raw response"
 msgstr "phản hồi thô"
 
-#: judge/models/profile.py:1469
+#: judge/models/profile.py:1489
 msgid "source"
 msgstr "nguồn"
 
-#: judge/models/profile.py:1474
+#: judge/models/profile.py:1494
 msgid "public identity hidden"
 msgstr "ẩn danh tính công khai"
 
-#: judge/models/profile.py:1489
+#: judge/models/profile.py:1509
 msgid "decided at"
 msgstr "thời điểm quyết định"
 
-#: judge/models/profile.py:1499
-msgid "username moderation case"
-msgstr "trường hợp kiểm duyệt tên người dùng"
+#: judge/models/profile.py:1520
+msgid "profile moderation case"
+msgstr "trường hợp kiểm duyệt hồ sơ"
 
-#: judge/models/profile.py:1500
-msgid "username moderation cases"
-msgstr "các trường hợp kiểm duyệt tên người dùng"
+#: judge/models/profile.py:1521
+msgid "profile moderation cases"
+msgstr "các trường hợp kiểm duyệt hồ sơ"
 
 #: judge/models/public_request.py:50
 msgid "public request"
@@ -4593,8 +4615,8 @@ msgid "Aborted"
 msgstr "Đã hủy"
 
 #: judge/models/submission.py:48 judge/models/submission.py:69
-#: templates/internal/username_moderation.html:18
-#: templates/internal/username_moderation.html:74
+#: templates/internal/username_moderation.html:26
+#: templates/internal/username_moderation.html:91
 msgid "Queued"
 msgstr "Trong hàng đợi"
 
@@ -5137,7 +5159,7 @@ msgstr "Đường dẫn file không hợp lệ"
 #: templates/internal/chat_moderation.html:174
 #: templates/internal/comment_moderation.html:119
 #: templates/internal/comment_moderation.html:182
-#: templates/internal/username_moderation.html:92
+#: templates/internal/username_moderation.html:109
 #: templates/submission/row.html:19
 msgid "Hidden"
 msgstr "Ẩn"
@@ -5611,15 +5633,6 @@ msgstr "%s Bảng điểm"
 #: judge/views/contests.py:1637 templates/contest/contests_summary.html:37
 msgid "Rank"
 msgstr "Rank"
-
-#: judge/views/contests.py:1637 judge/views/register.py:36
-#: templates/internal/username_moderation.html:52
-#: templates/notification/list.html:98
-#: templates/registration/registration_form.html:34
-#: templates/user/base-users-table.html:5
-#: templates/user/import/table_csv.html:4
-msgid "Username"
-msgstr "Tên đăng nhập"
 
 #: judge/views/contests.py:1637
 #, fuzzy
@@ -6684,7 +6697,7 @@ msgid "User permanently muted."
 msgstr "Người dùng đã bị cấm chat vĩnh viễn."
 
 #: judge/views/internal.py:2047 judge/views/internal.py:2215
-#: judge/views/internal.py:2313
+#: judge/views/internal.py:2319
 msgid "Unknown moderation action."
 msgstr "Hành động kiểm duyệt không xác định."
 
@@ -6703,22 +6716,22 @@ msgstr "Đã ẩn bình luận."
 
 #: judge/views/internal.py:2250 templates/internal/left-sidebar.html:9
 #: templates/internal/username_moderation.html:9
-msgid "Username Moderation"
-msgstr "Kiểm duyệt tên người dùng"
+msgid "Profile Moderation"
+msgstr "Kiểm duyệt hồ sơ"
 
-#: judge/views/internal.py:2302
-msgid "Username moderation case allowed."
-msgstr "Đã cho phép trường hợp kiểm duyệt tên người dùng."
+#: judge/views/internal.py:2308
+msgid "Profile moderation case allowed."
+msgstr "Đã cho phép trường hợp kiểm duyệt hồ sơ."
 
-#: judge/views/internal.py:2305
+#: judge/views/internal.py:2311
 msgid "User disabled and public identity hidden."
 msgstr "Đã vô hiệu hóa người dùng và ẩn danh tính công khai."
 
-#: judge/views/internal.py:2308
+#: judge/views/internal.py:2314
 msgid "Public identity hidden."
 msgstr "Đã ẩn danh tính công khai."
 
-#: judge/views/internal.py:2311
+#: judge/views/internal.py:2317
 msgid "Public identity restored."
 msgstr "Đã khôi phục danh tính công khai."
 
@@ -7991,7 +8004,7 @@ msgstr ""
 "Your email provider is not allowed due to history of abuse. Please use a "
 "reputable email provider."
 
-#: judge/views/register.py:212
+#: judge/views/register.py:215
 msgid "Authentication failure"
 msgstr "Xác thực thất bại"
 
@@ -8258,51 +8271,55 @@ msgstr "Tắt Xác thực hai yếu tố"
 msgid "Perform Two Factor Authentication"
 msgstr "Thực hiện Xác thực hai yếu tố"
 
-#: judge/views/user.py:111
+#: judge/views/user.py:114
 msgid "No such user"
 msgstr "Không tìm thấy người dùng"
 
-#: judge/views/user.py:112
+#: judge/views/user.py:115
 #, python-format
 msgid "No user handle \"%s\"."
 msgstr "Không tồn tại tên người dùng \"%s\"."
 
-#: judge/views/user.py:117
+#: judge/views/user.py:120
 msgid "My account"
 msgstr "Tài khoản của tôi"
 
-#: judge/views/user.py:119
+#: judge/views/user.py:122
 #, python-format
 msgid "User %s"
 msgstr "Thành viên %s"
 
-#: judge/views/user.py:221
+#: judge/views/user.py:224
 msgid "M j, Y, G:i"
 msgstr "j M, Y, G:i"
 
-#: judge/views/user.py:463
+#: judge/views/user.py:469
 msgid "Updated on site"
 msgstr "Được cập nhật trên web"
 
-#: judge/views/user.py:480 templates/admin/auth/user/change_form.html:14
+#: judge/views/user.py:479
+msgid "Queued for AI profile self-description moderation."
+msgstr "Đã đưa vào hàng đợi kiểm duyệt AI cho phần tự giới thiệu hồ sơ."
+
+#: judge/views/user.py:500 templates/admin/auth/user/change_form.html:14
 #: templates/admin/auth/user/change_form.html:17
 msgid "Edit profile"
 msgstr "Chỉnh sửa thông tin"
 
-#: judge/views/user.py:490 templates/user/user-left-sidebar.html:2
+#: judge/views/user.py:510 templates/user/user-left-sidebar.html:2
 #: templates/user/user-list-tabs.html:4
 msgid "Leaderboard"
 msgstr "Xếp hạng"
 
-#: judge/views/user.py:584
+#: judge/views/user.py:604
 msgid "You have been successfully logged out."
 msgstr "Bạn đã đăng xuất thành công."
 
-#: judge/views/user.py:593 templates/user/import/index.html:100
+#: judge/views/user.py:613 templates/user/import/index.html:100
 msgid "Import Users"
 msgstr "Nhập người dùng"
 
-#: judge/views/user.py:646
+#: judge/views/user.py:666
 msgid "Importing users..."
 msgstr "Đang nhập người dùng..."
 
@@ -8842,6 +8859,7 @@ msgstr "Đăng nhập để vote"
 #: templates/comments/comment-item.html:107
 #: templates/internal/chat_moderation.html:220
 #: templates/internal/comment_moderation.html:228
+#: templates/internal/username_moderation.html:143
 #: templates/organization/moderation_log.html:74
 msgid "Hide"
 msgstr "Ẩn"
@@ -9055,6 +9073,7 @@ msgstr "Thứ bảy"
 #: templates/internal/problem_duplicate_detail.html:228
 #: templates/internal/problem_duplicates.html:42
 #: templates/internal/problem_duplicates.html:88
+#: templates/internal/username_moderation.html:63
 msgid "Target"
 msgstr "Đích"
 
@@ -9377,7 +9396,7 @@ msgid "Join"
 msgstr "Tham gia"
 
 #: templates/contest/list.html:141
-#: templates/internal/username_moderation.html:86
+#: templates/internal/username_moderation.html:103
 msgid "Active"
 msgstr "Đang tham gia"
 
@@ -10209,7 +10228,7 @@ msgstr "Yêu cầu %%"
 
 #: templates/course/edit_lesson.html:383 templates/course/members.html:60
 #: templates/internal/comment_moderation.html:150
-#: templates/internal/username_moderation.html:56
+#: templates/internal/username_moderation.html:68
 #: templates/problem/language_limits.html:67 templates/quiz/manage.html:72
 #: templates/ticket/ticket.html:318
 msgid "Actions"
@@ -10327,7 +10346,7 @@ msgstr "Về khóa học này"
 #: templates/internal/chat_moderation.html:130
 #: templates/internal/comment_moderation.html:130
 #: templates/internal/community_blog_queue.html:98
-#: templates/internal/username_moderation.html:39
+#: templates/internal/username_moderation.html:50
 #: templates/notification/list.html:102
 #: templates/quiz/grading/dashboard.html:55
 #: templates/quiz/question_bank/list.html:36 templates/quiz/search-form.html:2
@@ -10671,7 +10690,7 @@ msgid_plural "Judges"
 msgstr[0] "Máy chấm"
 
 #: templates/internal/bridge_status.html:171
-#: templates/internal/username_moderation.html:54
+#: templates/internal/username_moderation.html:66
 #: templates/organization/requests/log.html:11
 #: templates/organization/requests/pending.html:27
 msgid "State"
@@ -10781,7 +10800,7 @@ msgstr "Thêm code mẫu"
 #: templates/internal/problem_duplicates.html:41
 #: templates/internal/problem_duplicates.html:87
 #: templates/internal/problem_queue.html:911
-#: templates/internal/username_moderation.html:55
+#: templates/internal/username_moderation.html:67
 msgid "Source"
 msgstr "Mã nguồn"
 
@@ -10984,7 +11003,7 @@ msgstr "Giữ lại"
 
 #: templates/internal/chat_moderation.html:199
 #: templates/internal/comment_moderation.html:207
-#: templates/internal/username_moderation.html:100
+#: templates/internal/username_moderation.html:117
 msgid "Auto"
 msgstr "Tự động"
 
@@ -11209,7 +11228,7 @@ msgid "Verification submissions"
 msgstr "Bài nộp kiểm chứng"
 
 #: templates/internal/problem_duplicate_detail.html:201
-#: templates/internal/username_moderation.html:53
+#: templates/internal/username_moderation.html:65
 msgid "Result"
 msgstr "Kết quả"
 
@@ -11814,35 +11833,35 @@ msgstr "Đường dẫn"
 msgid "View"
 msgstr "Xem"
 
-#: templates/internal/username_moderation.html:26
-msgid "Blocked accounts"
-msgstr "Tài khoản bị chặn"
+#: templates/internal/username_moderation.html:34
+msgid "Blocked cases"
+msgstr "Trường hợp đã chặn"
 
-#: templates/internal/username_moderation.html:38
-msgid "Search username..."
-msgstr "Tìm kiếm người dùng..."
+#: templates/internal/username_moderation.html:49
+msgid "Search profile moderation..."
+msgstr "Tìm kiếm kiểm duyệt hồ sơ..."
 
-#: templates/internal/username_moderation.html:88
+#: templates/internal/username_moderation.html:64
+msgid "Snapshot"
+msgstr "Bản ghi"
+
+#: templates/internal/username_moderation.html:105
 msgid "Disabled"
 msgstr "Đã vô hiệu hóa"
 
-#: templates/internal/username_moderation.html:114
+#: templates/internal/username_moderation.html:131
 #: templates/user/edit-profile.html:177
 msgid "Disable"
 msgstr "Tắt"
 
-#: templates/internal/username_moderation.html:120
+#: templates/internal/username_moderation.html:137
 #: templates/organization/moderation_log.html:78
 msgid "Unhide"
 msgstr "Hiện lại"
 
-#: templates/internal/username_moderation.html:126
-msgid "Hide name"
-msgstr "Ẩn tên"
-
-#: templates/internal/username_moderation.html:133
-msgid "No username moderation cases found"
-msgstr "Không có trường hợp kiểm duyệt tên người dùng"
+#: templates/internal/username_moderation.html:150
+msgid "No profile moderation cases found"
+msgstr "Không có trường hợp kiểm duyệt hồ sơ"
 
 #: templates/judge/emails/problem_checker_error.html:14
 msgid "Dear authors of"
@@ -15469,10 +15488,6 @@ msgstr "Ảnh đại diện"
 msgid "Background"
 msgstr "Hình nền"
 
-#: templates/user/edit-profile.html:146
-msgid "Self-description"
-msgstr "Tự giới thiệu"
-
 #: templates/user/edit-profile.html:154
 msgid "Select your closest major city"
 msgstr "Chọn thành phố gần nhất"
@@ -15874,6 +15889,21 @@ msgstr "Chọn tất cả"
 #: templates/widgets/sortable_formset.html:21
 msgid "No items yet."
 msgstr "Chưa có mục nào."
+
+#~ msgid "Hide username"
+#~ msgstr "Ẩn tên đăng nhập"
+
+#~ msgid "Username Moderation"
+#~ msgstr "Kiểm duyệt tên người dùng"
+
+#~ msgid "Blocked accounts"
+#~ msgstr "Tài khoản bị chặn"
+
+#~ msgid "Search username..."
+#~ msgstr "Tìm kiếm người dùng..."
+
+#~ msgid "Hide name"
+#~ msgstr "Ẩn tên"
 
 #~ msgid "judging feedback"
 #~ msgstr "phản hồi từ máy chấm"

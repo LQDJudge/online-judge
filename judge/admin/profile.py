@@ -7,7 +7,7 @@ from django.contrib.auth.admin import UserAdmin as OldUserAdmin
 from django.contrib.auth.forms import UserChangeForm
 
 
-from judge.models import Profile, ProfileInfo, UsernameModerationCase
+from judge.models import Profile, ProfileInfo, ProfileModerationCase
 from judge.validators import (
     USERNAME_ALLOWED_MESSAGE,
     clean_username as clean_username_value,
@@ -181,7 +181,7 @@ class ProfileAdmin(VersionAdmin):
 
 class UserForm(UserChangeForm):
     hide_public_identity = forms.BooleanField(
-        label=_("Hide username"),
+        label=_("Hide public identity"),
         required=False,
         help_text=_("Show this account as Disabled user to normal visitors."),
     )
@@ -190,12 +190,10 @@ class UserForm(UserChangeForm):
         super().__init__(*args, **kwargs)
         self.fields["username"].help_text = USERNAME_ALLOWED_MESSAGE
         if self.instance.pk:
-            self.initial["hide_public_identity"] = (
-                UsernameModerationCase.objects.filter(
-                    user=self.instance,
-                    public_identity_hidden=True,
-                ).exists()
-            )
+            self.initial["hide_public_identity"] = ProfileModerationCase.objects.filter(
+                user=self.instance,
+                public_identity_hidden=True,
+            ).exists()
 
     def clean_username(self):
         username = self.cleaned_data.get("username")
@@ -247,7 +245,7 @@ class UserAdmin(OldUserAdmin):
         ).exists()
 
     hide_public_identity.boolean = True
-    hide_public_identity.short_description = _("Hide username")
+    hide_public_identity.short_description = _("Hide public identity")
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
@@ -261,19 +259,24 @@ class UserAdmin(OldUserAdmin):
         moderator = getattr(request.user, "profile", None)
         if hide_identity:
             case = (
-                UsernameModerationCase.objects.filter(user=user)
-                .exclude(decision=UsernameModerationCase.DECISION_ALLOW)
+                ProfileModerationCase.objects.filter(
+                    user=user,
+                    target=ProfileModerationCase.TARGET_USERNAME,
+                )
+                .exclude(decision=ProfileModerationCase.DECISION_ALLOW)
                 .order_by("-updated_at", "-id")
                 .first()
             )
             if case is None:
-                UsernameModerationCase.objects.create(
+                ProfileModerationCase.objects.create(
                     user=user,
+                    target=ProfileModerationCase.TARGET_USERNAME,
                     username=user.username,
                     normalized_username=user.username.casefold(),
-                    source=UsernameModerationCase.SOURCE_MANUAL,
-                    decision=UsernameModerationCase.DECISION_REVIEW,
-                    category=UsernameModerationCase.CATEGORY_OTHER,
+                    value_snapshot=user.username,
+                    source=ProfileModerationCase.SOURCE_MANUAL,
+                    decision=ProfileModerationCase.DECISION_REVIEW,
+                    category=ProfileModerationCase.CATEGORY_OTHER,
                     public_identity_hidden=True,
                     moderator=moderator,
                 )
@@ -289,7 +292,7 @@ class UserAdmin(OldUserAdmin):
                 )
             return
 
-        for case in UsernameModerationCase.objects.filter(
+        for case in ProfileModerationCase.objects.filter(
             user=user,
             public_identity_hidden=True,
         ):
