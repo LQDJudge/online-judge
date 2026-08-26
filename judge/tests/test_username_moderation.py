@@ -329,6 +329,26 @@ class UsernameModerationDisplayTest(TestCase):
         self.assertEqual(case.source, ProfileModerationCase.SOURCE_PROFILE_EDIT)
         delay.assert_called_once_with(case.id)
 
+    def test_user_list_renders_references_to_hidden_users(self):
+        user = User.objects.create_user(username="hidden_reference_name")
+        Profile.objects.create(
+            user=user,
+            language=self.language,
+            about="[user:hidden_reference_name]",
+        )
+        UsernameModerationCase.objects.create(
+            user=user,
+            username=user.username,
+            decision=UsernameModerationCase.DECISION_REVIEW,
+            status=UsernameModerationCase.STATUS_PENDING,
+            public_identity_hidden=True,
+        )
+
+        response = self.client.get(reverse("user_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Disabled user")
+
     def test_user_active_change_invalidates_public_identity_cache(self):
         user = User.objects.create_user(username="cache_active_user", is_active=True)
         profile = Profile.objects.create(user=user, language=self.language)

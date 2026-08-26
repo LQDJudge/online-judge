@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 from ansi2html import Ansi2HTMLConverter
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
+from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 from lxml.html import Element
 
@@ -69,7 +70,10 @@ def get_user_info(usernames):
         p.username: {
             "display_rank": p.display_rank,
             "rating": p.rating,
-            "public_username": p.get_public_username(),
+            # lxml accepts only concrete text values. Hidden identities use a
+            # lazy gettext value for their public name, so resolve it while
+            # preparing reference data.
+            "public_username": force_str(p.get_public_username()),
         }
         for p in profiles
     }
