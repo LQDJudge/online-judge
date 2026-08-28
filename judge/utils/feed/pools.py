@@ -16,7 +16,7 @@ from judge.models import BlogPost, Contest, ContestProblem, Problem
 from judge.models.comment import Comment
 from judge.models.course import Course
 from judge.models.problem import Solution
-from judge.models.profile import Organization
+from judge.models.profile import Organization, Profile
 from judge.models.quiz import Quiz
 
 from .items import FeedItem
@@ -24,14 +24,15 @@ from .items import FeedItem
 FEED_CACHE_TTL = 60 * 60  # 1 hour
 
 
-def _feed_cache_key(request, pool_name):
+def _feed_cache_key(request, pool_name, organization=None):
     """Cache key scoped to user + feed token (from ?ft= param) + org context."""
     if request.user.is_authenticated:
         user_key = f"u{request.profile.id}"
     else:
         user_key = "anon"
     feed_token = request.GET.get("ft", "")
-    return f"feed:{pool_name}:{user_key}:{feed_token}"
+    org_key = f"o{organization.id}" if organization else "global"
+    return f"feed:{pool_name}:{org_key}:{user_key}:{feed_token}"
 
 
 class CachedPool:
@@ -47,7 +48,7 @@ class CachedPool:
         self.request = request
         self.organization = organization
         self._items = None
-        self._cache_key = _feed_cache_key(request, self.pool_name)
+        self._cache_key = _feed_cache_key(request, self.pool_name, organization)
 
     def get(self, offset, count):
         self._build()
@@ -135,7 +136,16 @@ class PostPool(CachedPool):
             )
 
         BlogPost.prefetch_organization_ids(*[p.id for p in posts])
-        return [FeedItem(FeedItem.POST, post, time=post.publish_on) for post in posts]
+        blog_ct = ContentType.objects.get_for_model(BlogPost)
+        return [
+            FeedItem(
+                FeedItem.POST,
+                post,
+                time=post.publish_on,
+                content_key=(blog_ct.id, post.id),
+            )
+            for post in posts
+        ]
 
 
 class CommentPool(CachedPool):
@@ -210,8 +220,6 @@ class CommentPool(CachedPool):
         for group in groups.values():
             all_author_ids.update(group["commenter_ids"])
 
-        from judge.models.profile import Profile
-
         cached_profiles = Profile.get_cached_instances(*all_author_ids)
         profiles = {p.id: p for p in cached_profiles}
 
@@ -221,7 +229,15 @@ class CommentPool(CachedPool):
             ]
 
         return [
-            FeedItem(FeedItem.COMMENT, group, time=group["latest_time"])
+            FeedItem(
+                FeedItem.COMMENT,
+                group,
+                time=group["latest_time"],
+                content_key=(
+                    group["comment"].content_type_id,
+                    group["comment"].object_id,
+                ),
+            )
             for group in groups.values()
         ]
 
@@ -237,7 +253,15 @@ class ProblemPool(CachedPool):
             problems = Problem.objects.filter(
                 organizations=org, is_public=True
             ).order_by("-date")[:100]
-            return [FeedItem(FeedItem.PROBLEM, p) for p in problems]
+            problem_ct = ContentType.objects.get_for_model(Problem)
+            return [
+                FeedItem(
+                    FeedItem.PROBLEM,
+                    p,
+                    content_key=(problem_ct.id, p.id),
+                )
+                for p in problems
+            ]
 
         try:
             from judge.utils.problems import (
@@ -287,7 +311,15 @@ class ProblemPool(CachedPool):
                 getattr(self.request, "LANGUAGE_CODE", "en"), *rec_ids[:100]
             )
             problems = Problem.get_cached_instances(*rec_ids[:100])
-            return [FeedItem(FeedItem.PROBLEM, p) for p in problems]
+            problem_ct = ContentType.objects.get_for_model(Problem)
+            return [
+                FeedItem(
+                    FeedItem.PROBLEM,
+                    p,
+                    content_key=(problem_ct.id, p.id),
+                )
+                for p in problems
+            ]
         except Exception:
             return []
 
@@ -324,7 +356,15 @@ class ContestPool(CachedPool):
                 is_organization_private=True,
                 organizations=org,
             ).order_by("-start_time")[:50]
-            return [FeedItem(FeedItem.CONTEST, c) for c in contests]
+            contest_ct = ContentType.objects.get_for_model(Contest)
+            return [
+                FeedItem(
+                    FeedItem.CONTEST,
+                    c,
+                    content_key=(contest_ct.id, c.id),
+                )
+                for c in contests
+            ]
 
         try:
             from judge.utils.contest_recommendation import (
@@ -343,8 +383,13 @@ class ContestPool(CachedPool):
             clean_ids = [r[0] if isinstance(r, (list, tuple)) else r for r in rec_ids]
             contests = Contest.objects.filter(id__in=clean_ids)
             id_map = {c.id: c for c in contests}
+            contest_ct = ContentType.objects.get_for_model(Contest)
             return [
-                FeedItem(FeedItem.CONTEST, id_map[cid])
+                FeedItem(
+                    FeedItem.CONTEST,
+                    id_map[cid],
+                    content_key=(contest_ct.id, cid),
+                )
                 for cid in clean_ids
                 if cid in id_map
             ]
@@ -359,7 +404,7 @@ class GroupCardPool:
         self.request = request
         self.organization = organization
         self._cards = None
-        self._cache_key = _feed_cache_key(request, "group_card")
+        self._cache_key = _feed_cache_key(request, "group_card", organization)
 
     def get(self, offset, count):
         self._build()

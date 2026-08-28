@@ -1,6 +1,6 @@
 import base64
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass, field
 
 
 @dataclass
@@ -16,9 +16,12 @@ class FeedCursor:
     problem_offset: int = 0
     contest_offset: int = 0
     group_card_offset: int = 0
+    seen_content_keys: list = field(default_factory=list)
 
     def encode(self):
-        data = json.dumps(asdict(self), separators=(",", ":"))
+        values = asdict(self)
+        values["seen_content_keys"] = [list(key) for key in self.seen_content_keys]
+        data = json.dumps(values, separators=(",", ":"))
         return base64.urlsafe_b64encode(data.encode()).decode().rstrip("=")
 
     @classmethod
@@ -28,9 +31,11 @@ class FeedCursor:
         try:
             padded = raw + "=" * (-len(raw) % 4)
             data = json.loads(base64.urlsafe_b64decode(padded))
-            return cls(
-                **{k: v for k, v in data.items() if k in cls.__dataclass_fields__}
-            )
+            values = {k: v for k, v in data.items() if k in cls.__dataclass_fields__}
+            values["seen_content_keys"] = [
+                tuple(key) for key in values.get("seen_content_keys", [])
+            ]
+            return cls(**values)
         except Exception:
             return cls()
 

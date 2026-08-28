@@ -66,10 +66,11 @@ class FeedGenerator:
             (items, next_cursor) — next_cursor is None if no more content.
         """
         items = []
+        seen_content_keys = set(cursor.seen_content_keys)
         consumed = {
             field: 0
             for field in FeedCursor.__dataclass_fields__
-            if field != "slot_offset"
+            if field not in ("slot_offset", "seen_content_keys")
         }
         slots_advanced = 0
 
@@ -83,10 +84,17 @@ class FeedGenerator:
             pool = getattr(self, pool_attr)
             offset = getattr(cursor, cursor_field) + consumed[cursor_field]
 
-            batch = pool.get(offset, 1)
-            if batch:
-                items.append(batch[0])
+            while pool.has_more(offset):
+                item = pool.get(offset, 1)[0]
                 consumed[cursor_field] += 1
+                offset += 1
+                content_key = item.content_key
+                if content_key and content_key in seen_content_keys:
+                    continue
+                items.append(item)
+                if content_key:
+                    seen_content_keys.add(content_key)
+                break
 
             slots_advanced += 1
 
@@ -104,6 +112,7 @@ class FeedGenerator:
             consumed_copy = dict(consumed)
             next_cursor = FeedCursor(
                 slot_offset=new_slot_offset,
+                seen_content_keys=sorted(seen_content_keys),
                 **{k: getattr(cursor, k) + v for k, v in consumed_copy.items()},
             )
         else:
