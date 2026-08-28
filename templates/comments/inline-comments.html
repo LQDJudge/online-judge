@@ -162,9 +162,46 @@
         // Fallback: simple textarea if editor libs not loaded
         $formContainer.html('<div class="inline-simple-form">' +
           '<textarea class="inline-comment-input" placeholder="{{ _("Write a comment...") }}" rows="1"></textarea>' +
-          '<div class="inline-form-actions" style="display:none;">' +
+          '<div class="inline-form-actions">' +
+          '<button type="button" class="inline-cancel-btn">{{ _("Cancel") }}</button>' +
           '<button type="button" class="inline-submit-btn">{{ _("Post") }}</button>' +
           '</div></div>');
+        $formContainer.find('.inline-cancel-btn').on('click', function() {
+          $formContainer.find('textarea').val('').blur();
+        });
+        $formContainer.find('.inline-submit-btn').on('click', function() {
+          var body = $formContainer.find('textarea').val();
+          if (!body.trim()) return;
+          $(this).prop('disabled', true);
+          $.ajax({
+            url: config.postUrl,
+            type: 'POST',
+            data: {
+              csrfmiddlewaretoken: $.cookie('csrftoken'),
+              parent: '',
+              body: body,
+              content_type_id: config.contentTypeId,
+              object_id: config.objectId
+            },
+            success: function(response) {
+              $formContainer.find('textarea').val('');
+              var $list = $container.find('.compact-comment-list');
+              if (!$list.length) {
+                $container.find('.inline-comments-empty').remove();
+                $container.find('.inline-comments-header').after('<ul class="top-level-comments compact-comment-list" id="inline-comments-' + config.contentTypeId + '-' + config.objectId + '"></ul>');
+                $list = $container.find('.compact-comment-list');
+              }
+              $list.prepend(response);
+              if (typeof renderKatex === 'function') renderKatex($container[0]);
+              if (typeof register_time === 'function') register_time($container.find('.time-with-rel'));
+              $formContainer.find('.inline-submit-btn').prop('disabled', false);
+            },
+            error: function(xhr) {
+              alert(getCommentPostError(xhr, '{{ _("Error posting comment")|escapejs }}'));
+              $formContainer.find('.inline-submit-btn').prop('disabled', false);
+            }
+          });
+        });
         return;
       }
 
