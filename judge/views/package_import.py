@@ -471,7 +471,7 @@ class PackageImportApplyView(View):
         path = _validate_path_in_dir(save_dir, "testdata.zip")
         if not os.path.exists(path):
             raise FileNotFoundError("testdata.zip not found")
-        data, _ = ProblemData.objects.get_or_create(problem=problem)
+        data, _created = ProblemData.objects.get_or_create(problem=problem)
         with open(path, "rb") as f:
             data.zipfile.save("testdata.zip", ContentFile(f.read()))
         data.save()
@@ -529,8 +529,8 @@ class PackageImportApplyView(View):
 
         Reads `summary.json`'s `checker` block to decide the checker type:
         a built-in (standard/floats/...) needs no file; testlib/testlibcms/customcpp
-        ship a checker.cpp; custom ships a checker.py. Falls back to the legacy
-        behavior (treat checker.cpp as customcpp) when no key is given.
+        ship a checker.cpp. Falls back to the legacy behavior (treat checker.cpp
+        as customcpp) when no key is given.
         """
         summary = self._read_summary(save_dir)
         checker = summary.get("checker") or {}
@@ -542,8 +542,15 @@ class PackageImportApplyView(View):
             key = "customcpp"
         if key not in valid_keys:
             raise ValueError(f"Unknown checker key: {key}")
+        if key == "custom":
+            raise ValueError(
+                _(
+                    "Python checkers are no longer supported for imports. "
+                    "Use a C++ checker, Testlib, or a built-in checker."
+                )
+            )
 
-        data, _ = ProblemData.objects.get_or_create(problem=problem)
+        data, _created = ProblemData.objects.get_or_create(problem=problem)
 
         if key in self._CPP_CHECKER_KEYS:
             path = _validate_path_in_dir(save_dir, "checker.cpp")
@@ -555,17 +562,6 @@ class PackageImportApplyView(View):
             data.checker_args = ""
             data.save()
             return f"Checker uploaded (type: {key})"
-
-        if key == "custom":
-            path = _validate_path_in_dir(save_dir, "checker.py")
-            if not os.path.exists(path):
-                raise FileNotFoundError("checker.py not found")
-            with open(path, "rb") as f:
-                data.custom_checker.save("checker.py", ContentFile(f.read()))
-            data.checker = "custom"
-            data.checker_args = ""
-            data.save()
-            return "Python checker uploaded (type: custom)"
 
         if key in ("interact", "interacttl"):
             # Interactive judges are also exposed via the dedicated `interactive`
@@ -594,7 +590,7 @@ class PackageImportApplyView(View):
         path = _validate_path_in_dir(save_dir, "generator.cpp")
         if not os.path.exists(path):
             raise FileNotFoundError("generator.cpp not found")
-        data, _ = ProblemData.objects.get_or_create(problem=problem)
+        data, _created = ProblemData.objects.get_or_create(problem=problem)
         with open(path, "rb") as f:
             data.generator.save("generator.cpp", ContentFile(f.read()))
         data.save()
@@ -604,7 +600,7 @@ class PackageImportApplyView(View):
         path = _validate_path_in_dir(save_dir, "generator_script.txt")
         if not os.path.exists(path):
             raise FileNotFoundError("generator_script.txt not found")
-        data, _ = ProblemData.objects.get_or_create(problem=problem)
+        data, _created = ProblemData.objects.get_or_create(problem=problem)
         with open(path, "r", encoding="utf-8") as f:
             data.generator_script = f.read()
         data.save(update_fields=["generator_script"])
@@ -614,7 +610,7 @@ class PackageImportApplyView(View):
         path = _validate_path_in_dir(save_dir, "interactive.cpp")
         if not os.path.exists(path):
             raise FileNotFoundError("interactive.cpp not found")
-        data, _ = ProblemData.objects.get_or_create(problem=problem)
+        data, _created = ProblemData.objects.get_or_create(problem=problem)
         with open(path, "rb") as f:
             data.interactive_judge.save("interactive.cpp", ContentFile(f.read()))
         data.checker = "interact"
@@ -627,7 +623,7 @@ class PackageImportApplyView(View):
             "0",
             "no",
         )
-        data, _ = ProblemData.objects.get_or_create(problem=problem)
+        data, _created = ProblemData.objects.get_or_create(problem=problem)
         data.output_only = bool(flag)
         update_fields = ["output_only"]
         extras = []
@@ -672,7 +668,7 @@ class PackageImportApplyView(View):
                     args["baseline"] = bv
             except ValueError:
                 pass
-        data, _ = ProblemData.objects.get_or_create(problem=problem)
+        data, _created = ProblemData.objects.get_or_create(problem=problem)
         data.checker = metric
         data.checker_args = json.dumps(args)
         data.save(update_fields=["checker", "checker_args"])

@@ -79,7 +79,6 @@ Use the exact field names users see:
 - Generator Script
 - Checker
 - Checker arguments
-- Custom checker file
 - Custom cpp checker file
 - Interactive judge
 - Is output only

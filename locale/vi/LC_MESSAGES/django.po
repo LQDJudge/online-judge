@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-26 16:17+0700\n"
+"POT-Creation-Date: 2026-08-29 06:56+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -137,7 +137,7 @@ msgid "Reason: %(reason)s"
 msgstr "Lý do: %(reason)s"
 
 #: chat_box/views.py:421 judge/views/comment/actions.py:310
-#: templates/chat/chat.html:60 templates/comments/inline-comments.html:554
+#: templates/chat/chat.html:60 templates/comments/inline-comments.html:591
 #: templates/comments/media-js.html:489
 #: templates/internal/chat_moderation.html:79
 #: templates/internal/comment_moderation.html:79
@@ -380,7 +380,7 @@ msgid "diff"
 msgstr "khác biệt"
 
 #: judge/admin/organization.py:65 judge/admin/problem.py:295
-#: judge/admin/profile.py:135 judge/admin/quiz.py:331
+#: judge/admin/profile.py:134 judge/admin/quiz.py:331
 msgid "View on site"
 msgstr "Xem trên trang"
 
@@ -503,7 +503,7 @@ msgstr "Bình chọn"
 msgid "timezone"
 msgstr "múi giờ"
 
-#: judge/admin/profile.py:144 judge/admin/quiz.py:470
+#: judge/admin/profile.py:143 judge/admin/quiz.py:470
 #: judge/admin/submission.py:329 judge/views/course.py:2592
 #: templates/contest/review.html:355 templates/contest/review.html:382
 #: templates/contest/review.html:417 templates/contest/review.html:444
@@ -522,36 +522,36 @@ msgstr "múi giờ"
 msgid "User"
 msgstr "Thành viên"
 
-#: judge/admin/profile.py:150 templates/registration/registration_form.html:40
+#: judge/admin/profile.py:149 templates/registration/registration_form.html:40
 #: templates/user/edit-profile.html:123 templates/user/import/table_csv.html:8
 msgid "Email"
 msgstr "Email"
 
-#: judge/admin/profile.py:156 judge/views/register.py:40
+#: judge/admin/profile.py:155 judge/views/register.py:40
 #: templates/registration/registration_form.html:68
 #: templates/user/edit-profile.html:155
 msgid "Timezone"
 msgstr "Múi giờ"
 
-#: judge/admin/profile.py:162
+#: judge/admin/profile.py:161
 msgid "date joined"
 msgstr "ngày tham gia"
 
-#: judge/admin/profile.py:172
+#: judge/admin/profile.py:171
 #, python-format
 msgid "%d user have scores recalculated."
 msgid_plural "%d users have scores recalculated."
 msgstr[0] "%d người dùng đã được tính điểm lại."
 
-#: judge/admin/profile.py:179
+#: judge/admin/profile.py:178
 msgid "Recalculate scores"
 msgstr "Tính điểm lại"
 
-#: judge/admin/profile.py:184 judge/admin/profile.py:250
+#: judge/admin/profile.py:183 judge/admin/profile.py:247
 msgid "Hide public identity"
 msgstr "Ẩn danh tính công khai"
 
-#: judge/admin/profile.py:186 judge/models/profile.py:1495
+#: judge/admin/profile.py:185 judge/models/profile.py:1495
 msgid "Show this account as Disabled user to normal visitors."
 msgstr ""
 "Hiển thị tài khoản này là Người dùng đã bị vô hiệu hóa với người xem thông "
@@ -1040,7 +1040,7 @@ msgstr ""
 msgid "Time limit cannot exceed %(max)s seconds."
 msgstr "Giới hạn thời gian không được vượt quá %(max)s giây."
 
-#: judge/forms.py:1333 judge/views/problem_data.py:342
+#: judge/forms.py:1333 judge/views/problem_data.py:364
 #, python-format
 msgid ""
 "Total judging time (time limit %(tl)ss × %(count)d test cases = %(total)ss) "
@@ -5330,7 +5330,7 @@ msgid "Username can only contain Latin letters, digits, and underscores."
 msgstr "Tên đăng nhập chỉ được chứa chữ cái Latin, chữ số hoặc dấu gạch dưới."
 
 #: judge/views/about.py:12 templates/course/course.html:35
-#: templates/home.html:42 templates/organization/home.html:112
+#: templates/home.html:42 templates/organization/home.html:113
 #: templates/organization/org-right-sidebar.html:117
 #: templates/user/theme-settings.html:13 templates/user/user-tabs.html:4
 #: templates/user/users-table.html:32
@@ -7094,6 +7094,14 @@ msgstr ""
 "bài, checker, lời giải) rồi import gói đó, sau đó tải dữ liệu test lên ở "
 "trang Problem Data."
 
+#: judge/views/package_import.py:548
+msgid ""
+"Python checkers are no longer supported for imports. Use a C++ checker, "
+"Testlib, or a built-in checker."
+msgstr ""
+"Checker Python không còn được hỗ trợ khi import. Hãy dùng checker C++, "
+"Testlib, hoặc checker có sẵn."
+
 #: judge/views/pagevote.py:38
 msgid "Invalid value for delta. It must be 1, 0, or -1."
 msgstr "Giá trị delta không hợp lệ. Phải là 1, 0, hoặc -1."
@@ -7374,192 +7382,192 @@ msgstr "Tệp quá lớn. Kích thước tối đa là %(mb)d MB."
 msgid "A file with that name already exists."
 msgstr "Tệp với tên đó đã tồn tại."
 
-#: judge/views/problem_data.py:90
+#: judge/views/problem_data.py:99
 msgid "Checker arguments is invalid JSON"
 msgstr "Tham số checker là JSON không hợp lệ"
 
-#: judge/views/problem_data.py:93
+#: judge/views/problem_data.py:102
 msgid "Checker arguments must be a JSON object"
 msgstr "Tham số checker phải là đối tượng JSON"
 
-#: judge/views/problem_data.py:107
+#: judge/views/problem_data.py:116
 msgid "Your zip file is invalid!"
 msgstr "File Zip không hợp lệ!"
 
-#: judge/views/problem_data.py:114
+#: judge/views/problem_data.py:123
 msgid "Generator file must be a .cpp file."
 msgstr "File generator phải là file .cpp."
 
-#: judge/views/problem_data.py:134
+#: judge/views/problem_data.py:143
 #, python-format
 msgid "Output submission size limit cannot exceed %(cap)d MB."
 msgstr "Giới hạn dung lượng bài nộp output không được vượt quá %(cap)d MB."
 
-#: judge/views/problem_data.py:139
+#: judge/views/problem_data.py:148
 msgid "Output submission size limit must be at least 1 MB."
 msgstr "Giới hạn dung lượng bài nộp output phải tối thiểu 1 MB."
 
-#: judge/views/problem_data.py:277
+#: judge/views/problem_data.py:299
 msgid "Each language must be unique."
 msgstr "Mỗi ngôn ngữ phải phân biệt"
 
-#: judge/views/problem_data.py:323
+#: judge/views/problem_data.py:345
 msgid "Use either input/output files or generator arguments, not both."
 msgstr "Chỉ dùng file input/output hoặc tham số generator, không dùng cả hai."
 
-#: judge/views/problem_data.py:332
+#: judge/views/problem_data.py:354
 msgid "At least one test case is required."
 msgstr "Cần ít nhất một testcase."
 
-#: judge/views/problem_data.py:369
+#: judge/views/problem_data.py:391
 #, python-brace-format
 msgid "Comparing submissions for {0}"
 msgstr "So sánh các bài nộp cho {0}"
 
-#: judge/views/problem_data.py:373
+#: judge/views/problem_data.py:395
 #, python-brace-format
 msgid "Comparing submissions for <a href=\"{1}\">{0}</a>"
 msgstr "So sánh các bài nộp cho <a href=\"{1}\">{0}</a>"
 
-#: judge/views/problem_data.py:410
+#: judge/views/problem_data.py:432
 #, python-brace-format
 msgid "Editing data for {0}"
 msgstr "Chỉnh sửa dữ liệu cho {0}"
 
-#: judge/views/problem_data.py:414
+#: judge/views/problem_data.py:436
 #, python-format
 msgid "Editing data for %s"
 msgstr "Chỉnh sửa dữ liệu cho %s"
 
-#: judge/views/problem_data.py:555
+#: judge/views/problem_data.py:577
 #, fuzzy
 #| msgid "Edit test data"
 msgid "Updated test data"
 msgstr "Chỉnh sửa test"
 
-#: judge/views/problem_data.py:619 judge/views/problem_data.py:621
+#: judge/views/problem_data.py:641 judge/views/problem_data.py:643
 #, python-format
 msgid "Generated init.yml for %s"
 msgstr "File init.yml cho %s"
 
-#: judge/views/problem_data.py:683 judge/views/problem_data.py:702
+#: judge/views/problem_data.py:705 judge/views/problem_data.py:724
 #: templates/problem/data.html:36
 msgid "File size exceeds 50 MB limit. Contact admin for larger uploads."
 msgstr ""
 "Kích thước file vượt quá giới hạn 50 MB. Liên hệ admin để tải lên file lớn "
 "hơn."
 
-#: judge/views/problem_data.py:734
+#: judge/views/problem_data.py:756
 #, python-brace-format
 msgid "Testcase Validator for {0}"
 msgstr "Kiểm tra test cho {0}"
 
-#: judge/views/problem_data.py:738
+#: judge/views/problem_data.py:760
 #, python-format
 msgid "Testcase Validator for %s"
 msgstr "Kiểm tra test cho %s"
 
-#: judge/views/problem_data.py:793 judge/views/problem_data.py:976
-#: judge/views/problem_data.py:1144 templates/problem/data.html:808
+#: judge/views/problem_data.py:815 judge/views/problem_data.py:998
+#: judge/views/problem_data.py:1166 templates/problem/data.html:808
 msgid "Invalid JSON."
 msgstr "JSON không hợp lệ."
 
-#: judge/views/problem_data.py:800
+#: judge/views/problem_data.py:822
 msgid "Invalid language."
 msgstr "Ngôn ngữ không hợp lệ."
 
-#: judge/views/problem_data.py:844
+#: judge/views/problem_data.py:866
 msgid "Validation already in progress for this problem."
 msgstr "Đang có quá trình kiểm tra cho bài này."
 
-#: judge/views/problem_data.py:858
+#: judge/views/problem_data.py:880
 #, python-format
 msgid "You have %(count)d validations running. Max %(max)d allowed."
 msgstr "Bạn đang có %(count)d quá trình kiểm tra. Tối đa %(max)d."
 
-#: judge/views/problem_data.py:883
+#: judge/views/problem_data.py:905
 msgid "No judges available."
 msgstr "Không có máy chấm khả dụng."
 
-#: judge/views/problem_data.py:932
+#: judge/views/problem_data.py:954
 #, python-brace-format
 msgid "Solution Codes for {0}"
 msgstr "Code lời giải cho {0}"
 
-#: judge/views/problem_data.py:936
+#: judge/views/problem_data.py:958
 #, python-format
 msgid "Solution Codes for %s"
 msgstr "Code lời giải cho %s"
 
-#: judge/views/problem_data.py:981
+#: judge/views/problem_data.py:1003
 msgid "Expected a list."
 msgstr "Dữ liệu phải là danh sách."
 
-#: judge/views/problem_data.py:988
+#: judge/views/problem_data.py:1010
 #, python-format
 msgid "Maximum %d solution codes allowed."
 msgstr "Tối đa %d code lời giải."
 
-#: judge/views/problem_data.py:1008
+#: judge/views/problem_data.py:1030
 #, python-format
 msgid "Code #%d has empty source."
 msgstr "Code #%d có mã nguồn trống."
 
-#: judge/views/problem_data.py:1016
+#: judge/views/problem_data.py:1038
 #, python-format
 msgid "Code #%d has invalid language."
 msgstr "Code #%d có ngôn ngữ không hợp lệ."
 
-#: judge/views/problem_data.py:1024
+#: judge/views/problem_data.py:1046
 #, python-format
 msgid "Code #%d has invalid expected result."
 msgstr "Code #%d có kết quả mong đợi không hợp lệ."
 
-#: judge/views/problem_data.py:1067
+#: judge/views/problem_data.py:1089
 #, fuzzy
 #| msgid "Update Solution"
 msgid "Updated solution codes"
 msgstr "Cập nhật lời giải"
 
-#: judge/views/problem_data.py:1083
+#: judge/views/problem_data.py:1105
 msgid "No solution codes to run."
 msgstr "Không có code lời giải để chạy."
 
-#: judge/views/problem_data.py:1099
+#: judge/views/problem_data.py:1121
 msgid "All codes are already being judged."
 msgstr ""
 
-#: judge/views/problem_data.py:1116 judge/views/problem_data.py:1193
+#: judge/views/problem_data.py:1138 judge/views/problem_data.py:1215
 msgid "Too many pending solution code runs."
 msgstr "Quá nhiều lượt chạy đang chờ."
 
-#: judge/views/problem_data.py:1150
+#: judge/views/problem_data.py:1172
 #, fuzzy
 #| msgid "Invalid model"
 msgid "Invalid order."
 msgstr "Model không hợp lệ"
 
-#: judge/views/problem_data.py:1159
+#: judge/views/problem_data.py:1181
 #, fuzzy
 #| msgid "Solution not found."
 msgid "Solution code not found."
 msgstr "Lời giải không tìm thấy"
 
-#: judge/views/problem_data.py:1166
+#: judge/views/problem_data.py:1188
 msgid "Duplicate order found. Please save and retry."
 msgstr ""
 
-#: judge/views/problem_data.py:1176
+#: judge/views/problem_data.py:1198
 #, fuzzy
 #| msgid "This code already exists"
 msgid "This code is already being judged."
 msgstr "Mã này đã tồn tại"
 
-#: judge/views/problem_data.py:1279 judge/views/problem_data.py:1307
+#: judge/views/problem_data.py:1301 judge/views/problem_data.py:1329
 msgid "AI feature permission required."
 msgstr "Cần quyền sử dụng tính năng AI."
 
-#: judge/views/problem_data.py:1315
+#: judge/views/problem_data.py:1337
 msgid "Missing task ID."
 msgstr ""
 
@@ -8380,7 +8388,7 @@ msgid "Report"
 msgstr "Báo cáo"
 
 #: templates/actionbar/media-js.html:103
-#: templates/comments/inline-comments.html:460
+#: templates/comments/inline-comments.html:497
 #: templates/comments/media-js.html:796
 msgid "Copied link"
 msgstr "Đã sao chép link"
@@ -8555,8 +8563,8 @@ msgid "Edit blog post"
 msgstr "Chỉnh sửa bài đăng"
 
 #: templates/blog/edit.html:37 templates/comments/edit-ajax.html:12
-#: templates/comments/inline-comments.html:631
-#: templates/comments/inline-comments.html:673
+#: templates/comments/inline-comments.html:668
+#: templates/comments/inline-comments.html:710
 #: templates/comments/media-js.html:582 templates/comments/media-js.html:642
 #: templates/comments/media-js.html:659 templates/contest/edit.html:336
 #: templates/course/create_lesson.html:54 templates/course/edit.html:55
@@ -8576,12 +8584,13 @@ msgstr "Lưu"
 
 #: templates/blog/edit.html:38 templates/chat/chat.html:62
 #: templates/chat/chat.html:156 templates/comments/edit-ajax.html:13
-#: templates/comments/inline-comments.html:183
-#: templates/comments/inline-comments.html:386
-#: templates/comments/inline-comments.html:421
-#: templates/comments/inline-comments.html:522
-#: templates/comments/inline-comments.html:630
-#: templates/comments/inline-comments.html:674
+#: templates/comments/inline-comments.html:166
+#: templates/comments/inline-comments.html:220
+#: templates/comments/inline-comments.html:423
+#: templates/comments/inline-comments.html:458
+#: templates/comments/inline-comments.html:559
+#: templates/comments/inline-comments.html:667
+#: templates/comments/inline-comments.html:711
 #: templates/comments/media-js.html:103 templates/comments/media-js.html:219
 #: templates/comments/media-js.html:457 templates/comments/media-js.html:583
 #: templates/course/create.html:68 templates/fine_uploader/script.html:23
@@ -8628,7 +8637,7 @@ msgid "Delete this message?"
 msgstr "Xóa tin nhắn này?"
 
 #: templates/chat/chat.html:54 templates/chat/chat.html:137
-#: templates/comments/inline-comments.html:503
+#: templates/comments/inline-comments.html:540
 #: templates/comments/media-js.html:438
 #: templates/internal/chat_moderation.html:252
 #: templates/internal/comment_moderation.html:260
@@ -8640,7 +8649,7 @@ msgid "Mute this user and delete all lobby messages?"
 msgstr "Cấm chat người dùng này và xóa tất cả tin nhắn ở sảnh?"
 
 #: templates/chat/chat.html:56 templates/chat/chat.html:140
-#: templates/comments/inline-comments.html:506
+#: templates/comments/inline-comments.html:543
 #: templates/comments/media-js.html:441
 #: templates/internal/chat_moderation.html:255
 #: templates/internal/comment_moderation.html:263
@@ -8648,7 +8657,7 @@ msgid "Mute duration"
 msgstr "Thời hạn cấm"
 
 #: templates/chat/chat.html:57 templates/chat/chat.html:144
-#: templates/comments/inline-comments.html:510
+#: templates/comments/inline-comments.html:547
 #: templates/comments/media-js.html:445
 #: templates/internal/chat_moderation.html:259
 #: templates/internal/comment_moderation.html:267
@@ -8656,7 +8665,7 @@ msgid "Temporary"
 msgstr "Tạm thời"
 
 #: templates/chat/chat.html:58 templates/chat/chat.html:148
-#: templates/comments/inline-comments.html:514
+#: templates/comments/inline-comments.html:551
 #: templates/comments/media-js.html:449
 #: templates/internal/chat_moderation.html:192
 #: templates/internal/chat_moderation.html:263
@@ -8666,7 +8675,7 @@ msgid "Forever"
 msgstr "Vĩnh viễn"
 
 #: templates/chat/chat.html:59 templates/chat/chat.html:152
-#: templates/comments/inline-comments.html:518
+#: templates/comments/inline-comments.html:555
 #: templates/comments/media-js.html:453
 #: templates/internal/chat_moderation.html:146
 #: templates/internal/chat_moderation.html:267
@@ -8679,7 +8688,7 @@ msgid "Reason"
 msgstr "Lý do"
 
 #: templates/chat/chat.html:61 templates/chat/chat.html:153
-#: templates/comments/inline-comments.html:519
+#: templates/comments/inline-comments.html:556
 #: templates/comments/media-js.html:454
 #: templates/internal/chat_moderation.html:268
 #: templates/internal/comment_moderation.html:276
@@ -8687,7 +8696,7 @@ msgid "Explain why this user is being muted..."
 msgstr "Giải thích lý do người dùng này bị cấm..."
 
 #: templates/chat/chat.html:63 templates/chat/chat.html:157
-#: templates/comments/inline-comments.html:523
+#: templates/comments/inline-comments.html:560
 #: templates/comments/media-js.html:458
 #: templates/internal/chat_moderation.html:272
 #: templates/internal/comment_moderation.html:280
@@ -8736,8 +8745,8 @@ msgstr "Đến tin nhắn"
 
 #: templates/chat/message.html:51 templates/chat/message.html:53
 #: templates/comments/comment-item.html:91
-#: templates/comments/inline-comments.html:387
-#: templates/comments/inline-comments.html:420
+#: templates/comments/inline-comments.html:424
+#: templates/comments/inline-comments.html:457
 #: templates/comments/media-js.html:218
 msgid "Reply"
 msgstr "Phản hồi"
@@ -8907,20 +8916,25 @@ msgid "Solve a problem to comment"
 msgstr "Giải một bài để bình luận"
 
 #: templates/comments/inline-comments.html:164
-#: templates/comments/inline-comments.html:181
+#: templates/comments/inline-comments.html:218
 #: templates/comments/media-js.html:23
 msgid "Write a comment..."
 msgstr "Thêm bình luận"
 
-#: templates/comments/inline-comments.html:166
-#: templates/comments/inline-comments.html:182
+#: templates/comments/inline-comments.html:167
+#: templates/comments/inline-comments.html:219
 #: templates/comments/media-js.html:102 templates/ticket/ticket.html:267
 msgid "Post"
 msgstr "Đăng"
 
-#: templates/comments/inline-comments.html:184
-#: templates/comments/inline-comments.html:422
-#: templates/comments/inline-comments.html:675
+#: templates/comments/inline-comments.html:200
+#: templates/comments/inline-comments.html:260
+msgid "Error posting comment"
+msgstr "Lỗi khi đăng bình luận"
+
+#: templates/comments/inline-comments.html:221
+#: templates/comments/inline-comments.html:459
+#: templates/comments/inline-comments.html:712
 #: templates/comments/media-js.html:104 templates/comments/media-js.html:220
 #: templates/comments/media-js.html:584
 #: templates/quiz/question_bank/create.html:181
@@ -8928,55 +8942,51 @@ msgstr "Đăng"
 msgid "Expand editor"
 msgstr "Mở rộng trình soạn thảo"
 
-#: templates/comments/inline-comments.html:185
-#: templates/comments/inline-comments.html:423
-#: templates/comments/inline-comments.html:676
+#: templates/comments/inline-comments.html:222
+#: templates/comments/inline-comments.html:460
+#: templates/comments/inline-comments.html:713
 #: templates/comments/media-js.html:105 templates/comments/media-js.html:221
 #: templates/comments/media-js.html:585
 msgid "Collapse editor"
 msgstr "Thu gọn trình soạn thảo"
 
-#: templates/comments/inline-comments.html:223
-msgid "Error posting comment"
-msgstr "Lỗi khi đăng bình luận"
-
-#: templates/comments/inline-comments.html:384
-#: templates/comments/inline-comments.html:419
+#: templates/comments/inline-comments.html:421
+#: templates/comments/inline-comments.html:456
 #: templates/comments/media-js.html:217
 msgid "Write a reply..."
 msgstr "Viết phản hồi..."
 
-#: templates/comments/inline-comments.html:402
 #: templates/comments/inline-comments.html:439
+#: templates/comments/inline-comments.html:476
 msgid "Error posting reply"
 msgstr "Lỗi khi đăng phản hồi"
 
-#: templates/comments/inline-comments.html:468
+#: templates/comments/inline-comments.html:505
 #: templates/comments/media-js.html:409
 msgid "Are you sure you want to hide this comment?"
 msgstr "Bạn có chắc chắn muốn ẩn bình luận này không?"
 
-#: templates/comments/inline-comments.html:482
+#: templates/comments/inline-comments.html:519
 msgid "Error hiding comment"
 msgstr "Lỗi khi ẩn bình luận"
 
-#: templates/comments/inline-comments.html:504
+#: templates/comments/inline-comments.html:541
 #: templates/comments/media-js.html:439
 #: templates/internal/comment_moderation.html:261
 msgid "Mute this user and hide this comment?"
 msgstr "Cấm người dùng này và ẩn bình luận này?"
 
-#: templates/comments/inline-comments.html:581
+#: templates/comments/inline-comments.html:618
 #: templates/comments/media-js.html:516
 msgid "Failed to mute user."
 msgstr "Không thể cấm chat người dùng."
 
-#: templates/comments/inline-comments.html:672
+#: templates/comments/inline-comments.html:709
 #: templates/comments/media-js.html:580
 msgid "Edit your comment..."
 msgstr "Chỉnh sửa bình luận"
 
-#: templates/comments/inline-comments.html:699
+#: templates/comments/inline-comments.html:736
 msgid "Error saving comment"
 msgstr "Lỗi khi lưu bình luận"
 
@@ -10281,7 +10291,7 @@ msgstr ""
 "Khóa học này chưa có bài học nào. Tạo bài học trước để thiết lập điều kiện "
 "tiên quyết."
 
-#: templates/course/edit_lesson.html:512 templates/organization/home.html:35
+#: templates/course/edit_lesson.html:512 templates/organization/home.html:36
 #: templates/organization/list.html:43 templates/quiz/import.html:113
 #: templates/quiz/question_bank/detail.html:47
 #: templates/quiz/question_bank/list.html:56
@@ -10289,7 +10299,7 @@ msgstr ""
 msgid "Public"
 msgstr "Công khai"
 
-#: templates/course/edit_lesson.html:512 templates/organization/home.html:39
+#: templates/course/edit_lesson.html:512 templates/organization/home.html:40
 #: templates/organization/list.html:44
 #: templates/quiz/question_bank/detail.html:51
 #: templates/quiz/question_bank/list.html:57
@@ -12198,30 +12208,30 @@ msgstr "Đã sao chép!"
 msgid "Copy this invite link:"
 msgstr "Sao chép link mời:"
 
-#: templates/organization/home.html:43
+#: templates/organization/home.html:44
 #: templates/organization/invite_join.html:18
 #: templates/organization/list.html:76
 msgid "members"
 msgstr "thành viên"
 
-#: templates/organization/home.html:66
+#: templates/organization/home.html:67
 msgid "Joined"
 msgstr "Đã tham gia"
 
-#: templates/organization/home.html:74
+#: templates/organization/home.html:75
 #: templates/organization/invite_join.html:26
 msgid "Join Group"
 msgstr "Tham gia nhóm"
 
-#: templates/organization/home.html:80
+#: templates/organization/home.html:81
 msgid "Request to Join"
 msgstr "Yêu cầu tham gia"
 
-#: templates/organization/home.html:87 templates/organization/list.html:98
+#: templates/organization/home.html:88 templates/organization/list.html:98
 msgid "Unblock"
 msgstr "Bỏ chặn"
 
-#: templates/organization/home.html:94
+#: templates/organization/home.html:95
 msgid "Login to Join"
 msgstr "Đăng nhập để tham gia"
 
@@ -12557,8 +12567,8 @@ msgid "I can help you with:"
 msgstr "Tôi có thể giúp bạn với:"
 
 #: templates/problem/chatbot.html:87
-msgid "Writing custom checkers (Python & C++)"
-msgstr "Viết trình chấm tùy chỉnh (Python & C++)"
+msgid "Writing custom C++ checkers"
+msgstr "Viết trình chấm C++ tùy chỉnh"
 
 #: templates/problem/chatbot.html:88
 msgid "Creating test generators"
@@ -12978,11 +12988,11 @@ msgstr ""
 "viết hướng dẫn này. <br><br> <b>Chép code từ bài hướng dẫn để nộp bài là "
 "hành vi có thể dẫn đến khóa tài khoản.</b>"
 
-#: templates/problem/feed.html:13
+#: templates/problem/feed.html:14
 msgid "FOR YOU"
 msgstr "DÀNH CHO BẠN"
 
-#: templates/problem/feed.html:16
+#: templates/problem/feed.html:17
 msgid "NEW"
 msgstr "MỚI NHẤT"
 

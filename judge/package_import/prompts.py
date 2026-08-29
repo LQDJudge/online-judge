@@ -205,7 +205,6 @@ Available checker keys:
   - testlib    : KEEP an existing testlib.h checker AS-IS. Return it unchanged as checker.cpp, source_file="checker.cpp".
   - testlibcms : a testlib checker using CMS/IOI-style scoring (registerTestlibCmd + quitp, or prints score to stdout). Return checker.cpp, source_file="checker.cpp".
   - customcpp  : a bespoke C++ checker with NO testlib dependency (see template). Return checker.cpp, source_file="checker.cpp".
-  - custom     : a Python checker (checker.py). Return checker.py, source_file="checker.py".
   - interact   : interactive judge, plain protocol (see below). Return interactive.cpp, source_file="interactive.cpp".
   - interacttl : interactive judge that uses testlib. Return interactive.cpp, source_file="interactive.cpp".
 
@@ -215,12 +214,12 @@ Polygon / Codeforces checker name → LQDOJ key mapping:
   fcmp                                 → identical
   Any testlib checker that calls quitp / reports partial scores → testlibcms
   Any OTHER testlib checker            → testlib   (keep the source AS-IS)
-  A non-testlib custom comparator      → customcpp (rewrite to plain ifstream) or custom (Python)
+  A non-testlib custom comparator      → customcpp (rewrite to plain ifstream)
 
 CRITICAL: Do NOT rewrite a testlib checker into ifstream. LQDOJ compiles testlib
 checkers natively (testlib.h is installed on the judge), and rewriting silently
 loses robust tokenizing and partial-scoring semantics. Only produce a customcpp
-or custom checker when the original genuinely does NOT use testlib.
+checker when the original genuinely does NOT use testlib.
 
 === LQDOJ CUSTOM CHECKER FORMAT (C++, key=customcpp) ===
 Only when the checker does not use testlib. Takes 3 file arguments: input_file, output_file, ans_file.
@@ -321,8 +320,8 @@ Rules:
       Just zip the test folder as-is. The exact basenames you put here must match
       the names you list in test_structure.
 
-   c) checker.cpp / checker.py — ONLY when checker.key needs a file (customcpp,
-      custom, testlib, testlibcms). For testlib/testlibcms, return the ORIGINAL
+   c) checker.cpp — ONLY when checker.key needs a file (customcpp,
+      testlib, testlibcms). For testlib/testlibcms, return the ORIGINAL
       source unchanged. For customcpp, rewrite to plain ifstream (see template).
       For a built-in checker (standard/floats/etc.) do NOT create this file.
 
@@ -356,7 +355,7 @@ Rules:
         "time_limit_seconds": number or null,
         "memory_limit_mb": number or null,
         "checker": {{
-            "key": "standard|floats|floatsabs|floatsrel|identical|rstripped|sorted|linecount|customcpp|custom|testlib|testlibcms|interact|interacttl",
+            "key": "standard|floats|floatsabs|floatsrel|identical|rstripped|sorted|linecount|customcpp|testlib|testlibcms|interact|interacttl",
             "args": {{}} or {{"precision": 6}},
             "source_file": "checker.cpp" (only for file-bearing keys; omit otherwise)
         }},
@@ -421,7 +420,7 @@ sample_submission.csv columns when available; if the file has only one column
 3. IMPORTANT — SEND ALL FILES BACK:
    After creating all files, you MUST attach/send every output file back to me.
    Send each file as an attachment. This is critical — I cannot access your filesystem.
-   Files to send: description.md, testdata.zip, checker.cpp (or checker.py),
+   Files to send: description.md, testdata.zip, checker.cpp,
    generator.cpp, generator_script.txt, interactive.cpp, summary.json, and all
    sol_*.* files. Only send files that you actually created (skip ones that don't exist).
 

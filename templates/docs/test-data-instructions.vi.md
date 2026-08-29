@@ -21,9 +21,8 @@ Dùng bảng này để biết chính xác mỗi control trên trang Test Data d
 | **File zip chứa test** | File `.zip` chứa input/output riêng tư. | Bạn đã có sẵn các file kiểu `.in` / `.out`. |
 | **File sinh test** | File C++, thường đặt tên `gen.cpp`. | Bạn muốn judge sinh test từ tham số thay vì lưu toàn bộ file test. |
 | **Generator Script** | Mỗi dòng là một bộ tham số cho một test sinh tự động. Mở mục này từ dòng generator sau khi đã lưu generator. | Bạn có generator và muốn tạo nhiều dòng test. |
-| **Checker** | Cách chấm: `standard`, `floats`, `custom`, `testlib`, `csv_*`, v.v. | Bài nào cũng cần checker; `standard` phù hợp với đa số bài exact-output. |
+| **Checker** | Cách chấm: `standard`, `floats`, `customcpp`, `testlib`, `csv_*`, v.v. | Bài nào cũng cần checker; `standard` phù hợp với đa số bài exact-output. |
 | **Checker arguments** | JSON tuỳ chọn cho checker đã chọn. UI có ô hỗ trợ cho checker số thực và CSV. | Cần khi cấu hình sai số, cột CSV, public/private leaderboard, hoặc tuỳ chọn riêng của checker. |
-| **Custom checker file** | Source checker Python. | Dùng với **Custom checker (PY)**. |
 | **Custom cpp checker file** | Source checker C++ hoặc Testlib. | Dùng với **Custom checker (CPP)**, **Testlib**, hoặc **Testlib (CMS / IOI)**. |
 | **Interactive judge** | Source interactor C++. | Dùng với **Interactive** hoặc **Interactive (Testlib)**. |
 | **Input file name** / **Output file name** | Tên file mà bài nộp dùng thay cho stdin/stdout. | Chỉ dùng cho bài file I/O. Để trống cho stdin/stdout bình thường. |
@@ -209,54 +208,9 @@ Checker có sẵn không cần upload file checker. Chọn checker trong menu **
 
 Dùng **Testlib** hoặc **Testlib (CMS / IOI)** khi bạn đã có `checker.cpp` từ Polygon, IOI, CMS, hoặc package tương tự. Upload file đó ở trường checker C++. Với package IOI, xem [Import bài IOI](#importing-ioi-tasks).
 
-### 3.2. Custom Checker {#custom-checker}
+### 3.2. Custom Checker (C++) {#custom-checker}
 
 Định nghĩa cách chấm cho các bài có nhiều đáp án đúng hoặc format đặc biệt.
-
-#### Python {#custom-checker-python}
-
-Với custom checker Python, cài đặt hàm `check`:
-
-```py
-def check(process_output, judge_output, **kwargs):
-    # return True/False
-```
-
-`**kwargs` có thể chứa: `process_output` (output bài nộp), `judge_output` (đáp án), `submission_source`, `judge_input`, `point_value`, `case_position`, `submission_language`, `execution_time`.
-
-Trả về bool, hoặc `CheckerResult(passed, points, feedback='')` cho điểm thành phần.
-
-**Ví dụ.** Input là một số nguyên `n`; output là hai số nguyên `a, b` bất kỳ thoả `a + b = n`.
-
-```py
-from dmoj.result import CheckerResult
-
-def wa(feedback):
-    return CheckerResult(False, 0, feedback)
-
-def check(process_output, judge_output, judge_input, **kwargs):
-    # process the input
-    input_arr = judge_input.split()
-    assert(len(input_arr) == 1)
-    n = int(input_arr[0])
-
-    #  process the contestant's output
-    output_arr = process_output.split()
-
-    if (len(output_arr) != 2):
-        return wa('Wrong output format')
-
-    try:
-        a, b = int(output_arr[0]), int(output_arr[1])
-    except:
-        return wa('Wrong output format')
-
-    if (n == a + b):
-        return True
-    return wa('a + b != n')
-```
-
-#### C++ {#custom-checker-cpp}
 
 Viết một chương trình C++ chạy theo dạng `./main <input_file> <output_file> <ans_file>`.
 

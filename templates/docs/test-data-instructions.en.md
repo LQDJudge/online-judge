@@ -21,9 +21,8 @@ Use this table as the source of truth for what each control on the Test Data pag
 | **Data zip file** | A `.zip` containing private input/output files. | You already have `.in` / `.out` style files. |
 | **Generator file** | A C++ file, usually named `gen.cpp`. | You want the judge to generate tests from arguments instead of storing all files. |
 | **Generator Script** | One line of arguments per generated test. Open it from the generator row after saving a generator. | You have a generator and want many generated rows. |
-| **Checker** | The judging method: `standard`, `floats`, `custom`, `testlib`, `csv_*`, etc. | Every problem needs a checker; `standard` is fine for most exact-output tasks. |
+| **Checker** | The judging method: `standard`, `floats`, `customcpp`, `testlib`, `csv_*`, etc. | Every problem needs a checker; `standard` is fine for most exact-output tasks. |
 | **Checker arguments** | JSON options for the selected checker. The UI shows helper inputs for float and CSV checkers. | Needed for tolerances, CSV columns, public/private leaderboard splits, and other checker-specific options. |
-| **Custom checker file** | Python checker source. | Use with **Custom checker (PY)**. |
 | **Custom cpp checker file** | C++ checker or Testlib checker source. | Use with **Custom checker (CPP)**, **Testlib**, or **Testlib (CMS / IOI)**. |
 | **Interactive judge** | C++ interactor source. | Use with **Interactive** or **Interactive (Testlib)**. |
 | **Input file name** / **Output file name** | File names used by submissions instead of stdin/stdout. | Only for file-I/O problems. Leave blank for normal stdin/stdout. |
@@ -209,54 +208,9 @@ Built-in checkers do not need a checker file. Select the checker in the **Checke
 
 Use **Testlib** or **Testlib (CMS / IOI)** when you already have a `checker.cpp` from Polygon, IOI, CMS, or a similar package. Upload that file in the C++ checker field. For IOI packages, see [Importing IOI tasks](#importing-ioi-tasks).
 
-### 3.2. Custom Checker {#custom-checker}
+### 3.2. Custom Checker (C++) {#custom-checker}
 
 Define custom judging logic for problems with multiple valid answers or special output formats.
-
-#### Python {#custom-checker-python}
-
-For a Python custom checker, implement `check`:
-
-```py
-def check(process_output, judge_output, **kwargs):
-    # return True/False
-```
-
-Available via `**kwargs`: `process_output` (submitter's output), `judge_output` (expected), `submission_source`, `judge_input`, `point_value`, `case_position`, `submission_language`, `execution_time`.
-
-Return a bool, or `CheckerResult(passed, points, feedback='')` for partial credit.
-
-**Example.** Input is one integer `n`; output any two integers `a, b` with `a + b = n`.
-
-```py
-from dmoj.result import CheckerResult
-
-def wa(feedback):
-    return CheckerResult(False, 0, feedback)
-
-def check(process_output, judge_output, judge_input, **kwargs):
-    # process the input
-    input_arr = judge_input.split()
-    assert(len(input_arr) == 1)
-    n = int(input_arr[0])
-
-    #  process the contestant's output
-    output_arr = process_output.split()
-
-    if (len(output_arr) != 2):
-        return wa('Wrong output format')
-
-    try:
-        a, b = int(output_arr[0]), int(output_arr[1])
-    except:
-        return wa('Wrong output format')
-
-    if (n == a + b):
-        return True
-    return wa('a + b != n')
-```
-
-#### C++ {#custom-checker-cpp}
 
 Compile a C++ program invoked as `./main <input_file> <output_file> <ans_file>`.
 

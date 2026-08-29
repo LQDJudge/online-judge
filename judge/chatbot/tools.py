@@ -28,7 +28,7 @@ CHATBOT_TOOLS = {
         "description": "Get documentation for test data management (generators, checkers, interactive)",
     },
     "get_checker_template": {
-        "description": "Get template code for writing custom checkers (Python and C++)",
+        "description": "Get template code for writing custom C++ checkers",
     },
     "get_generator_template": {
         "description": "Get template code for writing test generators",
@@ -197,67 +197,6 @@ def _get_test_data_docs(problem):
 
 def _get_checker_template(problem):
     """Get checker templates."""
-    python_template = '''"""Custom Python Checker Template"""
-from dmoj.result import CheckerResult
-
-def wa(feedback):
-    """Return Wrong Answer with feedback."""
-    return CheckerResult(False, 0, feedback)
-
-def check(process_output, judge_output, judge_input, **kwargs):
-    """
-    Main checker function.
-
-    Available parameters:
-    - process_output: contestant's output (string)
-    - judge_output: expected answer (string)
-    - judge_input: input data (string)
-    - point_value: points for current test case
-    - submission_source: submission source code
-    - execution_time: execution time in seconds
-
-    Return:
-    - True: Accepted (full points)
-    - False: Wrong Answer (0 points)
-    - CheckerResult(passed, points, feedback): Custom result
-      - passed: bool (AC or WA)
-      - points: float (0 to point_value)
-      - feedback: string (shown to user)
-    """
-    # Parse input if needed
-    # input_lines = judge_input.strip().split("\\n")
-
-    # Parse outputs
-    output_lines = process_output.strip().split("\\n")
-    expected_lines = judge_output.strip().split("\\n")
-
-    # Example: exact match check
-    if output_lines == expected_lines:
-        return True
-
-    return wa("Output does not match expected answer")
-
-
-# Example: Partial scoring checker
-def check_partial(process_output, judge_output, judge_input, point_value, **kwargs):
-    """Example checker with partial scoring."""
-    try:
-        user_ans = int(process_output.strip())
-        expected = int(judge_output.strip())
-
-        if user_ans == expected:
-            return True
-
-        # Give partial points based on closeness
-        diff = abs(user_ans - expected)
-        if diff <= 10:
-            return CheckerResult(False, point_value * 0.5, f"Close! Difference: {diff}")
-
-        return wa(f"Wrong answer. Expected {expected}, got {user_ans}")
-    except ValueError:
-        return wa("Invalid output format")
-'''
-
     cpp_template = """// Custom C++ Checker Template (testlib style)
 #include "testlib.h"
 #include <bits/stdc++.h>
@@ -309,18 +248,12 @@ Run with: ./checker input.txt output.txt answer.txt
 */
 """
 
-    return f"""Python Checker Template:
-```python
-{python_template}
-```
-
-C++ Checker Template (Testlib):
+    return f"""C++ Checker Template (Testlib):
 ```cpp
 {cpp_template}
 ```
 
 Notes:
-- Python checkers are simpler but slower
 - C++ checkers with testlib are faster and recommended for large tests
 - For interactive problems, use interactive judge instead"""
 

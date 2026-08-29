@@ -71,6 +71,11 @@ mimetypes.add_type("application/x-yaml", ".yml")
 
 # 50 MB limit for non-superusers uploading test data
 MAX_TESTDATA_FILE_SIZE = 50 * 1024 * 1024
+PYTHON_CHECKER_KEY = "custom"
+
+
+def without_python_checker(choices):
+    return [(value, label) for value, label in choices if value != PYTHON_CHECKER_KEY]
 
 
 def checker_args_cleaner(self):
@@ -181,14 +186,19 @@ class ProblemDataForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        has_legacy_python_checker = self.instance.checker == PYTHON_CHECKER_KEY
+        if has_legacy_python_checker:
+            self.fields["checker"].widget = HiddenInput()
+        else:
+            self.fields["checker"].choices = without_python_checker(
+                self.fields["checker"].choices
+            )
+        self.fields.pop("custom_checker", None)
         self.fields["generator"].widget = FileEditWidget(
             default_file_name="gen.cpp", accept=".cpp"
         )
         self.fields["custom_checker_cpp"].widget = FileEditWidget(
             default_file_name="checker.cpp"
-        )
-        self.fields["custom_checker"].widget = FileEditWidget(
-            default_file_name="checker.py"
         )
         self.fields["interactive_judge"].widget = FileEditWidget(
             default_file_name="interactive.cpp"
@@ -250,6 +260,12 @@ class ProblemCaseForm(ModelForm):
             # 'output_limit': NumberInput(attrs={'style': 'width: 6em'}),
             # 'checker_args': HiddenInput,
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["checker"].choices = without_python_checker(
+            self.fields["checker"].choices
+        )
 
 
 class ProblemSignatureGraderForm(ModelForm):
