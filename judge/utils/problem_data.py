@@ -87,13 +87,20 @@ class ProblemDataCompiler(object):
             cases.append(batch)
 
         def make_checker(case):
-            # File-bearing checker types (custom, customcpp, testlib, testlibcms)
+            if case.checker == "custom":
+                raise ProblemDataError(
+                    _(
+                        "Python checkers are no longer supported. Use a C++ "
+                        "checker, Testlib, or a built-in checker."
+                    )
+                )
+
+            # File-bearing checker types (customcpp, testlib, testlibcms)
             # store their file on `ProblemData`, not on `ProblemTestCase`. If a
             # per-case row sets one of these, fall back to its checker_args
             # JSON below — we can't resolve a path to a per-case file because
             # the model doesn't carry one.
             if not hasattr(case, "custom_checker") and case.checker in (
-                "custom",
                 "customcpp",
                 "testlib",
                 "testlibcms",
@@ -106,14 +113,6 @@ class ProblemDataCompiler(object):
                     )
                     % case.checker
                 )
-
-            if case.checker == "custom":
-                custom_checker_path = split_path_first(case.custom_checker.name)
-                if len(custom_checker_path) != 2:
-                    raise ProblemDataError(
-                        _("How did you corrupt the custom checker path?")
-                    )
-                return custom_checker_path[1]
 
             latest_cpp_key = _get_latest_cpp_key()
 

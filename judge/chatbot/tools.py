@@ -459,18 +459,6 @@ def _get_existing_checker(problem):
 
         result = f"Current checker type: {checker_type}\n"
 
-        # Get Python checker
-        if data.custom_checker and data.custom_checker.name:
-            try:
-                data.custom_checker.open("r")
-                code = data.custom_checker.read().decode("utf-8")
-                if len(code) > 4000:
-                    code = code[:4000] + "\n... (truncated)"
-                result += f"\nPython Checker Code:\n```python\n{code}\n```"
-                data.custom_checker.close()
-            except Exception as e:
-                result += f"\n(Could not read Python checker file: {e})"
-
         # Get C++ checker
         if data.custom_checker_cpp and data.custom_checker_cpp.name:
             try:

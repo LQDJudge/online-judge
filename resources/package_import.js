@@ -237,7 +237,7 @@ $(document).ready(function () {
       });
     }
 
-    // Checker. A file-bearing checker (customcpp/testlib/testlibcms/custom) shows
+    // Checker. A file-bearing checker (customcpp/testlib/testlibcms) shows
     // a source preview; a built-in checker (standard/floats/...) has no file, so
     // render its key + args so it can still be applied. interact/interacttl are
     // handled by the dedicated Interactive field below.
