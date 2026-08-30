@@ -12,6 +12,8 @@ class DirectUploader {
     constructor(options) {
         this.configUrl = options.configUrl;
         this.saveUrl = options.saveUrl;
+        this.requestTimeout = options.requestTimeout || 30000;
+        this.uploadTimeout = options.uploadTimeout || 300000;
         this.onProgress = options.onProgress || (() => {});
         this.onSuccess = options.onSuccess || (() => {});
         this.onError = options.onError || (() => {});
@@ -46,14 +48,14 @@ class DirectUploader {
             file_size: file.size,
         };
 
-        const response = await fetch(this.configUrl, {
+        const response = await fetchWithTimeout(this.configUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken,
             },
             body: JSON.stringify(body),
-        });
+        }, this.requestTimeout);
 
         if (!response.ok) {
             const data = await response.json().catch(() => ({}));
@@ -87,12 +89,14 @@ class DirectUploader {
             if (config.storage_type === 's3') {
                 // S3/R2: Use PUT with presigned URL
                 xhr.open('PUT', config.upload_url);
+                xhr.timeout = this.uploadTimeout;
                 xhr.setRequestHeader('Content-Type', config.content_type || file.type);
                 xhr.send(file);
             } else {
                 const formData = new FormData();
                 formData.append('file', file);
                 xhr.open('POST', config.upload_url);
+                xhr.timeout = this.uploadTimeout;
                 xhr.setRequestHeader('X-Upload-Token', config.token);
                 xhr.setRequestHeader('X-CSRFToken', getCsrfToken());
                 xhr.send(formData);
@@ -101,7 +105,7 @@ class DirectUploader {
     }
 
     async saveToModel(fileKey, uploadToken) {
-        const response = await fetch(this.saveUrl, {
+        const response = await fetchWithTimeout(this.saveUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -111,7 +115,7 @@ class DirectUploader {
                 file_key: fileKey,
                 upload_token: uploadToken,
             }),
-        });
+        }, this.requestTimeout);
 
         if (!response.ok) {
             const data = await response.json().catch(() => ({}));
@@ -131,6 +135,9 @@ class DirectUploadWidgetController {
         this.widget = widget;
         this.fileUrl = null;
         this.fileKey = null;
+        this.lastFile = null;
+        this.localPreviewUrl = null;
+        this.isUploading = false;
 
         // Cache config from data attributes
         this.config = {
@@ -164,6 +171,7 @@ class DirectUploadWidgetController {
         });
 
         this._bindEvents();
+        this._updateFormSubmissionState();
     }
 
     _createActionsHtml() {
@@ -256,7 +264,11 @@ class DirectUploadWidgetController {
             btn.setAttribute('data-bound', 'true');
             btn.addEventListener('click', () => {
                 this._hideError();
-                this._getFileInput()?.click();
+                if (this.lastFile) {
+                    this._startUpload(this.lastFile);
+                } else {
+                    this._getFileInput()?.click();
+                }
             });
         }
     }
@@ -269,19 +281,35 @@ class DirectUploadWidgetController {
         const file = e.target.files[0];
         if (!file) return;
 
+        // Reset the native input so choosing the same file again still emits
+        // a change event. The File object remains valid after the reset.
+        e.target.value = '';
+        this.lastFile = null;
+
         // Validate
         if (this.config.maxSize && file.size > this.config.maxSize) {
-            this._showStatus('error', gettext('File too large (max ') + formatFileSize(this.config.maxSize) + ')');
+            this._showError(gettext('File too large (max ') + formatFileSize(this.config.maxSize) + ')');
             return;
         }
 
         if (!validateFileType(file, this.config.accept)) {
-            this._showStatus('error', gettext('Invalid file type'));
+            this._showError(gettext('Invalid file type'));
             return;
         }
 
-        // Start upload
+        this.lastFile = file;
+        this._startUpload(file);
+    }
+
+    _startUpload(file) {
+        if (this.isUploading) return;
+
+        this.isUploading = true;
+        this.widget.dataset.uploadActive = 'true';
+        this._setControlsDisabled(true);
+        this._showLocalPreview(file);
         this._setState('uploading');
+        this._updateFormSubmissionState();
 
         const uploadInfo = {
             uploadToken: this.config.uploadToken,
@@ -299,13 +327,24 @@ class DirectUploadWidgetController {
     _onSuccess(config) {
         this.fileUrl = config.file_url;
         this.fileKey = config.file_key;
+        this.lastFile = null;
+        this._finishUpload();
         this._setState('hasFile');
+        this._revokeLocalPreview();
         this._showStatus('success', gettext('Uploaded successfully'));
     }
 
     _onError(err) {
+        this._finishUpload();
         this._setState('error');
-        this._showStatus('error', err.message);
+        this._showError(err.message);
+    }
+
+    _finishUpload() {
+        this.isUploading = false;
+        delete this.widget.dataset.uploadActive;
+        this._setControlsDisabled(false);
+        this._updateFormSubmissionState();
     }
 
     async _onDelete() {
@@ -319,14 +358,14 @@ class DirectUploadWidgetController {
         }
 
         try {
-            const response = await fetch(this.config.deleteUrl, {
+            const response = await fetchWithTimeout(this.config.deleteUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCsrfToken(),
                 },
                 body: JSON.stringify({ upload_token: this.config.uploadToken }),
-            });
+            }, this.uploader.requestTimeout);
 
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
@@ -335,6 +374,8 @@ class DirectUploadWidgetController {
 
             this.fileUrl = null;
             this.fileKey = null;
+            this.lastFile = null;
+            this._revokeLocalPreview();
             this._setState('empty');
             this._showStatus('success', gettext('File deleted'));
         } catch (err) {
@@ -392,6 +433,7 @@ class DirectUploadWidgetController {
         const uploadArea = this.widget.querySelector('.upload-area');
         if (uploadArea) uploadArea.style.display = 'none';
         this._hideError();
+        this._showProgress(0);
     }
 
     _renderHasFile() {
@@ -417,18 +459,34 @@ class DirectUploadWidgetController {
         this._hideProgress();
     }
 
-    _renderPreview() {
+    _showLocalPreview(file) {
+        if (this.config.widgetType !== 'image' || !window.URL || !window.URL.createObjectURL) {
+            return;
+        }
+
+        this._revokeLocalPreview();
+        this.localPreviewUrl = window.URL.createObjectURL(file);
+        this._renderPreview(this.localPreviewUrl, file.name);
+    }
+
+    _revokeLocalPreview() {
+        if (this.localPreviewUrl && window.URL && window.URL.revokeObjectURL) {
+            window.URL.revokeObjectURL(this.localPreviewUrl);
+        }
+        this.localPreviewUrl = null;
+    }
+
+    _renderPreview(url = this.fileUrl, displayName = this._getDisplayName(this.fileKey)) {
         let preview = this.widget.querySelector('.current-preview');
         let actions = this.widget.querySelector('.preview-actions');
-        const displayName = this._getDisplayName(this.fileKey);
 
         if (preview) {
             // Update existing preview
             const link = preview.querySelector('a');
             const img = preview.querySelector('img');
-            if (link) link.href = this.fileUrl;
+            if (link) link.href = url;
             if (img) {
-                img.src = this.fileUrl;
+                img.src = url;
                 img.removeAttribute('width');
                 img.removeAttribute('height');
                 img.style.maxWidth = '150px';
@@ -440,17 +498,58 @@ class DirectUploadWidgetController {
             // Create new preview
             preview = document.createElement('div');
             preview.className = 'current-preview';
-            preview.innerHTML = this._createPreviewHtml(this.fileUrl, displayName);
+            preview.innerHTML = this._createPreviewHtml(url, displayName);
 
-            // Create actions
+            const progressEl = this.widget.querySelector('.upload-progress');
+            this.widget.insertBefore(preview, progressEl);
+        }
+
+        if (!actions) {
             actions = document.createElement('div');
             actions.className = 'preview-actions';
             actions.innerHTML = this._createActionsHtml();
 
             const progressEl = this.widget.querySelector('.upload-progress');
-            this.widget.insertBefore(preview, progressEl);
             this.widget.insertBefore(actions, progressEl);
+            this._bindFileInputs();
+            this._bindDeleteButton();
+            this._setControlsDisabled(this.isUploading);
         }
+    }
+
+    _setControlsDisabled(disabled) {
+        this.widget.querySelectorAll('input[type="file"], .delete-btn, .retry-btn').forEach(control => {
+            control.disabled = disabled;
+        });
+    }
+
+    _updateFormSubmissionState() {
+        const form = this.widget.closest('form');
+        if (!form) return;
+
+        if (!form.hasAttribute('data-direct-upload-submit-bound')) {
+            form.setAttribute('data-direct-upload-submit-bound', 'true');
+            form.addEventListener('submit', event => {
+                const activeWidget = form.querySelector('[data-direct-upload][data-upload-active="true"]');
+                if (activeWidget) {
+                    event.preventDefault();
+                    activeWidget.scrollIntoView({behavior: 'smooth', block: 'center'});
+                }
+            });
+        }
+
+        const hasActiveUpload = Boolean(form.querySelector('[data-direct-upload][data-upload-active="true"]'));
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(control => {
+            if (hasActiveUpload) {
+                if (!control.disabled) {
+                    control.dataset.disabledByUpload = 'true';
+                    control.disabled = true;
+                }
+            } else if (control.dataset.disabledByUpload === 'true') {
+                delete control.dataset.disabledByUpload;
+                control.disabled = false;
+            }
+        });
     }
 
     _createUploadArea() {
@@ -465,7 +564,7 @@ class DirectUploadWidgetController {
         const progressFill = this.widget.querySelector('.progress-bar-fill');
         const progressPercent = this.widget.querySelector('.progress-percent');
 
-        if (progressEl) progressEl.style.display = 'block';
+        if (progressEl) progressEl.style.display = 'flex';
         if (progressFill) progressFill.style.width = (pct * 100) + '%';
         if (progressPercent) progressPercent.textContent = Math.round(pct * 100) + '%';
     }
@@ -478,6 +577,13 @@ class DirectUploadWidgetController {
     _hideError() {
         const errorEl = this.widget.querySelector('.upload-error');
         if (errorEl) errorEl.style.display = 'none';
+    }
+
+    _showError(message) {
+        const errorEl = this.widget.querySelector('.upload-error');
+        const messageEl = this.widget.querySelector('.error-message');
+        if (messageEl) messageEl.textContent = message;
+        if (errorEl) errorEl.style.display = 'flex';
     }
 
     _showStatus(type, message) {
@@ -510,6 +616,22 @@ function getCsrfToken() {
         if (name === 'csrftoken') return value;
     }
     return '';
+}
+
+async function fetchWithTimeout(url, options, timeout) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+        return await fetch(url, {...options, signal: controller.signal});
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            throw new Error(gettext('Upload timed out'));
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
+    }
 }
 
 function formatFileSize(bytes) {
@@ -549,10 +671,15 @@ function initDirectUploadWidget(widget) {
     new DirectUploadWidgetController(widget);
 }
 
-// Auto-initialize on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
+function initAllDirectUploadWidgets() {
     document.querySelectorAll('[data-direct-upload]').forEach(initDirectUploadWidget);
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAllDirectUploadWidgets);
+} else {
+    initAllDirectUploadWidgets();
+}
 
 // Initialize dynamically added widgets
 if (typeof MutationObserver !== 'undefined') {
@@ -568,7 +695,7 @@ if (typeof MutationObserver !== 'undefined') {
             });
         });
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
 }
 
 // Export for use in other scripts
