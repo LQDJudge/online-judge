@@ -7,7 +7,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.contrib.auth.models import User
 
-from judge.models import Profile
+from judge.models import Language, Profile
 from chat_box.models import Message, Room, UserRoom
 from chat_box.views import build_reply_snippet, get_reply_quotes
 
@@ -138,10 +138,14 @@ class ReplyQuotesTest(TestCase):
 
 
 class PostReplyEndpointTest(TestCase):
+    fixtures = ["language_small"]
+
     def setUp(self):
         cache.clear()
-        self.u = User.objects.create_user(username="carol", password="pw")
-        self.p = Profile.objects.create(user=self.u)
+        self.u = User.objects.create_user(
+            username="carol", password="pw", is_staff=True
+        )
+        self.p = Profile.objects.create(user=self.u, language=Language.objects.first())
         self.client.force_login(self.u)
 
     def tearDown(self):

@@ -24,6 +24,7 @@ from judge.models.public_request import PublicRequest
 from judge.review.registry import CHECKS
 from judge.review.triggers import trigger_problem_review_for
 from judge.review.verdict import batched_verdicts
+from judge.utils.community import can_use_community_features
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.views import QueryStringSortMixin, TitleMixin
 from judge.views.comment.forms import CommentForm
@@ -151,11 +152,8 @@ def _attach_comment_context(request, context, target):
             pass
 
     if request.user.is_authenticated:
-        context["is_new_user"] = (
-            not request.user.is_staff
-            and not request.profile.submission_set.filter(
-                points=F("problem__points")
-            ).exists()
+        context["is_new_user"] = not can_use_community_features(
+            request.user, request.profile
         )
 
     context.update(

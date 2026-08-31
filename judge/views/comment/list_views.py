@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.db.models import F
 from django.http import HttpResponseBadRequest, HttpResponseNotFound
 from django.views.generic import ListView
 
@@ -9,6 +8,7 @@ from judge.models.comment import (
     get_reply_ids,
     get_content_author_ids,
 )
+from judge.utils.community import can_use_community_features
 from judge.views.comment.mixins import is_comment_locked
 from judge.views.comment.utils import (
     DEFAULT_COMMENT_LIMIT,
@@ -93,11 +93,8 @@ class CommentListView(ListView):
         is_new_user = False
         is_comment_muted = False
         if self.request.user.is_authenticated:
-            is_new_user = (
-                not self.request.user.is_staff
-                and not self.request.profile.submission_set.filter(
-                    points=F("problem__points")
-                ).exists()
+            is_new_user = not can_use_community_features(
+                self.request.user, self.request.profile
             )
             is_comment_muted = self.request.profile.mute
 
@@ -197,11 +194,8 @@ class TopLevelCommentsView(CommentListView):
         is_new_user = False
         is_comment_muted = False
         if self.request.user.is_authenticated:
-            is_new_user = (
-                not self.request.user.is_staff
-                and not self.request.profile.submission_set.filter(
-                    points=F("problem__points")
-                ).exists()
+            is_new_user = not can_use_community_features(
+                self.request.user, self.request.profile
             )
             is_comment_muted = self.request.profile.mute
 

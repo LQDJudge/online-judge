@@ -24,6 +24,7 @@ from judge import event_poster as event
 from judge.caching import cache_wrapper
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.profile import get_profile_public_identity
+from judge.utils.community import can_use_community_features
 from chat_box.models import (
     ChatModerationLog,
     Ignore,
@@ -165,6 +166,7 @@ class ChatView(ListView):
             {
                 "object_list": self.messages,
                 "has_next": self.has_next(),
+                "can_chat": can_use_community_features(request.user, request.profile),
                 **reaction_render_context(self.messages, request.profile),
                 **reply_render_context(self.messages, request.user),
             },
@@ -180,6 +182,9 @@ class ChatView(ListView):
         context["has_next"] = self.has_next()
         context["unread_count_lobby"] = get_unread_count(None, self.request.profile)
         context["is_chat_muted"] = is_chat_muted(self.request.profile)
+        context["can_chat"] = can_use_community_features(
+            self.request.user, self.request.profile
+        )
         context["can_mute_chat_temporarily"] = can_mute_chat_temporarily(
             self.request.user
         )
@@ -440,7 +445,11 @@ def check_valid_message(request, room):
     if not room and len(request.POST["body"]) > 200:
         return False
 
-    if not can_access_room(request, room) or is_chat_muted(request.profile):
+    if (
+        not can_access_room(request, room)
+        or is_chat_muted(request.profile)
+        or not can_use_community_features(request.user, request.profile)
+    ):
         return False
 
     last_msg = Message.objects.filter(room=room).first()
@@ -580,7 +589,9 @@ def react_message(request):
         return HttpResponseForbidden()
 
     # A muted user is silenced from chat interaction, reactions included.
-    if is_chat_muted(request.profile):
+    if is_chat_muted(request.profile) or not can_use_community_features(
+        request.user, request.profile
+    ):
         return HttpResponseForbidden()
 
     profile = request.profile
@@ -841,6 +852,7 @@ def chat_message_ajax(request):
         "chat/message.html",
         {
             "message": message,
+            "can_chat": can_use_community_features(request.user, request.profile),
             **reaction_render_context([message], request.profile),
             **reply_render_context([message], request.user),
         },

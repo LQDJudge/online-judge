@@ -5,6 +5,7 @@
 {% set mute_reason_required = not request.user.is_superuser %}
 {% set message_reaction = reactions.get(message.id) if reactions is defined and reactions else None %}
 {% set reply_quote = reply_quotes.get(message.id) if reply_quotes is defined and reply_quotes else None %}
+{% set can_interact_message = can_chat if can_chat is defined else false %}
 <li class="message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}" data-time="{{ message.time.timestamp()|int }}">
   <div class="message-avatar">
     <img loading="lazy" src="{{ public_gravatar(message.author_id, request.user, 135) }}" class="profile-pic user-img">
@@ -34,7 +35,7 @@
       <div class="message-text message-bubble {% if request.profile.id != message.author_id %}message-text-other message-bubble-other{% else %}message-text-myself message-bubble-self{% endif %}" id="message-text-{{ message.id }}">
         {{message.body|markdown(lazy_load=False)|reference|str|safe }}
       </div>
-      {% if request.profile and chat_reactions is defined and not (is_message_template is defined and is_message_template) %}
+      {% if request.profile and can_interact_message and chat_reactions is defined and not (is_message_template is defined and is_message_template) %}
         <div class="message-react">
           <button type="button" class="message-react-toggle" data-id="{{ message.id }}" aria-haspopup="true" aria-expanded="false" title="{{ _('React') }}">
             <i class="far fa-face-smile" aria-hidden="true"></i>
@@ -47,7 +48,7 @@
           </div>
         </div>
       {% endif %}
-      {% if request.profile and not (is_message_template is defined and is_message_template) %}
+      {% if request.profile and can_interact_message and not (is_message_template is defined and is_message_template) %}
         <button type="button" class="message-reply-toggle" data-id="{{ message.id }}" data-author="{{ message.author_id }}" title="{{ _('Reply') }}">
           <i class="fas fa-reply" aria-hidden="true"></i>
           <span class="sr-only">{{ _('Reply') }}</span>

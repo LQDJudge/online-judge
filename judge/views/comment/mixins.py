@@ -1,5 +1,4 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import F
 from django.http import Http404
 
 from judge.models import Comment
@@ -7,6 +6,7 @@ from judge.models.comment import (
     get_visible_comment_count,
     get_visible_top_level_comment_count,
 )
+from judge.utils.community import can_use_community_features
 from judge.views.comment.forms import CommentForm
 from judge.views.comment.utils import parse_sort_params
 
@@ -57,11 +57,8 @@ class CommentableMixin:
         )
 
         if self.request.user.is_authenticated:
-            context["is_new_user"] = (
-                not self.request.user.is_staff
-                and not self.request.profile.submission_set.filter(
-                    points=F("problem__points")
-                ).exists()
+            context["is_new_user"] = not can_use_community_features(
+                self.request.user, self.request.profile
             )
             context["is_comment_muted"] = self.request.profile.mute
 

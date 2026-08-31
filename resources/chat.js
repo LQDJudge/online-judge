@@ -177,6 +177,14 @@
       var html = element.html();
       html = html.replace(/(\p{Extended_Pictographic})/ug, '<span class="big-emoji">$1</span>');
       element.html(html);
+    },
+
+    isChatDisabled: function() {
+      return ChatConfig.user.isMuted || !ChatConfig.user.canChat;
+    },
+
+    disabledChatMessage: function() {
+      return ChatConfig.user.isMuted ? ChatConfig.i18n.chatMuted : ChatConfig.i18n.chatRestricted;
     }
   };
 
@@ -589,17 +597,19 @@
 
     setMutedState: function(isMuted) {
       ChatConfig.user.isMuted = isMuted;
+      var isDisabled = ChatUtils.isChatDisabled();
+      var disabledMessage = ChatUtils.disabledChatMessage();
 
       ChatElements.chatInput
-        .prop('disabled', isMuted)
-        .attr('placeholder', isMuted ? ChatConfig.i18n.chatMuted : ChatConfig.i18n.enterMessage);
-      ChatElements.chatInputContainer.toggleClass('is-muted', isMuted);
-      ChatElements.chatSubmitButton.toggleClass('is-disabled', isMuted);
+        .prop('disabled', isDisabled)
+        .attr('placeholder', isDisabled ? disabledMessage : ChatConfig.i18n.enterMessage);
+      ChatElements.chatInputContainer.toggleClass('is-muted', isDisabled);
+      ChatElements.chatSubmitButton.toggleClass('is-disabled', isDisabled);
       ChatElements.emojiButton
-        .toggleClass('is-disabled', isMuted)
-        .attr('title', isMuted ? ChatConfig.i18n.chatMuted : ChatConfig.i18n.emoji);
+        .toggleClass('is-disabled', isDisabled)
+        .attr('title', isDisabled ? disabledMessage : ChatConfig.i18n.emoji);
 
-      if (isMuted) {
+      if (isDisabled) {
         ChatElements.chatInput.attr('aria-disabled', 'true');
         ChatElements.chatSubmitButton
           .attr('aria-disabled', 'true')
@@ -745,7 +755,7 @@
     },
 
     submit: function() {
-      if (ChatConfig.user.isMuted || !ChatConfig.room.lastMsgId) return;
+      if (ChatUtils.isChatDisabled() || !ChatConfig.room.lastMsgId) return;
 
       var body = ChatElements.chatInput.val().trim();
       if (!body) return;
@@ -975,6 +985,7 @@
     bindReply: function() {
       $(document).on('click', '.message-reply-toggle', function(e) {
         e.stopPropagation();
+        if (ChatUtils.isChatDisabled()) return;
         var messageId = $(this).data('id');
         var $msg = $('#message-' + messageId);
         var author = $msg.find('.message-header a').first().text().trim();
@@ -1263,6 +1274,7 @@
       // Open/close the emoji picker from the smiley toggle.
       $(document).on('click', '.message-react-toggle', function(e) {
         e.stopPropagation();
+        if (ChatUtils.isChatDisabled()) return;
         ChatEvents.closeReactionLists();
         var $react = $(this).closest('.message-react');
         var wasOpen = $react.hasClass('is-open');
@@ -1294,6 +1306,7 @@
       // Pick a reaction -> POST, then render the authoritative summary.
       $(document).on('click', '.reaction-option', function(e) {
         e.stopPropagation();
+        if (ChatUtils.isChatDisabled()) return;
         var messageId = $(this).data('id');
         var reaction = $(this).data('reaction');
         ChatEvents.closeReactionPickers();
@@ -1368,7 +1381,7 @@
       ChatUI.applyMutedState();
       // Don't auto-focus on mobile: it would pop the on-screen keyboard the
       // moment a conversation is opened, covering the input and newest messages.
-      if (!ChatConfig.user.isMuted && !ChatUtils.isMobile()) {
+      if (!ChatUtils.isChatDisabled() && !ChatUtils.isMobile()) {
         ChatElements.chatInput.focus();
       }
       ChatDrafts.restoreCurrent();
@@ -1439,7 +1452,7 @@
       $('#emoji-button').on('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        if (ChatConfig.user.isMuted) return;
+        if (ChatUtils.isChatDisabled()) return;
         toggleEmoji();
       });
 
@@ -1450,7 +1463,7 @@
       });
 
       $('emoji-picker').on('emoji-click', function(e) {
-        if (ChatConfig.user.isMuted) return;
+        if (ChatUtils.isChatDisabled()) return;
         var chatInput = ChatElements.chatInput.get(0);
         ChatUtils.insertAtCursor(chatInput, e.detail.unicode);
         chatInput.focus();
@@ -1704,7 +1717,7 @@
     }
 
     // Skip auto-focus on mobile so the keyboard doesn't cover the chat on load.
-    if (!ChatConfig.user.isMuted && !ChatUtils.isMobile()) {
+    if (!ChatUtils.isChatDisabled() && !ChatUtils.isMobile()) {
       ChatElements.chatInput.focus();
     }
 
