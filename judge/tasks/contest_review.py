@@ -34,7 +34,7 @@ from llm_service.llm_api import LLMService
 logger = logging.getLogger(__name__)
 
 
-def _call_llm_text(system_prompt: str, user_prompt: str) -> str:
+def _call_llm_text(system_prompt: str, user_prompt: str, user_id=None) -> str:
     """Plain text LLM call (used by contest synthesis — no JSON wrapping needed).
 
     Mirrors `_call_llm_text` from judge/tasks/review.py. Kept local to this
@@ -42,7 +42,10 @@ def _call_llm_text(system_prompt: str, user_prompt: str) -> str:
     """
     config = get_config()
     service = LLMService(
-        api_key=config.api_key, bot_name=config.get_bot_name_for_review()
+        api_key=config.api_key,
+        bot_name=config.get_bot_name_for_review(),
+        feature="contest_review_synthesis",
+        user_id=user_id,
     )
     return service.call_llm(user_prompt, system_prompt=system_prompt) or ""
 
@@ -59,7 +62,9 @@ def review_contest(self, run_id):
     translation.activate(getattr(settings, "LANGUAGE_CODE", "vi"))
 
     try:
-        run = ContestReviewRun.objects.select_related("contest").get(id=run_id)
+        run = ContestReviewRun.objects.select_related("contest", "triggered_by").get(
+            id=run_id
+        )
     except ContestReviewRun.DoesNotExist:
         logger.error("review_contest: ContestReviewRun %s not found", run_id)
         return {"success": False, "error": "run not found"}
@@ -155,8 +160,10 @@ def _run_synthesis_inline(run):
         f"Auto-review results:\n\n" + "\n\n".join(blob)
     )
 
+    user_id = run.triggered_by.user_id if run.triggered_by_id else None
+
     try:
-        return _call_llm_text(CONTEST_SYNTHESIS_SYSTEM, user_prompt)
+        return _call_llm_text(CONTEST_SYNTHESIS_SYSTEM, user_prompt, user_id=user_id)
     except Exception as exc:
         logger.exception("Contest synthesis failed for run %s", run.id)
         return f"_(Synthesis unavailable: {exc})_\n\nRaw findings:\n\n" + "\n".join(
@@ -174,7 +181,9 @@ def synthesize_contest_feedback(self, run_id):
     """
     translation.activate(getattr(settings, "LANGUAGE_CODE", "vi"))
     try:
-        run = ContestReviewRun.objects.select_related("contest").get(id=run_id)
+        run = ContestReviewRun.objects.select_related("contest", "triggered_by").get(
+            id=run_id
+        )
     except ContestReviewRun.DoesNotExist:
         return {"success": False, "error": "run not found"}
 

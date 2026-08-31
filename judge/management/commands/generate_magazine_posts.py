@@ -792,6 +792,8 @@ class Command(BaseCommand):
             bot_name=options["llm"],
             sleep_time=config.sleep_time,
             timeout=240,
+            feature="magazine_post_generation",
+            metadata={"organization_id": org.id, "post_type": options["post_type"]},
         )
 
         if options["evaluate_post_id"]:

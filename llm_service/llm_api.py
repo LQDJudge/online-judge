@@ -12,10 +12,14 @@ from typing import List, Optional
 from urllib.parse import unquote, urlparse
 
 try:
+    from django.apps import apps
     from django.conf import settings
+    from django.contrib.auth import get_user_model
     from django.core.files.storage import default_storage
-except ImportError:
+except Exception:
+    apps = None
     settings = None
+    get_user_model = None
     default_storage = None
 
 import fastapi_poe as fp
@@ -33,14 +37,74 @@ class LLMService:
         bot_name: str = "Claude-Sonnet-4.6",
         sleep_time: float = 2.5,
         timeout: int = 120,
+        feature: str = "",
+        user=None,
+        user_id: Optional[int] = None,
+        metadata: Optional[dict] = None,
     ):
         self.api_key = api_key
         self.bot_name = bot_name
         self.sleep_time = sleep_time
         self.timeout = timeout
+        self.feature = feature
+        self.user = user
+        self.user_id = user_id
+        self.metadata = metadata or {}
 
         if not self.api_key:
             raise ValueError("API_KEY is required")
+
+    def _resolve_usage_user(self):
+        if self.user is not None:
+            return self.user
+        if not self.user_id:
+            return None
+        try:
+            return get_user_model().objects.filter(id=self.user_id).first()
+        except Exception:
+            return None
+
+    def _message_stats(self, messages):
+        input_chars = 0
+        attachment_count = 0
+        for message in messages:
+            input_chars += len(getattr(message, "content", "") or "")
+            attachment_count += len(getattr(message, "attachments", None) or [])
+        return input_chars, attachment_count
+
+    def _record_usage(
+        self,
+        messages,
+        tools,
+        started_at,
+        response="",
+        status="success",
+        error="",
+    ):
+        try:
+            if apps is None or not apps.ready:
+                return
+            AIUsageLog = apps.get_model("judge", "AIUsageLog")
+            user = self._resolve_usage_user()
+            input_chars, attachment_count = self._message_stats(messages)
+            username = getattr(user, "username", "") if user is not None else ""
+            AIUsageLog.objects.create(
+                user=user,
+                username=username,
+                feature=self.feature or "",
+                bot_name=self.bot_name or "",
+                status=status,
+                duration_ms=(time.monotonic() - started_at) * 1000,
+                input_chars=input_chars,
+                output_chars=len(response or ""),
+                message_count=len(messages),
+                attachment_count=attachment_count,
+                tool_count=len(tools or []),
+                error=(error or "")[:2000],
+                metadata=self.metadata,
+            )
+        except Exception:
+            logger.exception("Failed to record AI usage log")
 
     def _get_response(
         self,
@@ -61,6 +125,7 @@ class LLMService:
         stream_timeout = (
             timeout if timeout is not None else getattr(self, "timeout", 120)
         )
+        started_at = time.monotonic()
 
         def _timeout_handler(signum, frame):
             raise TimeoutError(f"LLM streaming timed out after {stream_timeout}s")
@@ -110,13 +175,38 @@ class LLMService:
                         response[-500:],
                     )
                 response = cleaned
-            return response.strip()
+            response = response.strip()
+            status = "success" if response else "error"
+            error = "" if response else "empty response"
+            self._record_usage(
+                messages,
+                tools,
+                started_at,
+                response=response,
+                status=status,
+                error=error,
+            )
+            return response
 
         except TimeoutError as e:
             logger.error(f"LLM streaming timeout: {e}")
+            self._record_usage(
+                messages,
+                tools,
+                started_at,
+                status="timeout",
+                error=str(e),
+            )
             return None
         except Exception as e:
             logger.error(f"Error during LLM API call: {e}")
+            self._record_usage(
+                messages,
+                tools,
+                started_at,
+                status="error",
+                error=str(e),
+            )
             return None
 
     def _remove_thinking_content(self, text: str) -> str:
@@ -131,7 +221,6 @@ class LLMService:
           *Thinking...* > [thinking] answer *Thinking...* > [thinking] answer
         Splitting on *Thinking...* and taking the last clean segment handles this.
         """
-        import re
 
         def _strip_thinking_lines(segment: str) -> str:
             result_lines = []

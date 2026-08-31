@@ -1,0 +1,268 @@
+{% extends "two-column-content.html" %}
+
+{% block left_sidebar %}
+  {% include "internal/left-sidebar.html" %}
+{% endblock %}
+
+{% block two_col_media %}
+  <style>
+    .internal-ai-usage-page .ai-usage-filter-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75em 1em;
+      align-items: end;
+      margin-bottom: 1em;
+    }
+
+    .internal-ai-usage-page .ai-usage-filter-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25em;
+      min-width: 12em;
+    }
+
+    .internal-ai-usage-page .ai-usage-filter-grid select {
+      max-width: 18em;
+    }
+
+    .internal-ai-usage-page .ai-usage-actions {
+      display: flex;
+      gap: 0.5em;
+      align-items: center;
+      padding-bottom: 0.1em;
+    }
+
+    .internal-ai-usage-page .ai-usage-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(10em, 1fr));
+      gap: 0.75em;
+      margin: 1em 0;
+    }
+
+    .internal-ai-usage-page .ai-usage-summary-item {
+      border: 1px solid;
+      border-radius: 4px;
+      padding: 0.75em;
+    }
+
+    .internal-ai-usage-page .ai-usage-summary-label {
+      display: block;
+      font-size: 0.9em;
+    }
+
+    .internal-ai-usage-page .ai-usage-summary-value {
+      display: block;
+      font-size: 1.35em;
+      font-weight: 600;
+      margin-top: 0.25em;
+    }
+
+    .internal-ai-usage-page .ai-usage-table-caption {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5em 1em;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+  </style>
+{% endblock %}
+
+{% block middle_content %}
+  <div class="internal-ai-usage-page">
+    <h2>{{ title }}</h2>
+
+    <form method="get" class="ai-usage-filter-grid">
+      <label>
+        {{ _("Window") }}
+        <select name="window">
+          {% for value, label in filters.window_options %}
+            <option value="{{ value }}"{% if filters.window == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        {{ _("Feature") }}
+        <select name="feature">
+          <option value=""{% if not filters.feature %} selected{% endif %}>{{ _("All") }}</option>
+          {% for feature, label in filter_options.features %}
+            <option value="{{ feature }}"{% if filters.feature == feature %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        {{ _("User") }}
+        <select name="username">
+          <option value=""{% if not filters.username %} selected{% endif %}>{{ _("All users with usage") }}</option>
+          {% if filter_options.has_system_usage %}
+            <option value="__system__"{% if filters.username == "__system__" %} selected{% endif %}>{{ _("System") }}</option>
+          {% endif %}
+          {% for username in filter_options.users %}
+            <option value="{{ username }}"{% if filters.username == username %} selected{% endif %}>{{ username }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        {{ _("Bot") }}
+        <select name="bot">
+          <option value=""{% if not filters.bot %} selected{% endif %}>{{ _("All") }}</option>
+          {% for bot in filter_options.bots %}
+            <option value="{{ bot }}"{% if filters.bot == bot %} selected{% endif %}>{{ bot }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        {{ _("Status") }}
+        <select name="status">
+          <option value=""{% if not filters.status %} selected{% endif %}>{{ _("All") }}</option>
+          {% for value, label in filters.status_options %}
+            <option value="{{ value }}"{% if filters.status == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        {{ _("By") }}
+        <select name="group">
+          {% for value, label in filters.group_options %}
+            <option value="{{ value }}"{% if filters.group == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="ai-usage-actions">
+        <button type="submit" class="action-btn">{{ _("Apply") }}</button>
+        <a href="{{ clear_filters_url }}" class="action-btn">{{ _("Reset") }}</a>
+      </div>
+    </form>
+
+    <div class="ai-usage-summary">
+      <div class="ai-usage-summary-item">
+        <span class="ai-usage-summary-label">{{ _("Requests") }}</span>
+        <span class="ai-usage-summary-value">{{ overview.count }}</span>
+      </div>
+      <div class="ai-usage-summary-item">
+        <span class="ai-usage-summary-label">{{ _("Success %%") }}</span>
+        <span class="ai-usage-summary-value">{{ overview.success_rate|floatformat(1) if overview.success_rate is not none else "-" }}</span>
+      </div>
+      <div class="ai-usage-summary-item">
+        <span class="ai-usage-summary-label">{{ _("Errors") }}</span>
+        <span class="ai-usage-summary-value">{{ overview.error_count }}</span>
+      </div>
+      <div class="ai-usage-summary-item">
+        <span class="ai-usage-summary-label">{{ _("Avg (ms)") }}</span>
+        <span class="ai-usage-summary-value">{{ overview.avg_duration_ms|floatformat(2) if overview.avg_duration_ms is not none else "-" }}</span>
+      </div>
+      <div class="ai-usage-summary-item">
+        <span class="ai-usage-summary-label">{{ _("Estimated input tokens") }}</span>
+        <span class="ai-usage-summary-value">{{ overview.estimated_input_tokens }}</span>
+      </div>
+      <div class="ai-usage-summary-item">
+        <span class="ai-usage-summary-label">{{ _("Estimated output tokens") }}</span>
+        <span class="ai-usage-summary-value">{{ overview.estimated_output_tokens }}</span>
+      </div>
+    </div>
+
+    <div class="ai-usage-table-caption">
+      <h3>{{ group_heading }}</h3>
+      <span class="gray">{{ _("Token counts are estimates from character counts.") }}</span>
+    </div>
+    <div class="internal-table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{{ group_title }}</th>
+            <th>{{ _("Requests") }}</th>
+            <th>{{ _("Avg (ms)") }}</th>
+            <th>{{ _("Input chars") }}</th>
+            <th>{{ _("Output chars") }}</th>
+            <th>{{ _("Estimated input tokens") }}</th>
+            <th>{{ _("Estimated output tokens") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in group_rows %}
+            <tr>
+              <td>
+                {% if row.filter_value %}
+                  <a href="{{ group_query(group_field, row.filter_value) }}">{{ row.label if row.value else _("System") }}</a>
+                {% elif group_field == "username" %}
+                  <span class="gray">{{ _("System") }}</span>
+                {% else %}
+                  <span class="gray">{{ _("Unknown") }}</span>
+                {% endif %}
+              </td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.avg_duration_ms|floatformat(2) if row.avg_duration_ms is not none else "-" }}</td>
+              <td>{{ row.input_chars or 0 }}</td>
+              <td>{{ row.output_chars or 0 }}</td>
+              <td>{{ row.input_tokens }}</td>
+              <td>{{ row.output_tokens }}</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7">{{ _("No AI usage logs match these filters.") }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h3>{{ _("Recent requests") }}</h3>
+    {% if page_obj.num_pages > 1 %}
+      <div>{% include "list-pages.html" %}</div>
+    {% endif %}
+    <div class="internal-table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{{ _("Time") }}</th>
+            <th>{{ _("User") }}</th>
+            <th>{{ _("Feature") }}</th>
+            <th>{{ _("Bot") }}</th>
+            <th>{{ _("Status") }}</th>
+            <th>{{ _("Duration (ms)") }}</th>
+            <th>{{ _("Input") }}</th>
+            <th>{{ _("Output") }}</th>
+            <th>{{ _("Estimated input tokens") }}</th>
+            <th>{{ _("Estimated output tokens") }}</th>
+            <th>{{ _("Messages") }}</th>
+            <th>{{ _("Tools") }}</th>
+            <th>{{ _("Files") }}</th>
+            <th>{{ _("Error") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+            <tr>
+              <td>{{ log.time|date("Y-m-d H:i:s") }}</td>
+              <td>
+                {% if log.username %}
+                  <a href="/user/{{ log.username|urlquote }}">{{ log.username }}</a>
+                {% else %}
+                  <span class="gray">{{ _("System") }}</span>
+                {% endif %}
+              </td>
+              <td>{{ log.feature_label or "-" }}</td>
+              <td>{{ log.bot_name or "-" }}</td>
+              <td>{{ log.get_status_display() }}</td>
+              <td>{{ log.duration_ms|floatformat(2) if log.duration_ms is not none else "-" }}</td>
+              <td>{{ log.input_chars }}</td>
+              <td>{{ log.output_chars }}</td>
+              <td>{{ log.estimated_input_tokens }}</td>
+              <td>{{ log.estimated_output_tokens }}</td>
+              <td>{{ log.message_count }}</td>
+              <td>{{ log.tool_count }}</td>
+              <td>{{ log.attachment_count }}</td>
+              <td>{{ log.error[:80] }}{% if log.error|length > 80 %}...{% endif %}</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="14">{{ _("No AI usage logs match these filters.") }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.num_pages > 1 %}
+      <div>{% include "list-pages.html" %}</div>
+    {% endif %}
+  </div>
+{% endblock %}

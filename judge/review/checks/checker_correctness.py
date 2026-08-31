@@ -30,13 +30,15 @@ class CheckerCorrectnessCheck(ProblemReviewCheck):
 
         # Branch 2: custom checker — validate the source.
         if checker_key in ("custom", "customval", "customcpp"):
-            return self._validate_custom_checker(problem, pd)
+            return self._validate_custom_checker(problem, pd, run)
 
         # Branch 1: detect multi-output via LLM.
         try:
+            user_id = run.triggered_by.user_id if run.triggered_by_id else None
             multi = call_llm_json(
                 CHECKER_MULTIOUTPUT_SYSTEM,
                 f"Problem statement:\n\n{problem.description or ''}",
+                user_id=user_id,
             )
         except LLMCallFailed as exc:
             return CheckResultData(
@@ -73,7 +75,7 @@ class CheckerCorrectnessCheck(ProblemReviewCheck):
             details={"branch": "standard_ok", "llm_response": multi},
         )
 
-    def _validate_custom_checker(self, problem, pd):
+    def _validate_custom_checker(self, problem, pd, run):
         # Best-effort read of custom checker source. Field names vary; try several.
         source = ""
         for field_name in ("custom_checker_cpp", "custom_checker", "checker"):
@@ -101,9 +103,11 @@ class CheckerCorrectnessCheck(ProblemReviewCheck):
             )
 
         try:
+            user_id = run.triggered_by.user_id if run.triggered_by_id else None
             report = call_llm_json(
                 CHECKER_VALIDITY_SYSTEM,
                 f"Statement:\n{problem.description or ''}\n\nChecker source:\n```\n{source}\n```",
+                user_id=user_id,
             )
         except LLMCallFailed as exc:
             return CheckResultData(

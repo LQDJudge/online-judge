@@ -479,7 +479,9 @@ def edit_profile(request):
                         reason=_("Queued for AI profile self-description moderation."),
                     )
                     transaction.on_commit(
-                        lambda: moderate_profile_case_task.delay(moderation_case.id)
+                        lambda: moderate_profile_case_task.delay(
+                            moderation_case.id, trigger_user_id=request.user.id
+                        )
                     )
             return HttpResponseRedirect(request.path)
     else:

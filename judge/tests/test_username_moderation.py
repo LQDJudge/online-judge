@@ -327,7 +327,7 @@ class UsernameModerationDisplayTest(TestCase):
             case.value_snapshot, "Visit my GitHub for programming projects."
         )
         self.assertEqual(case.source, ProfileModerationCase.SOURCE_PROFILE_EDIT)
-        delay.assert_called_once_with(case.id)
+        delay.assert_called_once_with(case.id, trigger_user_id=user.id)
 
     def test_user_list_renders_references_to_hidden_users(self):
         user = User.objects.create_user(username="hidden_reference_name")

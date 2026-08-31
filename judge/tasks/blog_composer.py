@@ -146,6 +146,9 @@ def compose_blog_task(
         bot_name=getattr(settings, "MAGAZINE_LLM_BOT", "Gemini-3.7-Flash"),
         sleep_time=config.sleep_time,
         timeout=240,
+        feature="community_blog_composer",
+        user_id=user_id,
+        metadata={"post_id": post_id, "organization_id": organization_id},
     )
 
     def report_progress(stage, done, total):

@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.views import redirect_to_login
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Avg, Count, Q, Sum
 from django.http import (
     Http404,
     HttpResponseForbidden,
@@ -46,6 +46,7 @@ from judge.ml.semantic_search import (
     SemanticSearchUnavailable,
 )
 from judge.models import (
+    AIUsageLog,
     BlogPost,
     CommentModerationLog,
     Organization,
@@ -77,6 +78,7 @@ from judge.utils.problem_equivalence import (
 from judge.utils.problem_merge import ProblemMerge
 from judge.utils.strings import safe_float_or_none
 from judge.utils.timefmt import format_mmss
+from llm_service.config import CHATBOT_SUPPORTED_MODELS, DEFAULT_BOT_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -473,6 +475,240 @@ class InternalProblemDuplicateStatusApi(InternalView, View):
                 }
             )
         return JsonResponse({"submissions": results})
+
+
+class InternalAIUsage(InternalView, ListView):
+    model = AIUsageLog
+    title = _("AI Usage")
+    template_name = "internal/ai_usage.html"
+    paginate_by = 100
+    context_object_name = "logs"
+    system_user_filter_value = "__system__"
+
+    window_options = (
+        ("24h", _("Last 24 hours")),
+        ("7d", _("Last 7 days")),
+        ("30d", _("Last 30 days")),
+        ("all", _("All time")),
+    )
+    group_options = (
+        ("feature", _("Feature")),
+        ("username", _("User")),
+        ("bot_name", _("Bot")),
+        ("status", _("Status")),
+    )
+    group_fields = {value for value, _label in group_options}
+    group_filter_params = {
+        "feature": "feature",
+        "username": "username",
+        "bot_name": "bot",
+        "status": "status",
+    }
+
+    def get_paginator(
+        self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
+    ):
+        return DiggPaginator(
+            queryset,
+            per_page,
+            body=6,
+            padding=2,
+            margin=2,
+            tail=2,
+            orphans=orphans,
+            allow_empty_first_page=allow_empty_first_page,
+            **kwargs,
+        )
+
+    def get_window_queryset(self):
+        queryset = AIUsageLog.objects.select_related("user")
+        window = self.request.GET.get("window", "7d")
+        if window == "24h":
+            queryset = queryset.filter(time__gte=timezone.now() - timedelta(hours=24))
+        elif window == "30d":
+            queryset = queryset.filter(time__gte=timezone.now() - timedelta(days=30))
+        elif window != "all":
+            window = "7d"
+            queryset = queryset.filter(time__gte=timezone.now() - timedelta(days=7))
+        self.window = window
+        return queryset
+
+    def get_base_queryset(self):
+        queryset = self.get_window_queryset()
+        feature = self.request.GET.get("feature", "").strip()
+        username = self.request.GET.get("username", "").strip()
+        bot_name = self.request.GET.get("bot", "").strip()
+        status = self.request.GET.get("status", "").strip()
+        group = self.request.GET.get("group", "feature").strip()
+        if group not in self.group_fields:
+            group = "feature"
+
+        if feature:
+            queryset = queryset.filter(feature=feature)
+        if username == self.system_user_filter_value:
+            queryset = queryset.filter(username="")
+        elif username:
+            queryset = queryset.filter(username=username)
+        if bot_name:
+            queryset = queryset.filter(bot_name=bot_name)
+        if status:
+            queryset = queryset.filter(status=status)
+
+        self.filters = {
+            "window": self.window,
+            "feature": feature,
+            "username": username,
+            "bot": bot_name,
+            "status": status,
+            "group": group,
+            "window_options": self.window_options,
+            "status_options": AIUsageLog.STATUS_CHOICES,
+            "group_options": self.group_options,
+        }
+        return queryset
+
+    def get_queryset(self):
+        return self.get_base_queryset().order_by("-time")
+
+    def query_with(self, **kwargs):
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        for key, value in kwargs.items():
+            if value is None:
+                params.pop(key, None)
+            else:
+                params[key] = value
+        query_string = params.urlencode()
+        return "?%s" % query_string if query_string else ""
+
+    def get_summary_rows(self, queryset, *fields):
+        return queryset.values(*fields).annotate(
+            count=Count("id"),
+            total_duration_ms=Sum("duration_ms"),
+            avg_duration_ms=Avg("duration_ms"),
+            input_chars=Sum("input_chars"),
+            output_chars=Sum("output_chars"),
+        )
+
+    def get_filter_options(self):
+        queryset = self.get_window_queryset()
+        features = set(AIUsageLog.FEATURE_LABELS)
+        features.update(
+            queryset.exclude(feature="")
+            .order_by()
+            .values_list("feature", flat=True)
+            .distinct()
+        )
+        bots = {DEFAULT_BOT_NAME}
+        bots.update(model["id"] for model in CHATBOT_SUPPORTED_MODELS)
+        for setting_name in (
+            "POE_BOT_NAME",
+            "POE_BOT_NAME_TAGGING",
+            "POE_BOT_NAME_MARKDOWN",
+            "POE_BOT_NAME_SOLUTION",
+            "POE_BOT_NAME_CHATBOT",
+            "POE_BOT_NAME_REVIEW",
+            "POE_BOT_NAME_MODERATION",
+            "MAGAZINE_LLM_BOT",
+        ):
+            bot_name = getattr(settings, setting_name, None)
+            if bot_name:
+                bots.add(bot_name)
+        bots.update(
+            queryset.exclude(bot_name="")
+            .order_by()
+            .values_list("bot_name", flat=True)
+            .distinct()
+        )
+        return {
+            "features": [
+                (feature, AIUsageLog.get_feature_label(feature))
+                for feature in sorted(features)
+            ],
+            "users": list(
+                queryset.exclude(username="")
+                .order_by("username")
+                .values_list("username", flat=True)
+                .distinct()
+            ),
+            "has_system_usage": queryset.filter(username="").exists(),
+            "bots": sorted(bots),
+        }
+
+    def format_group_rows(self, rows, group):
+        status_labels = dict(AIUsageLog.STATUS_CHOICES)
+        formatted = []
+        for row in rows:
+            value = row[group] or ""
+            if group == "status":
+                label = status_labels.get(value, value)
+            elif group == "feature":
+                label = AIUsageLog.get_feature_label(value)
+            else:
+                label = value
+            input_chars = row["input_chars"] or 0
+            output_chars = row["output_chars"] or 0
+            row.update(
+                {
+                    "value": value,
+                    "label": label,
+                    "filter_value": (
+                        self.system_user_filter_value
+                        if group == "username" and not value
+                        else value
+                    ),
+                    "input_tokens": AIUsageLog.estimate_tokens(input_chars),
+                    "output_tokens": AIUsageLog.estimate_tokens(output_chars),
+                }
+            )
+            formatted.append(row)
+        return formatted
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        queryset = self.get_base_queryset()
+        total_count = queryset.count()
+        success_count = queryset.filter(status=AIUsageLog.STATUS_SUCCESS).count()
+        total_duration = queryset.aggregate(total=Sum("duration_ms"))["total"] or 0
+        context["page_type"] = "ai_usage"
+        context["title"] = self.title
+        context["filters"] = self.filters
+        context["filter_options"] = self.get_filter_options()
+        context["clear_filters_url"] = self.request.path
+        context["group_field"] = self.filters["group"]
+        context["group_title"] = dict(self.group_options)[self.filters["group"]]
+        context["group_heading"] = _("By %(field)s") % {"field": context["group_title"]}
+        context["group_query"] = lambda field, value: self.query_with(
+            **{self.group_filter_params[field]: value}
+        )
+        page_params = self.request.GET.copy()
+        page_params.pop("page", None)
+        page_query = page_params.urlencode()
+        context["page_prefix"] = "?%spage=" % (
+            ("%s&" % page_query) if page_query else ""
+        )
+        context["first_page_href"] = (
+            "?%s" % page_query if page_query else self.request.path
+        )
+        context["overview"] = {
+            "count": total_count,
+            "success_count": success_count,
+            "error_count": total_count - success_count,
+            "success_rate": success_count / total_count * 100 if total_count else None,
+            "total_duration_ms": total_duration,
+            "avg_duration_ms": total_duration / total_count if total_count else None,
+            "estimated_input_tokens": AIUsageLog.estimate_tokens(
+                queryset.aggregate(total=Sum("input_chars"))["total"] or 0
+            ),
+            "estimated_output_tokens": AIUsageLog.estimate_tokens(
+                queryset.aggregate(total=Sum("output_chars"))["total"] or 0
+            ),
+        }
+        rows = self.get_summary_rows(queryset, self.filters["group"]).order_by(
+            "-count"
+        )[:100]
+        context["group_rows"] = self.format_group_rows(rows, self.filters["group"])
+        return context
 
 
 class InternalBridgeStatus(InternalView, TemplateView):
@@ -1049,7 +1285,7 @@ def improve_markdown_queue(request):
         except Problem.DoesNotExist:
             return JsonResponse({"success": False, "error": "Problem not found"})
 
-        task = improve_markdown_task.delay(problem.id)
+        task = improve_markdown_task.delay(problem.id, user_id=request.user.id)
         return JsonResponse({"success": True, "task_id": task.id})
 
     elif request.method == "POST":
@@ -1344,7 +1580,7 @@ def problem_tag(request):
             all_types = list(ProblemType.objects.all().values("id", "name"))
 
             # Dispatch async Celery task
-            task = tag_problem_task.delay(problem.id)
+            task = tag_problem_task.delay(problem.id, user_id=request.user.id)
 
             return JsonResponse(
                 {

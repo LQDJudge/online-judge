@@ -63,12 +63,14 @@ CRITICAL INSTRUCTIONS:
 class QuizAIService:
     """Service for AI-powered quiz question features using LLM"""
 
-    def __init__(self):
+    def __init__(self, user_id=None):
         self.config = get_config()
         self.llm_service = LLMService(
             api_key=self.config.api_key,
             bot_name=self.config.get_bot_name_for_markdown(),
             sleep_time=self.config.sleep_time,
+            feature="quiz_ai",
+            user_id=user_id,
         )
 
     def improve_question_markdown(
@@ -364,8 +366,10 @@ OUTPUT: Provide ONLY the improved explanation in markdown, nothing else."""
 _quiz_ai_service = None
 
 
-def get_quiz_ai_service() -> QuizAIService:
+def get_quiz_ai_service(user_id=None) -> QuizAIService:
     """Get global Quiz AI Service instance"""
+    if user_id is not None:
+        return QuizAIService(user_id=user_id)
     global _quiz_ai_service
     if _quiz_ai_service is None:
         _quiz_ai_service = QuizAIService()

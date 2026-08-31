@@ -168,12 +168,14 @@ class Command(BaseCommand):
             self.llm_service = LLMService(
                 api_key=api_key,
                 bot_name=bot_name,
+                feature="comment_moderation",
             )
             self.chat_llm_service = LLMService(
                 api_key=config.api_key,
                 bot_name=bot_name,
                 sleep_time=config.sleep_time,
                 timeout=config.timeout,
+                feature="chat_moderation",
             )
         except Exception as e:
             self.stderr.write(

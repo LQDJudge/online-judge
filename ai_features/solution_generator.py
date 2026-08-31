@@ -16,9 +16,19 @@ class SolutionGenerator:
     """Generates problem solutions/editorials using LLM"""
 
     def __init__(
-        self, api_key: str, bot_name: str = "Claude-Sonnet-4.6", sleep_time: float = 2.5
+        self,
+        api_key: str,
+        bot_name: str = "Claude-Sonnet-4.6",
+        sleep_time: float = 2.5,
+        user_id=None,
     ):
-        self.llm_service = LLMService(api_key, bot_name, sleep_time)
+        self.llm_service = LLMService(
+            api_key,
+            bot_name,
+            sleep_time,
+            feature="solution_generation",
+            user_id=user_id,
+        )
         self.sleep_time = sleep_time
 
     def _fix_latex(self, markdown: str) -> str:

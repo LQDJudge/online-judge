@@ -19,27 +19,32 @@ logger = logging.getLogger(__name__)
 class ProblemTagService:
     """Service for tagging problems with difficulty and types using LLM"""
 
-    def __init__(self):
+    def __init__(self, user_id=None):
         self.config = get_config()
         self.tagger = ProblemTagger(
             api_key=self.config.api_key,
             bot_name=self.config.get_bot_name_for_tagging(),
             sleep_time=self.config.sleep_time,
+            user_id=user_id,
         )
         self.llm_service = LLMService(
             api_key=self.config.api_key,
             bot_name=self.config.bot_name,
             sleep_time=self.config.sleep_time,
+            feature="problem_ai",
+            user_id=user_id,
         )
         self.markdown_improver = MarkdownImprover(
             api_key=self.config.api_key,
             bot_name=self.config.get_bot_name_for_markdown(),
             sleep_time=self.config.sleep_time,
+            user_id=user_id,
         )
         self.solution_generator = SolutionGenerator(
             api_key=self.config.api_key,
             bot_name=self.config.get_bot_name_for_solution(),
             sleep_time=self.config.sleep_time,
+            user_id=user_id,
         )
 
     def get_problem_statement(self, problem) -> Optional[str]:
@@ -405,8 +410,10 @@ class ProblemTagService:
 _problem_tag_service = None
 
 
-def get_problem_tag_service() -> ProblemTagService:
+def get_problem_tag_service(user_id=None) -> ProblemTagService:
     """Get global Problem Tag Service instance"""
+    if user_id is not None:
+        return ProblemTagService(user_id=user_id)
     global _problem_tag_service
     if _problem_tag_service is None:
         _problem_tag_service = ProblemTagService()

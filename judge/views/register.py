@@ -143,14 +143,14 @@ class RegistrationView(OldRegistrationView):
             source=ProfileModerationCase.SOURCE_REGISTRATION,
         )
         transaction.on_commit(
-            lambda: self.enqueue_username_moderation(moderation_case.id)
+            lambda: self.enqueue_username_moderation(moderation_case.id, user.id)
         )
 
         self.send_activation_email(user.id)
         return user
 
-    def enqueue_username_moderation(self, case_id):
-        moderate_profile_case_task.delay(case_id)
+    def enqueue_username_moderation(self, case_id, trigger_user_id):
+        moderate_profile_case_task.delay(case_id, trigger_user_id=trigger_user_id)
 
     def send_activation_email(self, user_id):
         site = get_current_site(self.request)

@@ -93,7 +93,10 @@ class SolutionsRubricCheck(ProblemReviewCheck):
         )
 
         try:
-            report = call_llm_json(SOLUTIONS_RUBRIC_SYSTEM, user_prompt)
+            user_id = run.triggered_by.user_id if run.triggered_by_id else None
+            report = call_llm_json(
+                SOLUTIONS_RUBRIC_SYSTEM, user_prompt, user_id=user_id
+            )
         except LLMCallFailed as exc:
             return CheckResultData(
                 status=ProblemReviewCheckResult.ERROR,
