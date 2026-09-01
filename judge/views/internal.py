@@ -540,6 +540,7 @@ class InternalAIUsage(InternalView, ListView):
         bot_name = self.request.GET.get("bot", "").strip()
         status = self.request.GET.get("status", "").strip()
         group = self.request.GET.get("group", "feature").strip()
+        include_system = self.request.GET.get("include_system") == "1"
         if group not in self.group_fields:
             group = "feature"
 
@@ -549,6 +550,8 @@ class InternalAIUsage(InternalView, ListView):
             queryset = queryset.filter(username="")
         elif username:
             queryset = queryset.filter(username=username)
+        elif not include_system:
+            queryset = queryset.exclude(username="")
         if bot_name:
             queryset = queryset.filter(bot_name=bot_name)
         if status:
@@ -561,6 +564,7 @@ class InternalAIUsage(InternalView, ListView):
             "bot": bot_name,
             "status": status,
             "group": group,
+            "include_system": include_system,
             "window_options": self.window_options,
             "status_options": AIUsageLog.STATUS_CHOICES,
             "group_options": self.group_options,

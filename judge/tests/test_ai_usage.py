@@ -168,7 +168,7 @@ class AIUsageLogTests(TestCase):
         self.assertEqual(log.metadata["target_user_id"], user.id)
         self.assertEqual(log.metadata["target_username"], "needs_review")
 
-    def test_profile_moderation_records_trigger_user_when_provided(self):
+    def test_profile_moderation_records_system_user_for_profile_edit(self):
         user = get_user_model().objects.create_user("profile_owner")
         language, _created = Language.objects.get_or_create(
             key="PY3",
@@ -206,12 +206,12 @@ class AIUsageLogTests(TestCase):
                 ],
             ),
         ):
-            result = moderate_profile_case_task(case.id, trigger_user_id=user.id)
+            result = moderate_profile_case_task(case.id)
 
         self.assertEqual(result["decision"], ProfileModerationCase.DECISION_ALLOW)
         log = AIUsageLog.objects.get()
-        self.assertEqual(log.user, user)
-        self.assertEqual(log.username, "profile_owner")
+        self.assertIsNone(log.user)
+        self.assertEqual(log.username, "")
         self.assertEqual(log.feature, "profile_moderation")
         self.assertEqual(log.metadata["target_user_id"], user.id)
 
@@ -269,7 +269,16 @@ class AIUsageLogTests(TestCase):
         self.assertContains(superuser_response, 'value="problem_chatbot"')
         self.assertContains(superuser_response, 'value="problem_tagging"')
         self.assertContains(superuser_response, 'value="__system__"')
+        self.assertContains(superuser_response, 'name="include_system"')
         self.assertContains(superuser_response, "Token")
+        default_logs = list(superuser_response.context["logs"])
+        self.assertEqual(len(default_logs), 1)
+        self.assertEqual(default_logs[0].feature, "problem_chatbot")
+
+        include_system_response = self.client.get(url, {"include_system": "1"})
+        self.assertEqual(include_system_response.status_code, 200)
+        include_system_logs = list(include_system_response.context["logs"])
+        self.assertEqual(len(include_system_logs), 2)
 
         system_response = self.client.get(url, {"username": "__system__"})
         self.assertEqual(system_response.status_code, 200)

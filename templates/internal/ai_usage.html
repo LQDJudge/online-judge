@@ -25,6 +25,13 @@
       max-width: 18em;
     }
 
+    .internal-ai-usage-page .ai-usage-filter-grid label.ai-usage-checkbox {
+      flex-direction: row;
+      align-items: center;
+      min-width: auto;
+      padding-bottom: 0.35em;
+    }
+
     .internal-ai-usage-page .ai-usage-actions {
       display: flex;
       gap: 0.5em;
@@ -126,6 +133,10 @@
             <option value="{{ value }}"{% if filters.group == value %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
+      </label>
+      <label class="ai-usage-checkbox">
+        <input type="checkbox" name="include_system" value="1"{% if filters.include_system %} checked{% endif %}>
+        {{ _("Include System requests") }}
       </label>
       <div class="ai-usage-actions">
         <button type="submit" class="action-btn">{{ _("Apply") }}</button>
