@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from judge.models import (
@@ -17,6 +17,7 @@ from judge.models import (
 from judge.tasks.llm import tag_problem_task
 from judge.tasks.username_moderation import moderate_profile_case_task
 from llm_service import llm_api
+from llm_service.config import LLMConfig
 from llm_service.llm_api import LLMService
 
 
@@ -31,6 +32,7 @@ def fake_llm_config():
         get_bot_name_for_markdown=lambda: "MarkdownBot",
         get_bot_name_for_solution=lambda: "SolutionBot",
         get_bot_name_for_moderation=lambda: "ModerationBot",
+        get_parameters_for_moderation=lambda: {"enable_thinking": False},
     )
 
 
@@ -42,13 +44,14 @@ class AIUsageLogTests(TestCase):
             bot_name="TestBot",
             feature="problem_chatbot",
             user_id=user.id,
+            parameters={"enable_thinking": False},
         )
 
         with patch.object(
             llm_api.fp,
             "get_bot_response_sync",
             return_value=[SimpleNamespace(text="answer", is_replace_response=False)],
-        ):
+        ) as get_bot_response_sync:
             response = service.call_llm("prompt")
 
         self.assertEqual(response, "answer")
@@ -62,6 +65,20 @@ class AIUsageLogTests(TestCase):
         self.assertEqual(log.output_chars, len("answer"))
         self.assertEqual(log.message_count, 1)
         self.assertIsNotNone(log.duration_ms)
+        messages = get_bot_response_sync.call_args.kwargs["messages"]
+        self.assertEqual(messages[-1].parameters, {"enable_thinking": False})
+
+    @override_settings(
+        POE_BOT_NAME_MODERATION=None,
+        POE_BOT_PARAMETERS_MODERATION=None,
+    )
+    def test_default_moderation_config_uses_muse_without_thinking(self):
+        config = LLMConfig()
+
+        self.assertEqual(config.get_bot_name_for_moderation(), "Muse-Glimmer-30B-EL")
+        self.assertEqual(
+            config.get_parameters_for_moderation(), {"enable_thinking": False}
+        )
 
     def test_llm_service_records_failed_usage(self):
         service = LLMService(

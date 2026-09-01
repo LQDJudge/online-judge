@@ -168,6 +168,7 @@ def moderate_profile_case_task(
             timeout=min(config.timeout, 60),
             feature=feature,
             user_id=trigger_user_id,
+            parameters=config.get_parameters_for_moderation(),
             metadata={
                 "case_id": case.id,
                 "target": case.target,

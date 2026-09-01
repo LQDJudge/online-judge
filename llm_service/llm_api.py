@@ -41,6 +41,7 @@ class LLMService:
         user=None,
         user_id: Optional[int] = None,
         metadata: Optional[dict] = None,
+        parameters: Optional[dict] = None,
     ):
         self.api_key = api_key
         self.bot_name = bot_name
@@ -50,6 +51,7 @@ class LLMService:
         self.user = user
         self.user_id = user_id
         self.metadata = metadata or {}
+        self.parameters = dict(parameters or {})
 
         if not self.api_key:
             raise ValueError("API_KEY is required")
@@ -282,6 +284,7 @@ class LLMService:
             fp.ProtocolMessage(
                 role="user",
                 content=prompt,
+                parameters=dict(self.parameters),
                 timestamp=int(time.time()),
                 attachments=attachments or [],
             )
@@ -323,6 +326,7 @@ class LLMService:
             fp.ProtocolMessage(
                 role="user",
                 content=current_prompt,
+                parameters=dict(self.parameters),
                 timestamp=int(time.time()),
             )
         )

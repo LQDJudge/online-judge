@@ -8,7 +8,8 @@ from typing import Optional
 
 # Default configuration values
 DEFAULT_BOT_NAME = "Claude-Sonnet-4.6"
-DEFAULT_MODERATION_BOT_NAME = "Qwen3.7-Flash-EL"
+DEFAULT_MODERATION_BOT_NAME = "Muse-Glimmer-30B-EL"
+DEFAULT_MODERATION_PARAMETERS = {"enable_thinking": False}
 DEFAULT_SLEEP_TIME = 2.5
 DEFAULT_TIMEOUT = 300
 DEFAULT_MAX_RETRIES = 1
@@ -68,6 +69,7 @@ class LLMConfig:
         self.bot_name_chatbot: Optional[str] = None
         self.bot_name_review: Optional[str] = None
         self.bot_name_moderation: Optional[str] = None
+        self.bot_parameters_moderation: Optional[dict] = None
 
         # Try to load from Django settings first, then environment
         self._load_config()
@@ -93,6 +95,9 @@ class LLMConfig:
             self.bot_name_review = getattr(settings, "POE_BOT_NAME_REVIEW", None)
             self.bot_name_moderation = getattr(
                 settings, "POE_BOT_NAME_MODERATION", None
+            )
+            self.bot_parameters_moderation = getattr(
+                settings, "POE_BOT_PARAMETERS_MODERATION", None
             )
         except ImportError:
             # Django not available, use environment variables
@@ -161,6 +166,14 @@ class LLMConfig:
         """Get bot name for lightweight moderation tasks."""
         return self.bot_name_moderation or DEFAULT_MODERATION_BOT_NAME
 
+    def get_parameters_for_moderation(self) -> dict:
+        """Get Poe request parameters for moderation tasks."""
+        if self.bot_parameters_moderation is not None:
+            return dict(self.bot_parameters_moderation)
+        if self.get_bot_name_for_moderation() == DEFAULT_MODERATION_BOT_NAME:
+            return dict(DEFAULT_MODERATION_PARAMETERS)
+        return {}
+
     def get_chatbot_supported_models(self) -> list:
         """Get list of supported models for chatbot"""
         return CHATBOT_SUPPORTED_MODELS
@@ -194,6 +207,7 @@ class LLMConfig:
             "bot_name_chatbot": self.get_bot_name_for_chatbot(),
             "bot_name_review": self.get_bot_name_for_review(),
             "bot_name_moderation": self.get_bot_name_for_moderation(),
+            "bot_parameters_moderation": self.get_parameters_for_moderation(),
             "sleep_time": self.sleep_time,
             "timeout": self.timeout,
             "max_retries": self.max_retries,

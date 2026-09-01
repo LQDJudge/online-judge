@@ -165,10 +165,12 @@ class Command(BaseCommand):
         try:
             config = get_config()
             bot_name = config.get_bot_name_for_moderation()
+            parameters = config.get_parameters_for_moderation()
             self.llm_service = LLMService(
                 api_key=api_key,
                 bot_name=bot_name,
                 feature="comment_moderation",
+                parameters=parameters,
             )
             self.chat_llm_service = LLMService(
                 api_key=config.api_key,
@@ -176,6 +178,7 @@ class Command(BaseCommand):
                 sleep_time=config.sleep_time,
                 timeout=config.timeout,
                 feature="chat_moderation",
+                parameters=parameters,
             )
         except Exception as e:
             self.stderr.write(
