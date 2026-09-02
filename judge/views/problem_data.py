@@ -1312,6 +1312,7 @@ class ProblemSolutionCodesGenerateView(ProblemManagerMixin, View):
             model_id=model_id,
             instructions=instructions,
             include_reference=include_reference,
+            user_id=request.user.id,
         )
         return JsonResponse({"status": "ok", "task_id": task.id})
 

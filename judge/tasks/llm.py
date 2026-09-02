@@ -43,6 +43,7 @@ def generate_solution_task(
     problem_id=None,
     rough_ideas="",
     problem_code=None,
+    user_id=None,
 ):
     """
     Celery task to generate solution for a problem using LLM.
@@ -58,7 +59,7 @@ def generate_solution_task(
     """
     try:
         problem = _resolve_problem_for_ai_task(problem_id, problem_code)
-        tag_service = get_problem_tag_service()
+        tag_service = get_problem_tag_service(user_id=user_id)
         result = tag_service.generate_problem_solution(problem, rough_ideas=rough_ideas)
 
         return {
@@ -94,6 +95,7 @@ def tag_problem_task(
     problem_id=None,
     description="",
     problem_code=None,
+    user_id=None,
 ):
     """
     Celery task to tag a problem (difficulty + types) using LLM.
@@ -110,7 +112,7 @@ def tag_problem_task(
     """
     try:
         problem = _resolve_problem_for_ai_task(problem_id, problem_code)
-        tag_service = get_problem_tag_service()
+        tag_service = get_problem_tag_service(user_id=user_id)
         result = tag_service.tag_single_problem(
             problem, description_override=description
         )
@@ -158,6 +160,7 @@ def improve_markdown_task(
     problem_id=None,
     description="",
     problem_code=None,
+    user_id=None,
 ):
     """
     Celery task to improve markdown formatting for a problem using LLM.
@@ -174,7 +177,7 @@ def improve_markdown_task(
     """
     try:
         problem = _resolve_problem_for_ai_task(problem_id, problem_code)
-        tag_service = get_problem_tag_service()
+        tag_service = get_problem_tag_service(user_id=user_id)
         result = tag_service.improve_problem_markdown(
             problem, description_override=description
         )
@@ -205,7 +208,7 @@ def improve_markdown_task(
 
 
 @shared_task(bind=True)
-def improve_question_markdown_task(self, content, choices_json=""):
+def improve_question_markdown_task(self, content, choices_json="", user_id=None):
     """
     Celery task to improve markdown formatting for a quiz question.
 
@@ -218,7 +221,7 @@ def improve_question_markdown_task(self, content, choices_json=""):
         Dict with improvement results (stored in Celery result backend)
     """
     try:
-        service = get_quiz_ai_service()
+        service = get_quiz_ai_service(user_id=user_id)
         result = service.improve_question_markdown(content, choices_json)
 
         response = {
@@ -247,6 +250,7 @@ def generate_question_explanation_task(
     correct_answers_json,
     existing_explanation,
     rough_ideas="",
+    user_id=None,
 ):
     """
     Celery task to generate or improve an explanation for a quiz question.
@@ -262,7 +266,7 @@ def generate_question_explanation_task(
         Dict with generation results (stored in Celery result backend)
     """
     try:
-        service = get_quiz_ai_service()
+        service = get_quiz_ai_service(user_id=user_id)
         result = service.generate_or_improve_explanation(
             question_content=question_content,
             question_type=question_type,
@@ -295,6 +299,7 @@ def generate_solution_codes_task(
     instructions="",
     include_reference=False,
     problem_code=None,
+    user_id=None,
 ):
     """
     Celery task to generate multiple reference solution codes using LLM.
@@ -321,6 +326,7 @@ def generate_solution_codes_task(
             api_key=config.api_key,
             bot_name=bot_name,
             sleep_time=config.sleep_time,
+            user_id=user_id,
         )
         result = generator.generate(
             problem, instructions=instructions, include_reference=include_reference

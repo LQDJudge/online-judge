@@ -84,6 +84,8 @@ class ReactionEndpointTest(TestCase):
         self.u1 = self._profile("er_u1")
         self.u2 = self._profile("er_u2")
         self.u3 = self._profile("er_u3")
+        self.u1.user.is_staff = True
+        self.u1.user.save(update_fields=["is_staff"])
         self.lobby_msg = Message.objects.create(author=self.u2, body="hello", room=None)
         self.url = reverse("chat_react")
         self.client.login(username="er_u1", password="pw")
@@ -160,6 +162,17 @@ class ReactionEndpointTest(TestCase):
         self.u1.mute_until = timezone.now() + timedelta(days=1)
         self.u1.save(update_fields=["mute", "mute_until"])
         resp = self._react(self.lobby_msg, "like")
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(
+            MessageReaction.objects.filter(message=self.lobby_msg).count(), 0
+        )
+
+    def test_user_without_solve_cannot_react(self):
+        self._profile("er_restricted")
+        self.client.login(username="er_restricted", password="pw")
+
+        resp = self._react(self.lobby_msg, "like")
+
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             MessageReaction.objects.filter(message=self.lobby_msg).count(), 0

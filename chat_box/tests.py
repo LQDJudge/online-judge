@@ -16,7 +16,14 @@ from chat_box.models import (
 )
 from chat_box.utils import encrypt_url, get_unread_boxes
 from chat_box.views import ChatView, get_status_context
-from judge.models import Notification, Profile
+from judge.models import (
+    Language,
+    Notification,
+    Problem,
+    ProblemGroup,
+    Profile,
+    Submission,
+)
 from judge.models.notification import NotificationCategory
 
 
@@ -411,7 +418,7 @@ class ChatSelfRoomTest(TestCase):
         cache.clear()
         self.client = Client()
         self.user = User.objects.create_user(
-            username="selfchat", password="password123"
+            username="selfchat", password="password123", is_staff=True
         )
         self.profile, _ = Profile.objects.get_or_create(user=self.user)
         self.other_user = User.objects.create_user(username="selfchatother")
@@ -484,6 +491,75 @@ class ChatSelfRoomTest(TestCase):
             ).exists()
         )
         self.assertEqual(UserRoom.objects.get(room=self_room).unread_count, 0)
+
+
+class ChatCommunityPolicyTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = Client()
+        self.language, _ = Language.objects.get_or_create(
+            key="PY3",
+            defaults={
+                "name": "Python 3",
+                "short_name": "PY3",
+                "common_name": "Python",
+                "ace": "python",
+                "pygments": "python3",
+                "template": "",
+            },
+        )
+        self.problem_group = ProblemGroup.objects.create(
+            name="chat-policy", full_name="Chat Policy"
+        )
+        self.problem = Problem.objects.create(
+            code="chatpolicy",
+            name="Chat Policy",
+            group=self.problem_group,
+            time_limit=1.0,
+            memory_limit=262144,
+            points=100.0,
+            is_public=True,
+        )
+        self.user = User.objects.create_user(
+            username="chatpolicyuser", password="password123"
+        )
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user, defaults={"language": self.language}
+        )
+
+    def tearDown(self):
+        cache.clear()
+
+    def _post_lobby_message(self, body="hello lobby"):
+        self.client.login(username="chatpolicyuser", password="password123")
+        with patch("chat_box.views.event.post"):
+            return self.client.post(
+                "/chat/post/",
+                {"room": "", "body": body, "tmp_id": "policy-1"},
+            )
+
+    def test_user_without_solve_cannot_post_chat_message(self):
+        response = self._post_lobby_message()
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Message.objects.filter(author=self.profile).exists())
+
+    def test_user_with_full_score_submission_can_post_chat_message(self):
+        Submission.objects.create(
+            user=self.profile,
+            problem=self.problem,
+            language=self.language,
+            points=self.problem.points,
+            status="D",
+            result="AC",
+            case_points=self.problem.points,
+            case_total=self.problem.points,
+        )
+
+        response = self._post_lobby_message()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Message.objects.filter(author=self.profile).exists())
 
 
 class UnreadBoxesCacheTest(TestCase):

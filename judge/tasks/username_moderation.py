@@ -137,7 +137,9 @@ def mark_stale_profile_moderation_case(case):
 
 
 @shared_task(bind=True)
-def moderate_profile_case_task(self, case_id, delete_safe_case=False):
+def moderate_profile_case_task(
+    self, case_id, delete_safe_case=False, trigger_user_id=None
+):
     case = ProfileModerationCase.objects.select_related("user", "user__profile").get(
         id=case_id
     )
@@ -151,6 +153,11 @@ def moderate_profile_case_task(self, case_id, delete_safe_case=False):
         return {"skipped": True, "reason": "stale profile self-description"}
 
     prompt, system_prompt = get_profile_moderation_prompt(case)
+    feature = (
+        "profile_moderation"
+        if case.target == ProfileModerationCase.TARGET_ABOUT
+        else "username_moderation"
+    )
 
     try:
         config = get_config()
@@ -159,6 +166,16 @@ def moderate_profile_case_task(self, case_id, delete_safe_case=False):
             bot_name=config.get_bot_name_for_moderation(),
             sleep_time=config.sleep_time,
             timeout=min(config.timeout, 60),
+            feature=feature,
+            user_id=trigger_user_id,
+            parameters=config.get_parameters_for_moderation(),
+            metadata={
+                "case_id": case.id,
+                "target": case.target,
+                "source": case.source,
+                "target_user_id": case.user_id,
+                "target_username": case.username,
+            },
         )
         response = llm.call_llm(prompt, system_prompt=system_prompt)
         result = parse_profile_moderation_response(response)
@@ -247,5 +264,7 @@ def moderate_profile_case_task(self, case_id, delete_safe_case=False):
 
 
 @shared_task(bind=True)
-def moderate_username_task(self, case_id, delete_safe_case=False):
-    return moderate_profile_case_task(case_id, delete_safe_case=delete_safe_case)
+def moderate_username_task(self, case_id, delete_safe_case=False, trigger_user_id=None):
+    return moderate_profile_case_task(
+        case_id, delete_safe_case=delete_safe_case, trigger_user_id=trigger_user_id
+    )

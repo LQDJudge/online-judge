@@ -30,7 +30,8 @@
         isStaff: {{ request.user.has_perm('judge.change_comment')|tojson }},
         canModerateChat: {{ (can_mute_chat_temporarily or can_mute_chat_permanently)|tojson }},
         canMutePermanently: {{ can_mute_chat_permanently|tojson }},
-        isMuted: {{ is_chat_muted|tojson }}
+        isMuted: {{ is_chat_muted|tojson }},
+        canChat: {{ can_chat|tojson }}
       },
       room: {
         id: "{{ room if room else '' }}",
@@ -62,6 +63,7 @@
         cancel: "{{ _('Cancel') }}",
         confirmMute: "{{ _('Confirm mute') }}",
         chatMuted: "{{ _('You are muted from chat.') }}",
+        chatRestricted: "{{ _('Solve a problem to chat.') }}",
         emoji: "{{ _('Emoji') }}",
         searchPlaceholder: "{{ _('Search by handle...') }}",
         enterMessage: "{{ _('Enter your message') }}",
@@ -116,15 +118,16 @@
             {{ _('Chat is disabled during contest.') }}
           </div>
         {% else %}
-          {% set chat_input_placeholder = _('You are muted from chat.') if is_chat_muted else _('Enter your message') %}
-          <div id="chat-input-container" class="chat-input-area {% if is_chat_muted %}is-muted{% endif %}">
+          {% set chat_disabled = is_chat_muted or not can_chat %}
+          {% set chat_input_placeholder = _('You are muted from chat.') if is_chat_muted else (_('Solve a problem to chat.') if not can_chat else _('Enter your message')) %}
+          <div id="chat-input-container" class="chat-input-area {% if chat_disabled %}is-muted{% endif %}">
             <div class="chat-input-wrapper">
-              <textarea rows="1" maxlength="{{5000 if room else 200}}" id="chat-input" class="chat-input" placeholder="{{ chat_input_placeholder }}"{% if is_chat_muted %} disabled aria-disabled="true"{% endif %}></textarea>
-              <div class="chat-input-icon chat-emoji-btn {% if is_chat_muted %}is-disabled{% endif %}" id="emoji-button" title="{{ chat_input_placeholder if is_chat_muted else _('Emoji') }}"{% if is_chat_muted %} aria-disabled="true" tabindex="-1"{% endif %}>
+              <textarea rows="1" maxlength="{{5000 if room else 200}}" id="chat-input" class="chat-input" placeholder="{{ chat_input_placeholder }}"{% if chat_disabled %} disabled aria-disabled="true"{% endif %}></textarea>
+              <div class="chat-input-icon chat-emoji-btn {% if chat_disabled %}is-disabled{% endif %}" id="emoji-button" title="{{ chat_input_placeholder if chat_disabled else _('Emoji') }}"{% if chat_disabled %} aria-disabled="true" tabindex="-1"{% endif %}>
                 <i class="icofont-slightly-smile"></i>
               </div>
             </div>
-            <div class="chat-input-icon chat-submit-btn {% if is_chat_muted %}is-disabled{% endif %}" id="chat-submit-button"{% if is_chat_muted %} aria-disabled="true" tabindex="-1"{% endif %}>
+            <div class="chat-input-icon chat-submit-btn {% if chat_disabled %}is-disabled{% endif %}" id="chat-submit-button"{% if chat_disabled %} aria-disabled="true" tabindex="-1"{% endif %}>
               <i class="fa fa-paper-plane"></i>
             </div>
           </div>

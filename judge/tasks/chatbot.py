@@ -255,6 +255,9 @@ def chatbot_respond_task(
             api_key=config.api_key,
             bot_name=selected_model,
             sleep_time=config.sleep_time,
+            feature="problem_chatbot",
+            user_id=user_id,
+            metadata={"problem_id": problem.id, "problem_code": problem.code},
         )
 
         # Build tool definitions and executables bound to this problem

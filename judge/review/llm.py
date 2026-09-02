@@ -16,7 +16,7 @@ class LLMCallFailed(Exception):
     pass
 
 
-def call_llm_json(system_prompt: str, user_prompt: str) -> dict:
+def call_llm_json(system_prompt: str, user_prompt: str, user_id=None) -> dict:
     """
     Call the LLM with the given prompts, expecting a JSON object back.
     Retries up to AUTO_REVIEW_LLM_RETRY_COUNT times. Strips ```json fences.
@@ -25,7 +25,10 @@ def call_llm_json(system_prompt: str, user_prompt: str) -> dict:
     retries = getattr(settings, "AUTO_REVIEW_LLM_RETRY_COUNT", 3)
     config = get_config()
     service = LLMService(
-        api_key=config.api_key, bot_name=config.get_bot_name_for_review()
+        api_key=config.api_key,
+        bot_name=config.get_bot_name_for_review(),
+        feature="problem_review_check",
+        user_id=user_id,
     )
 
     last_exc = None

@@ -1911,6 +1911,11 @@ urlpatterns = [
                     name="internal_problem_duplicate_status_api",
                 ),
                 re_path(
+                    r"^ai_usage$",
+                    internal.InternalAIUsage.as_view(),
+                    name="internal_ai_usage",
+                ),
+                re_path(
                     r"^bridge_status$",
                     internal.InternalBridgeStatus.as_view(),
                     name="internal_bridge_status",

@@ -133,7 +133,10 @@ class AutoModerateCommandTest(TestCase):
             timeout = 30
 
             def get_bot_name_for_moderation(self):
-                return "Qwen3.7-Flash-EL"
+                return "Muse-Glimmer-30B-EL"
+
+            def get_parameters_for_moderation(self):
+                return {"enable_thinking": False}
 
         get_config.return_value = FakeConfig()
 
@@ -146,12 +149,19 @@ class AutoModerateCommandTest(TestCase):
 
         llm_service.assert_has_calls(
             [
-                call(api_key="test-key", bot_name="Qwen3.7-Flash-EL"),
                 call(
                     api_key="test-key",
-                    bot_name="Qwen3.7-Flash-EL",
+                    bot_name="Muse-Glimmer-30B-EL",
+                    feature="comment_moderation",
+                    parameters={"enable_thinking": False},
+                ),
+                call(
+                    api_key="test-key",
+                    bot_name="Muse-Glimmer-30B-EL",
                     sleep_time=0.5,
                     timeout=30,
+                    feature="chat_moderation",
+                    parameters={"enable_thinking": False},
                 ),
             ]
         )
@@ -166,7 +176,10 @@ class AutoModerateCommandTest(TestCase):
             timeout = 30
 
             def get_bot_name_for_moderation(self):
-                return "Qwen3.7-Flash-EL"
+                return "Muse-Glimmer-30B-EL"
+
+            def get_parameters_for_moderation(self):
+                return {"enable_thinking": False}
 
         comment = self.create_comment()
         get_config.return_value = FakeConfig()
@@ -200,7 +213,10 @@ class AutoModerateCommandTest(TestCase):
             timeout = 30
 
             def get_bot_name_for_moderation(self):
-                return "Qwen3.7-Flash-EL"
+                return "Muse-Glimmer-30B-EL"
+
+            def get_parameters_for_moderation(self):
+                return {"enable_thinking": False}
 
         user = User.objects.create_user("chat_review_user", password="pw")
         profile, _ = Profile.objects.get_or_create(
@@ -245,7 +261,10 @@ class AutoModerateCommandTest(TestCase):
             timeout = 30
 
             def get_bot_name_for_moderation(self):
-                return "Qwen3.7-Flash-EL"
+                return "Muse-Glimmer-30B-EL"
+
+            def get_parameters_for_moderation(self):
+                return {"enable_thinking": False}
 
         user = User.objects.create_user("chat_string_id_user", password="pw")
         profile, _ = Profile.objects.get_or_create(
@@ -291,7 +310,10 @@ class AutoModerateCommandTest(TestCase):
             timeout = 30
 
             def get_bot_name_for_moderation(self):
-                return "Qwen3.7-Flash-EL"
+                return "Muse-Glimmer-30B-EL"
+
+            def get_parameters_for_moderation(self):
+                return {"enable_thinking": False}
 
         user = User.objects.create_user("chat_missing_decision_user", password="pw")
         profile, _ = Profile.objects.get_or_create(
@@ -325,7 +347,10 @@ class AutoModerateCommandTest(TestCase):
             timeout = 30
 
             def get_bot_name_for_moderation(self):
-                return "Qwen3.7-Flash-EL"
+                return "Muse-Glimmer-30B-EL"
+
+            def get_parameters_for_moderation(self):
+                return {"enable_thinking": False}
 
         admin_user = User.objects.create_superuser("admin_author", password="pw")
         normal_user = User.objects.create_user("normal_post_author", password="pw")

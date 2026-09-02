@@ -39,6 +39,7 @@ from judge.review.decisions import (
     reject_contest_public_request,
 )
 from judge.review.verdict import batched_verdicts
+from judge.utils.community import can_use_community_features
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.timefmt import format_mmss
 from judge.utils.views import QueryStringSortMixin, TitleMixin
@@ -183,11 +184,8 @@ def _attach_comment_context(request, context, target):
             pass
 
     if request.user.is_authenticated:
-        context["is_new_user"] = (
-            not request.user.is_staff
-            and not request.profile.submission_set.filter(
-                points=F("problem__points")
-            ).exists()
+        context["is_new_user"] = not can_use_community_features(
+            request.user, request.profile
         )
 
     context.update(

@@ -80,6 +80,8 @@ def quiz_import_task(self, file_path, user_id):
             api_key=config.api_key,
             bot_name=GEMINI_FLASH_BOT,
             timeout=300,
+            feature="quiz_import",
+            user_id=user_id,
         )
         response_text = service.call_llm(
             prompt=QUIZ_IMPORT_USER_PROMPT,

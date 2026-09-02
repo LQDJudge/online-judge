@@ -430,7 +430,9 @@ class QuizAIMixin:
 
             choices_json = request.POST.get("choices", "").strip()
 
-            task = improve_question_markdown_task.delay(content, choices_json)
+            task = improve_question_markdown_task.delay(
+                content, choices_json, user_id=request.user.id
+            )
 
             return JsonResponse(
                 {
@@ -471,6 +473,7 @@ class QuizAIMixin:
                 correct_answers_json=correct_answers_json,
                 existing_explanation=existing_explanation,
                 rough_ideas=rough_ideas,
+                user_id=request.user.id,
             )
 
             return JsonResponse(

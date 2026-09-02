@@ -41,6 +41,7 @@ from judge.models.comment import (
 from judge.models.profile import Profile, get_contribution_rank
 from judge.review.comment_notify import notify_review_comment
 from judge.utils.contribution import is_content_public
+from judge.utils.community import can_use_community_features
 from judge.utils.ratelimit import ratelimit
 from judge.utils.voting import can_user_access_votable, decrypt_vote_token
 from judge.views.comment.forms import CommentForm
@@ -65,12 +66,7 @@ def vote_comment(request, delta):
     if "token" not in request.POST:
         return HttpResponseBadRequest()
 
-    if (
-        not request.user.is_staff
-        and not request.profile.submission_set.filter(
-            points=F("problem__points")
-        ).exists()
-    ):
+    if not can_use_community_features(request.user, request.profile):
         return HttpResponseBadRequest(
             _("You must solve at least one problem before you can vote."),
             content_type="text/plain",
@@ -341,12 +337,7 @@ def post_comment(request):
     if request.profile.mute:
         return HttpResponseBadRequest(_("You are muted and cannot comment."))
 
-    if (
-        not request.user.is_staff
-        and not request.profile.submission_set.filter(
-            points=F("problem__points")
-        ).exists()
-    ):
+    if not can_use_community_features(request.user, request.profile):
         return HttpResponseBadRequest(
             _("You need to solve at least one problem before commenting")
         )
