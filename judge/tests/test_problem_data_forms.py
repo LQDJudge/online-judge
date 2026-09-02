@@ -1,5 +1,6 @@
 import json
 import tempfile
+from unittest.mock import patch
 
 from django.forms import HiddenInput
 from django.test import SimpleTestCase
@@ -51,3 +52,31 @@ class ProblemDataCheckerChoiceTests(SimpleTestCase):
                 "Python checkers are no longer supported.",
             ):
                 ProblemDataCompiler(None, data, [], []).make_init()
+
+    @patch("judge.utils.problem_data._get_latest_cpp_key", return_value="CPP20")
+    def test_problem_data_compiler_preserves_file_checker_args(self, _latest_cpp):
+        data = ProblemData(
+            checker="testlib",
+            checker_args=json.dumps(
+                {
+                    "treat_checker_points_as_percentage": True,
+                    "files": "untrusted.cpp",
+                    "lang": "PY3",
+                    "type": "cms",
+                }
+            ),
+        )
+        data.custom_checker_cpp.name = "problem/checker.cpp"
+
+        checker = ProblemDataCompiler(None, data, [], []).make_init()["checker"]
+
+        self.assertEqual(checker["name"], "bridged")
+        self.assertEqual(
+            checker["args"],
+            {
+                "treat_checker_points_as_percentage": True,
+                "files": "checker.cpp",
+                "lang": "CPP20",
+                "type": "testlib",
+            },
+        )

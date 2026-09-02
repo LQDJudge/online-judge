@@ -122,13 +122,19 @@ class ProblemDataCompiler(object):
                     raise ProblemDataError(
                         _("How did you corrupt the custom checker path?")
                     )
-                return {
-                    "name": "bridged",
-                    "args": {
+                checker_args = (
+                    json.loads(case.checker_args) if case.checker_args else {}
+                )
+                checker_args.update(
+                    {
                         "files": custom_checker_path[1],
                         "lang": latest_cpp_key,
                         "type": "lqdoj",
-                    },
+                    }
+                )
+                return {
+                    "name": "bridged",
+                    "args": checker_args,
                 }
 
             if case.checker in ("testlib", "testlibcms"):
@@ -137,15 +143,21 @@ class ProblemDataCompiler(object):
                     raise ProblemDataError(
                         _("How did you corrupt the custom checker path?")
                     )
-                return {
-                    "name": "bridged",
-                    "args": {
+                checker_args = (
+                    json.loads(case.checker_args) if case.checker_args else {}
+                )
+                checker_args.update(
+                    {
                         "files": custom_checker_path[1],
                         "lang": latest_cpp_key,
                         # `testlibcms` uses the CMS-style testlib fork (Kian Mirjalali) which
                         # expects argv `input answer output` and prints CMS-format scores.
                         "type": "cms" if case.checker == "testlibcms" else "testlib",
-                    },
+                    }
+                )
+                return {
+                    "name": "bridged",
+                    "args": checker_args,
                 }
 
             if case.checker_args:
