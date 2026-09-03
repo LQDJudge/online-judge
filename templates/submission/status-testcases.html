@@ -5,8 +5,8 @@
   <div data-submission-result-json-url="{{ result_json_url }}"></div>
 {% endif %}
 
-{% if show_generator_timeout_guide %}
-  {% include "submission/generator-timeout-guide.html" %}
+{% if test_data_timeout_component %}
+  {% include "submission/test-data-timeout-guide.html" %}
 {% endif %}
 
 {% if submission.status != 'IE' %}

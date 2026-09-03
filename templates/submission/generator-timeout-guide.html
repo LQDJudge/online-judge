@@ -1,17 +1,2 @@
-<div class="alert alert-warning">
-  <h4>{{ _('Generator timed out') }}</h4>
-  <p>
-    {{ _('The test generator did not finish in time while preparing this submission. See the test data instructions before rejudging affected submissions.') }}
-  </p>
-  <strong>{{ _('Tips') }}</strong>
-  <ul>
-    <li>
-      {{ _('For C++ generators, add fast I/O setup:') }}
-      <code>ios::sync_with_stdio(false); cin.tie(nullptr); cerr.unsetf(ios::unitbuf);</code>
-    </li>
-    <li>{{ _('Use the fastest accepted solution to generate answers.') }}</li>
-  </ul>
-  <a href="{{ url('test_data_instructions') }}#test-generator" target="_blank">{{ _('Test data instructions') }}</a>
-  &middot;
-  <a href="{{ url('problem_data', submission.problem.code) }}">{{ _('Open test data') }}</a>
-</div>
+{% set test_data_timeout_component = 'generator' %}
+{% include "submission/test-data-timeout-guide.html" %}

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-01 07:23+0700\n"
+"POT-Creation-Date: 2026-09-04 05:20+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -5274,8 +5274,8 @@ msgstr "Vượt quá dung lượng lưu trữ. File đã bị xóa."
 msgid "Invalid file path"
 msgstr "Đường dẫn file không hợp lệ"
 
-#: judge/utils/hidden_results.py:113 judge/views/submission.py:534
-#: judge/views/submission.py:1367
+#: judge/utils/hidden_results.py:113 judge/views/submission.py:539
+#: judge/views/submission.py:1372
 #: templates/contest/contest-problem-table.html:23
 #: templates/contest/contest-problem-table.html:59
 #: templates/course/lesson_user_submissions_ajax.html:12
@@ -5338,68 +5338,68 @@ msgid ""
 "(not per test case). Set the checker at the problem level instead."
 msgstr ""
 
-#: judge/utils/problem_data.py:123 judge/utils/problem_data.py:138
+#: judge/utils/problem_data.py:123 judge/utils/problem_data.py:144
 msgid "How did you corrupt the custom checker path?"
 msgstr "How did you corrupt the custom checker path?"
 
-#: judge/utils/problem_data.py:163
+#: judge/utils/problem_data.py:175
 #, fuzzy, python-format
 #| msgid "Points must be defined for non-batch case #%d."
 msgid "Points must be defined for case #%d."
 msgstr "Ô điểm số cho test #%d phải được điền."
 
-#: judge/utils/problem_data.py:174
+#: judge/utils/problem_data.py:186
 #, python-format
 msgid "Input file for case %(case_num)d does not exist: %(filename)s"
 msgstr "File input cho test %(case_num)d không tồn tại: %(filename)s"
 
-#: judge/utils/problem_data.py:181
+#: judge/utils/problem_data.py:193
 #, python-format
 msgid "Output file for case %(case_num)d does not exist: %(filename)s"
 msgstr "File output cho test %(case_num)d không tồn tại: %(filename)s"
 
-#: judge/utils/problem_data.py:209
+#: judge/utils/problem_data.py:221
 #, python-format
 msgid "Batch start case #%d requires points."
 msgstr "Nhóm test #%d cần được điền điểm số."
 
-#: judge/utils/problem_data.py:237
+#: judge/utils/problem_data.py:249
 #, python-format
 msgid "Attempt to end batch outside of one in case #%d"
 msgstr "Nhóm test #%d kết thúc không hợp lệ"
 
-#: judge/utils/problem_data.py:256
+#: judge/utils/problem_data.py:268
 msgid "How did you corrupt the zip path?"
 msgstr "Làm sao bạn làm hỏng đường dẫn zip?"
 
-#: judge/utils/problem_data.py:262
+#: judge/utils/problem_data.py:274
 msgid "How did you corrupt the generator path?"
 msgstr "Làm sao bạn làm hỏng đường dẫn generator?"
 
-#: judge/utils/problem_data.py:280
+#: judge/utils/problem_data.py:292
 msgid "Invalid interactor judge"
 msgstr "Máy chấm tương tác không hợp lệ"
 
-#: judge/utils/problem_data.py:315
+#: judge/utils/problem_data.py:327
 msgid "Invalid validator source path"
 msgstr "Đường dẫn mã nguồn validator không hợp lệ"
 
-#: judge/utils/problem_data.py:323
+#: judge/utils/problem_data.py:335
 #, python-format
 msgid "Unsupported validator extension: %s"
 msgstr "Phần mở rộng validator không được hỗ trợ: %s"
 
-#: judge/utils/problem_data.py:340
+#: judge/utils/problem_data.py:352
 #, fuzzy
 #| msgid "Invalid Two Factor Authentication token."
 msgid "Invalid communication manager"
 msgstr "Mã Xác thực hai yếu tố không hợp lệ."
 
-#: judge/utils/problem_data.py:370
+#: judge/utils/problem_data.py:382
 msgid "Invalid signature handler"
 msgstr "Trình xử lý không hợp lệ"
 
-#: judge/utils/problem_data.py:379
+#: judge/utils/problem_data.py:391
 msgid "Invalid signature header for C/C++"
 msgstr "File định nghĩa hàm không hợp lệ"
 
@@ -6995,7 +6995,7 @@ msgstr "%s Thành viên"
 msgid "All submissions in <a href=\"{1}\">{0}</a>"
 msgstr "Bài nộp trong <a href=\"{1}\">{0}</a>"
 
-#: judge/views/organization.py:883 judge/views/submission.py:1017
+#: judge/views/organization.py:883 judge/views/submission.py:1022
 msgid "Submissions in"
 msgstr "Bài nộp trong"
 
@@ -8264,64 +8264,64 @@ msgstr "Thống kê"
 msgid "Version matrix"
 msgstr "Ma trận phiên bản"
 
-#: judge/views/submission.py:133 judge/views/submission.py:141
+#: judge/views/submission.py:137 judge/views/submission.py:145
 #, python-format
 msgid "Submission of %(problem)s by %(user)s"
 msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 
-#: judge/views/submission.py:357 judge/views/submission.py:358
+#: judge/views/submission.py:362 judge/views/submission.py:363
 #: templates/contest/submissions.html:50 templates/problem/problem.html:217
 #: templates/problem/problem.html:230 templates/submission/list.html:386
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:685 judge/views/submission.py:690
+#: judge/views/submission.py:690 judge/views/submission.py:695
 msgid "All my submissions"
 msgstr "Tất cả bài nộp của tôi"
 
-#: judge/views/submission.py:686
+#: judge/views/submission.py:691
 #, python-format
 msgid "All submissions by %s"
 msgstr "Tất cả bài nộp của %s"
 
-#: judge/views/submission.py:692
+#: judge/views/submission.py:697
 #, python-brace-format
 msgid "All submissions by <a href=\"{1}\">{0}</a>"
 msgstr "Tất cả bài nộp của <a href=\"{1}\">{0}</a>"
 
-#: judge/views/submission.py:715
+#: judge/views/submission.py:720
 msgid "All friend submissions"
 msgstr "Bài nộp của bạn bè"
 
-#: judge/views/submission.py:744
+#: judge/views/submission.py:749
 #, python-format
 msgid "All submissions for %s"
 msgstr "Tất cả bài nộp cho %s"
 
-#: judge/views/submission.py:772
+#: judge/views/submission.py:777
 msgid "Must pass a problem"
 msgstr "Phải làm được một bài"
 
-#: judge/views/submission.py:843
+#: judge/views/submission.py:848
 #, python-format
 msgid "My submissions for %(problem)s"
 msgstr "Bài nộp của tôi cho %(problem)s"
 
-#: judge/views/submission.py:844
+#: judge/views/submission.py:849
 #, python-format
 msgid "%(user)s's submissions for %(problem)s"
 msgstr "Các bài nộp của %(user)s cho %(problem)s"
 
-#: judge/views/submission.py:997
+#: judge/views/submission.py:1002
 msgid "Must pass a contest"
 msgstr "Phải qua một kỳ thi"
 
-#: judge/views/submission.py:1021
+#: judge/views/submission.py:1026
 #, python-brace-format
 msgid "Submissions in <a href=\"{0}\">{1}</a>"
 msgstr "Bài nộp trong <a href=\"{0}\">{1}</a>"
 
-#: judge/views/submission.py:1092
+#: judge/views/submission.py:1097
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a "
@@ -8330,7 +8330,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
 
-#: judge/views/submission.py:1104
+#: judge/views/submission.py:1109
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
@@ -8339,7 +8339,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho bài {2} trong <a href=\"{4}\">{3}"
 "</a>"
 
-#: judge/views/submission.py:1277
+#: judge/views/submission.py:1282
 msgid "You don't have permission to access."
 msgstr "Bạn không có quyền truy cập."
 
@@ -10809,6 +10809,7 @@ msgstr "Tất cả người dùng có sử dụng"
 msgid "By"
 msgstr "Theo"
 
+#: templates/internal/ai_usage.html:139
 msgid "Include System requests"
 msgstr "Bao gồm yêu cầu hệ thống"
 
@@ -15352,38 +15353,6 @@ msgstr "Thông tin Runtime"
 msgid "Version Matrix"
 msgstr "Phiên bản"
 
-#: templates/submission/generator-timeout-guide.html:2
-msgid "Generator timed out"
-msgstr "Generator bị quá thời gian"
-
-#: templates/submission/generator-timeout-guide.html:4
-msgid ""
-"The test generator did not finish in time while preparing this submission. "
-"See the test data instructions before rejudging affected submissions."
-msgstr ""
-"Generator sinh test không hoàn tất kịp thời khi chuẩn bị chấm bài nộp này. "
-"Hãy xem hướng dẫn dữ liệu test trước khi chấm lại các bài nộp bị ảnh hưởng."
-
-#: templates/submission/generator-timeout-guide.html:6
-msgid "Tips"
-msgstr "Gợi ý"
-
-#: templates/submission/generator-timeout-guide.html:9
-msgid "For C++ generators, add fast I/O setup:"
-msgstr "Với generator C++, thêm thiết lập nhập xuất nhanh:"
-
-#: templates/submission/generator-timeout-guide.html:12
-msgid "Use the fastest accepted solution to generate answers."
-msgstr "Dùng lời giải Accepted nhanh nhất để sinh đáp án."
-
-#: templates/submission/generator-timeout-guide.html:14
-msgid "Test data instructions"
-msgstr "Hướng dẫn dữ liệu test"
-
-#: templates/submission/generator-timeout-guide.html:16
-msgid "Open test data"
-msgstr "Mở dữ liệu test"
-
 #: templates/submission/internal-error-message.html:3
 #, python-format
 msgid ""
@@ -15543,6 +15512,63 @@ msgstr "Hủy chấm"
 #, python-format
 msgid "%(user)s's"
 msgstr "%(user)s's"
+
+#: templates/submission/test-data-timeout-guide.html:3
+msgid "Checker timed out"
+msgstr "Checker bị quá thời gian"
+
+#: templates/submission/test-data-timeout-guide.html:5
+msgid ""
+"The custom checker did not finish in time while validating this submission. "
+"Optimize the checker or split very large test rows before rejudging affected "
+"submissions."
+msgstr ""
+"Checker tùy chỉnh không hoàn tất kịp thời khi kiểm tra bài nộp này. Hãy tối "
+"ưu checker hoặc chia các hàng test quá lớn trước khi chấm lại các bài nộp bị "
+"ảnh hưởng."
+
+#: templates/submission/test-data-timeout-guide.html:7
+#: templates/submission/test-data-timeout-guide.html:18
+msgid "Tips"
+msgstr "Gợi ý"
+
+#: templates/submission/test-data-timeout-guide.html:9
+msgid "Avoid reading or parsing the contestant output more than necessary."
+msgstr "Tránh đọc hoặc phân tích output của thí sinh nhiều hơn mức cần thiết."
+
+#: templates/submission/test-data-timeout-guide.html:10
+msgid ""
+"Keep every test case, but split rows whose checker workload is too large."
+msgstr "Giữ nguyên mọi test, nhưng chia những hàng có khối lượng chấm quá lớn."
+
+#: templates/submission/test-data-timeout-guide.html:12
+#: templates/submission/test-data-timeout-guide.html:26
+msgid "Test data instructions"
+msgstr "Hướng dẫn dữ liệu test"
+
+#: templates/submission/test-data-timeout-guide.html:14
+msgid "Generator timed out"
+msgstr "Generator bị quá thời gian"
+
+#: templates/submission/test-data-timeout-guide.html:16
+msgid ""
+"The test generator did not finish in time while preparing this submission. "
+"See the test data instructions before rejudging affected submissions."
+msgstr ""
+"Generator sinh test không hoàn tất kịp thời khi chuẩn bị chấm bài nộp này. "
+"Hãy xem hướng dẫn dữ liệu test trước khi chấm lại các bài nộp bị ảnh hưởng."
+
+#: templates/submission/test-data-timeout-guide.html:21
+msgid "For C++ generators, add fast I/O setup:"
+msgstr "Với generator C++, thêm thiết lập nhập xuất nhanh:"
+
+#: templates/submission/test-data-timeout-guide.html:24
+msgid "Use the fastest accepted solution to generate answers."
+msgstr "Dùng lời giải Accepted nhanh nhất để sinh đáp án."
+
+#: templates/submission/test-data-timeout-guide.html:29
+msgid "Open test data"
+msgstr "Mở dữ liệu test"
 
 #: templates/submission/user-ajax.html:2
 msgid "Contest submissions of"

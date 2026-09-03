@@ -73,6 +73,10 @@ def is_generator_timeout_error(error):
     return bool(error and "generator timed out" in error.casefold())
 
 
+def is_checker_timeout_error(error):
+    return bool(error and "checker timed out" in error.casefold())
+
+
 def submission_related(queryset):
     return queryset.select_related(
         "user", "problem", "language", "contest_object"
@@ -278,11 +282,12 @@ class SubmissionStatus(SubmissionDetailBase):
         context["can_see_testcases"] = False
         context["can_manage_test_data"] = self.can_manage_test_data()
         context["test_data_feedback"] = ""
-        context["show_generator_timeout_guide"] = (
-            context["can_manage_test_data"]
-            and submission.status == "IE"
-            and is_generator_timeout_error(submission.error)
-        )
+        context["test_data_timeout_component"] = None
+        if context["can_manage_test_data"] and submission.status == "IE":
+            if is_generator_timeout_error(submission.error):
+                context["test_data_timeout_component"] = "generator"
+            elif is_checker_timeout_error(submission.error):
+                context["test_data_timeout_component"] = "checker"
         context["result_json_url"] = ""
         if self.highlight_source:
             context["highlighted_source"] = highlight_code(

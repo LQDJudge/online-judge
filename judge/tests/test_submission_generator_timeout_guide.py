@@ -10,7 +10,10 @@ from judge.models import (
     Submission,
     SubmissionSource,
 )
-from judge.views.submission import is_generator_timeout_error
+from judge.views.submission import (
+    is_checker_timeout_error,
+    is_generator_timeout_error,
+)
 
 
 @override_settings(LANGUAGE_CODE="en")
@@ -64,6 +67,14 @@ class SubmissionGeneratorTimeoutGuideTests(TestCase):
         )
         self.assertFalse(is_generator_timeout_error("Judge worker timeout"))
 
+    def test_checker_timeout_error_detection(self):
+        self.assertTrue(
+            is_checker_timeout_error(
+                "dmoj.error.InternalError: checker timed out (> 20 seconds)"
+            )
+        )
+        self.assertFalse(is_checker_timeout_error("Judge worker timeout"))
+
     def test_problem_author_sees_generator_timeout_guide(self):
         submission = self._submission(
             "Traceback\n" "dmoj.error.InternalError: generator timed out (> 20 seconds)"
@@ -102,3 +113,30 @@ class SubmissionGeneratorTimeoutGuideTests(TestCase):
         response = self.client.get(reverse("submission_status", args=[submission.id]))
 
         self.assertNotContains(response, "Generator timed out")
+
+    def test_problem_author_sees_checker_timeout_guide(self):
+        submission = self._submission(
+            "Traceback\n" "dmoj.error.InternalError: checker timed out (> 20 seconds)"
+        )
+        self.client.login(username=self.author.user.username, password="password")
+
+        response = self.client.get(reverse("submission_status", args=[submission.id]))
+
+        self.assertContains(response, "Checker timed out")
+        self.assertContains(response, "Tips")
+        self.assertContains(response, "Test data instructions")
+        self.assertContains(response, reverse("test_data_instructions") + "#checker")
+        self.assertContains(response, "Avoid reading or parsing")
+        self.assertContains(response, "split rows")
+        self.assertContains(response, "Open test data")
+
+    def test_submitter_does_not_see_checker_timeout_guide(self):
+        submission = self._submission(
+            "dmoj.error.InternalError: checker timed out (> 20 seconds)"
+        )
+        self.client.login(username=self.submitter.user.username, password="password")
+
+        response = self.client.get(reverse("submission_status", args=[submission.id]))
+
+        self.assertNotContains(response, "Checker timed out")
+        self.assertNotContains(response, "Avoid reading or parsing")
