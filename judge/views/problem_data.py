@@ -969,9 +969,7 @@ class ProblemSolutionCodesView(TitleMixin, ProblemManagerMixin):
         )
         context["max_solution_codes"] = MAX_SOLUTION_CODES
         context["languages"] = list(
-            Language.objects.filter(judges__online=True)
-            .distinct()
-            .values("id", "name", "key", "ace")
+            problem.usable_languages.values("id", "name", "key", "ace")
         )
         context["expected_result_choices"] = ProblemSolutionCode.EXPECTED_RESULT_CHOICES
         context["ACE_URL"] = settings.ACE_URL
@@ -1117,6 +1115,16 @@ class ProblemSolutionCodesRunView(ProblemManagerMixin, View):
                 status=409,
             )
 
+        usable_language_ids = set(problem.usable_languages.values_list("id", flat=True))
+        if any(sc.language_id not in usable_language_ids for sc in codes_to_run):
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _("No judge is available for this problem."),
+                },
+                status=400,
+            )
+
         # Per-user limit across all problems
         pending_count = Submission.objects.filter(
             user=request.profile,
@@ -1182,6 +1190,15 @@ class ProblemSolutionCodesRunOneView(ProblemManagerMixin, View):
                     "message": _("Duplicate order found. Please save and retry."),
                 },
                 status=409,
+            )
+
+        if not problem.usable_languages.filter(id=sc.language_id).exists():
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _("No judge is available for this problem."),
+                },
+                status=400,
             )
 
         # Block if this code is already being judged
