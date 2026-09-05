@@ -3162,7 +3162,7 @@ msgstr ""
 
 #: judge/models/problem_data.py:53
 msgid "Interactive (Testlib)"
-msgstr "trình chấm interactive"
+msgstr "Tương tác (Testlib)"
 
 #: judge/models/problem_data.py:54
 msgid "CSV: accuracy"
