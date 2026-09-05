@@ -101,7 +101,9 @@ svg.rate-box {
 
 .rate-group {
     white-space: nowrap;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
     color: black;
 
     .rating {
@@ -110,6 +112,6 @@ svg.rate-box {
 
     .rate-box {
         margin-right: 0.2em;
-        vertical-align: bottom;
+        vertical-align: middle;
     }
 }

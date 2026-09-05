@@ -1,6 +1,9 @@
 {% extends "common-content.html" %}
 
+{% set content_class = 'problem-detail-page' %}
 {% set has_hidden_subtasks = request.in_contest and request.participation.contest.format.has_hidden_subtasks %}
+
+{% block content_right_class %}problem-content-right{% endblock %}
 
 {% block content_media %}
   {% include "comments/media-css.html" %}
@@ -254,18 +257,18 @@
     </div>
     <div class="link-row">
       <a href="{{ url('problem_ticket_list', problem.code) }}">
-        <i class="fa fa-clipboard-list"></i><span> {{ _('Manage tickets') }}
-          {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
-        </span>
+        <i class="fa fa-clipboard-list"></i>
+        <span class="ticket-link-label">{{ _('Manage tickets') }}</span>
+        {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
       </a>
     </div>
   {% elif request.user.is_authenticated and has_tickets %}
     <hr>
     <div class="link-row">
       <a href="{{ url('problem_ticket_list', problem.code) }}">
-        <i class="fa fa-inbox"></i><span> {{ _('My tickets') }}
-          {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
-        </span>
+        <i class="fa fa-inbox"></i>
+        <span class="ticket-link-label">{{ _('My tickets') }}</span>
+        {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
       </a>
     </div>
   {% endif %}

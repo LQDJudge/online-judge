@@ -180,34 +180,303 @@ form.quiz-join-pseudotab {
 
 // Quiz List Page
 .quiz-list-page {
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    gap: 1rem;
+  .quiz-list-layout {
+    align-items: flex-start;
+  }
 
-    h1 {
+  .middle-content {
+    min-width: 0;
+  }
+
+  .quiz-contest-context {
+    margin: 0 0 $space-lg;
+    padding: $space-md $space-lg;
+    border-left: 4px solid $theme_color;
+    background: $surface-primary;
+
+    h2,
+    p {
       margin: 0;
     }
 
-    .actions {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
+    p {
+      margin-top: $space-xs;
+      color: $text-muted;
     }
   }
 
-  .quiz-table {
+  .quiz-list-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(150px, 0.75fr) auto;
+    min-width: 0;
+    margin-bottom: $space-md;
+    padding: $space-lg $space-spacious;
+    align-items: center;
+    gap: $space-spacious;
+    box-sizing: border-box;
+    border: 1px solid $border-light;
+    border-radius: $radius-lg;
+    background: $surface-primary;
+    box-shadow: $shadow-sm;
+    transition: $transition-ui;
+
+    &:hover {
+      border-color: $border_gray;
+      box-shadow: $shadow-md;
+    }
+  }
+
+  .quiz-card-main {
+    min-width: 0;
+  }
+
+  .quiz-card-eyebrow {
+    display: flex;
+    margin-bottom: $space-xs;
+    align-items: center;
+    gap: $space-xs;
+    color: $text-muted;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .quiz-card-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 650;
+    line-height: 1.4;
+
+    a {
+      color: $link_color;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .contest-tag {
+    margin-top: $space-sm;
+  }
+
+  .quiz-card-info {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: $space-sm;
+    color: $text-secondary;
+    font-size: 0.86rem;
+
+    > span {
+      display: flex;
+      align-items: center;
+      gap: $space-sm;
+    }
+
+    i {
+      width: 1rem;
+      color: $text-muted;
+      text-align: center;
+    }
+  }
+
+  .quiz-card-side {
+    display: flex;
+    min-width: 110px;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: $space-md;
+  }
+
+  .quiz-card-progress {
+    display: flex;
+    gap: $space-md;
+  }
+
+  .quiz-progress-item {
+    display: flex;
+    min-width: 42px;
+    flex-direction: column;
+    color: $text-muted;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    text-align: right;
+
+    strong {
+      margin-top: $space-nano;
+      color: $text-strong;
+      font-size: 0.9rem;
+    }
+  }
+
+  .quiz-card-start {
+    margin: 0;
+
+    .action-btn {
+      min-width: 96px;
+      min-height: 40px;
+      justify-content: center;
+    }
+  }
+
+  .quiz-list-pagination {
+    margin-top: $space-lg;
+  }
+
+  .quiz-search-box {
+    margin: 0;
+    overflow: hidden;
+
+    .sidebox-content {
+      padding: $space-md;
+    }
+
+    form {
+      margin: 0;
+    }
+  }
+
+  .quiz-search-control {
+    position: relative;
+
+    #search-quiz {
+      width: 100%;
+      min-width: 0;
+      height: $control-min-height;
+      margin: 0;
+      padding-right: calc(36px + $space-md);
+      box-sizing: border-box;
+      border: 1px solid $border_gray;
+      border-radius: $radius-md;
+      background: $surface-primary;
+    }
+  }
+
+  .quiz-search-submit {
+    position: absolute;
+    top: 50%;
+    right: $space-xs;
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    transform: translateY(-50%);
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: $radius-md;
+    background: $theme_color;
+    color: $text-on-primary;
+    cursor: pointer;
+    transition: $transition-ui;
+
+    &:hover,
+    &:focus-visible {
+      filter: brightness(1.08);
+    }
+  }
+
+  .quiz-create-link {
     width: 100%;
+    margin-top: $space-md;
+    justify-content: center;
+    box-sizing: border-box;
   }
 
   .no-quizzes {
+    padding: $space-hero $space-spacious;
+    border: 1px dashed $border_gray;
+    border-radius: $radius-lg;
+    background: $surface-primary;
+    color: $text-primary;
     text-align: center;
-    padding: 3rem;
-    background: white;
-    border-radius: 4px;
+
+    h3 {
+      margin: $space-md 0 $space-xs;
+      color: $text-strong;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0;
+      color: $text-muted;
+    }
+  }
+
+  .no-quizzes-icon {
+    display: inline-flex;
+    width: 56px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+    border-radius: $radius-pill;
+    background: $color-soft-accent-bg;
+    color: $theme_color;
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 799px) {
+  .quiz-list-page {
+    .quiz-list-layout {
+      display: flex !important;
+      flex-direction: column;
+
+      .middle-content {
+        order: 1;
+        width: 100%;
+        max-width: none;
+        margin-right: 0 !important;
+      }
+
+      > .quiz-list-sidebar {
+        order: 0;
+        display: block !important;
+        width: 100%;
+        max-width: none;
+        margin: 0 0 $space-lg;
+        padding: 0;
+      }
+    }
+
+    .quiz-list-card {
+      grid-template-columns: 1fr;
+      padding: $space-md;
+      align-items: stretch;
+      gap: $space-md;
+    }
+
+    .quiz-card-info {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: $space-sm $space-lg;
+    }
+
+    .quiz-card-side {
+      min-width: 0;
+      padding-top: $space-md;
+      align-items: center;
+      flex-direction: row;
+      justify-content: space-between;
+      border-top: 1px solid $border-light;
+    }
+
+    .quiz-progress-item {
+      text-align: left;
+    }
+
+    .quiz-card-start {
+      margin-left: auto;
+    }
+
+    .quiz-search-box h3 {
+      display: none;
+    }
+
+    .quiz-search-box .sidebox-content {
+      border: 0;
+      padding: 0;
+      background: transparent;
+    }
   }
 }
 

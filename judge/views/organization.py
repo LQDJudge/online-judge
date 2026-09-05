@@ -471,8 +471,14 @@ class OrganizationList(
         return "-member_count"
 
     def get(self, request, *args, **kwargs):
-        default_tab = "community"
-        self.current_tab = self.request.GET.get("tab", default_tab)
+        default_tab = "mine" if self.request.user.is_authenticated else "community"
+        allowed_tabs = {"community", "public", "private"}
+        if self.request.user.is_authenticated:
+            allowed_tabs.update(("mine", "blocked"))
+        requested_tab = self.request.GET.get("tab", default_tab)
+        self.current_tab = (
+            requested_tab if requested_tab in allowed_tabs else default_tab
+        )
         self.organization_query = request.GET.get("organization", "")
 
         # Handle order parameter validation

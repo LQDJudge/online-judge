@@ -448,6 +448,35 @@ class HiddenContestResultTest(TestCase):
         self.assertEqual(rows_by_user[self.user.username][hidden_index], "?")
         self.assertEqual(rows_by_user[blank_user.username][hidden_index], "")
 
+    def test_contest_ranking_csv_uses_utf8_bom_and_display_problem_order(self):
+        self.user.first_name = "Nguyễn Văn An"
+        self.user.last_name = "Trường THPT Chuyên Lê Quý Đôn"
+        self.user.save(update_fields=["first_name", "last_name"])
+        self.contest_problem.order = 10
+        self.contest_problem.save(update_fields=["order"])
+        self.normal_contest_problem.order = 30
+        self.normal_contest_problem.save(update_fields=["order"])
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("contest_ranking", args=[self.contest.key]), {"format": "csv"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.content.startswith(b"\xef\xbb\xbf"))
+        rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
+        header, data_rows = rows[0], rows[1:]
+        self.assertEqual(
+            header[5:],
+            [
+                self.contest.get_label_for_problem(0),
+                self.contest.get_label_for_problem(1),
+            ],
+        )
+        row = next(row for row in data_rows if row[1] == self.user.username)
+        self.assertEqual(row[2], "Nguyễn Văn An")
+        self.assertEqual(row[3], "Trường THPT Chuyên Lê Quý Đôn")
+
     def test_user_submission_api_masks_public_hidden_result(self):
         self.problem.is_public = True
         self.problem.save(update_fields=["is_public"])

@@ -10,7 +10,7 @@
 
 {% block body %}
   <div id="common-content">
-    <div id="content-right">
+    <div id="content-right" class="{% block content_right_class %}{% endblock %}">
       <div class="info-float">{% block info_float %}{% endblock %}</div>
     </div>
     <div id="content-left" class="split-common-content">

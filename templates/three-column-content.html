@@ -26,6 +26,7 @@
         display: block;
       }
     }
+
   </style>
 {% endblock %}
 
@@ -40,7 +41,7 @@
   {% block before_posts %}{% endblock %}
   <div id="three-col-container">
     {% block left_sidebar %}{% endblock %}
-    <div class="middle-right-content {{'wrapper' if is_two_column}}">
+    <div class="middle-right-content {{'wrapper' if is_two_column}} {{ middle_right_class or '' }}">
       {% block three_col_media %}{% endblock %}
       <div class="middle-content">
         {% block middle_title %}{% endblock %}

@@ -311,7 +311,7 @@
       <noscript>
         <div id="noscript">{{ _('This site works best with JavaScript enabled.') }}</div>
       </noscript>
-      <main id="content" class="{{'wrapper' if layout != 'no_wrapper'}}">
+      <main id="content" class="{{ 'wrapper' if layout != 'no_wrapper' }} {{ content_class or '' }}">
         {% block title_row %}
           <h2 class="title-row">
             {% block content_title %}

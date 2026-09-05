@@ -1,4 +1,5 @@
 {% extends "three-column-content.html" %}
+{% set middle_right_class = 'feed-drawer-layout blog-feed-layout' %}
 {% block three_col_media %}
   {% include "blog/media-css.html" %}
   <style>
@@ -23,6 +24,7 @@
   {% include "comments/editor-libs-js.html" %}
   {% include "actionbar/media-js.html" %}
   {% include "feed/feed_js.html" %}
+  {% include "feed/mobile-sidebar-js.html" %}
   <script type="text/javascript">
     $(document).ready(function () {
       $('.time-remaining').each(function () {
@@ -39,9 +41,19 @@
 {% endblock %}
 
 {% block right_sidebar %}
-  <div class="right-sidebar">
+  <button id="blog-sidebar-toggle" class="feed-sidebar-toggle" type="button"
+          aria-controls="blog-feed-sidebar" aria-expanded="false"
+          aria-label="{{ _('Open sidebar') }}" title="{{ _('Open sidebar') }}">
+    <i class="fa fa-chevron-left" aria-hidden="true"></i>
+  </button>
+  <button id="blog-sidebar-backdrop" class="feed-sidebar-backdrop" type="button"
+          aria-label="{{ _('Close sidebar') }}"></button>
+  <aside id="blog-feed-sidebar" class="right-sidebar feed-right-sidebar">
+    <button class="feed-sidebar-close" type="button">
+      <i class="fa fa-chevron-right" aria-hidden="true"></i>{{ _('Close sidebar') }}
+    </button>
     {% include 'profile-table.html' %}
     {% include 'contests-countdown.html' %}
     {% include 'top-users.html' %}
-  </div>
+  </aside>
 {% endblock %}

@@ -1,45 +1,65 @@
-<div class="sidebox">
-  <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Contest search') }}</h3>
+<div class="sidebox contest-list-filter{% if hide_organization_contests or show_only_rated_contests or org_query or selected_order %} filters-open{% endif %}">
   <div class="sidebox-content">
     <form id="filter-form" method="GET">
-      <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
-             placeholder="{{ _('Search contests...') }}">
-      {% if organizations %}
-        <div style="margin-bottom: 1em;">
-          <input id="hide_organization_contests" type="checkbox" name="hide_organization_contests" value="1" {% if hide_organization_contests %}checked{% endif %}>
-          <label for="hide_organization_contests">{{ _('Hide organization & course contests') }}</label>
-        </div>
-      {% endif %}
-      <div style="margin-bottom: 1em;">
-        <input id="show_only_rated_contests" type="checkbox" name="show_only_rated_contests" value="1" {% if show_only_rated_contests %}checked{% endif %}>
-        <label for="show_only_rated_contests">{{ _('Show only rated contests') }}</label>
+      <input type="hidden" name="filters" value="1">
+      <div class="contest-search-control">
+        <label class="sr-only" for="search-contest">{{ _('Search') }}</label>
+        <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
+               placeholder="{{ _('Search contests...') }}">
+        <button id="go" type="submit" class="contest-search-submit"
+                title="{{ _('Search') }}" aria-label="{{ _('Search') }}">
+          <i class="fa fa-search" aria-hidden="true"></i>
+        </button>
       </div>
-      {% if organizations %}
-        <label for="search-org" class="bold-text margin-label">{{ _('Group') }}</label>
-        <select id="search-org" name="orgs" multiple>
-          {% for org in organizations %}
-            <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>
-              {{ org.name }}
-            </option>
-          {% endfor %}
-        </select>
-      {% endif %}
-      <div class="filter-form-group">
-        <label for="order" class="bold-text margin-label">{{ _('Order by') }}</label>
-        <select id="order" name="order" style="width: 100%">
-          <option value="">---</option>
-          {% for value, name in all_sort_options %}
-            <option value="{{value}}"{% if selected_order == value%} selected{% endif %}>
-              {{ name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-submit-group">
-        <a id="go" class="action-btn">{{ _('Go') }}</a>
-        {% if create_url %}
-          <a href="{{ create_url }}" class="action-btn"><i class="fa fa-plus"></i> {{ _('Create') }}</a>
+      <button type="button" class="contest-filter-toggle"
+              aria-controls="contest-advanced-filters"
+              aria-expanded="{{ 'true' if hide_organization_contests or show_only_rated_contests or org_query or selected_order else 'false' }}">
+        <i class="fa fa-sliders-h" aria-hidden="true"></i>
+        <span>{{ _('Filter') }}</span>
+        <i class="fa fa-chevron-down contest-filter-chevron" aria-hidden="true"></i>
+      </button>
+      <div id="contest-advanced-filters" class="contest-advanced-filters">
+        {% if organizations %}
+          <label class="contest-checkbox-row" for="hide_organization_contests">
+            <input id="hide_organization_contests" type="checkbox" name="hide_organization_contests" value="1" {% if hide_organization_contests %}checked{% endif %}>
+            <span>{{ _('Hide organization & course contests') }}</span>
+          </label>
         {% endif %}
+        <label class="contest-checkbox-row" for="show_only_rated_contests">
+          <input id="show_only_rated_contests" type="checkbox" name="show_only_rated_contests" value="1" {% if show_only_rated_contests %}checked{% endif %}>
+          <span>{{ _('Show only rated contests') }}</span>
+        </label>
+        {% if organizations %}
+          <div class="filter-form-group">
+            <label for="search-org" class="bold-text margin-label">{{ _('Group') }}</label>
+            <select id="search-org" name="orgs" multiple>
+              {% for org in organizations %}
+                <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>
+                  {{ org.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        {% endif %}
+        {% if not hide_order %}
+          <div class="filter-form-group">
+            <label for="order" class="bold-text margin-label">{{ _('Order by') }}</label>
+            <select id="order" name="order">
+              <option value="">---</option>
+              {% for value, name in all_sort_options %}
+                <option value="{{value}}"{% if selected_order == value%} selected{% endif %}>
+                  {{ name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        {% endif %}
+        <div class="form-submit-group">
+          <button type="submit" class="action-btn">{{ _('Filter') }}</button>
+          {% if create_url %}
+            <a href="{{ create_url }}" class="action-btn"><i class="fa fa-plus"></i> {{ _('Create') }}</a>
+          {% endif %}
+        </div>
       </div>
     </form>
   </div>

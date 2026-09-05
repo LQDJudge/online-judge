@@ -1,9 +1,5 @@
 {% extends "three-column-content.html" %}
 
-{% block three_col_media %}
-  <link rel="stylesheet" href="{{ static('course.css') }}">
-{% endblock %}
-
 {% block js_media %}
   <script>
     $(function () {
@@ -91,10 +87,10 @@
         {% for course in courses %}
           <div class="course-item">
             <div class="course-image">
+              <span class="course-image-initial">{{ course.name|first|upper }}</span>
               {% if course.course_image %}
-                <img src="{{ course.course_image.url }}" alt="{{ course.name }}" loading="lazy">
-              {% else %}
-                {{ course.name|first|upper }}
+                <img src="{{ course.course_image.url }}" alt="{{ course.name }}" loading="lazy"
+                     onerror="this.remove();">
               {% endif %}
             </div>
 
@@ -128,7 +124,7 @@
 
               {% if course.about %}
                 <div class="course-description">
-                  {{ course.about|truncatewords(25) }}
+                  {{ course.about|markdown|striptags|truncatewords(25) }}
                 </div>
               {% endif %}
 

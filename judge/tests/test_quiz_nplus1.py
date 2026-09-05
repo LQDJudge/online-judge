@@ -25,6 +25,76 @@ from judge.models.quiz import (
 )
 
 ANSWER_TABLE = QuizAnswer._meta.db_table
+ASSIGNMENT_TABLE = QuizQuestionAssignment._meta.db_table
+ATTEMPT_TABLE = QuizAttempt._meta.db_table
+
+
+class QuizListNPlusOneTest(TestCase):
+    fixtures = ["language_small"]
+
+    def setUp(self):
+        language = Language.objects.first()
+        self.user = User.objects.create_user("quizlistuser", password="pw")
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user, defaults={"language": language}
+        )
+        self.client.force_login(self.user)
+
+    def _add_quiz(self, index):
+        question = QuizQuestion.objects.create(
+            question_type="MC",
+            title=f"Question {index}",
+            content="Choose the answer",
+            choices=[{"id": "A", "text": "Answer"}],
+            correct_answers={"answers": "A"},
+        )
+        quiz = Quiz.objects.create(
+            code=f"listquery{index}", title=f"List Query Quiz {index}", is_public=True
+        )
+        QuizQuestionAssignment.objects.create(
+            quiz=quiz, question=question, points=10, order=1
+        )
+        QuizAttempt.objects.create(
+            user=self.profile,
+            quiz=quiz,
+            attempt_number=1,
+            is_submitted=True,
+            score=4,
+        )
+        QuizAttempt.objects.create(
+            user=self.profile,
+            quiz=quiz,
+            attempt_number=2,
+            is_submitted=True,
+            score=9,
+        )
+        return quiz
+
+    def _get_list_query_counts(self):
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(reverse("quiz_list"))
+            self.assertEqual(response.status_code, 200)
+
+        sql = [query["sql"] for query in queries.captured_queries]
+        return response, {
+            "assignments": sum(ASSIGNMENT_TABLE in query for query in sql),
+            "attempts": sum(ATTEMPT_TABLE in query for query in sql),
+        }
+
+    def test_quiz_list_stats_do_not_scale_queries_per_quiz(self):
+        first_quiz = self._add_quiz(1)
+        response, base_counts = self._get_list_query_counts()
+
+        self.assertEqual(response.context["attempt_counts"][first_quiz.id], 2)
+        self.assertEqual(response.context["best_scores"][first_quiz.id], 9.0)
+        self.assertEqual(response.context["quizzes"][0].question_count, 1)
+
+        for index in range(2, 6):
+            self._add_quiz(index)
+        response, grown_counts = self._get_list_query_counts()
+
+        self.assertEqual(base_counts, grown_counts)
+        self.assertEqual(len(response.context["quizzes"]), 5)
 
 
 class GradingDashboardNPlusOneTest(TestCase):

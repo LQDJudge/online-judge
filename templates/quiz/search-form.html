@@ -1,17 +1,21 @@
-<div class="sidebox">
-  <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Search') }}</h3>
+<div class="sidebox quiz-search-box">
+  <h3 class="colored-text"><i class="fa fa-search" aria-hidden="true"></i>{{ _('Search') }}</h3>
   <div class="sidebox-content">
     <form id="filter-form" method="GET">
-      <input id="search-quiz" type="text" name="search" value="{{ search or '' }}"
-             placeholder="{{ _('Search quizzes...') }}">
-      <div class="form-submit-group">
-        <a id="go" class="action-btn">{{ _('Go') }}</a>
-        {% if request.user.is_authenticated %}
-          <a href="{{ url('quiz_create') }}" class="action-btn">
-            {{ _('Create') }}
-          </a>
-        {% endif %}
+      <label class="sr-only" for="search-quiz">{{ _('Search') }}</label>
+      <div class="quiz-search-control">
+        <input id="search-quiz" type="text" name="search" value="{{ search or '' }}"
+               placeholder="{{ _('Search quizzes...') }}">
+        <button id="go" type="submit" class="quiz-search-submit"
+                title="{{ _('Search') }}" aria-label="{{ _('Search') }}">
+          <i class="fa fa-search" aria-hidden="true"></i>
+        </button>
       </div>
+      {% if request.user.is_authenticated %}
+        <a href="{{ url('quiz_create') }}" class="action-btn outlined quiz-create-link">
+          <i class="fa fa-plus" aria-hidden="true"></i>{{ _('Create') }}
+        </a>
+      {% endif %}
     </form>
   </div>
 </div>

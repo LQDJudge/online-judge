@@ -1,11 +1,12 @@
 {% set has_hidden_subtasks = has_hidden_subtasks is defined and has_hidden_subtasks %}
 {% set _result_hidden_problem_ids = result_hidden_problem_ids if result_hidden_problem_ids is defined else set() %}
-<table id="contest-problems" class="table striped">
+<table id="contest-problems" class="table striped modern">
   <thead>
     <tr>
       {% if request.user.is_authenticated and not has_hidden_subtasks %}
         <th class="solved"><i class="fa fa-check"></i></th>
       {% endif %}
+      <th class="problem-order" aria-label="{{ _('Order') }}"></th>
       <th class="problem">{{ _('Problem') }}</th>
       <th class="pcode">{{ _('Problem code') }}</th>
       <th class="points">{{ _('Points') }}</th>
@@ -40,8 +41,11 @@
             </td>
           {% endif %}
         {% endif %}
+        <td class="problem-order">{{ contest.get_label_for_problem(loop.index0) }}</td>
         <td class="problem">
-          <a href="{{ url('problem_detail', problem.code) }}">{{ problem.translated_name(LANGUAGE_CODE) }}</a>
+          <a class="contest-problem-name" href="{{ url('problem_detail', problem.code) }}">
+            {{ problem.translated_name(LANGUAGE_CODE) }}
+          </a>
         </td>
         <td class="pcode">
           <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>

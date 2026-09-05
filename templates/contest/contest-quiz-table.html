@@ -1,7 +1,7 @@
 {% if contest_quizzes %}
   {% set _quiz_user_data = quiz_user_data if quiz_user_data is defined else {} %}
   {% set _result_hidden_ids = result_hidden_contest_quiz_ids if result_hidden_contest_quiz_ids is defined else set() %}
-  <table id="contest-quizzes" class="table striped">
+  <table id="contest-quizzes" class="table striped modern">
     <thead>
       <tr>
         <th class="quiz-name">{{ _('Quiz') }}</th>

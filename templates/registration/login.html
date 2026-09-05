@@ -1,58 +1,105 @@
 {% extends "base.html" %}
+{% set layout = 'no_wrapper' %}
 
+{% block title_row %}{% endblock %}
+{% block title_ruler %}{% endblock %}
 
 {% block body %}
-  <div id="login-panel">
-    <form action="" method="post" class="form-area">
-      {% csrf_token %}
-      {% if form.non_field_errors() or form.username.errors or form.password.errors %}
-        <div id="form-errors">
-          <p class="error">{{ _('Invalid username/email or password.') }}</p>
+  <section class="auth-layout" aria-labelledby="login-heading">
+    <div id="login-panel" class="auth-card">
+      <div class="auth-heading">
+        <div class="auth-icon" aria-hidden="true"><i class="fa fa-user"></i></div>
+        <div>
+          <h2 id="login-heading">{{ _('Login') }}</h2>
+          <p>{{ _('Sign in to continue.') }}</p>
+        </div>
+      </div>
+
+      <form action="" method="post" class="auth-form">
+        {% csrf_token %}
+        {% if form.non_field_errors() or form.username.errors or form.password.errors %}
+          <div id="form-errors" role="alert">
+            <p class="error">{{ _('Invalid username/email or password.') }}</p>
+          </div>
+        {% endif %}
+
+        <div class="auth-field">
+          <label for="{{ form.username.id_for_label }}">
+            <i class="fa fa-user fa-fw" aria-hidden="true"></i>{{ _('Username/Email') }}
+          </label>
+          {{ form.username }}
+        </div>
+
+        <div class="auth-field">
+          <label for="{{ form.password.id_for_label }}">
+            <i class="fa fa-key fa-fw" aria-hidden="true"></i>{{ _('Password') }}
+          </label>
+          <div class="password-field">
+            {{ form.password }}
+            <button id="password-visibility" type="button" aria-label="{{ _('Show password') }}"
+                    aria-pressed="false">
+              <i class="fa fa-eye" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        {% if 'captcha' in form.fields %}
+          <div class="auth-field captcha-field">{{ form['captcha'] }}</div>
+          {% if form['captcha'].errors %}
+            <div class="form-field-error">{{ form['captcha'].errors }}</div>
+          {% endif %}
+        {% endif %}
+
+        <a class="auth-reset-link" href="{{ url('password_reset') }}">{{ _('Forgot your password?') }}</a>
+        <button type="submit" class="action-btn full auth-submit">{{ _('Login!') }}</button>
+        <input type="hidden" name="next" value="{{ next }}">
+      </form>
+
+      {% if form.has_google_auth or form.has_facebook_auth or form.has_github_auth %}
+        <div class="social-login">
+          <h4>{{ _('Or log in with...') }}</h4>
+          {% if form.has_google_auth %}
+            <a href="{{ url('social:begin', "google-oauth2") }}?next={{ next }}" class="social google-icon"
+               aria-label="Google">
+              <i class="fab fa-square-google-plus"></i>
+            </a>
+          {% endif %}
+          {% if form.has_facebook_auth %}
+            <a href="{{ url('social:begin', "facebook") }}?next={{ next }}" class="social facebook-icon"
+               aria-label="Facebook">
+              <i class="fab fa-facebook-square"></i>
+            </a>
+          {% endif %}
+          {% if form.has_github_auth %}
+            <a href="{{ url('social:begin', "github-secure") }}?next={{ next }}" class="social github-icon"
+               aria-label="GitHub">
+              <i class="fab fa-github-square"></i>
+            </a>
+          {% endif %}
         </div>
       {% endif %}
-      <table border="0" style="text-align:left">
-        <tr>
-          <th><i class="fa fa-user fa-fw"></i>
-          </th>
-          <td>{{ form.username }}
-          </td>
-        </tr>
-        <tr>
-          <th><i class="fa fa-key fa-fw"></i>
-          </th>
-          <td>{{ form.password }}
-          </td>
-        </tr>
-      </table>
-      {% if 'captcha' in form.fields %}
-        <div style="margin-top: 0.5em">{{ form['captcha'] }}</div>
-        {% if form['captcha'].errors %}
-          <div class="form-field-error">{{ form['captcha'].errors }}</div>
-        {% endif %}
-      {% endif %}
-      <hr>
-      <button style="float:right;" type="submit" class="action-btn">{{ _('Login!') }}</button>
-      <input type="hidden" name="next" value="{{ next }}">
-    </form>
-    <br><a href="{{ url('password_reset') }}">{{ _('Forgot your password?') }}</a>
+    </div>
+  </section>
+{% endblock %}
 
-    {% if form.has_google_auth or form.has_facebook_auth or form.has_github_auth %}
-      <h4>{{ _('Or log in with...') }}</h4>
-      {% if form.has_google_auth %}
-        <a href="{{ url('social:begin', "google-oauth2") }}?next={{ next }}" class="social google-icon">
-          <i class="fab fa-square-google-plus"></i>
-        </a>
-      {% endif %}
-      {% if form.has_facebook_auth %}
-        <a href="{{ url('social:begin', "facebook") }}?next={{ next }}" class="social facebook-icon">
-          <i class="fab fa-facebook-square"></i>
-        </a>
-      {% endif %}
-      {% if form.has_github_auth %}
-        <a href="{{ url('social:begin', "github-secure") }}?next={{ next }}" class="social github-icon">
-          <i class="fab fa-github-square"></i>
-        </a>
-      {% endif %}
-    {% endif %}
-  </div>
+{% block js_media %}
+  <script>
+    $(function () {
+      if (window.innerHeight <= 650) {
+        window.scrollTo(0, 0);
+      }
+
+      $('#password-visibility').on('click', function () {
+        var $password = $('#{{ form.password.id_for_label }}');
+        var isVisible = $password.attr('type') === 'text';
+        $password.attr('type', isVisible ? 'password' : 'text');
+        $(this)
+          .attr('aria-label', isVisible ? "{{ _('Show password') }}" : "{{ _('Hide password') }}")
+          .attr('aria-pressed', isVisible ? 'false' : 'true')
+          .find('i')
+          .toggleClass('fa-eye', isVisible)
+          .toggleClass('fa-eye-slash', !isVisible);
+      });
+    });
+  </script>
 {% endblock %}

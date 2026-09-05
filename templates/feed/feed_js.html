@@ -61,27 +61,20 @@
     $(window).on("scroll", function() {
       if (window.loading_page || !window.has_next_page) return;
       var isDesktop = window.matchMedia('(min-width: 800px)').matches;
-      if (!isDesktop) return;
 
-      // Load page 2 immediately on first scroll
-      if (firstScroll) {
+      // Keep the existing eager first load on desktop. Mobile loads only as the
+      // user approaches the end of the current batch.
+      if (isDesktop && firstScroll) {
         firstScroll = false;
         loadNextPage();
         return;
       }
 
       var distanceFromBottom = $(document).height() - ($(window).scrollTop() + $(window).height());
-      if (distanceFromBottom < 500) {
+      var loadThreshold = Math.max(500, $(window).height() * 0.75);
+      if (distanceFromBottom < loadThreshold) {
         loadNextPage();
       }
-    });
-
-    $(document).on("click", ".view-next-page", () => {
-      if (window.loading_page || !window.has_next_page) return;
-      var isDesktop = window.matchMedia('(min-width: 800px)').matches;
-      if (isDesktop) return;
-      $(".view-next-page").remove();
-      loadNextPage();
     });
   });
 </script>

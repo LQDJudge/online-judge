@@ -1,0 +1,34 @@
+{% if active_count or current_count or future_count or past_count %}
+  <nav class="tabs tabs-no-flex contest-status-tabs" aria-label="{{ _('Contests') }}">
+    <ul>
+      {% if request.user.is_authenticated and active_count %}
+        <li class="{{ 'active' if current_tab == 'active' }}">
+          <a id="active-url" href="?tab=active"{% if current_tab == 'active' %} aria-current="page"{% endif %}>{{ _('Active') }}
+            <span class="contest-tab-count">{{ active_count }}</span>
+          </a>
+        </li>
+      {% endif %}
+      {% if current_count %}
+        <li class="{{ 'active' if current_tab == 'current' }}">
+          <a id="current-url" href="?tab=current"{% if current_tab == 'current' %} aria-current="page"{% endif %}>{{ _('Ongoing') }}
+            <span class="contest-tab-count">{{ current_count }}</span>
+          </a>
+        </li>
+      {% endif %}
+      {% if future_count %}
+        <li class="{{ 'active' if current_tab == 'future' }}">
+          <a id="future-url" href="?tab=future"{% if current_tab == 'future' %} aria-current="page"{% endif %}>{{ _('Upcoming') }}
+            <span class="contest-tab-count">{{ future_count }}</span>
+          </a>
+        </li>
+      {% endif %}
+      {% if past_count %}
+        <li class="{{ 'active' if current_tab == 'past' }}">
+          <a id="past-url" href="?tab=past"{% if current_tab == 'past' %} aria-current="page"{% endif %}>{{ _('Past') }}
+            <span class="contest-tab-count">{{ past_count }}</span>
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}

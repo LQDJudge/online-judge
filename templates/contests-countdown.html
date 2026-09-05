@@ -1,41 +1,76 @@
-{% if current_contests %}
-  <div class="blog-sidebox sidebox">
-    <h3 class="bold-text colored-text"><i class="fa fa-ranking-star"></i> {{ _('Ongoing contests') }}</h3>
-    <div class="sidebox-content">
-      {% for contest in current_contests %}
-        <div class="contest">
-          <div class="contest-list-title">
-            <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
-          </div>
-          <div class="time">
-            {{ _('Ends in') }} {{ _('%(countdown)s.', countdown=contest.end_time|as_countdown) }}
-          </div>
-        </div>
-      {% endfor %}
-      <div style="text-align: center; padding: 0.4em;">
-        <a href="{{ url('contest_list') }}" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
-      </div>
-    </div>
-  </div>
-{% endif %}
+{% set ongoing_active = current_contests %}
+{% set upcoming_active = not current_contests and future_contests %}
 
-{% if future_contests %}
-  <div class="blog-sidebox sidebox">
-    <h3 class="bold-text colored-text"><i class="fa fa-ranking-star"></i>{{ _('Upcoming contests') }}</h3>
-    <div class="sidebox-content">
-      {% for contest in future_contests %}
-        <div class="contest">
-          <div class="contest-list-title">
-            <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+{% if current_contests or future_contests %}
+  <section class="blog-sidebox sidebox contest-summary-card tabbed-sidebox">
+    <h3 class="bold-text colored-text">
+      <i class="fa fa-ranking-star" aria-hidden="true"></i>{{ _('Contests') }}
+    </h3>
+    <div class="sidebox-content tabbed-sidebox-content">
+      <div class="sidebox-tabs" role="tablist" aria-label="{{ _('Contests') }}">
+        {% if current_contests %}
+          <button type="button" id="contest-ongoing-tab"
+                  class="sidebox-tab{% if ongoing_active %} active{% endif %}"
+                  role="tab" aria-selected="{{ 'true' if ongoing_active else 'false' }}"
+                  aria-controls="contest-ongoing-panel"
+                  tabindex="{{ '0' if ongoing_active else '-1' }}"
+                  data-sidebox-panel="contest-ongoing-panel">
+            {{ _('Ongoing') }} <span class="sidebox-tab-count">{{ current_contests|length }}</span>
+          </button>
+        {% endif %}
+        {% if future_contests %}
+          <button type="button" id="contest-upcoming-tab"
+                  class="sidebox-tab{% if upcoming_active %} active{% endif %}"
+                  role="tab" aria-selected="{{ 'true' if upcoming_active else 'false' }}"
+                  aria-controls="contest-upcoming-panel"
+                  tabindex="{{ '0' if upcoming_active else '-1' }}"
+                  data-sidebox-panel="contest-upcoming-panel">
+            {{ _('Upcoming') }} <span class="sidebox-tab-count">{{ future_contests|length }}</span>
+          </button>
+        {% endif %}
+      </div>
+
+      {% if current_contests %}
+        <div id="contest-ongoing-panel" class="sidebox-tab-panel" role="tabpanel"
+             aria-labelledby="contest-ongoing-tab"{% if not ongoing_active %} hidden{% endif %}>
+          <div class="contest-summary-list">
+            {% for contest in current_contests %}
+              <div class="contest">
+                <div class="contest-list-title">
+                  <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+                </div>
+                <div class="time">
+                  {{ _('Ends in') }} {{ _('%(countdown)s.', countdown=contest.end_time|as_countdown) }}
+                </div>
+              </div>
+            {% endfor %}
           </div>
-          <div class="time">
-            {{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}
+          <div class="tabbed-sidebox-footer">
+            <a href="{{ url('contest_list') }}">{{ _('View all') }} &rarr;</a>
           </div>
         </div>
-      {% endfor %}
-      <div style="text-align: center; padding: 0.4em;">
-        <a href="{{ url('contest_list') }}" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
-      </div>
+      {% endif %}
+
+      {% if future_contests %}
+        <div id="contest-upcoming-panel" class="sidebox-tab-panel" role="tabpanel"
+             aria-labelledby="contest-upcoming-tab"{% if not upcoming_active %} hidden{% endif %}>
+          <div class="contest-summary-list">
+            {% for contest in future_contests %}
+              <div class="contest">
+                <div class="contest-list-title">
+                  <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+                </div>
+                <div class="time">
+                  {{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="tabbed-sidebox-footer">
+            <a href="{{ url('contest_list') }}">{{ _('View all') }} &rarr;</a>
+          </div>
+        </div>
+      {% endif %}
     </div>
-  </div>
+  </section>
 {% endif %}

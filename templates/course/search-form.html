@@ -1,13 +1,16 @@
-<div class="sidebox">
-  <h3><i class="fa fa-search"></i> {{ _('Search') }}</h3>
+<div class="sidebox course-search-box">
   <div class="sidebox-content">
     <form id="filter-form" name="form" action="" method="get">
       {% if current_tab %}
         <input type="hidden" name="tab" value="{{ current_tab }}">
       {% endif %}
-      <p>
+      <p class="course-search-control">
         <input id="search" type="text" name="search" value="{{ search_query or '' }}"
-               placeholder="{{ _('Search courses...') }}">
+               placeholder="{{ _('Search') }}">
+        <button id="go" type="submit" class="course-search-submit"
+                title="{{ _('Search') }}" aria-label="{{ _('Search') }}">
+          <i class="fa fa-search" aria-hidden="true"></i>
+        </button>
       </p>
       {% if current_tab == 'my' and request.user.is_authenticated %}
         <p>
@@ -20,9 +23,6 @@
           </select>
         </p>
       {% endif %}
-      <p>
-        <button id="go" type="submit" class="action-btn">{{ _('Search') }}</button>
-      </p>
     </form>
   </div>
 </div>

@@ -1,4 +1,10 @@
-<div class="right-sidebar">
+<div{% if organization_right_sidebar_id %} id="{{ organization_right_sidebar_id }}"{% endif %}
+     class="right-sidebar {{ organization_right_sidebar_class or '' }}">
+  {% if organization_right_sidebar_id %}
+    <button class="feed-sidebar-close" type="button">
+      <i class="fa fa-chevron-right" aria-hidden="true"></i>{{ _('Close sidebar') }}
+    </button>
+  {% endif %}
   <div id="control-panel" class="blog-sidebox sidebox no-dot-blog-sidebox">
     <h3><i class="fa fa-cog"></i>{{ _('Controls') }}</h3>
     <ul id="control-list" class="sidebox-content" style="margin: 0;">

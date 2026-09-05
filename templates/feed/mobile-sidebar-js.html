@@ -1,0 +1,52 @@
+<script type="text/javascript">
+  $(document).ready(function () {
+    var $layout = $('.feed-drawer-layout').first();
+    var $toggle = $layout.find('.feed-sidebar-toggle').first();
+    var $close = $layout.find('.feed-sidebar-close').first();
+    var $backdrop = $layout.find('.feed-sidebar-backdrop').first();
+    var touchStartX = null;
+    var touchStartY = null;
+
+    if (!$layout.length || !$toggle.length) return;
+
+    function setSidebarOpen(isOpen) {
+      $layout.toggleClass('mobile-sidebar-open', isOpen);
+      $('body').toggleClass('mobile-feed-sidebar-open', isOpen);
+      $toggle.attr('aria-expanded', isOpen ? 'true' : 'false');
+      if (isOpen) $close.trigger('focus');
+    }
+
+    $toggle.on('click', function () {
+      setSidebarOpen(!$layout.hasClass('mobile-sidebar-open'));
+    });
+    $close.add($backdrop).on('click', function () {
+      setSidebarOpen(false);
+    });
+    $(document).on('keydown.feedSidebar', function (event) {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    });
+
+    document.addEventListener('touchstart', function (event) {
+      if (event.touches.length !== 1) return;
+      var touch = event.touches[0];
+      var isOpen = $layout.hasClass('mobile-sidebar-open');
+      if (!isOpen && touch.clientX < window.innerWidth - 32) return;
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+    }, {passive: true});
+
+    document.addEventListener('touchend', function (event) {
+      if (touchStartX === null || !event.changedTouches.length) return;
+      var touch = event.changedTouches[0];
+      var deltaX = touch.clientX - touchStartX;
+      var deltaY = touch.clientY - touchStartY;
+      var isHorizontal = Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY);
+      if (isHorizontal) {
+        if (!$layout.hasClass('mobile-sidebar-open') && deltaX < 0) setSidebarOpen(true);
+        else if ($layout.hasClass('mobile-sidebar-open') && deltaX > 0) setSidebarOpen(false);
+      }
+      touchStartX = null;
+      touchStartY = null;
+    }, {passive: true});
+  });
+</script>

@@ -10,7 +10,7 @@ from django.contrib.auth.views import redirect_to_login
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q, Max, Avg
+from django.db.models import Avg, Count, Max, Q
 from django.http import (
     Http404,
     HttpResponse,
@@ -725,7 +725,7 @@ class QuizList(
             queryset = Quiz.objects.filter(id__in=contest_quiz_ids)
         else:
             # Outside contest mode, show public quizzes and quizzes the user can edit
-            queryset = Quiz.objects.prefetch_related("authors__user")
+            queryset = Quiz.objects.all()
 
             if not self.request.user.is_authenticated:
                 # Anonymous users can only see public quizzes
@@ -747,7 +747,9 @@ class QuizList(
                 Q(code__icontains=search) | Q(title__icontains=search)
             )
 
-        return queryset.order_by("-created_at")
+        return queryset.annotate(
+            question_count=Count("quiz_questions", distinct=True)
+        ).order_by("-created_at")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -760,44 +762,41 @@ class QuizList(
             quizzes = context.get("quizzes", [])
             quiz_ids = [q.id for q in quizzes]
 
-            # Get best scores for each quiz
             best_scores = {}
             attempt_counts = {}
             quiz_points = {}
 
-            for quiz_id in quiz_ids:
-                # Filter attempts by context
-                attempt_filter = {
-                    "user": profile,
-                    "quiz_id": quiz_id,
-                    "is_submitted": True,
-                }
-                if self.in_contest:
-                    attempt_filter["contest_participation"] = profile.current_contest
-                else:
-                    # Standalone: only standalone attempts
-                    attempt_filter["lesson_quiz__isnull"] = True
-                    attempt_filter["contest_participation__isnull"] = True
+            attempt_filter = {
+                "user": profile,
+                "quiz_id__in": quiz_ids,
+                "is_submitted": True,
+            }
+            if self.in_contest:
+                attempt_filter["contest_participation"] = profile.current_contest
+            else:
+                # Standalone: only standalone attempts
+                attempt_filter["lesson_quiz__isnull"] = True
+                attempt_filter["contest_participation__isnull"] = True
 
-                best_attempt = (
-                    QuizAttempt.objects.filter(**attempt_filter)
-                    .order_by("-score")
-                    .first()
-                )
-                if best_attempt and best_attempt.score is not None:
-                    best_scores[quiz_id] = float(best_attempt.score)
-
-                attempt_counts[quiz_id] = QuizAttempt.objects.filter(
-                    **attempt_filter
-                ).count()
+            attempt_stats = (
+                QuizAttempt.objects.filter(**attempt_filter)
+                .values("quiz_id")
+                .annotate(best_score=Max("score"), attempt_count=Count("id"))
+            )
+            for stats in attempt_stats:
+                quiz_id = stats["quiz_id"]
+                if stats["best_score"] is not None:
+                    best_scores[quiz_id] = float(stats["best_score"])
+                attempt_counts[quiz_id] = stats["attempt_count"]
 
             # Get quiz points from contest if in contest mode
             if self.in_contest:
                 participation = self.request.profile.current_contest
-                for cp in participation.contest.contest_problems.filter(
-                    quiz__isnull=False
-                ):
-                    quiz_points[cp.quiz_id] = cp.points
+                quiz_points = dict(
+                    participation.contest.contest_problems.filter(
+                        quiz_id__in=quiz_ids
+                    ).values_list("quiz_id", "points")
+                )
                 context["current_contest"] = participation.contest
 
             context["best_scores"] = best_scores

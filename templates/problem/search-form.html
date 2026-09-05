@@ -83,8 +83,8 @@
       <input id="point-start" type="hidden" name="point_start" {% if point_start and point_start != point_values.min %}value="{{ point_start }}"{% else %}disabled{% endif %}>
       <input id="point-end" type="hidden" name="point_end" {% if point_end and point_end != point_values.max %}value="{{ point_end }}"{% else %}disabled{% endif %}>
       <div class="form-submit-group">
-        <div id="go" class="action-btn">{{ _('Go') }}</div>
-        <div id="random" class="action-btn">{{ _('Random') }}</div>
+        <button id="go" type="submit" class="action-btn">{{ _('Apply') }}</button>
+        <button id="random" type="button" class="action-btn">{{ _('Random') }}</button>
       </div>
     </form>
   </div>

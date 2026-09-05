@@ -266,6 +266,7 @@ function registerPopper($trigger, $dropdown) {
     $trigger.on('click.popper', function(e) {
         e.stopPropagation();
         $dropdown.toggle();
+        $trigger.attr('aria-expanded', $dropdown.is(':visible') ? 'true' : 'false');
         popper.update();
     });
 
@@ -278,8 +279,16 @@ function registerPopper($trigger, $dropdown) {
             var target = $(e.target);
             if (target.closest($trigger).length === 0 && target.closest($dropdown).length === 0) {
                 $dropdown.hide();
+                $trigger.attr('aria-expanded', 'false');
             }
         });
+
+    $trigger.on('keydown.popper', function(e) {
+        if (e.key === 'Escape') {
+            $dropdown.hide();
+            $trigger.attr('aria-expanded', 'false').focus();
+        }
+    });
 }
 
 function populateCopyButton() {
@@ -593,18 +602,25 @@ function register_copy_clipboard($elements, callback) {
 }
 
 function activateBlogBoxOnClick() {
-    $('.blog-box').on('click', function (e) {
-        if ($(e.target).closest('.actionbar-box, .inline-comments-container, .comment-area, a, button, select, input').length) {
+    function expandBlogBox($box) {
+        $box.children('.blog-description').css('max-height', 'fit-content');
+        $box.removeClass('pre-expand-blog');
+        $box.find('.show-more').attr('aria-expanded', 'true').hide();
+    }
+
+    $('.blog-description').on('click', function (e) {
+        if ($(e.target).closest('a, button, select, input, textarea').length) {
             return;
         }
-        var $description = $(this).children('.blog-description');
+        var $description = $(this);
         var max_height = $description.css('max-height');
         if (max_height !== 'fit-content') {
-            $description.css('max-height', 'fit-content');
-            $(this).css('cursor', 'auto');
-            $(this).removeClass('pre-expand-blog');
-            $(this).children().children('.show-more').hide();
+            expandBlogBox($description.closest('.blog-box'));
         }
+    });
+
+    $('.show-more').on('click', function () {
+        expandBlogBox($(this).closest('.blog-box'));
     });
 
     $('.blog-box').each(function () {
@@ -615,10 +631,49 @@ function activateBlogBoxOnClick() {
         }
         if ($content > $precontent - 30) {
             $(this).addClass('pre-expand-blog');
-            $(this).css('cursor', 'pointer');
         } else {
             $(this).children().children('.show-more').hide();
         }
+    });
+}
+
+function initSideboxTabs() {
+    $('.sidebox-tabs').each(function () {
+        var $tablist = $(this);
+        if ($tablist.data('sidebox-tabs-ready')) return;
+        $tablist.data('sidebox-tabs-ready', true);
+
+        var $tabs = $tablist.find('[role="tab"]');
+
+        function activateTab($tab, shouldFocus) {
+            var panelId = $tab.data('sidebox-panel');
+            var $card = $tab.closest('.tabbed-sidebox');
+
+            $tabs.removeClass('active').attr({'aria-selected': 'false', 'tabindex': '-1'});
+            $tab.addClass('active').attr({'aria-selected': 'true', 'tabindex': '0'});
+            $card.find('.sidebox-tab-panel').prop('hidden', true);
+            $card.find('#' + panelId).prop('hidden', false);
+
+            if (shouldFocus) $tab.trigger('focus');
+        }
+
+        $tabs.on('click', function () {
+            activateTab($(this), false);
+        });
+
+        $tabs.on('keydown', function (event) {
+            var currentIndex = $tabs.index(this);
+            var nextIndex;
+
+            if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % $tabs.length;
+            else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + $tabs.length) % $tabs.length;
+            else if (event.key === 'Home') nextIndex = 0;
+            else if (event.key === 'End') nextIndex = $tabs.length - 1;
+            else return;
+
+            event.preventDefault();
+            activateTab($tabs.eq(nextIndex), true);
+        });
     });
 }
 
@@ -934,6 +989,7 @@ function onWindowReady() {
     });
     register_all_toggles();
     activateBlogBoxOnClick();
+    initSideboxTabs();
     registerNavigation();
     registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
     registerPopper($('#user-links'), $('#userlink_dropdown'));

@@ -30,10 +30,11 @@
       {% if is_in_contest %}
         {% include "contest/contest-problem-table.html" %}
       {% else %}
-        <table id="contest-problems" class="table">
+        <table id="contest-problems" class="table striped modern">
           <thead>
             <tr>
-              <th>{{ _('Problem') }}</th>
+              <th class="problem-order" aria-label="{{ _('Order') }}"></th>
+              <th class="problem">{{ _('Problem') }}</th>
               <th>{{ _('Points') }}</th>
               {% if contest.ended %}
                 <th>{{ _('AC Rate') }}</th>
@@ -45,11 +46,14 @@
           <tbody>
             {% for problem in contest_problems %}
               <tr>
-                <td>
+                <td class="problem-order">{{ contest.get_label_for_problem(loop.index0) }}</td>
+                <td class="problem">
                   {% if problem.is_public or is_editor or request.user.is_superuser %}
-                    <a href="{{ url('problem_detail', problem.code) }}">{{ problem.translated_name(LANGUAGE_CODE) }}</a>
+                    <a class="contest-problem-name" href="{{ url('problem_detail', problem.code) }}">
+                      {{ problem.translated_name(LANGUAGE_CODE) }}
+                    </a>
                   {% else %}
-                    {{ problem.translated_name(LANGUAGE_CODE) }}
+                    <span class="contest-problem-name">{{ problem.translated_name(LANGUAGE_CODE) }}</span>
                   {% endif %}
                 </td>
                 <td>{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>

@@ -1,19 +1,26 @@
 {% if request.user.is_authenticated and related_problems %}
-  <div class="content-description">
-    <h4>{{_('Recommended problems')}}:</h4>
-    <ul style="list-style-type: none; margin: 0.3em;">
+  <section class="related-problems-card">
+    <h3 class="related-problems-title">
+      <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
+      {{ _('Recommended problems') }}
+    </h3>
+    <div class="related-problems-list">
       {% for problem in related_problems %}
-        <li>
-          {% if problem.id in completed_problem_ids %}
-            <i class="solved-problem-color fa fa-check-circle"></i>
-          {% elif problem.id in attempted_problems %}
-            <i class="attempted-problem-color fa fa-minus-circle"></i>
-          {% else %}
-            <i class="unsolved-problem-color fa fa-minus-circle"></i>
-          {% endif %}
-          <a href="{{url('problem_detail', problem.code)}}">{{ problem.name }}</a>
-        </li>
+        <a class="related-problem-item" href="{{ url('problem_detail', problem.code) }}">
+          <span class="related-problem-status" aria-hidden="true">
+            {% if problem.id in completed_problem_ids %}
+              <i class="solved-problem-color fa fa-check-circle"></i>
+            {% elif problem.id in attempted_problems %}
+              <i class="attempted-problem-color fa fa-minus-circle"></i>
+            {% else %}
+              <i class="unsolved-problem-color fa fa-minus-circle"></i>
+            {% endif %}
+          </span>
+          <span class="related-problem-name">{{ problem.name }}</span>
+          <span class="related-problem-code">{{ problem.code }}</span>
+          <i class="fa fa-chevron-right related-problem-arrow" aria-hidden="true"></i>
+        </a>
       {% endfor %}
-    </ul>
-  </div>
+    </div>
+  </section>
 {% endif %}

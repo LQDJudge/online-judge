@@ -8,6 +8,10 @@
 {% endblock %}
 
 {% block middle_content %}
+  <button id="problem-filter-toggle" type="button" class="action-btn outlined"
+          aria-expanded="false" aria-controls="content-right">
+    <i class="fa fa-filter" aria-hidden="true"></i>{{ _('Filters') }}
+  </button>
   <div class="tabs">
     <ul>
       <li class="{{'active' if feed_type=='for_you'}}">

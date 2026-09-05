@@ -168,6 +168,7 @@ def _find_contest(request, key):
 
 class ContestListMixin(object):
     official = False
+    include_official_live = False
 
     def get_queryset(self):
         q = Contest.get_visible_contests(self.request.user)
@@ -175,6 +176,8 @@ class ContestListMixin(object):
             q = q.filter(official__isnull=False).select_related(
                 "official", "official__category", "official__location"
             )
+        elif self.include_official_live:
+            q = q.select_related("official", "official__category", "official__location")
         else:
             q = q.filter(official__isnull=True)
         return q
@@ -190,6 +193,9 @@ class ContestList(
     all_sorts = frozenset(("name", "user_count", "start_time"))
     default_desc = frozenset(("name", "user_count"))
     context_object_name = "contests"
+    include_official_live = True
+    prefetch_list_metadata = True
+    prefetch_organization_metadata = True
 
     def get_default_sort_order(self, request):
         if request.GET.get("contest") and settings.ENABLE_FTS:
@@ -203,9 +209,11 @@ class ContestList(
         return timezone.now()
 
     def GET_with_session(self, request, key):
-        if not request.GET.get(key):
+        if request.GET.get("filters") == "1":
+            return request.GET.get(key) == "1"
+        if key not in request.GET:
             return request.session.get(key, False)
-        return request.GET.get(key, None) == "1"
+        return request.GET.get(key) == "1"
 
     def setup_contest_list(self, request):
         self.contest_query = request.GET.get("contest", "")
@@ -217,6 +225,14 @@ class ContestList(
         self.show_only_rated_contests = 0
         if self.GET_with_session(request, "show_only_rated_contests"):
             self.show_only_rated_contests = 1
+
+        if request.GET.get("filters") == "1":
+            request.session["hide_organization_contests"] = bool(
+                self.hide_organization_contests
+            )
+            request.session["show_only_rated_contests"] = bool(
+                self.show_only_rated_contests
+            )
 
         self.org_query = []
         if request.GET.get("orgs") and request.profile:
@@ -235,12 +251,12 @@ class ContestList(
                 pass
 
     def get(self, request, *args, **kwargs):
-        default_tab = "active"
-        if not self.request.user.is_authenticated:
-            default_tab = "current"
-
-        self.current_tab = self.request.GET.get("tab", default_tab)
-
+        tab_priority = ("active", "current", "future", "past")
+        requested_tab = self.request.GET.get("tab")
+        fallback_tab = "active" if self.request.user.is_authenticated else "current"
+        self.current_tab = (
+            requested_tab if requested_tab in tab_priority else fallback_tab
+        )
         self.setup_contest_list(request)
 
         return super(ContestList, self).get(request, *args, **kwargs)
@@ -259,17 +275,15 @@ class ContestList(
         return queryset
 
     def _get_queryset(self):
-        queryset = (
-            super(ContestList, self)
-            .get_queryset()
-            .prefetch_related(
+        queryset = super(ContestList, self).get_queryset()
+        if self.prefetch_list_metadata:
+            queryset = queryset.prefetch_related(
                 "tags",
                 Prefetch(
                     "course",
                     queryset=CourseContest.objects.select_related("course"),
                 ),
             )
-        )
 
         if self.contest_query:
             substr_queryset = queryset.filter(
@@ -295,11 +309,10 @@ class ContestList(
         return queryset
 
     def _get_past_contests_queryset(self):
-        return (
-            self._get_queryset()
-            .filter(end_time__lt=self._now)
-            .order_by(self.order, "key")
-        )
+        queryset = self._get_queryset().filter(end_time__lt=self._now)
+        if self.include_official_live and not self.official:
+            queryset = queryset.filter(official__isnull=True)
+        return queryset.order_by(self.order, "key")
 
     @cached_property
     def _recommended_contests_queryset(self):
@@ -355,6 +368,11 @@ class ContestList(
             user=self.request.profile,
             contest__start_time__lte=self._now,
             contest__end_time__gte=self._now,
+        ).select_related(
+            "contest",
+            "contest__official",
+            "contest__official__category",
+            "contest__official__location",
         )
 
     @cached_property
@@ -368,7 +386,6 @@ class ContestList(
     def _get_current_contests_queryset(self):
         return (
             self._get_queryset()
-            .exclude(id__in=self._active_contests_ids)
             .filter(start_time__lte=self._now, end_time__gte=self._now)
             .order_by(self.order, "key")
         )
@@ -388,28 +405,101 @@ class ContestList(
         )
         ordered_ids = list(active_contests.values_list("id", flat=True))
 
-        participations = self._active_participations().filter(
-            contest_id__in=ordered_ids
+        participations = (
+            self._active_participations()
+            .filter(contest_id__in=ordered_ids)
+            .prefetch_related(
+                "contest__tags",
+                Prefetch(
+                    "contest__course",
+                    queryset=CourseContest.objects.select_related("course"),
+                ),
+            )
         )
+        order_by_id = {
+            contest_id: position for position, contest_id in enumerate(ordered_ids)
+        }
         participations = sorted(
-            participations, key=lambda p: ordered_ids.index(p.contest_id)
+            participations,
+            key=lambda participation: order_by_id[participation.contest_id],
         )
         return participations
 
+    def _get_tab_counts(self):
+        active_count = 0
+        if self.request.user.is_authenticated:
+            active_count = (
+                self._get_queryset().filter(id__in=self._active_contests_ids).count()
+            )
+        past_filter = Q(end_time__lt=self._now)
+        if self.include_official_live and not self.official:
+            past_filter &= Q(official__isnull=True)
+        temporal_counts = self._get_queryset().aggregate(
+            current=Count(
+                "id",
+                filter=Q(start_time__lte=self._now, end_time__gte=self._now),
+                distinct=True,
+            ),
+            future=Count("id", filter=Q(start_time__gt=self._now), distinct=True),
+            past=Count("id", filter=past_filter, distinct=True),
+        )
+        return {
+            "active": active_count,
+            "current": temporal_counts["current"],
+            "future": temporal_counts["future"],
+            "past": temporal_counts["past"],
+        }
+
+    def _add_contest_card_context(self, context):
+        rendered_contests = [
+            item.contest if isinstance(item, ContestParticipation) else item
+            for item in context["contests"]
+        ]
+        contest_ids = [contest.id for contest in rendered_contests]
+
+        if self.prefetch_organization_metadata:
+            Contest.prefetch_organization_ids(*contest_ids)
+
+        spectatable_contest_ids = set()
+        if self.request.profile:
+            live_contest_ids = [
+                contest.id
+                for contest in rendered_contests
+                if contest.start_time <= self._now <= contest.end_time
+            ]
+            if live_contest_ids:
+                spectatable_contest_ids = set(
+                    Contest.objects.filter(id__in=live_contest_ids)
+                    .filter(
+                        Q(authors=self.request.profile)
+                        | Q(curators=self.request.profile)
+                        | Q(testers=self.request.profile)
+                    )
+                    .values_list("id", flat=True)
+                    .distinct()
+                )
+        context["spectatable_contest_ids"] = spectatable_contest_ids
+        return context
+
     def get_queryset(self):
-        # If no specific tab is requested and user is authenticated, check if we should default to current instead of active
-        if (
-            self.current_tab == "active"
-            and not self.request.GET.get("tab")
-            and self.request.user.is_authenticated
-        ):
-            active_participations = self._get_active_participations_queryset()
-            if len(active_participations) == 0:
-                # Switch to current tab since there are no active contests
-                self.current_tab = "current"
-                return self._get_current_contests_queryset()
-            else:
-                return active_participations
+        if not hasattr(self, "tab_counts"):
+            original_tab = self.current_tab
+            self.tab_counts = self._get_tab_counts()
+            tab_priority = ("active", "current", "future", "past")
+            available_tabs = [
+                tab for tab in tab_priority if self.tab_counts.get(tab, 0) > 0
+            ]
+            if self.current_tab not in available_tabs:
+                fallback_tab = (
+                    "active" if self.request.user.is_authenticated else "current"
+                )
+                self.current_tab = available_tabs[0] if available_tabs else fallback_tab
+            if self.current_tab != original_tab:
+                requested_order = self.request.GET.get("order", "")
+                if requested_order.lstrip("-") not in self.all_sorts:
+                    self.order = (
+                        "start_time" if self.current_tab == "future" else "-start_time"
+                    )
 
         if self.current_tab == "past":
             return self._get_past_contests_queryset()
@@ -425,16 +515,26 @@ class ContestList(
 
         context["current_tab"] = self.current_tab
 
-        context["current_count"] = self._get_current_contests_queryset().count()
-        context["future_count"] = self._get_future_contests_queryset().count()
-        context["active_count"] = len(self._get_active_participations_queryset())
+        tab_counts = getattr(self, "tab_counts", None)
+        if tab_counts is None:
+            tab_counts = self._get_tab_counts()
+        context["active_count"] = tab_counts["active"]
+        context["current_count"] = tab_counts["current"]
+        context["future_count"] = tab_counts["future"]
+        context["past_count"] = tab_counts["past"]
         context["now"] = self._now
         context["first_page_href"] = "."
         context["contest_query"] = self.contest_query
         context["org_query"] = self.org_query
         context["hide_organization_contests"] = int(self.hide_organization_contests)
         context["show_only_rated_contests"] = int(self.show_only_rated_contests)
-        if self.request.profile:
+        context["active_contest_ids"] = (
+            set(self._active_contests_ids)
+            if self.request.user.is_authenticated
+            and self.current_tab in ("active", "current")
+            else set()
+        )
+        if self.prefetch_organization_metadata and self.request.profile:
             context["organizations"] = self.request.profile.get_organizations()
         context["page_type"] = "list"
         context["selected_order"] = self.request.GET.get("order")
@@ -448,10 +548,7 @@ class ContestList(
         ]
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
-        Contest.prefetch_organization_ids(
-            *[contest.id for contest in context["contests"]]
-        )
-        return context
+        return self._add_contest_card_context(context)
 
 
 class PrivateContestError(Exception):
@@ -1632,11 +1729,16 @@ class ContestRanking(ContestRankingBase):
         rank_map = compute_ranks(rows)
 
         output = io.StringIO()
+        # Help spreadsheet applications reliably detect UTF-8, especially for
+        # Vietnamese names and schools.
+        output.write("\ufeff")
         writer = csv.writer(output)
 
         header = [_("Rank"), _("Username"), _("Full Name"), _("School"), _("Score")]
-        for cp in problems:
-            header.append(contest.get_label_for_problem(cp.order))
+        for index, _cp in enumerate(problems):
+            # Match the labels rendered by ranking-table.html. ContestProblem.order
+            # controls sorting, but may be sparse or start at a non-zero value.
+            header.append(contest.get_label_for_problem(index))
         writer.writerow(header)
 
         for p in participations:
@@ -1657,7 +1759,9 @@ class ContestRanking(ContestRankingBase):
                     row.append(pdata["points"] if pdata else "")
             writer.writerow(row)
 
-        response = HttpResponse(output.getvalue(), content_type="text/csv")
+        response = HttpResponse(
+            output.getvalue(), content_type="text/csv; charset=utf-8"
+        )
         safe_key = contest.key.replace('"', "").replace(";", "")
         response["Content-Disposition"] = (
             f'attachment; filename="{safe_key}_ranking.csv"'
@@ -2285,6 +2389,31 @@ def recalculate_contest_summary_result(request, contest_summary):
 class OfficialContestList(ContestList):
     official = True
     template_name = "contest/official_list.html"
+    all_sorts = frozenset(("name", "official_participant_count", "start_time"))
+    default_desc = frozenset(("name", "official_participant_count"))
+    prefetch_list_metadata = False
+    prefetch_organization_metadata = False
+
+    def get(self, request, *args, **kwargs):
+        self.current_tab = "all"
+        self.tab_counts = {"active": 0, "current": 0, "future": 0, "past": 0}
+        self.setup_contest_list(request)
+        return super(ContestList, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        if self._show_collection_browser:
+            return Contest.objects.none()
+        return self._get_queryset().order_by(self.order, "key")
+
+    @property
+    def _show_collection_browser(self):
+        return (
+            not self.contest_query
+            and not self.selected_categories
+            and not self.selected_locations
+            and self.year_from is None
+            and self.year_to is None
+        )
 
     def setup_contest_list(self, request):
         self.contest_query = request.GET.get("contest", "")
@@ -2331,18 +2460,50 @@ class OfficialContestList(ContestList):
             queryset = queryset.filter(official__year__gte=self.year_from)
         if self.year_to:
             queryset = queryset.filter(official__year__lte=self.year_to)
-        return queryset
+        return queryset.annotate(
+            official_participant_count=Count(
+                "users__user",
+                filter=Q(users__virtual__gte=0),
+                distinct=True,
+            )
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_type"] = "official"
         context["is_official"] = True
-        context["categories"] = OfficialContestCategory.objects.all()
+        visible_official_contests = Contest.get_visible_contests(
+            self.request.user
+        ).filter(official__isnull=False)
+        visible_categories = OfficialContestCategory.objects.filter(
+            officialcontest__contest__in=visible_official_contests
+        )
+        if self._show_collection_browser:
+            category_summaries = visible_categories.annotate(
+                contest_count=Count("officialcontest__contest", distinct=True),
+                earliest_year=Min("officialcontest__year"),
+                latest_year=Max("officialcontest__year"),
+            ).order_by("name")
+            categories = category_summaries
+        else:
+            category_summaries = ()
+            categories = visible_categories.distinct().order_by("name")
+        context["categories"] = categories
+        context["category_summaries"] = category_summaries
         context["locations"] = OfficialContestLocation.objects.all()
         context["selected_categories"] = self.selected_categories
         context["selected_locations"] = self.selected_locations
         context["year_from"] = self.year_from
         context["year_to"] = self.year_to
+        context["show_collection_browser"] = self._show_collection_browser
+        context["all_sort_options"] = [
+            ("start_time", _("Start time (asc.)")),
+            ("-start_time", _("Start time (desc.)")),
+            ("name", _("Name (asc.)")),
+            ("-name", _("Name (desc.)")),
+            ("official_participant_count", _("Participant count (asc.)")),
+            ("-official_participant_count", _("Participant count (desc.)")),
+        ]
 
         return context
 
@@ -2359,6 +2520,10 @@ class RecommendedContestList(ContestList):
         self.show_only_rated_contests = 0
         if self.GET_with_session(request, "show_only_rated_contests"):
             self.show_only_rated_contests = 1
+        if request.GET.get("filters") == "1":
+            request.session["show_only_rated_contests"] = bool(
+                self.show_only_rated_contests
+            )
 
     def get(self, request, *args, **kwargs):
         self.current_tab = "recommended"
@@ -2374,7 +2539,15 @@ class RecommendedContestList(ContestList):
         return HttpResponseRedirect(request.get_full_path())
 
     def get_queryset(self):
-        queryset = self._recommended_contests_queryset
+        queryset = self._recommended_contests_queryset.select_related(
+            "official", "official__category", "official__location"
+        ).prefetch_related(
+            "tags",
+            Prefetch(
+                "course",
+                queryset=CourseContest.objects.select_related("course"),
+            ),
+        )
         if self.contest_query:
             queryset = queryset.filter(
                 Q(key__icontains=self.contest_query)
@@ -2391,12 +2564,10 @@ class RecommendedContestList(ContestList):
         context["first_page_href"] = "."
         context["contest_query"] = self.contest_query
         context["show_only_rated_contests"] = int(self.show_only_rated_contests)
+        context["hide_order"] = True
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
-        Contest.prefetch_organization_ids(
-            *[contest.id for contest in context["contests"]]
-        )
-        return context
+        return self._add_contest_card_context(context)
 
 
 class ContestProblemset(ContestMixin, TitleMixin, DetailView):

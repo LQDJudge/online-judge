@@ -1,27 +1,9 @@
 {% extends "three-column-content.html" %}
+{% set content_class = 'quiz-list-page' %}
+{% set middle_right_class = 'quiz-list-layout' %}
 
 {% block three_col_media %}
 {# Styles are in resources/quiz.scss - .quiz-list-page #}
-{% endblock %}
-
-{% block js_media %}
-  <script>
-    $(function () {
-      var $form = $('form#filter-form');
-
-      function clean_submit() {
-        $form.submit();
-      }
-
-      $('#search-quiz').keypress(function (e) {
-        if (e.keyCode === 13) {
-          $('#go').click();
-        }
-      });
-
-      $('#go').click(clean_submit);
-    });
-  </script>
 {% endblock %}
 
 {% block left_sidebar %}
@@ -29,14 +11,14 @@
 {% endblock %}
 
 {% block right_sidebar %}
-  <div class="right-sidebar">
+  <div class="right-sidebar quiz-list-sidebar">
     {% include "quiz/search-form.html" %}
   </div>
 {% endblock %}
 
 {% block middle_content %}
   {% if show_contest_mode and in_contest %}
-    <div class="page-title" style="margin-bottom: 1em;">
+    <div class="page-title quiz-contest-context">
       <h2>
         <i class="fa fa-question-circle"></i> {{ _('Contest Quizzes') }}
       </h2>
@@ -46,69 +28,77 @@
 
   {% if quizzes %}
     {% for quiz in quizzes %}
-      <div class="list-contest">
-        <div class="info-contest">
-          <div class="contest-title">{{ _('Quiz') }}</div>
-          <div class="contest-block">
-            <a href="{{ url('quiz_detail', quiz.code) }}" class="contest-list-title" style="margin-right: 5px;">{{ quiz.title
-              }}</a>
-            <div class="contest-tags">
-              {% if not quiz.is_public %}
-                <span class="contest-tag contest-tag-hidden">
-                  <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
-                </span>
-              {% endif %}
-            </div>
+      <article class="quiz-list-card">
+        <div class="quiz-card-main">
+          <div class="quiz-card-eyebrow">
+            <i class="fa fa-file-alt" aria-hidden="true"></i>{{ _('Quiz') }}
           </div>
+          <h2 class="quiz-card-title">
+            <a href="{{ url('quiz_detail', quiz.code) }}">{{ quiz.title }}</a>
+          </h2>
+          {% if not quiz.is_public %}
+            <span class="contest-tag contest-tag-hidden">
+              <i class="fa fa-eye-slash" aria-hidden="true"></i>{{ _('hidden') }}
+            </span>
+          {% endif %}
         </div>
-        <div class="info-contest">
-          <div class="contest-title">{{ _('Info') }}</div>
-          <div class="contest-block">
-            <div><i class="fa fa-list"></i> {{ quiz.get_question_count() }} {{ _('questions') }}</div>
+        <div class="quiz-card-info" aria-label="{{ _('Info') }}">
+          <span>
+            <i class="fa fa-list" aria-hidden="true"></i>
+            {{ quiz.question_count }} {{ _('questions') }}
+          </span>
+          <span>
+            <i class="far fa-clock" aria-hidden="true"></i>
             {% if quiz.time_limit %}
-              <div><i class="fa fa-clock"></i> {{ quiz.time_limit }} {{ _('mins') }}</div>
+              {{ quiz.time_limit }} {{ _('mins') }}
             {% else %}
-              <div><i class="fa fa-clock"></i> {{ _('No limit') }}</div>
+              {{ _('No limit') }}
             {% endif %}
-            {% if in_contest and quiz_points.get(quiz.id) %}
-              <div><i class="fa fa-star"></i> {{ quiz_points.get(quiz.id) }} {{ _('pts') }}</div>
-            {% endif %}
-          </div>
+          </span>
+          {% if in_contest and quiz_points.get(quiz.id) %}
+            <span>
+              <i class="fa fa-star" aria-hidden="true"></i>
+              {{ quiz_points.get(quiz.id) }} {{ _('pts') }}
+            </span>
+          {% endif %}
         </div>
-        <div class="info-contest contest-format-user">
+        <div class="quiz-card-side">
           {% if request.user.is_authenticated %}
-            <div class="contest-title">{{ _('Progress') }}</div>
-            <div class="contest-block">
-              <div>
-                <strong>{{ _('Best') }}:</strong>
-                {% if best_scores.get(quiz.id) is not none %}
-                  {{ best_scores.get(quiz.id)|round(1) }}
-                {% else %}
-                  -
-                {% endif %}
-              </div>
-              <div>
-                <strong>{{ _('Attempts') }}:</strong> {{ attempt_counts.get(quiz.id, 0) }}
-              </div>
+            <div class="quiz-card-progress" aria-label="{{ _('Progress') }}">
+              <span class="quiz-progress-item">
+                <span>{{ _('Best') }}</span>
+                <strong>
+                  {% if best_scores.get(quiz.id) is not none %}
+                    {{ best_scores.get(quiz.id)|round(1) }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </strong>
+              </span>
+              <span class="quiz-progress-item">
+                <span>{{ _('Attempts') }}</span>
+                <strong>{{ attempt_counts.get(quiz.id, 0) }}</strong>
+              </span>
             </div>
           {% endif %}
-          <div class="participate-button">
-            <form method="post" action="{{ url('quiz_start', quiz.code) }}" style="display: inline;">
-              {% csrf_token %}
-              <input type="submit" class="action-btn" value="{{ _('Start') }}">
-            </form>
-          </div>
+          <form class="quiz-card-start" method="post" action="{{ url('quiz_start', quiz.code) }}">
+            {% csrf_token %}
+            <button type="submit" class="action-btn">
+              <i class="fa fa-play" aria-hidden="true"></i>{{ _('Start') }}
+            </button>
+          </form>
         </div>
-      </div>
+      </article>
     {% endfor %}
 
     {% if page_obj and page_obj.paginator.num_pages > 1 %}
-      <div style="margin-top: 10px;">
+      <nav class="quiz-list-pagination" aria-label="{{ _('Quizzes') }}">
         {% include "list-pages.html" %}
-      </div>
+      </nav>
     {% endif %}
   {% else %}
-    <div class="no-quizzes">
+    <div class="no-quizzes" role="status">
+      <div class="no-quizzes-icon" aria-hidden="true"><i class="fa fa-file-alt"></i></div>
       <h3>{{ _('No quizzes found') }}</h3>
       {% if in_contest %}
         <p>{{ _('There are no quizzes in this contest.') }}</p>

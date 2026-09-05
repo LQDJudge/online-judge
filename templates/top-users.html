@@ -4,70 +4,111 @@
   {% set users_url = url('user_list') %}
 {% endif %}
 
-{% if top_rated %}
-  <div class="blog-sidebox sidebox">
-    <h3 class="bold-text colored-text"><i class="fa fa-trophy"></i>{{ _('Top Rating') }}</h3>
-    <div class="sidebox-content" style="padding: 0; border: 0">
-      <table class="table feed-table">
-        <tbody>
-          {% for user in top_rated %}
-            <tr>
-              <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
-              <td style="line-break: anywhere">{{link_user(user)}}</td>
-              <td>{{user.rating or '_'}}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <div style="text-align: center; padding: 0.4em;">
-        <a href="{{ users_url }}?order=-rating" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
-      </div>
-    </div>
-  </div>
-{% endif %}
+{% set rating_active = top_rated %}
+{% set score_active = not top_rated and top_scorer %}
+{% set contributors_active = not top_rated and not top_scorer and top_contributors %}
 
-{% if top_scorer %}
-  <div class="blog-sidebox sidebox">
-    <h3 class="bold-text colored-text"><i class="fa fa-trophy"></i>{{ _('Top Score') }}</h3>
-    <div class="sidebox-content" style="padding: 0; border: 0">
-      <table class="table feed-table">
-        <tbody>
-          {% for user in top_scorer %}
-            <tr>
-              <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
-              <td style="line-break: anywhere">{{link_user(user)}}</td>
-              <td>{{ user.performance_points|floatformat(0) }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <div style="text-align: center; padding: 0.4em;">
-        <a href="{{ users_url }}?order=-performance_points" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
+{% if top_rated or top_scorer or top_contributors %}
+  <section class="blog-sidebox sidebox leaderboard-card tabbed-sidebox">
+    <h3 class="bold-text colored-text">
+      <i class="fa fa-trophy" aria-hidden="true"></i>{{ _('Leaderboard') }}
+    </h3>
+    <div class="sidebox-content tabbed-sidebox-content">
+      <div class="sidebox-tabs" role="tablist" aria-label="{{ _('Leaderboard') }}">
+        {% if top_rated %}
+          <button type="button" id="leaderboard-rating-tab"
+                  class="sidebox-tab{% if rating_active %} active{% endif %}"
+                  role="tab" aria-selected="{{ 'true' if rating_active else 'false' }}"
+                  aria-controls="leaderboard-rating-panel"
+                  tabindex="{{ '0' if rating_active else '-1' }}"
+                  data-sidebox-panel="leaderboard-rating-panel">
+            {{ _('Rating') }}
+          </button>
+        {% endif %}
+        {% if top_scorer %}
+          <button type="button" id="leaderboard-score-tab"
+                  class="sidebox-tab{% if score_active %} active{% endif %}"
+                  role="tab" aria-selected="{{ 'true' if score_active else 'false' }}"
+                  aria-controls="leaderboard-score-panel"
+                  tabindex="{{ '0' if score_active else '-1' }}"
+                  data-sidebox-panel="leaderboard-score-panel">
+            {{ _('Score') }}
+          </button>
+        {% endif %}
+        {% if top_contributors %}
+          <button type="button" id="leaderboard-contributors-tab"
+                  class="sidebox-tab{% if contributors_active %} active{% endif %}"
+                  role="tab" aria-selected="{{ 'true' if contributors_active else 'false' }}"
+                  aria-controls="leaderboard-contributors-panel"
+                  tabindex="{{ '0' if contributors_active else '-1' }}"
+                  data-sidebox-panel="leaderboard-contributors-panel">
+            {{ _('Contributors') }}
+          </button>
+        {% endif %}
       </div>
-    </div>
-  </div>
-{% endif %}
 
-{% if top_contributors %}
-  <div class="blog-sidebox sidebox">
-    <h3 class="bold-text colored-text"><i class="fa fa-pen"></i>{{ _('Top Contributors') }}</h3>
-    <div class="sidebox-content" style="padding: 0; border: 0">
-      <table class="table feed-table">
-        <tbody>
-          {% for user in top_contributors %}
-            <tr>
-              <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
-              <td style="line-break: anywhere">{{link_user(user)}}</td>
-              <td {% if user.post_count is defined %}title="{{ user.post_count }} {{ _('posts') }}, {{ user.post_vote_count }} {{ _('post likes') }}, {{ user.comment_count }} {{ _('comments') }}, {{ user.comment_vote_count }} {{ _('comment likes') }}"{% endif %}>
-                {{ user.contribution_score if user.contribution_score is defined else user.contribution_points }}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <div style="text-align: center; padding: 0.4em;">
-        <a href="{{ users_url }}?order=-contribution_points" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
-      </div>
+      {% if top_rated %}
+        <div id="leaderboard-rating-panel" class="sidebox-tab-panel" role="tabpanel"
+             aria-labelledby="leaderboard-rating-tab"{% if not rating_active %} hidden{% endif %}>
+          <table class="table feed-table leaderboard-table">
+            <tbody>
+              {% for user in top_rated %}
+                <tr>
+                  <td class="leaderboard-rank"><b>{{ loop.index }}</b></td>
+                  <td class="leaderboard-user">{{ link_user(user) }}</td>
+                  <td class="leaderboard-value">{{ user.rating or '_' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="tabbed-sidebox-footer">
+            <a href="{{ users_url }}?order=-rating">{{ _('View all') }} &rarr;</a>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if top_scorer %}
+        <div id="leaderboard-score-panel" class="sidebox-tab-panel" role="tabpanel"
+             aria-labelledby="leaderboard-score-tab"{% if not score_active %} hidden{% endif %}>
+          <table class="table feed-table leaderboard-table">
+            <tbody>
+              {% for user in top_scorer %}
+                <tr>
+                  <td class="leaderboard-rank"><b>{{ loop.index }}</b></td>
+                  <td class="leaderboard-user">{{ link_user(user) }}</td>
+                  <td class="leaderboard-value">{{ user.performance_points|floatformat(0) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="tabbed-sidebox-footer">
+            <a href="{{ users_url }}?order=-performance_points">{{ _('View all') }} &rarr;</a>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if top_contributors %}
+        <div id="leaderboard-contributors-panel" class="sidebox-tab-panel" role="tabpanel"
+             aria-labelledby="leaderboard-contributors-tab"{% if not contributors_active %} hidden{% endif %}>
+          <table class="table feed-table leaderboard-table">
+            <tbody>
+              {% for user in top_contributors %}
+                <tr>
+                  <td class="leaderboard-rank"><b>{{ loop.index }}</b></td>
+                  <td class="leaderboard-user">{{ link_user(user) }}</td>
+                  <td class="leaderboard-value"{% if user.post_count is defined %}
+                        title="{{ user.post_count }} {{ _('posts') }}, {{ user.post_vote_count }} {{ _('post likes') }}, {{ user.comment_count }} {{ _('comments') }}, {{ user.comment_vote_count }} {{ _('comment likes') }}"{% endif %}>
+                      {{ user.contribution_score if user.contribution_score is defined else user.contribution_points }}
+                    </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="tabbed-sidebox-footer">
+            <a href="{{ users_url }}?order=-contribution_points">{{ _('View all') }} &rarr;</a>
+          </div>
+        </div>
+      {% endif %}
     </div>
-  </div>
+  </section>
 {% endif %}

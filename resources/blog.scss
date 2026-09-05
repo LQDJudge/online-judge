@@ -5,7 +5,7 @@
     padding-right: 0em;
     vertical-align: top;
     margin-right: 0;
-    width: 100%;
+    width: auto;
 
     .post {
         border: 1px dotted grey;
@@ -140,14 +140,14 @@
 }
 
 .blog-box {
-    border-bottom: 1.4px solid lightgray;
-    border-top: 1.4px solid lightgray;
+    border: 1px solid $border-light;
+    border-radius: $radius-lg;
     margin-bottom: 1.5em;
-    padding: 1em 1.25em 0.5em 1.25em;
-    background-color: white;
+    padding: $space-lg $space-spacious $space-md;
+    background-color: $surface-primary;
     margin-left: auto;
     margin-right: auto;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    box-shadow: $shadow-sm;
 
     .title {
         margin-bottom: 0.2em;
@@ -156,8 +156,8 @@
 }
 
 .blog-box:hover, .blog-box:not(.pre-expand-blog) {
-    border-color: #8a8a8a;
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
+    border-color: $border_gray;
+    box-shadow: $shadow-xs;
 }
 
 .blog-description {
@@ -187,13 +187,139 @@
     color: gray;
 }
 
+.problem-feed-card {
+    .blog-description {
+        max-height: 22rem;
+    }
+}
+
 .feed-table {
     margin: 0;
+}
+
+.tabbed-sidebox {
+    .tabbed-sidebox-content {
+        padding: 0;
+        overflow: hidden;
+        border: 0;
+    }
+
+    .sidebox-tabs {
+        display: flex;
+        gap: $space-nano;
+        padding: $space-xs;
+        border-bottom: 1px solid $border-light;
+        background: $background_light_gray;
+    }
+
+    .sidebox-tab {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: $space-sm $space-nano;
+        overflow: hidden;
+        border: 0;
+        border-radius: $radius-sm;
+        background: transparent;
+        color: $text-secondary;
+        font: inherit;
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+
+        &:hover {
+            background: $color-interactive-hover-bg;
+            color: $text-primary;
+        }
+
+        &:focus-visible {
+            outline: 2px solid $theme_color;
+            outline-offset: 1px;
+        }
+
+        &.active {
+            background: $color-soft-accent-bg;
+            color: $theme_color;
+        }
+    }
+
+    .sidebox-tab-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.25rem;
+        height: 1.25rem;
+        margin-left: $space-nano;
+        padding: 0 $space-nano;
+        border-radius: $radius-pill;
+        background: $border-light;
+        color: $text-secondary;
+        font-size: 0.68rem;
+        line-height: 1;
+        vertical-align: middle;
+    }
+
+    .sidebox-tab.active .sidebox-tab-count {
+        background: $theme_color;
+        color: $text-on-primary;
+    }
+
+    .sidebox-tab-panel[hidden] {
+        display: none;
+    }
+
+    .tabbed-sidebox-footer {
+        padding: $space-sm;
+        border-top: 1px solid $border-light;
+        text-align: center;
+
+        a {
+            font-size: 0.85em;
+        }
+    }
+}
+
+.leaderboard-card {
+    .leaderboard-table {
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+
+        td {
+            padding: $space-sm $space-xs;
+        }
+
+        .leaderboard-rank {
+            width: 2rem;
+            text-align: center;
+        }
+
+        .leaderboard-user {
+            width: 100%;
+            overflow-wrap: anywhere;
+        }
+
+        .leaderboard-value {
+            text-align: right;
+            white-space: nowrap;
+        }
+    }
+}
+
+.contest-summary-card {
+    .contest-summary-list {
+        padding: 0 $space-md;
+    }
 }
 
 .pre-expand-blog {
     position: relative;
     padding-bottom: 0;
+
+    > .blog-description {
+        cursor: pointer;
+    }
 }
 
 .show-more {
@@ -201,16 +327,19 @@
     color: black;
     font-size: 16px;
     font-weight: 700;
-    padding: 0px 12px;
-    margin-top: 5px;
+    width: 100%;
+    min-height: $control-min-height;
+    padding: $space-lg;
+    border: 0;
+    margin-top: $space-tight;
     position: absolute;
-    inset: 50% 0px 0px;
-    background: linear-gradient(transparent, white);
+    inset: 50% 0 0;
+    background: linear-gradient(transparent, $surface-primary);
     -webkit-box-pack: end;
     justify-content: flex-end;
     align-items: flex-end;
     cursor: pointer;
-    padding: 16px 16px;
+    font-family: inherit;
 }
 
 .actionbar-box {
@@ -337,14 +466,111 @@
 
 
 @media (max-width: 799px) {
+    body.mobile-home-sidebar-open,
+    body.mobile-feed-sidebar-open {
+        overflow: hidden;
+    }
+
+    .feed-drawer-layout {
+        .feed-right-sidebar {
+            position: fixed;
+            z-index: 1201;
+            top: $navbar_height_mobile;
+            right: 0;
+            display: block !important;
+            width: min(88vw, 22rem);
+            max-width: none;
+            height: calc(100dvh - $navbar_height_mobile);
+            margin: 0;
+            padding: $space-md;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background: $background_light_gray;
+            box-shadow: $shadow-modal;
+            visibility: hidden;
+            transform: translateX(105%);
+            transition: transform 0.2s ease, visibility 0.2s ease;
+            pointer-events: none;
+        }
+
+        &.mobile-sidebar-open .feed-right-sidebar {
+            visibility: visible;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        .feed-sidebar-toggle {
+            position: fixed;
+            z-index: 1100;
+            right: 0;
+            top: 42%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 3rem;
+            padding: 0;
+            border: 1px solid $border_gray;
+            border-right: 0;
+            border-radius: $radius-lg 0 0 $radius-lg;
+            background: $surface-primary;
+            color: $theme_color;
+            box-shadow: $shadow-sm;
+            cursor: pointer;
+        }
+
+        .feed-sidebar-backdrop {
+            position: fixed;
+            z-index: 1200;
+            inset: 0;
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            border: 0;
+            background: rgba($text-strong, 0.45);
+        }
+
+        &.mobile-sidebar-open .feed-sidebar-backdrop {
+            display: block;
+        }
+
+        .feed-sidebar-close {
+            position: sticky;
+            z-index: 1;
+            top: 0;
+            display: flex;
+            align-items: center;
+            gap: $space-sm;
+            width: 100%;
+            min-height: $control-min-height;
+            margin-bottom: $space-md;
+            padding: $space-sm $space-md;
+            border: 1px solid $border_gray;
+            border-radius: $radius-md;
+            background: $surface-primary;
+            color: $text-primary;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .feed-right-sidebar > .blog-sidebox:first-of-type {
+            margin-top: 0;
+        }
+    }
+
     .actionbar-box {
         margin: 8px 0;
     }
 
     .blog-box {
-        padding-left: 5%;
-        padding-right: 5%;
-        margin-bottom: 0;
+        padding: $space-lg;
+        margin-bottom: $space-md;
+    }
+
+    .problem-feed-card .blog-description {
+        max-height: 18rem;
     }
 
     .post-title {
@@ -361,15 +587,22 @@
     }
 }
 
+.feed-sidebar-toggle,
+.feed-sidebar-backdrop,
+.feed-sidebar-close,
+.home-sidebar-toggle,
+.home-sidebar-backdrop,
+.home-sidebar-close {
+    display: none;
+}
+
 @media (min-width: 800px) {
     .feed-table {
         font-size: small;
     }
 
     .blog-box {
-        border-left: 1.4px solid lightgray;
-        border-right: 1.4px solid lightgray;
-        border-radius: 16px;
+        border-radius: $radius-lg;
     }
 
     .post-full {

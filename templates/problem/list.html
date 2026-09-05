@@ -6,6 +6,12 @@
 {% set has_hidden_subtasks = show_contest_mode and request.participation.contest.format.has_hidden_subtasks %}
 
 {% block middle_content %}
+  {% if not show_contest_mode %}
+    <button id="problem-filter-toggle" type="button" class="action-btn outlined"
+            aria-expanded="false" aria-controls="content-right">
+      <i class="fa fa-filter" aria-hidden="true"></i>{{ _('Filters') }}
+    </button>
+  {% endif %}
   <div id="content-left" class="problems">
     {% if show_contest_mode %}
       {% include "contest/contest-problem-table.html" %}
@@ -23,7 +29,7 @@
               <a href="{{ sort_links.name }}">{{ _('Problem') }}{{ sort_order.name }}</a>
             </th>
             <th class="pcode">
-              <a href="{{ sort_links.code }}">{{ _('Problem code') }}</a>
+              <a href="{{ sort_links.code }}">{{ _('Code') }}</a>
             </th>
             <th class="category">
               <a href="{{ sort_links.group }}">{{ _('Category') }}{{ sort_order.group }}</a>
@@ -43,8 +49,9 @@
               <a href="{{ sort_links.user_count }}">{{ _('AC #') }}{{ sort_order.user_count }}</a>
             </th>
             {% if show_editorial %}
-              <th class="editorial">
-                {{_('Editorial')}}
+              <th class="editorial" title="{{ _('Editorial') }}">
+                <i class="fa fa-book-open" aria-hidden="true"></i>
+                <span class="sr-only">{{ _('Editorial') }}</span>
               </th>
             {% endif %}
           </tr>
@@ -54,7 +61,7 @@
             <tr>
               {% if request.user.is_authenticated %}
                 {% if problem.id in completed_problem_ids %}
-                  <td solved="1">
+                  <td class="solved" solved="1" data-label="{{ _('Status') }}">
                     <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
                       {% if problem.is_public %}
                         <i class="solved-problem-color fa fa-check-circle"></i>
@@ -64,7 +71,7 @@
                     </a>
                   </td>
                 {% elif problem.id in attempted_problems %}
-                  <td solved="0">
+                  <td class="solved" solved="0" data-label="{{ _('Status') }}">
                     <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
                       {% if problem.is_public %}
                         <i class="attempted-problem-color fa fa-minus-circle"></i>
@@ -74,7 +81,7 @@
                     </a>
                   </td>
                 {% else %}
-                  <td solved="-1">
+                  <td class="solved" solved="-1" data-label="{{ _('Status') }}">
                     {% if problem.is_public %}
                       <i class="unsolved-problem-color fa fa-minus-circle"></i>
                     {% else %}
@@ -83,32 +90,35 @@
                   </td>
                 {% endif %}
               {% endif %}
-              <td class="problem">
+              <td class="problem" data-label="{{ _('Problem') }}">
                 <a href="{{ url('problem_detail', problem.code) }}">{{ problem.translated_name(LANGUAGE_CODE)
                   }}</a>
               </td>
-              <td class="pcode">
+              <td class="pcode" data-label="{{ _('Code') }}">
                 <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
               </td>
-              <td class="category">{{ problem.get_group_name() }}</td>
+              <td class="category" data-label="{{ _('Category') }}">{{ problem.get_group_name() }}</td>
               {% if show_types %}
-                <td class="types">
+                <td class="types" data-label="{{ _('Types') }}">
                   {% for type in problem.get_types_name() %}
                     <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
                   {% endfor %}
                 </td>
               {% endif %}
-              <td class="p">{{ problem.points|floatformat }}{% if problem.get_partial() %}p{% endif %}</td>
-              <td class="ac-rate">{{ problem.get_ac_rate()|floatformat(0) }}%</td>
-              <td class="users">
+              <td class="p" data-label="{{ _('Points') }}">{{ problem.points|floatformat }}{% if problem.get_partial() %}p{% endif %}</td>
+              <td class="ac-rate" data-label="{{ _('AC %%') }}">{{ problem.get_ac_rate()|floatformat(0) }}%</td>
+              <td class="users" data-label="{{ _('Solved by') }}">
                 <a href="{{ url('ranked_submissions', problem.code) }}">
                   {{ problem.user_count }}
                 </a>
               </td>
               {% if show_editorial %}
-                <td class="editorial">
+                <td class="editorial" data-label="{{ _('Editorial') }}">
                   {% if problem.has_public_editorial() %}
-                    <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
+                    <a href="{{ url('problem_editorial', problem.code) }}"
+                       title="{{ _('Editorial') }}" aria-label="{{ _('Editorial') }}">
+                      <i class="fa fa-book-open" aria-hidden="true"></i>
+                    </a>
                   {% endif %}
                 </td>
               {% endif %}
@@ -180,7 +190,9 @@
     {% endif %}
   </div>
   {% if page_obj.num_pages > 1 %}
-    <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
+    <nav class="problem-pagination problem-pagination-bottom" aria-label="{{ _('Problems') }}">
+      {% include "list-pages.html" %}
+    </nav>
   {% endif %}
   <iframe name="raw_problemset" id="raw_problemset" style="visibility: hidden;width: 0; height: 0;"></iframe>
 {% endblock %}

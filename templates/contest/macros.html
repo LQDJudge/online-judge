@@ -1,8 +1,19 @@
-{% macro contest_head(contest, organization=None) %}
-  <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;">
-    {{contest.name}}
-  </a>
+{% macro contest_head(contest, organization=None, show_official=False, heading_id=None) %}
+  {% if heading_id %}
+    <h2 id="{{ heading_id }}" class="contest-card-heading">
+      <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title">{{ contest.name }}</a>
+    </h2>
+  {% else %}
+    <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title">{{ contest.name }}</a>
+  {% endif %}
   <div class="contest-tags">
+    {% if show_official and contest.official %}
+      <span class="contest-tag contest-tag-official">
+        <a href="{{ url('official_contest_list') }}?category={{ contest.official.category_id }}">
+          <i class="far fa-check-circle" aria-hidden="true"></i>{{ _('Official') }}
+        </a>
+      </span>
+    {% endif %}
     {% if not contest.is_visible %}
       <span class="contest-tag contest-tag-hidden">
         <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
@@ -86,22 +97,108 @@
 
 {% macro contest_format_user(contest, request, show_user=True, is_official=False) %}
   {% if is_official %}
-    <div style="display: flex; flex-direction: column;">
+    <div class="contest-format-details">
       <div><b>{{ _('Format') }}</b>: {{ contest.format.name }}</div>
       <div><b>{{ _('Category') }}</b>: {{ contest.official.category.name }}</div>
       <div><b>{{ _('Location') }}</b>: {{ contest.official.location.name }}</div>
       <div><b>{{ _('Year') }}</b>: {{ contest.official.year }}</div>
       {% if show_user %}
-        <div class="contest-title" style="margin-top: 0.4em">{{ user_count(contest, request.user) }}</div>
+        <div class="contest-title contest-user-count">{{ user_count(contest, request.user) }}</div>
       {% endif %}
     </div>
   {% else %}
-    <div style="display: flex; flex-direction: column;">
-      <div class="contest-title"> {{ _('Format') }} </div>
-      <div style="flex-grow: 1">{{ contest.format.name }}</div>
+    <div class="contest-format-details">
+      <div class="contest-format-summary">
+        <span class="contest-title contest-format-label">{{ _('Format') }}</span>
+        <span class="contest-format-name">{{ contest.format.name }}</span>
+      </div>
       {% if show_user %}
-        <div class="contest-title" style="margin-top: 0.4em">{{ user_count(contest, request.user) }}</div>
+        <div class="contest-title contest-user-count">{{ user_count(contest, request.user) }}</div>
       {% endif %}
     </div>
   {% endif %}
+{% endmacro %}
+
+{% macro contest_join(contest, request, is_past=False, is_participating=False, is_future=False, can_spectate=False) %}
+  {% if is_future %}
+    <a class="action-btn outlined" href="{{ url('contest_view', contest.key) }}">{{ _('View') }}</a>
+  {% elif is_participating or (request.in_contest and request.participation.contest == contest) %}
+    {% if request.in_contest and request.participation.contest == contest %}
+      <a class="action-btn" href="{{ url('contest_problems', contest.key) }}">{{ _('Continue') }}</a>
+    {% else %}
+      <form action="{{ url('contest_join', contest.key) }}" method="post">
+        {% csrf_token %}
+        <input type="submit" class="action-btn full" value="{{ _('Continue') }}">
+      </form>
+    {% endif %}
+  {% elif is_past %}
+    <form action="{{ url('contest_join', contest.key) }}" method="post">
+      {% csrf_token %}
+      <input type="submit" class="action-btn full" value="{{ _('Virtual join') }}">
+    </form>
+  {% elif can_spectate %}
+    <form action="{{ url('contest_join', contest.key) }}" method="post">
+      {% csrf_token %}
+      <input type="submit" class="action-btn full" value="{{ _('Spectate') }}">
+    </form>
+  {% else %}
+    <form action="{{ url('contest_join', contest.key) }}" method="post">
+      {% csrf_token %}
+      <input type="submit" class="action-btn full join-warning" value="{{ _('Join') }}">
+    </form>
+  {% endif %}
+{% endmacro %}
+
+{% macro contest_empty(message, now) %}
+  <div class="contest-empty-state" role="status">
+    <div class="contest-empty-icon" aria-hidden="true"><i class="fa fa-calendar-day"></i></div>
+    <h2>{{ _('No contests found') }}</h2>
+    <p>{{ message }}</p>
+    <a class="action-btn outlined" href="{{ url('contest_calendar', now.year, now.month) }}">
+      <i class="fa fa-calendar" aria-hidden="true"></i>{{ _('View calendar') }}
+    </a>
+  </div>
+{% endmacro %}
+
+{% macro standard_contest_card(contest, request, phase, organization=None, participation=None, is_participating=False, show_user=True, can_spectate=False) %}
+  {% set heading_id = 'contest-card-' ~ contest.key %}
+  <article class="list-contest" aria-labelledby="{{ heading_id }}">
+    <div class="info-contest contest-card-main">
+      {{ contest_head(contest, organization, show_official=True, heading_id=heading_id) }}
+    </div>
+    <div class="info-contest contest-card-time">
+      <div class="contest-title"><i class="far fa-clock" aria-hidden="true"></i>{{ _('Time') }}</div>
+      <div class="contest-block">
+        {% if contest.start_time %}
+          {{ time_left(contest) }}
+          {% if phase == 'active' and participation %}
+            {% if contest.time_limit %}
+              <span class="time">
+                {% trans countdown=participation.end_time|as_countdown %}Window ends in {{countdown}}{% endtrans %}
+              </span>
+            {% elif contest.time_before_end %}
+              <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}</span>
+            {% endif %}
+          {% elif phase == 'future' and contest.time_before_start %}
+            <span class="time">{{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}</span>
+          {% elif phase == 'current' and contest.time_before_end %}
+            <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}</span>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="info-contest contest-format-user contest-card-meta">
+      {{ contest_format_user(contest, request, show_user=show_user) }}
+      <div class="participate-button">
+        {{ contest_join(
+        contest,
+        request,
+        is_past=phase == 'past',
+        is_participating=is_participating,
+        is_future=phase == 'future',
+        can_spectate=can_spectate,
+        ) }}
+      </div>
+    </div>
+  </article>
 {% endmacro %}

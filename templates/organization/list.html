@@ -1,4 +1,5 @@
 {% extends "three-column-content.html" %}
+{% set middle_right_class = 'organizations-list-layout' %}
 
 {% block js_media %}
   <script type="text/javascript">
@@ -12,20 +13,9 @@
 
       var $form = $('form#filter-form');
 
-      $('#go').click(function() {
+      $form.on('submit', function(e) {
+        e.preventDefault();
         submitFormWithParams($form, "GET");
-      });
-
-      $form.on('keypress', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-        }
-      });
-
-      $('#search-organization').keypress(function (e) {
-        if (e.keyCode === 13) {
-          $('#go').click();
-        }
       });
 
       $('#order').select2();
@@ -36,10 +26,10 @@
 
 {% block left_sidebar %}
   <div class="left-sidebar">
-    {{ make_tab_item('community', 'fa fa-comments', request.path + '?tab=community', _('Communities')) }}
     {% if request.user.is_authenticated %}
       {{ make_tab_item('mine', 'fa fa-user', request.path + '?tab=mine', _('Mine')) }}
     {% endif %}
+    {{ make_tab_item('community', 'fa fa-comments', request.path + '?tab=community', _('Communities')) }}
     {{ make_tab_item('public', 'fa fa-globe', request.path + '?tab=public', _('Public')) }}
     {{ make_tab_item('private', 'fa fa-lock', request.path + '?tab=private', _('Private')) }}
     {% if request.user.is_authenticated %}
@@ -49,7 +39,7 @@
 {% endblock %}
 
 {% block right_sidebar %}
-  <div class="right-sidebar">
+  <div class="right-sidebar organizations-right-sidebar">
     {% include "organization/search-form.html" %}
   </div>
 {% endblock %}
@@ -58,14 +48,18 @@
   {% if queryset %}
     <div class="organization-container">
       {% for org in queryset %}
-        <div class="organization-card" style="cursor: pointer;" onclick="location.href='{{ org.get_absolute_url() }}';">
+        <div class="organization-card" role="link" tabindex="0"
+             onclick="if (!event.target.closest('a, button, form')) location.href='{{ org.get_absolute_url() }}';"
+             onkeydown="if (event.key === 'Enter') location.href='{{ org.get_absolute_url() }}';">
           {% if org.organization_image %}
-            <img class="org-logo" loading="lazy" src="{{ org.organization_image.url }}">
+            <img class="org-logo" loading="lazy" src="{{ org.organization_image.url }}" alt="{{ org.name }}"
+                 onerror="this.onerror=null;this.src='{{ static('icons/icon.svg') }}';">
           {% else %}
-            <img class="org-logo" loading="lazy" src="{{ static('icons/icon.svg') }}" onerror="this.onerror=null;this.src='{{ static('icons/logo.svg') }}';">
+            <img class="org-logo" loading="lazy" src="{{ static('icons/icon.svg') }}" alt="{{ org.name }}"
+                 onerror="this.onerror=null;this.src='{{ static('icons/logo.svg') }}';">
           {% endif %}
           <div class="org-details">
-            <span style="font-weight: bold;">
+            <span class="organization-card-name">
               {{ org.name }}
               {% if org.is_community %}
                 <span class="community-badge" title="{{ _('Community') }}">
@@ -73,29 +67,30 @@
                 </span>
               {% endif %}
             </span>
-            <span style="margin-bottom: 0"><i>{{ org.member_count }} {{ _('members') }}</i>
+            <span class="organization-card-members"><i>{{ org.member_count }} {{ _('members') }}</i>
               {% if request.profile and org.id in request.profile.get_admin_organization_ids() %}
-                <i class="fa fa-crown" style="color: gold;" title="{{ _('You are an admin of this organization') }}"></i>
+                <i class="fa fa-crown gold" title="{{ _('You are an admin of this organization') }}"></i>
               {% endif %}
             </span>
           </div>
           {% if tab == 'mine' %}
-            <div class="background-royalblue button small">{{ _('View') }}</div>
+            <div class="action-btn organization-card-action">{{ _('View') }}</div>
           {% elif tab == 'public' or tab == 'community' %}
             {% if request.profile and org.id in request.profile.get_organization_ids() %}
-              <div class="background-royalblue button small">{{ _('View') }}</div>
+              <div class="action-btn organization-card-action">{{ _('View') }}</div>
             {% else %}
               <form method="post" action="{{ url('join_organization', org.id, org.slug) }}">
                 {% csrf_token %}
-                <input type="submit" style="width: 100%" class="background-royalblue button small" value="{{ _('Join') }}">
+                <button type="submit" class="action-btn organization-card-action">{{ _('Join') }}</button>
               </form>
             {% endif %}
           {% elif tab == 'private' %}
-            <a href="{{ url('request_organization', org.id, org.slug) }}" style="font-size: 15px;" class="background-royalblue button small">{{ _('Request membership') }}</a>
+            <a href="{{ url('request_organization', org.id, org.slug) }}"
+               class="action-btn organization-card-action">{{ _('Request membership') }}</a>
           {% else %}
             <form method="post" action="{{ url('unblock_organization', org.id, org.slug) }}">
               {% csrf_token %}
-              <input type="submit" style="width: 100%" class="background-royalblue button small" value="{{ _('Unblock') }}">
+              <button type="submit" class="action-btn organization-card-action">{{ _('Unblock') }}</button>
             </form>
           {% endif %}
         </div>

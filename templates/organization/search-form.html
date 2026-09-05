@@ -1,12 +1,17 @@
-<div class="sidebox">
-  <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Group search') }}</h3>
+<div class="sidebox organization-search-box">
   <div class="sidebox-content">
     <form id="filter-form" method="GET">
-      <input id="search-organization" type="text" name="organization" value="{{ organization_query or '' }}"
-             placeholder="{{ _('Search groups...') }}">
-      <div class="filter-form-group">
+      <p class="organization-search-control">
+        <input id="search-organization" type="text" name="organization" value="{{ organization_query or '' }}"
+               placeholder="{{ _('Search groups...') }}">
+        <button id="go" type="submit" class="organization-search-submit"
+                title="{{ _('Search') }}" aria-label="{{ _('Search') }}">
+          <i class="fa fa-search" aria-hidden="true"></i>
+        </button>
+      </p>
+      <div class="organization-sort-control">
         <label for="order" class="bold-text margin-label">{{ _('Order by') }}</label>
-        <select id="order" name="order" style="width: 100%">
+        <select id="order" name="order">
           {% for value, name in all_sort_options %}
             <option value="{{value}}"{% if selected_order == value%} selected{% endif %}>
               {{ name }}
@@ -14,9 +19,11 @@
           {% endfor %}
         </select>
       </div>
-      <div class="form-submit-group">
-        <a class="action-btn" href="{{url('organization_add')}}">{{_("Create group")}}</a>
-        <a id="go" class="action-btn">{{ _('Go') }}</a>
+      <div class="organization-create-row">
+        <a class="organization-create-link" href="{{ url('organization_add') }}">
+          <i class="fa fa-plus-circle" aria-hidden="true"></i>
+          <span>{{ _('Create group') }}</span>
+        </a>
       </div>
     </form>
   </div>

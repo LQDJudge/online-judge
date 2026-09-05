@@ -1,42 +1,150 @@
 {% extends "contest/list.html" %}
-
-{% block contest_list_media %}
-  <style type="text/css">
-    .contest-format-user {
-      flex: 1 !important;
-    }
-
-    .year-range {
-      display: inline;
-    }
-
-    .year-range input {
-      width: 45%;
-    }
-  </style>
-{% endblock %}
+{% from "contest/macros.html" import contest_empty, contest_join %}
+{% set content_class = 'official-contest-page' %}
+{% set middle_right_class = 'official-contest-layout' %}
 
 {% block contest_list_js %}
   <script type="text/javascript">
     $(function() {
-      $("#category").select2();
-      $("#location").select2();
-      $('#year_from').keypress(function (e) {
-        if (e.keyCode === 13) {
-          $('#go').click();
-        }
+      $('#category').select2();
+      $('#location').select2();
+
+      $('.official-filter-toggle').on('click', function() {
+        var $filterBox = $('.official-contest-search-box');
+        var expanded = !$filterBox.hasClass('filters-open');
+        $filterBox.toggleClass('filters-open', expanded);
+        $(this).attr('aria-expanded', expanded ? 'true' : 'false');
       });
-      $('#year_to').keypress(function (e) {
-        if (e.keyCode === 13) {
-          $('#go').click();
-        }
-      });
+
     });
   </script>
 {% endblock %}
 
 {% block right_sidebar %}
-  <div class="right-sidebar">
+  <div class="right-sidebar official-contest-sidebar">
     {% include "contest/official-search-form.html" %}
   </div>
+{% endblock %}
+
+{% macro official_contest_card(contest) %}
+  {% if contest.start_time > now %}
+    {% set status = 'future' %}
+  {% elif contest.end_time >= now %}
+    {% set status = 'current' %}
+  {% else %}
+    {% set status = 'past' %}
+  {% endif %}
+  <article class="official-contest-card">
+    <div class="official-contest-card-topline">
+      <span class="official-contest-year">{{ contest.official.year }}</span>
+      <span class="official-contest-category">{{ contest.official.category.name }}</span>
+      <span class="official-contest-status official-contest-status-{{ status }}">
+        {% if status == 'future' %}
+          {{ _('Upcoming') }}
+        {% elif status == 'current' %}
+          {{ _('Ongoing') }}
+        {% else %}
+          {{ _('Past') }}
+        {% endif %}
+      </span>
+    </div>
+    <h2 class="official-contest-name">
+      <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+    </h2>
+    <div class="official-contest-meta">
+      <span title="{{ _('Location') }}">
+        <i class="fa fa-map-marker-alt" aria-hidden="true"></i>
+        <span class="sr-only">{{ _('Location') }}:</span>
+        {{ contest.official.location.name }}
+      </span>
+      <span title="{{ _('Format') }}">
+        <i class="fa fa-layer-group" aria-hidden="true"></i>
+        <span class="sr-only">{{ _('Format') }}:</span>
+        {{ contest.format.name }}
+      </span>
+      <a href="{{ url('contest_ranking', contest.key) }}" title="{{ _('Ranking') }}">
+        <i class="fa fa-users" aria-hidden="true"></i>
+        <span class="sr-only">{{ _('Ranking') }}:</span>
+        {{ contest.official_participant_count }}
+      </a>
+    </div>
+    <div class="official-contest-card-footer">
+      <div class="official-contest-time">
+        <i class="far fa-clock" aria-hidden="true"></i>
+        {% if status == 'current' %}
+          {% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}
+        {% elif status == 'future' %}
+          {{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}
+        {% else %}
+          {{ contest.start_time|date(_('d/m/Y')) }}
+        {% endif %}
+      </div>
+      <div class="official-contest-action">
+        {% if status == 'future' %}
+          <a class="action-btn outlined" href="{{ url('contest_view', contest.key) }}">{{ _('View') }}</a>
+        {% elif status == 'past' %}
+          {{ contest_join(contest, request, is_past=True, can_spectate=contest.id in spectatable_contest_ids) }}
+        {% else %}
+          {{ contest_join(contest, request, can_spectate=contest.id in spectatable_contest_ids) }}
+        {% endif %}
+      </div>
+    </div>
+  </article>
+{% endmacro %}
+
+{% block middle_content %}
+  {% if show_collection_browser %}
+    <section class="official-collection-intro">
+      <div>
+        <h1>{{ _('Contest collections') }}</h1>
+        <p>{{ _('Browse official contests by series and year.') }}</p>
+      </div>
+      <div class="official-collection-total">
+        <i class="fa fa-folder-open" aria-hidden="true"></i>
+        <span class="sr-only">{{ _('Contest collections') }}:</span>
+        {{ category_summaries|length }}
+      </div>
+    </section>
+    <div class="official-collection-grid">
+      {% for collection in category_summaries %}
+        <a class="official-collection-card"
+           href="{{ url('official_contest_list') }}?category={{ collection.id }}">
+          <span class="official-collection-icon" aria-hidden="true"><i class="fa fa-folder"></i></span>
+          <span class="official-collection-details">
+            <strong>{{ collection.name }}</strong>
+            <span class="official-collection-meta">
+              <span>
+                {% trans count=collection.contest_count %}{{ count }} contest{% pluralize %}{{ count }} contests{% endtrans %}
+              </span>
+              {% if collection.earliest_year and collection.latest_year %}
+                <span>
+                  {{ collection.earliest_year }}{% if collection.latest_year != collection.earliest_year %}–{{ collection.latest_year }}{% endif %}
+                </span>
+              {% endif %}
+            </span>
+          </span>
+          <i class="fa fa-chevron-right official-collection-chevron" aria-hidden="true"></i>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <a class="official-browse-back" href="{{ url('official_contest_list') }}">
+      <i class="fa fa-arrow-left" aria-hidden="true"></i>{{ _('Browse all collections') }}
+    </a>
+
+    {% if contests %}
+      <div class="official-contest-grid">
+        {% for contest in contests %}
+          {{ official_contest_card(contest) }}
+        {% endfor %}
+      </div>
+      {% if page_obj and page_obj.num_pages > 1 %}
+        <nav class="official-contest-pagination" aria-label="{{ _('Contests') }}">
+          {% include "list-pages.html" %}
+        </nav>
+      {% endif %}
+    {% else %}
+      {{ contest_empty(_('No contests found'), now) }}
+    {% endif %}
+  {% endif %}
 {% endblock %}
