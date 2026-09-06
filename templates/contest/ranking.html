@@ -198,7 +198,11 @@
             .text(isFav ? '\u2605' : '\u2606')
             .toggleClass('fav-active', isFav);
 
-          $row.find('.user-name .rating').first().after($star);
+          var $userLabel = $row.find('.contest-ranking-user').first();
+          if (!$userLabel.length) {
+            $userLabel = $row.find('.user-name .rating').first();
+          }
+          $userLabel.after($star);
           $row.toggleClass('fav-row', isFav);
         });
       };

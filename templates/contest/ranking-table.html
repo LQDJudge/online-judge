@@ -55,13 +55,15 @@
 {% endblock %}
 
 {% block user_link %}
-  {{ link_user(user.user, show_image=True) }}
+  <span class="user-with-img contest-ranking-user">
+    {{ link_user(user.user, show_image=True) }}
+    {% if user.participation.virtual %}
+      <sub class="gray">[{{user.participation.virtual}}]</sub>
+    {% endif %}
+  </span>
 {% endblock %}
 
 {% block user_data %}
-  {% if user.participation.virtual %}
-    <sub class="gray">[{{user.participation.virtual}}]</sub>
-  {% endif %}
   {% if can_edit %}
     <span class="contest-participation-operation">
       <form action="{{ url('contest_participation_disqualify', contest.key) }}" method="post">
