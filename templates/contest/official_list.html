@@ -1,5 +1,5 @@
 {% extends "contest/list.html" %}
-{% from "contest/macros.html" import contest_empty, contest_join %}
+{% from "contest/macros.html" import contest_empty, contest_join, contest_progress_summary %}
 {% set content_class = 'official-contest-page' %}
 {% set middle_right_class = 'official-contest-layout' %}
 
@@ -67,6 +67,10 @@
         <span class="sr-only">{{ _('Ranking') }}:</span>
         {{ contest.official_participant_count }}
       </a>
+      {% if status == 'past' and contest_progress.get(contest.id) is not none %}
+        {% set progress = contest_progress.get(contest.id) %}
+        {{ contest_progress_summary(progress) }}
+      {% endif %}
     </div>
     <div class="official-contest-card-footer">
       <div class="official-contest-time">

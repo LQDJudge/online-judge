@@ -12,6 +12,7 @@
       'future' if is_future else ('current' if is_current else 'past'),
       organization=organization,
       can_spectate=contest.id in spectatable_contest_ids,
+      progress=contest_progress.get(contest.id) if not is_future and not is_current else none,
       ) }}
     {% endfor %}
     {% if page_obj and page_obj.num_pages > 1 %}

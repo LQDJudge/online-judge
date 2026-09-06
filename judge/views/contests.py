@@ -70,6 +70,7 @@ from judge.forms import (
 )
 from judge.utils.contest import maybe_trigger_contest_rescore
 from judge.models import (
+    BestSubmission,
     Contest,
     ContestMoss,
     ContestParticipation,
@@ -479,7 +480,76 @@ class ContestList(
                     .distinct()
                 )
         context["spectatable_contest_ids"] = spectatable_contest_ids
+        context["contest_progress"] = self._get_past_contest_progress(rendered_contests)
         return context
+
+    def _get_past_contest_progress(self, contests):
+        if not self.request.profile:
+            return {}
+
+        past_contest_ids = [
+            contest.id for contest in contests if contest.end_time < self._now
+        ]
+        if not past_contest_ids:
+            return {}
+
+        contest_rows = list(
+            ContestProblem.objects.filter(contest_id__in=past_contest_ids).values(
+                "contest_id",
+                "problem_id",
+                "points",
+                "partial",
+                "is_result_hidden",
+            )
+        )
+
+        # Omit the entire contest if any result is hidden.
+        excluded_contest_ids = {
+            row["contest_id"] for row in contest_rows if row["is_result_hidden"]
+        }
+        problem_rows = [
+            row
+            for row in contest_rows
+            if row["contest_id"] not in excluded_contest_ids
+            and row["problem_id"] is not None
+        ]
+        if not problem_rows:
+            return {}
+
+        problem_ids = {row["problem_id"] for row in problem_rows}
+        best_rows = list(
+            BestSubmission.objects.filter(
+                user=self.request.profile,
+                problem_id__in=problem_ids,
+                case_total__gt=0,
+            ).values("problem_id", "points", "case_total")
+        )
+
+        best_by_problem = {row["problem_id"]: row for row in best_rows}
+
+        achieved_by_contest = defaultdict(float)
+        total_by_contest = defaultdict(float)
+        for row in problem_rows:
+            contest_id = row["contest_id"]
+            contest_points = float(row["points"] or 0)
+            total_by_contest[contest_id] += contest_points
+
+            best = best_by_problem.get(row["problem_id"])
+            if not best or not best["case_total"]:
+                continue
+            ratio = max(0.0, min(float(best["points"]) / best["case_total"], 1.0))
+            if not row["partial"] and ratio < 1.0:
+                continue
+            achieved_by_contest[contest_id] += ratio * contest_points
+
+        return {
+            contest_id: {
+                "achieved": round(achieved_by_contest[contest_id], 3),
+                "total": total,
+            }
+            for contest_id, total in total_by_contest.items()
+            if total > 0
+        }
 
     def get_queryset(self):
         if not hasattr(self, "tab_counts"):

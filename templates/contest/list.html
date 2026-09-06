@@ -162,6 +162,7 @@
         'past',
         organization=organization,
         can_spectate=contest.id in spectatable_contest_ids,
+        progress=contest_progress.get(contest.id),
         ) }}
       {% endfor %}
       {% if page_obj and page_obj.num_pages > 1 %}

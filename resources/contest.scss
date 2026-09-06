@@ -344,6 +344,32 @@
     }
 }
 
+.contest-progress {
+    display: inline-flex;
+    margin-top: $space-sm;
+    align-items: center;
+    align-self: flex-start;
+    gap: $space-xs;
+    color: $text-secondary;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.3;
+
+    i {
+        color: $theme_color;
+    }
+
+    strong {
+        color: $text-primary;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+}
+
+.official-contest-meta > .contest-progress {
+    margin-top: 0;
+}
+
 .official-contest-card-footer {
     display: flex;
     margin-top: auto;

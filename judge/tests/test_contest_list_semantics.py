@@ -1,4 +1,5 @@
 from datetime import timedelta
+from types import SimpleNamespace
 
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
@@ -6,21 +7,27 @@ from django.urls import reverse
 from django.utils import timezone
 
 from judge.models import (
+    BestSubmission,
     Contest,
     ContestParticipation,
+    ContestProblem,
     Language,
     OfficialContest,
     OfficialContestCategory,
     OfficialContestLocation,
+    Problem,
+    ProblemGroup,
     Profile,
+    Submission,
 )
+from judge.views.contests import ContestList
 
 
 @override_settings(LANGUAGE_CODE="en")
 class ContestListSemanticsTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        language, _ = Language.objects.get_or_create(
+        cls.language, _ = Language.objects.get_or_create(
             key="PY3",
             defaults={
                 "name": "Python 3",
@@ -33,7 +40,7 @@ class ContestListSemanticsTest(TestCase):
         )
         user = User.objects.create_user("contest-list-user", password="pw")
         cls.profile, _ = Profile.objects.get_or_create(
-            user=user, defaults={"language": language}
+            user=user, defaults={"language": cls.language}
         )
         now = timezone.now()
 
@@ -187,3 +194,125 @@ class ContestListSemanticsTest(TestCase):
             contest_ids,
             {self.official_live_contest.id, self.official_past_contest.id},
         )
+
+    def test_best_submission_progress_is_only_shown_for_past_contests(self):
+        group = ProblemGroup.objects.create(
+            name="list-progress", full_name="Contest list progress"
+        )
+        problem = Problem.objects.create(
+            code="listprogress",
+            name="List progress problem",
+            group=group,
+            time_limit=1,
+            memory_limit=65536,
+            points=10,
+        )
+        for contest in (
+            self.regular_past_contest,
+            self.official_past_contest,
+            self.official_live_contest,
+            self.upcoming_contest,
+        ):
+            ContestProblem.objects.create(
+                contest=contest,
+                problem=problem,
+                points=100,
+                partial=True,
+                order=0,
+            )
+        hidden_past_contest = Contest.objects.create(
+            key="listhiddenpast",
+            name="Hidden-result past contest",
+            start_time=timezone.now() - timedelta(days=4),
+            end_time=timezone.now() - timedelta(days=3),
+            is_visible=True,
+        )
+        ContestProblem.objects.create(
+            contest=hidden_past_contest,
+            problem=problem,
+            points=100,
+            partial=True,
+            order=0,
+            is_result_hidden=True,
+        )
+
+        submission = Submission.objects.create(
+            user=self.profile,
+            problem=problem,
+            language=self.language,
+            status="D",
+            points=4,
+            case_points=40,
+            case_total=100,
+        )
+        BestSubmission.objects.create(
+            user=self.profile,
+            problem=problem,
+            submission=submission,
+            points=40,
+            case_total=100,
+        )
+
+        view = ContestList()
+        view.request = SimpleNamespace(
+            profile=self.profile,
+            user=self.profile.user,
+        )
+        with self.assertNumQueries(2):
+            progress = view._get_past_contest_progress(
+                [
+                    self.regular_past_contest,
+                    self.official_past_contest,
+                    self.official_live_contest,
+                    self.upcoming_contest,
+                    hidden_past_contest,
+                ]
+            )
+        self.assertSetEqual(
+            set(progress),
+            {self.regular_past_contest.id, self.official_past_contest.id},
+        )
+        self.assertNotIn(hidden_past_contest.id, progress)
+
+        past_response = self.client.get(reverse("contest_list"), {"tab": "past"})
+        self.assertEqual(
+            past_response.context_data["contest_progress"][
+                self.regular_past_contest.id
+            ],
+            {"achieved": 40.0, "total": 100.0},
+        )
+        self.assertContains(past_response, "Progress:")
+        self.assertContains(past_response, "40 / 100")
+        self.assertNotIn(
+            hidden_past_contest.id,
+            past_response.context_data["contest_progress"],
+        )
+
+        current_response = self.client.get(reverse("contest_list"), {"tab": "current"})
+        self.assertNotIn(
+            self.official_live_contest.id,
+            current_response.context_data["contest_progress"],
+        )
+        self.assertNotContains(current_response, "Progress:")
+
+        future_response = self.client.get(reverse("contest_list"), {"tab": "future"})
+        self.assertNotIn(
+            self.upcoming_contest.id,
+            future_response.context_data["contest_progress"],
+        )
+        self.assertNotContains(future_response, "Progress:")
+
+        official_response = self.client.get(
+            reverse("official_contest_list"), {"category": self.category.id}
+        )
+        self.assertEqual(
+            official_response.context_data["contest_progress"][
+                self.official_past_contest.id
+            ],
+            {"achieved": 40.0, "total": 100.0},
+        )
+        self.assertNotIn(
+            self.official_live_contest.id,
+            official_response.context_data["contest_progress"],
+        )
+        self.assertContains(official_response, "Progress:", count=1)

@@ -95,7 +95,17 @@
   {% endif %}
 {% endmacro %}
 
-{% macro contest_format_user(contest, request, show_user=True, is_official=False) %}
+{% macro contest_progress_summary(progress) %}
+  {% if progress is not none %}
+    <div class="contest-progress">
+      <i class="fa fa-chart-line" aria-hidden="true"></i>
+      <span>{{ _('Progress') }}:</span>
+      <strong>{{ progress.achieved|floatformat }} / {{ progress.total|floatformat }}</strong>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro contest_format_user(contest, request, show_user=True, is_official=False, progress=None) %}
   {% if is_official %}
     <div class="contest-format-details">
       <div><b>{{ _('Format') }}</b>: {{ contest.format.name }}</div>
@@ -105,6 +115,7 @@
       {% if show_user %}
         <div class="contest-title contest-user-count">{{ user_count(contest, request.user) }}</div>
       {% endif %}
+      {{ contest_progress_summary(progress) }}
     </div>
   {% else %}
     <div class="contest-format-details">
@@ -115,6 +126,7 @@
       {% if show_user %}
         <div class="contest-title contest-user-count">{{ user_count(contest, request.user) }}</div>
       {% endif %}
+      {{ contest_progress_summary(progress) }}
     </div>
   {% endif %}
 {% endmacro %}
@@ -160,7 +172,7 @@
   </div>
 {% endmacro %}
 
-{% macro standard_contest_card(contest, request, phase, organization=None, participation=None, is_participating=False, show_user=True, can_spectate=False) %}
+{% macro standard_contest_card(contest, request, phase, organization=None, participation=None, is_participating=False, show_user=True, can_spectate=False, progress=None) %}
   {% set heading_id = 'contest-card-' ~ contest.key %}
   <article class="list-contest" aria-labelledby="{{ heading_id }}">
     <div class="info-contest contest-card-main">
@@ -188,7 +200,7 @@
       </div>
     </div>
     <div class="info-contest contest-format-user contest-card-meta">
-      {{ contest_format_user(contest, request, show_user=show_user) }}
+      {{ contest_format_user(contest, request, show_user=show_user, progress=progress) }}
       <div class="participate-button">
         {{ contest_join(
         contest,
