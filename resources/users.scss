@@ -360,7 +360,8 @@ a.edit-profile {
 
     .user-profile-img {
         width: 145px;
-        height: 145px;
+        height: auto;
+        aspect-ratio: 1;
     }
 }
 
@@ -759,7 +760,8 @@ a.edit-profile {
 
     .user-profile-img {
         width: 145px;
-        height: 145px;
+        height: auto;
+        aspect-ratio: 1;
         border: 3px solid white;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }

@@ -105,7 +105,7 @@
   {% endif %}
 {% endmacro %}
 
-{% macro contest_format_user(contest, request, show_user=True, is_official=False, progress=None) %}
+{% macro contest_format_user(contest, request, show_user=True, is_official=False) %}
   {% if is_official %}
     <div class="contest-format-details">
       <div><b>{{ _('Format') }}</b>: {{ contest.format.name }}</div>
@@ -115,7 +115,6 @@
       {% if show_user %}
         <div class="contest-title contest-user-count">{{ user_count(contest, request.user) }}</div>
       {% endif %}
-      {{ contest_progress_summary(progress) }}
     </div>
   {% else %}
     <div class="contest-format-details">
@@ -126,7 +125,6 @@
       {% if show_user %}
         <div class="contest-title contest-user-count">{{ user_count(contest, request.user) }}</div>
       {% endif %}
-      {{ contest_progress_summary(progress) }}
     </div>
   {% endif %}
 {% endmacro %}
@@ -198,9 +196,10 @@
           {% endif %}
         {% endif %}
       </div>
+      {{ contest_progress_summary(progress) }}
     </div>
     <div class="info-contest contest-format-user contest-card-meta">
-      {{ contest_format_user(contest, request, show_user=show_user, progress=progress) }}
+      {{ contest_format_user(contest, request, show_user=show_user) }}
       <div class="participate-button">
         {{ contest_join(
         contest,

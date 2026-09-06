@@ -229,6 +229,69 @@
     height: $control-min-height;
 }
 
+.organization-edit-form .organization-form-title {
+    margin: 0 0 $space-lg;
+    padding: 0 0 $space-md;
+    border-bottom: 1px solid $border-light;
+    border-radius: 0;
+    color: $text-primary;
+    font-size: 1.3rem;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.organization-pending-page {
+    .pending-review-header {
+        padding: $space-lg $space-lg 0;
+        margin-bottom: $space-md;
+        background: $surface-primary;
+        border: 1px solid $border-light;
+
+        h2 {
+            margin: 0 0 $space-md;
+            color: $text-primary;
+            font-size: 1.3rem;
+            line-height: 1.4;
+        }
+
+        .tabs {
+            margin: 0;
+        }
+    }
+
+    .pending-review-empty {
+        padding: $space-hero $space-lg;
+        background: $surface-primary;
+        text-align: center;
+    }
+
+    .blog-box {
+        .title {
+            margin: $space-sm 0 $space-md;
+            font-size: 1.15rem;
+            line-height: 1.4;
+        }
+
+        .post-content-header {
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+        }
+
+        .blog-description {
+            max-height: 280px;
+        }
+
+        .actionbar {
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .actionbar-block {
+            flex: 0 0 auto;
+        }
+    }
+}
+
 .organization-search-box {
     overflow: visible;
 

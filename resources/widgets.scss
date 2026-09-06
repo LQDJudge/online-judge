@@ -228,7 +228,10 @@ input {
 .tabs {
     margin: 0 0 8px;
     width: 100%;
+    min-width: 0;
     display: flex;
+    background: $surface-primary;
+    color: $text-primary;
 
     &.tabs-no-flex {
         display: block;
@@ -260,6 +263,8 @@ input {
     }
 
     > ul {
+        min-width: 0;
+        max-width: 100%;
         margin: 0;
         padding: 0;
         list-style: outside none none;
@@ -493,6 +498,79 @@ a.close {
     background-color: $color-badge-danger-bg;
     border-radius: $radius-lg;
     box-sizing: border-box;
+}
+
+.page-heading {
+    margin: 0 0 $space-md;
+    padding: $space-md $space-lg;
+    background: $surface-primary;
+    color: $text-primary;
+    border: 1px solid $border-light;
+    border-radius: $radius-lg;
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.tabs.page-tabs {
+    position: static;
+    z-index: auto;
+    margin: 0 0 $space-md;
+    padding: 0 $space-md;
+    border: 1px solid $border-light;
+    border-radius: $radius-lg;
+
+    > ul {
+        margin: 0 !important;
+        gap: $space-sm;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    > ul > li {
+        flex: 0 0 auto;
+        text-transform: none;
+
+        > a {
+            display: inline-flex;
+            min-height: 48px;
+            margin: 0;
+            padding: $space-md $space-sm;
+            align-items: center;
+            gap: $space-xs;
+            border-bottom: 2px solid transparent;
+            color: $text-secondary;
+            font-weight: 500;
+
+            &:hover {
+                border-bottom-color: $color-tab-hover;
+                color: $text-primary;
+            }
+        }
+
+        &.active > a,
+        &.active > a:hover,
+        &.active > a:focus {
+            border-bottom: 2px solid $theme_color;
+            color: $theme_color;
+            font-weight: 600;
+        }
+    }
+}
+
+.edit-form-surface {
+    min-width: 0;
+    padding: $space-lg;
+    background: $surface-primary;
+    color: $text-primary;
+    border: 1px solid $border-light;
+
+    @media (max-width: 799px) {
+        padding: $space-md;
+    }
 }
 
 .form-submit-group {
@@ -1113,8 +1191,8 @@ button:hover, button:focus {
 
 @media (max-width: 799px) {
     .tabs {
-        margin-left: 1em;
-        margin-right: 1em;
+        margin-left: 0;
+        margin-right: 0;
     }
 }
 // Featherlight modal customization for image widget only

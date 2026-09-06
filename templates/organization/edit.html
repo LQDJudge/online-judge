@@ -31,6 +31,10 @@
   {{ form.media.css }}
 {% endblock %}
 
+{% block middle_title %}{% endblock %}
+
 {% block middle_content %}
-  {% include "organization/form.html" %}
+  {% with organization_form_title = content_title if content_title else title %}
+    {% include "organization/form.html" %}
+  {% endwith %}
 {% endblock %}

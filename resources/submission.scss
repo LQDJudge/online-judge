@@ -16,6 +16,7 @@
 
     .sub-result {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         font-weight: 600;
         gap: 10px;
@@ -33,11 +34,13 @@
 
         .score {
             font-size: 1.2em;
+            white-space: nowrap;
         }
     }
 
     .sub-details {
         flex-grow: 1;
+        min-width: 0;
         overflow: hidden;
     }
 
@@ -49,9 +52,11 @@
         margin-bottom: 10px;
 
         .sub-user {
-            overflow-wrap: break-word;
+            overflow-wrap: anywhere;
         }
         .sub-problem {
+            min-width: 0;
+            overflow-wrap: anywhere;
             font-weight: 700;
         }
 
@@ -73,6 +78,7 @@
 
     .sub-usage {
         margin-left: auto;
+        padding-left: 10px;
         white-space: nowrap;
         text-align: right;
         display: flex;
@@ -129,6 +135,34 @@ label[for="language"], label[for="status"] {
 
 @media(max-width: 799px) {
     .submission-row {
+        flex-wrap: wrap;
+        gap: 10px;
+
+        .sub-details {
+            flex-basis: 100%;
+        }
+
+        .sub-info {
+            font-size: 1em;
+            margin-bottom: 8px;
+        }
+
+        .sub-result .score {
+            font-size: 1em;
+        }
+
+        .sub-usage {
+            width: 100%;
+            padding-left: 0;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+
+            .sub-prop {
+                margin-left: auto;
+            }
+        }
+
         .sub-prop {
             .label {
                 display: none;

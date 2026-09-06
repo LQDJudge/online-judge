@@ -1,5 +1,5 @@
 {% if active_count or current_count or future_count or past_count %}
-  <nav class="tabs tabs-no-flex contest-status-tabs" aria-label="{{ _('Contests') }}">
+  <nav class="tabs tabs-no-flex page-tabs contest-status-tabs" aria-label="{{ _('Contests') }}">
     <ul>
       {% if request.user.is_authenticated and active_count %}
         <li class="{{ 'active' if current_tab == 'active' }}">

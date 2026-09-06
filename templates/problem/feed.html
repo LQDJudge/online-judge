@@ -12,13 +12,13 @@
           aria-expanded="false" aria-controls="content-right">
     <i class="fa fa-filter" aria-hidden="true"></i>{{ _('Filters') }}
   </button>
-  <div class="tabs">
+  <div class="tabs page-tabs">
     <ul>
       <li class="{{'active' if feed_type=='for_you'}}">
-        <a href="{{url('problem_feed')}}">{{_('FOR YOU')}}</a>
+        <a href="{{url('problem_feed')}}"{% if feed_type == 'for_you' %} aria-current="page"{% endif %}>{{_('For you')}}</a>
       </li>
       <li class="{{'active' if feed_type=='new'}}">
-        <a href="{{url('problem_feed_new')}}">{{_('NEW')}}</a>
+        <a href="{{url('problem_feed_new')}}"{% if feed_type == 'new' %} aria-current="page"{% endif %}>{{_('New')}}</a>
       </li>
     </ul>
   </div>

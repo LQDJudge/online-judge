@@ -1,4 +1,7 @@
 {% extends "organization/home-base.html" %}
+{% set content_class = 'organization-pending-page' %}
+
+{% block middle_title %}{% endblock %}
 
 {% block org_js %}
   {% include "organization/blog/pending-js.html" %}
@@ -7,29 +10,32 @@
 {% block middle_content %}
   {% include "messages.html" %}
 
-  <div class="tabs" id="pending-blog-tabs">
-    <ul>
-      <li class="{{'active' if current_tab == 'pending'}}">
-        <a href="?tab=pending">
-          <i class="fa fa-clock"></i> {{ _('Pending') }}
-          {% if pending_count > 0 %}
-            <span class="badge">{{ pending_count }}</span>
-          {% endif %}
-        </a>
-      </li>
-      <li class="{{'active' if current_tab == 'rejected'}}">
-        <a href="?tab=rejected">
-          <i class="fa fa-times-circle"></i> {{ _('Rejected') }}
-          {% if rejected_count > 0 %}
-            <span class="badge">{{ rejected_count }}</span>
-          {% endif %}
-        </a>
-      </li>
-    </ul>
+  <div class="pending-review-header">
+    <h2>{{ content_title if content_title else title }}</h2>
+    <div class="tabs" id="pending-blog-tabs">
+      <ul>
+        <li class="{{'active' if current_tab == 'pending'}}">
+          <a href="?tab=pending">
+            <i class="fa fa-clock"></i> {{ _('Pending') }}
+            {% if pending_count > 0 %}
+              <span class="badge">{{ pending_count }}</span>
+            {% endif %}
+          </a>
+        </li>
+        <li class="{{'active' if current_tab == 'rejected'}}">
+          <a href="?tab=rejected">
+            <i class="fa fa-times-circle"></i> {{ _('Rejected') }}
+            {% if rejected_count > 0 %}
+              <span class="badge">{{ rejected_count }}</span>
+            {% endif %}
+          </a>
+        </li>
+      </ul>
+    </div>
   </div>
 
   {% if not blogs %}
-    <div class="empty-message gray" style="text-align: center; padding: 2em;">
+    <div class="pending-review-empty gray">
       <i class="fa {% if current_tab == 'rejected' %}fa-check-circle{% else %}fa-inbox{% endif %}" style="font-size: 3em;"></i>
       <p>{% if current_tab == 'rejected' %}{{ _('No rejected posts.') }}{% else %}{{ _('No pending posts.') }}{% endif %}</p>
     </div>
