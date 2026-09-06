@@ -1,14 +1,11 @@
 <div class="sidebox official-contest-search-box{% if selected_categories or selected_locations or year_from or year_to or selected_order %} filters-open{% endif %}">
+  <h3 class="colored-text"><i class="fa fa-search" aria-hidden="true"></i>{{ _('Search') }}</h3>
   <div class="sidebox-content">
     <form id="filter-form" method="GET">
-      <div class="official-contest-search-control">
+      <div>
         <label class="sr-only" for="search-contest">{{ _('Search') }}</label>
         <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
                placeholder="{{ _('Search contests...') }}">
-        <button id="go" type="submit" class="official-contest-search-submit"
-                title="{{ _('Search') }}" aria-label="{{ _('Search') }}">
-          <i class="fa fa-search" aria-hidden="true"></i>
-        </button>
       </div>
 
       <button type="button" class="official-filter-toggle"
@@ -65,8 +62,9 @@
             {% endfor %}
           </select>
         </div>
-
-        <button type="submit" class="action-btn official-apply-filters">{{ _('Apply') }}</button>
+      </div>
+      <div class="form-submit-group">
+        <button id="go" type="submit" class="action-btn">{{ _('Apply') }}</button>
       </div>
     </form>
   </div>

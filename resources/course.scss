@@ -1023,55 +1023,7 @@
 
 .course-list-layout > .courses.right-sidebar {
     .course-search-box {
-        margin: 0;
         overflow: visible;
-        border: 0;
-        background: transparent;
-        box-shadow: none;
-
-        .sidebox-content {
-            padding: 0;
-            border-radius: $radius-md;
-            background: transparent;
-        }
-    }
-
-    .course-search-control {
-        position: relative;
-        margin: 0;
-
-        #search {
-            min-width: 0;
-            height: $control-min-height;
-            margin: 0;
-            border: 1px solid $border_gray;
-            border-radius: $radius-md;
-            background: $surface-primary;
-            padding-right: calc(36px + $space-md);
-        }
-    }
-
-    .course-search-submit {
-        position: absolute;
-        top: 50%;
-        right: $space-xs;
-        display: inline-flex;
-        width: 36px;
-        height: 36px;
-        padding: 0;
-        transform: translateY(-50%);
-        align-items: center;
-        justify-content: center;
-        border: 0;
-        border-radius: $radius-md;
-        background: $theme_color;
-        color: $text-on-primary;
-        cursor: pointer;
-        transition: $transition-ui;
-
-        &:hover {
-            filter: brightness(1.08);
-        }
     }
 }
 

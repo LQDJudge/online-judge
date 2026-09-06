@@ -334,51 +334,14 @@ form.quiz-join-pseudotab {
     }
   }
 
-  .quiz-search-control {
-    position: relative;
-
-    #search-quiz {
-      width: 100%;
-      min-width: 0;
-      height: $control-min-height;
-      margin: 0;
-      padding-right: calc(36px + $space-md);
-      box-sizing: border-box;
-      border: 1px solid $border_gray;
-      border-radius: $radius-md;
-      background: $surface-primary;
-    }
-  }
-
-  .quiz-search-submit {
-    position: absolute;
-    top: 50%;
-    right: $space-xs;
-    display: inline-flex;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    transform: translateY(-50%);
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: $radius-md;
-    background: $theme_color;
-    color: $text-on-primary;
-    cursor: pointer;
-    transition: $transition-ui;
-
-    &:hover,
-    &:focus-visible {
-      filter: brightness(1.08);
-    }
-  }
-
   .quiz-create-link {
-    width: 100%;
-    margin-top: $space-md;
     justify-content: center;
-    box-sizing: border-box;
+  }
+
+  .quiz-search-box .form-submit-group .action-btn {
+    min-height: 34px;
+    padding: $space-xs $space-md;
+    font-size: 0.85rem;
   }
 
   .no-quizzes {

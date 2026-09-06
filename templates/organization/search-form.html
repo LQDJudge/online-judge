@@ -1,14 +1,12 @@
 <div class="sidebox organization-search-box">
+  <h3 class="colored-text"><i class="fa fa-search" aria-hidden="true"></i>{{ _('Search') }}</h3>
   <div class="sidebox-content">
     <form id="filter-form" method="GET">
-      <p class="organization-search-control">
+      <div>
+        <label class="sr-only" for="search-organization">{{ _('Search') }}</label>
         <input id="search-organization" type="text" name="organization" value="{{ organization_query or '' }}"
                placeholder="{{ _('Search groups...') }}">
-        <button id="go" type="submit" class="organization-search-submit"
-                title="{{ _('Search') }}" aria-label="{{ _('Search') }}">
-          <i class="fa fa-search" aria-hidden="true"></i>
-        </button>
-      </p>
+      </div>
       <div class="organization-sort-control">
         <label for="order" class="bold-text margin-label">{{ _('Order by') }}</label>
         <select id="order" name="order">
@@ -18,6 +16,9 @@
             </option>
           {% endfor %}
         </select>
+      </div>
+      <div class="form-submit-group">
+        <button id="go" type="submit" class="action-btn">{{ _('Search') }}</button>
       </div>
       <div class="organization-create-row">
         <a class="organization-create-link" href="{{ url('organization_add') }}">

@@ -1,15 +1,12 @@
 <div class="sidebox contest-list-filter{% if hide_organization_contests or show_only_rated_contests or org_query or selected_order %} filters-open{% endif %}">
+  <h3 class="colored-text"><i class="fa fa-search" aria-hidden="true"></i>{{ _('Search') }}</h3>
   <div class="sidebox-content">
     <form id="filter-form" method="GET">
       <input type="hidden" name="filters" value="1">
-      <div class="contest-search-control">
+      <div>
         <label class="sr-only" for="search-contest">{{ _('Search') }}</label>
         <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
                placeholder="{{ _('Search contests...') }}">
-        <button id="go" type="submit" class="contest-search-submit"
-                title="{{ _('Search') }}" aria-label="{{ _('Search') }}">
-          <i class="fa fa-search" aria-hidden="true"></i>
-        </button>
       </div>
       <button type="button" class="contest-filter-toggle"
               aria-controls="contest-advanced-filters"
@@ -54,12 +51,12 @@
             </select>
           </div>
         {% endif %}
-        <div class="form-submit-group">
-          <button type="submit" class="action-btn">{{ _('Filter') }}</button>
-          {% if create_url %}
-            <a href="{{ create_url }}" class="action-btn"><i class="fa fa-plus"></i> {{ _('Create') }}</a>
-          {% endif %}
-        </div>
+      </div>
+      <div class="form-submit-group">
+        <button id="go" type="submit" class="action-btn">{{ _('Apply') }}</button>
+        {% if create_url %}
+          <a href="{{ create_url }}" class="action-btn"><i class="fa fa-plus"></i> {{ _('Create') }}</a>
+        {% endif %}
       </div>
     </form>
   </div>
