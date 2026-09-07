@@ -1,8 +1,9 @@
 from datetime import timedelta
+import re
 from types import SimpleNamespace
 
 from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -133,6 +134,57 @@ class ContestListSemanticsTest(TestCase):
         contest_ids = {contest.id for contest in response.context_data["contests"]}
         self.assertIn(self.regular_past_contest.id, contest_ids)
         self.assertNotIn(self.official_past_contest.id, contest_ids)
+
+    @override_settings(USE_ML=False)
+    def test_list_join_forms_pass_csrf_validation(self):
+        cases = (
+            ("recommended_contest_list", {}, self.regular_past_contest),
+            (
+                "official_contest_list",
+                {"category": self.category.id},
+                self.official_past_contest,
+            ),
+            (
+                "official_contest_list",
+                {"category": self.category.id},
+                self.official_live_contest,
+            ),
+            ("contest_list", {"tab": "past"}, self.regular_past_contest),
+        )
+        for route, params, contest in cases:
+            with self.subTest(route=route, contest=contest.key):
+                client = Client(enforce_csrf_checks=True)
+                client.force_login(self.profile.user)
+                response = client.get(reverse(route), params)
+                self.assertEqual(response.status_code, 200)
+                join_url = reverse("contest_join", args=[contest.key])
+                form = re.search(
+                    r'<form action="' + re.escape(join_url) + r'"[^>]*>(.*?)</form>',
+                    response.content.decode(),
+                    re.DOTALL,
+                )
+                self.assertIsNotNone(form)
+                token = re.search(
+                    r"name=['\"]csrfmiddlewaretoken['\"] value=['\"]([^'\"]+)['\"]",
+                    form.group(1),
+                )
+                self.assertIsNotNone(token, "Join form must contain its CSRF token")
+
+                response = client.post(
+                    join_url, {"csrfmiddlewaretoken": token.group(1)}
+                )
+
+                self.assertRedirects(
+                    response,
+                    reverse("contest_problems", args=[contest.key]),
+                    fetch_redirect_response=False,
+                )
+                self.profile.refresh_from_db()
+                participation = self.profile.current_contest
+                self.assertEqual(participation.contest_id, contest.id)
+                self.assertEqual(participation.virtual > 0, contest.ended)
+                self.assertFalse(participation.ended)
+                self.profile.remove_contest()
 
     def test_upcoming_contest_has_view_action(self):
         response = self.client.get(reverse("contest_list"), {"tab": "future"})

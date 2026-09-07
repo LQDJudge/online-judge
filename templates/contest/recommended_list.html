@@ -1,5 +1,5 @@
 {% extends "contest/list.html" %}
-{% from "contest/macros.html" import contest_empty, standard_contest_card %}
+{% from "contest/macros.html" import contest_empty, standard_contest_card with context %}
 
 {% block middle_content %}
   {% if contests %}

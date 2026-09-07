@@ -362,17 +362,25 @@ class ProblemDataCompiler(object):
             }
             # Reuse the C/C++ signature grader as the stub + header.
             if self.data.use_ioi_signature:
+                signature = {}
                 for grader in self.problem.signature_graders.all():
-                    if grader.language != "c":
-                        continue
                     handler_path = split_path_first(grader.handler.name)
-                    header_path = split_path_first(grader.header.name)
-                    if len(handler_path) == 2 and len(header_path) == 2:
-                        communication["signature"] = {
-                            "entry": handler_path[1],
-                            "header": header_path[1],
-                        }
-                    break
+                    if len(handler_path) != 2:
+                        continue
+                    if grader.language == "c":
+                        header_path = split_path_first(grader.header.name)
+                        if len(header_path) != 2:
+                            continue
+                        signature.update(
+                            {
+                                "entry": handler_path[1],
+                                "header": header_path[1],
+                            }
+                        )
+                    else:
+                        signature[grader.language] = {"entry": handler_path[1]}
+                if "entry" in signature and "header" in signature:
+                    communication["signature"] = signature
             init["communication"] = communication
         elif self.data.use_ioi_signature:
             signature_graders = {}
