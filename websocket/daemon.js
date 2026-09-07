@@ -3,6 +3,7 @@ const queue = require('qu');
 const { Server } = require('socket.io');
 const http = require('http');
 const express = require('express');
+const { isChatChannel, verifyChatGrant } = require('./chat_grant');
 
 // Create Express app and HTTP server
 const app = express();
@@ -28,7 +29,7 @@ let connection_count = 0;
 let message_id = Date.now();
 const messages = new queue();
 const max_queue = config.max_queue || 50;
-const max_subscriptions_per_connection = config.max_subscriptions_per_connection || 10;
+const max_subscriptions_per_connection = config.max_subscriptions_per_connection || 64;
 const max_connections = config.max_connections || 5000;
 
 // Queue methods
@@ -63,6 +64,51 @@ messages.last = function() {
   return this.tail()?.id || 0;
 };
 
+const max_backend_batch = 50;
+
+function senderEventError(data) {
+  if (!data || typeof data.channel !== 'string' ||
+      data.channel.length === 0 || data.channel.length > 100) {
+    return {
+      status: 'error',
+      code: 'invalid-channel',
+      message: 'Invalid channel'
+    };
+  }
+  return null;
+}
+
+function postSenderEvent(data) {
+  if (data.channel === '__chat_revoke_user_room__') {
+    const revocation = data.message || {};
+    io.sockets.sockets.forEach(client => {
+      const claims = client.chatGrant;
+      if (!client.isSender && claims &&
+          Number(claims.user_id) === Number(revocation.user_id) &&
+          claims.room_ids.includes(Number(revocation.room_id))) {
+        if (typeof revocation.channel === 'string') {
+          client.leave(revocation.channel);
+          client.channels.delete(revocation.channel);
+          claims.channels = claims.channels.filter(
+            channel => channel !== revocation.channel
+          );
+        }
+        claims.room_ids = claims.room_ids.filter(
+          roomId => roomId !== Number(revocation.room_id)
+        );
+        client.emit('chat-revoked', revocation);
+      }
+    });
+    return ++message_id;
+  }
+  return messages.post(data.channel, data.message);
+}
+
+function answerSender(socket, callback, response, eventName) {
+  if (callback) callback(response);
+  else socket.emit(eventName, response);
+}
+
 // Authentication middleware for socket connections
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
@@ -88,26 +134,45 @@ io.on('connection', (socket) => {
   if (socket.isSender) {
     // Sender commands
     socket.on('post', (data, callback) => {
-      if (typeof data.channel !== 'string' || data.channel.length === 0 || data.channel.length > 100) {
-        const error = {
-          status: 'error',
-          code: 'invalid-channel',
-          message: 'Invalid channel'
-        };
-        
-        if (callback) callback(error);
-        else socket.emit('error', error);
+      const error = senderEventError(data);
+      if (error) {
+        answerSender(socket, callback, error, 'error');
         return;
       }
-      
-      const id = messages.post(data.channel, data.message);
-      const response = {
-        status: 'success',
-        id: id
-      };
-      
-      if (callback) callback(response);
-      else socket.emit('post-response', response);
+      answerSender(
+        socket,
+        callback,
+        { status: 'success', id: postSenderEvent(data) },
+        'post-response'
+      );
+    });
+
+    socket.on('post-batch', (data, callback) => {
+      const events = data && data.events;
+      if (!Array.isArray(events) || events.length === 0 ||
+          events.length > max_backend_batch) {
+        answerSender(socket, callback, {
+          status: 'error',
+          code: 'invalid-batch',
+          message: 'Invalid event batch'
+        }, 'error');
+        return;
+      }
+      const error = events.map(senderEventError).find(Boolean);
+      if (error) {
+        answerSender(socket, callback, error, 'error');
+        return;
+      }
+      let id = 0;
+      events.forEach(event => {
+        id = postSenderEvent(event);
+      });
+      answerSender(
+        socket,
+        callback,
+        { status: 'success', id: id },
+        'post-response'
+      );
     });
     
     socket.on('last-msg', (callback) => {
@@ -140,6 +205,10 @@ io.on('connection', (socket) => {
   // Initialize socket properties
   socket.last_msg = 0;
   socket.channels = new Set();
+  socket.chatGrant = verifyChatGrant(
+    socket.handshake.auth.grant,
+    BACKEND_AUTH_TOKEN
+  );
   
   // Add client metadata
   socket.metadata = {
@@ -149,6 +218,16 @@ io.on('connection', (socket) => {
   
   // Setup got_message function for this socket
   socket.got_message = (message) => {
+    if (isChatChannel(message.channel) &&
+        (!socket.chatGrant || socket.chatGrant.exp <= Math.floor(Date.now() / 1000))) {
+      socket.emit('error', {
+        status: 'error',
+        code: 'chat-grant-expired',
+        message: 'Chat subscription grant expired'
+      });
+      socket.disconnect(true);
+      return;
+    }
     socket.emit('message', message);
     socket.last_msg = message.id;
   };
@@ -191,6 +270,19 @@ io.on('connection', (socket) => {
         status: 'error',
         code: 'invalid-channel',
         message: 'Channel must be a non-empty string (max 100 chars)'
+      });
+      return;
+    }
+
+    const requestedChatChannels = data.filter.filter(isChatChannel);
+    if (requestedChatChannels.length &&
+        (!socket.chatGrant || requestedChatChannels.some(
+          channel => !socket.chatGrant.channels.includes(channel)
+        ))) {
+      socket.emit('error', {
+        status: 'error',
+        code: 'unauthorized-chat-channel',
+        message: 'A valid chat subscription grant is required'
       });
       return;
     }

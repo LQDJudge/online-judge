@@ -162,7 +162,42 @@
                 </td>
                 <td class="notification-content">
                   {% set notification_extra = notification.extra_data or {} %}
-                  {% if notification.category == "chat_mute" and notification_extra.get("type") == "chat_mute_notice" %}
+                  {% set notification_type = notification_extra.get("type") %}
+                  {% set notification_room = notification_extra.get("room_name") %}
+                  {% if notification_type == "room_added" and notification_room %}
+                    {% set room = notification_room %}
+                    <a href="{{ url('chat', notification_extra.get('room_id')) }}">{% trans %}You were added to {{ room }}.{% endtrans %}</a>
+                  {% elif notification_type == "room_role_changed" and notification_room and notification_extra.get("role") %}
+                    {% set role_code = notification_extra.get("role") %}
+                    {% set notification_role = _("Admin") if role_code == "admin" else (_("Moderator") if role_code == "moderator" else _("Member")) %}
+                    {% set room = notification_room %}
+                    {% set role = notification_role %}
+                    <a href="{{ url('chat', notification_extra.get('room_id')) }}">{% trans %}Your role in {{ room }} is now {{ role }}.{% endtrans %}</a>
+                  {% elif notification_type == "room_removed" and notification_room %}
+                    {% set room = notification_room %}
+                    {% trans %}You were removed from {{ room }}.{% endtrans %}
+                  {% elif notification_type == "room_blocked" and notification_room %}
+                    {% set room = notification_room %}
+                    {% trans %}You were blocked from {{ room }}.{% endtrans %}
+                  {% elif notification_type == "room_unblocked" and notification_room %}
+                    {% set room = notification_room %}
+                    {% trans %}You were unblocked from {{ room }}.{% endtrans %}
+                  {% elif notification_type == "room_mute_notice" and notification_room and notification_extra.get("mute_until_display") %}
+                    {% set room = notification_room %}
+                    {% set time = notification_extra.get("mute_until_display") %}
+                    <a href="{{ url('chat', notification_extra.get('room_id')) }}">{% trans %}You were muted in {{ room }} until {{ time }}.{% endtrans %}</a>
+                    {% if notification_extra.get("reason") %}
+                      {% set reason = notification_extra.get("reason") %}
+                      <br>{% trans %}Reason: {{ reason }}{% endtrans %}
+                    {% endif %}
+                  {% elif notification_type == "room_unmuted" and notification_room %}
+                    {% set room = notification_room %}
+                    <a href="{{ url('chat', notification_extra.get('room_id')) }}">{% trans %}Your mute in {{ room }} was removed.{% endtrans %}</a>
+                  {% elif notification_type == "lobby_moderator_appointed" %}
+                    <a href="{{ url('chat', notification_extra.get('room_id')) }}">{{ _("You were appointed as a Lobby moderator.") }}</a>
+                  {% elif notification_type == "lobby_moderator_revoked" %}
+                    <a href="{{ url('chat', notification_extra.get('room_id')) }}">{{ _("You are no longer a Lobby moderator.") }}</a>
+                  {% elif notification.category == "chat_mute" and notification_type == "chat_mute_notice" %}
                     {% if notification_extra.get("mute_until") %}
                       {% set mute_until = notification_extra.get("mute_until") %}
                       {% trans %}Your chat access has been muted until {{ mute_until }}.{% endtrans %}

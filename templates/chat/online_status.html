@@ -1,61 +1,79 @@
-<li class="status-row" id="lobby_row">
-  <div class="status-container">
-    <img loading="lazy" src="{{ static('icons/icon.svg') }}" class="status-pic lobby-icon">
-  </div>
-  <div class="status-user">
-    <span class="status-username"><b>{{_('Lobby')}}</b></span>
-  </div>
-  {% if unread_count_lobby and unread_count_lobby > 0 %}
-    <span class="unread-count" id="unread-count-lobby">{{unread_count_lobby}}</span>
-  {% endif %}
-</li>
-{% for section in status_sections %}
-  {% if section.user_list %}
-    <div class="status-section-title toggle open">
-      <h4>
-        <i class="fa fa-chevron-right fa-fw"></i>{{_(section.title)}}
-      </h4>
-      <hr/>
+{% if not lobby_hidden %}
+  <li class="status-row" id="lobby_row" data-room="{{ lobby_room.id }}" data-room-url="{{ url('chat', lobby_room.id) }}">
+    <div class="status-container">
+      <img loading="lazy" src="{{ static('icons/icon.svg') }}" class="status-pic lobby-icon">
     </div>
-    <ul class="status-list toggled">
-      {% for user_dict in section.user_list %}
-        <li class="click_space status-row" id="click_space_{{user_dict.user.id}}" value="{{user_dict.url}}" data-user-id="{{user_dict.user.id}}" data-room="{{user_dict.room or ''}}" data-is-self="{{ '1' if user_dict.is_self else '0' }}">
-          <div class="status-container">
-            <img loading="lazy" src="{{ public_gravatar(user_dict.user, request.user, 135) }}" class="status-pic user-img">
-            <span class="status-circle {{ 'online' if user_dict.is_online else 'offline' }}"></span>
-          </div>
-          <div class="status-user">
-            <span class="username {{ user_dict.user.css_class }} wrapline">
-              {{ user_dict.user.get_public_username(request.user) }}
-              {% if user_dict.is_self %}
-                <span class="gray">&nbsp;({{ _('You') }})</span>
-              {% endif %}
-            </span>
-            {% if user_dict.last_msg %}
-              <span class="status_last_message status-last-message wrapline" {% if user_dict.room %}id="last_msg-{{user_dict.room}}"{% endif %}>
-                {{ user_dict.last_msg }}
-              </span>
-            {% endif %}
-          </div>
-          {% if user_dict.unread_count and user_dict.unread_count > 0 %}
-            <span class="unread-count" id="unread-count-{{user_dict.user.id}}">
-              {{user_dict.unread_count}}
-            </span>
+    <div class="status-user">
+      <span class="status-username"><b>{{_('Lobby')}}</b></span>
+    </div>
+    {% if unread_count_lobby and unread_count_lobby > 0 %}
+      <span class="unread-count" id="unread-count-lobby" data-count="{{ unread_count_lobby }}" aria-label="{{ _('%(count)s unread messages', count=unread_count_lobby) }}">
+        {{ '99+' if unread_count_lobby > 99 else unread_count_lobby }}
+      </span>
+    {% endif %}
+  </li>
+{% endif %}
+{% set section = status_sections[0] %}
+<div class="chat-recent-header">
+  <h4>{{ _('Recent') }}</h4>
+  <div class="chat-room-filters" role="group" aria-label="{{ _('Filter rooms') }}">
+    {% for key, label in [('all', _('All')), ('conversations', _('Conversations')), ('channels', _('Channels'))] %}
+      <button type="button" class="chat-room-filter{% if section.key == key %} is-active{% endif %}"
+              data-room-filter="{{ key }}" aria-pressed="{{ 'true' if section.key == key else 'false' }}">
+        {{ label }}
+      </button>
+    {% endfor %}
+  </div>
+</div>
+<ul class="status-list" data-room-section="{{ section.key }}">
+  {% for room_item in section.room_list %}
+    <li class="click_space status-row" id="room_row_{{room_item.room}}" data-user-id="{{room_item.user.id if room_item.user else ''}}" data-room="{{room_item.room}}" data-room-url="{{ url('chat', room_item.room) }}" data-is-self="{{ '1' if room_item.is_self else '0' }}">
+      <div class="status-container">
+        {% if room_item.user %}
+          <img loading="lazy" src="{{ public_gravatar(room_item.user, request.user, 135) }}" class="status-pic user-img">
+          <span class="status-circle {{ 'online' if room_item.is_online else 'offline' }}"></span>
+        {% elif room_item.avatar_url %}
+          <img loading="lazy" src="{{ room_item.avatar_url }}" class="status-pic room-avatar" alt="">
+        {% else %}
+          <span class="status-room-icon" aria-hidden="true"><i class="fa {{ 'fa-users' if room_item.room_type == 'group' else 'fa-hashtag' }}"></i></span>
+        {% endif %}
+      </div>
+      <div class="status-user">
+        <span class="username {{ room_item.user.css_class if room_item.user else '' }} wrapline">
+          {{ room_item.name }}
+          {% if room_item.is_self %}
+            <span class="gray">&nbsp;({{ _('You') }})</span>
           {% endif %}
-          {% if not user_dict.is_self %}
-            <div class="setting-wrapper">
-              <div class="control-button small setting-button">
-                <i class="fa fa-ellipsis-h"></i>
-              </div>
-              <div class="setting-content">
-                <a href="{{url('toggle_ignore', user_dict.user.id)}}" class="red">
-                  {{_('Ignore')}}
-                </a>
-              </div>
-            </div>
-          {% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-{% endfor %}
+        </span>
+        {% if room_item.last_msg %}
+          <span class="status_last_message status-last-message wrapline" id="last_msg-{{room_item.room}}">
+            {{ room_item.last_msg }}
+          </span>
+        {% endif %}
+      </div>
+      {% if room_item.unread_count and room_item.unread_count > 0 %}
+        <span class="unread-count" id="unread-count-room-{{room_item.room}}" data-count="{{ room_item.unread_count }}" aria-label="{{ _('%(count)s unread messages', count=room_item.unread_count) }}">
+          {{ '99+' if room_item.unread_count > 99 else room_item.unread_count }}
+        </span>
+      {% endif %}
+      {% if room_item.user and not room_item.is_self %}
+        <div class="setting-wrapper">
+          <div class="control-button small setting-button">
+            <i class="fa fa-ellipsis-h"></i>
+          </div>
+          <div class="setting-content">
+            <a href="{{url('toggle_ignore', room_item.user.id)}}" class="red">
+              {{_('Ignore')}}
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>
+{% if not section.room_list %}
+  <p class="chat-recent-empty">{{ _('No rooms found.') }}</p>
+{% endif %}
+{% if section.has_more %}
+  <button type="button" class="action-btn small chat-load-more chat-load-more-rooms" data-room-section="{{ section.key }}" data-cursor="{{ section.next_cursor }}">{{ _('Load more') }}</button>
+{% endif %}

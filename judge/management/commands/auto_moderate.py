@@ -727,7 +727,11 @@ class Command(BaseCommand):
 
         # Get unhidden lobby messages not yet reviewed, within cutoff
         messages = list(
-            ChatMessage.objects.filter(room=None, hidden=False, time__gte=cutoff)
+            ChatMessage.objects.filter(
+                room__singleton_key="lobby",
+                hidden=False,
+                time__gte=cutoff,
+            )
             .exclude(id__in=already_reviewed)
             .select_related("author__user")
             .order_by("id")[: self.batch_size]

@@ -12,7 +12,13 @@ from chat_box.models import Message, Room, UserRoom
 from chat_box.views import build_reply_snippet, get_reply_quotes
 
 
+def lobby_room():
+    return Room.objects.get(singleton_key="lobby")
+
+
 class ReplyModelTest(TestCase):
+    fixtures = ["language_small"]
+
     def setUp(self):
         cache.clear()
         self.u = User.objects.create_user(username="alice", password="x")
@@ -22,17 +28,17 @@ class ReplyModelTest(TestCase):
         cache.clear()
 
     def test_reply_to_links_parent_and_reverse(self):
-        parent = Message.objects.create(author=self.p, body="parent", room=None)
+        parent = Message.objects.create(author=self.p, body="parent", room=lobby_room())
         child = Message.objects.create(
-            author=self.p, body="child", room=None, reply_to=parent
+            author=self.p, body="child", room=lobby_room(), reply_to=parent
         )
         self.assertEqual(child.reply_to_id, parent.id)
         self.assertIn(child, parent.replies.all())
 
     def test_deleting_parent_nulls_reply_to(self):
-        parent = Message.objects.create(author=self.p, body="parent", room=None)
+        parent = Message.objects.create(author=self.p, body="parent", room=lobby_room())
         child = Message.objects.create(
-            author=self.p, body="child", room=None, reply_to=parent
+            author=self.p, body="child", room=lobby_room(), reply_to=parent
         )
         parent.delete()
         child.refresh_from_db()
@@ -56,6 +62,8 @@ class ReplySnippetTest(TestCase):
 
 
 class ReplyQuotesTest(TestCase):
+    fixtures = ["language_small"]
+
     def setUp(self):
         cache.clear()
         self.u = User.objects.create_user(username="bob", password="x")
@@ -66,7 +74,11 @@ class ReplyQuotesTest(TestCase):
 
     def _msg(self, body, reply_to=None, hidden=False):
         return Message.objects.create(
-            author=self.p, body=body, room=None, reply_to=reply_to, hidden=hidden
+            author=self.p,
+            body=body,
+            room=lobby_room(),
+            reply_to=reply_to,
+            hidden=hidden,
         )
 
     def test_quote_for_reply(self):
@@ -96,7 +108,7 @@ class ReplyQuotesTest(TestCase):
         # child's FK ever points at a parent in another room (data created
         # outside that path — admin/shell/import, or a later move), rendering
         # must NOT leak the other room's snippet. Re-check room at render time.
-        room = Room.objects.create(last_msg_id=None)
+        room = Room.objects.create(room_type=Room.Type.GROUP, name="Other room")
         parent = Message.objects.create(author=self.p, body="in room", room=room)
         child = self._msg("child in lobby", reply_to=parent)  # child.room is None
         self.assertTrue(get_reply_quotes([child])[child.id]["unavailable"])
@@ -119,7 +131,7 @@ class ReplyQuotesTest(TestCase):
             for i in range(5)
         ]
         parents = [
-            Message.objects.create(author=authors[i], body="p%d" % i, room=None)
+            Message.objects.create(author=authors[i], body="p%d" % i, room=lobby_room())
             for i in range(5)
         ]
         children = [self._msg("c%d" % i, reply_to=parents[i]) for i in range(5)]
@@ -159,7 +171,7 @@ class PostReplyEndpointTest(TestCase):
             )
 
     def test_valid_reply_links_parent(self):
-        parent = Message.objects.create(author=self.p, body="parent", room=None)
+        parent = Message.objects.create(author=self.p, body="parent", room=lobby_room())
         resp = self._post("child", reply_to=parent.id)
         self.assertEqual(resp.status_code, 200)
         child = Message.objects.latest("id")
@@ -172,7 +184,7 @@ class PostReplyEndpointTest(TestCase):
 
     def test_hidden_parent_dropped_but_message_posts(self):
         parent = Message.objects.create(
-            author=self.p, body="secret", room=None, hidden=True
+            author=self.p, body="secret", room=lobby_room(), hidden=True
         )
         resp = self._post("child", reply_to=parent.id)
         self.assertEqual(resp.status_code, 200)
@@ -184,7 +196,7 @@ class PostReplyEndpointTest(TestCase):
         self.assertIsNone(Message.objects.latest("id").reply_to_id)
 
     def test_cross_room_parent_dropped(self):
-        room = Room.objects.create(last_msg_id=None)
+        room = Room.objects.create(room_type=Room.Type.GROUP, name="Other room")
         UserRoom.objects.create(user=self.p, room=room)
         parent = Message.objects.create(author=self.p, body="in room", room=room)
         resp = self._post("child in lobby", reply_to=parent.id)  # posts to lobby

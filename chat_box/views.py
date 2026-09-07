@@ -1,8 +1,10 @@
+import math
 import re
 
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.db.models import Count, F
+from django.db.models import Count, Q
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -12,6 +14,7 @@ from django.http import (
 )
 from django.shortcuts import render
 from django.templatetags.static import static
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -23,8 +26,10 @@ from reversion import revisions
 from judge import event_poster as event
 from judge.caching import cache_wrapper
 from judge.models.notification import Notification, NotificationCategory
-from judge.models.profile import get_profile_public_identity
+from judge.models.profile import Organization, get_profile_public_identity
 from judge.utils.community import can_use_community_features
+from judge.utils.views import generic_message
+from chat_box.exceptions import RoomError, RoomPermissionDenied
 from chat_box.models import (
     ChatModerationLog,
     Ignore,
@@ -32,6 +37,8 @@ from chat_box.models import (
     MessageReaction,
     Profile,
     Room,
+    RoomMute,
+    RoomRedirect,
     UserRoom,
     CHAT_REACTIONS,
     CHAT_REACTION_CODES,
@@ -40,30 +47,39 @@ from chat_box.models import (
     CHAT_REACTION_LABELS,
     get_first_msg_id,
     get_ignored_user_ids,
-    get_user_room_list,
 )
+from chat_box.policies import RoomPolicy
+from chat_box.selectors import (
+    ROOM_LIST_SECTIONS,
+    active_room_mute,
+    encode_room_list_cursor,
+    get_lobby,
+    get_membership,
+    get_room_page,
+    unread_counts_for_memberships,
+)
+from chat_box.services.events import broadcast_room_event, chat_event_channels
+from chat_box.services.moderation import (
+    ROOM_MUTE_MAX_DAYS,
+    hide_message as hide_room_message,
+    mute_member,
+)
+from chat_box.services.unread import mark_room_read
 from chat_box.utils import (
     encrypt_url,
     decrypt_url,
     encrypt_channel,
+    create_chat_event_grant,
     get_reactions_summary,
-    get_unread_boxes,
 )
 
 CHAT_TEMP_MUTE_CAP_DAYS = 30
 REACTION_LIST_PER_TYPE_LIMIT = 10
-
-
-def can_mute_chat_temporarily(user):
-    return user.has_perm("judge.change_comment")
+CHAT_MODERATION_BATCH_SIZE = 500
 
 
 def can_mute_chat_permanently(user):
     return user.is_superuser
-
-
-def can_mute_chat(user):
-    return can_mute_chat_temporarily(user) or can_mute_chat_permanently(user)
 
 
 def clear_expired_chat_mute(profile):
@@ -103,6 +119,8 @@ class ChatView(ListView):
         super().__init__()
         self.room_id = None
         self.room = None
+        self.membership = None
+        self.management_override = False
         self.messages = None
         self.first_page_size = 20  # only for first request
         self.follow_up_page_size = 50
@@ -137,6 +155,7 @@ class ChatView(ListView):
 
     def get(self, request, *args, **kwargs):
         request_room = kwargs["room_id"]
+        redirected_room = False
         page_size = self.follow_up_page_size
         try:
             last_id = int(request.GET.get("last_id"))
@@ -145,28 +164,127 @@ class ChatView(ListView):
             page_size = self.first_page_size
         only_messages = request.GET.get("only_messages")
 
-        if request_room:
-            try:
-                self.room = Room.objects.get(id=request_room)
-                if not can_access_room(request, self.room):
-                    return HttpResponseBadRequest()
-            except Room.DoesNotExist:
-                return HttpResponseBadRequest()
-        else:
-            request_room = None
+        try:
+            if request_room:
+                try:
+                    self.room = Room.objects.get(id=request_room)
+                except Room.DoesNotExist:
+                    canonical_room_id = (
+                        RoomRedirect.objects.filter(old_room_id=request_room)
+                        .values_list("canonical_room_id", flat=True)
+                        .first()
+                    )
+                    if canonical_room_id is None:
+                        raise
+                    self.room = Room.objects.get(id=canonical_room_id)
+                    redirected_room = True
+            else:
+                self.room = get_lobby()
+            self.membership = get_membership(self.room, request.profile)
+            policy = RoomPolicy(
+                request.user,
+                request.profile,
+                self.room,
+                self.membership,
+            )
+            if not policy.can_view():
+                if request.GET.get("switch_room") or only_messages:
+                    return HttpResponseForbidden()
+                return generic_message(
+                    request,
+                    _("Access denied"),
+                    _(
+                        "You do not have access to this private room. Ask a room administrator for an invitation link."
+                    ),
+                    status=403,
+                )
+            self.management_override = False
+        except Room.DoesNotExist:
+            return HttpResponseBadRequest()
 
+        if redirected_room and not (request.GET.get("switch_room") or only_messages):
+            return HttpResponseRedirect(
+                reverse("chat", kwargs={"room_id": self.room.id})
+            )
+
+        request_room = self.room.id
         self.room_id = request_room
         self.messages = self.get_message_page(last_id, page_size)
+        if request.GET.get("switch_room"):
+            if self.management_override:
+                return HttpResponseForbidden()
+            context = self.get_context_data(object_list=self.messages)
+            message_template_context = dict(context)
+            message_template_context.update(
+                {
+                    "message": context["message_template"],
+                    "is_message_template": True,
+                }
+            )
+            return JsonResponse(
+                {
+                    "room": {
+                        "id": self.room.id,
+                        "type": self.room.room_type,
+                        "channel_kind": self.room.channel_kind or "",
+                        "is_archived": context["room_is_archived"],
+                        "max_length": 200 if context["is_lobby"] else 5000,
+                        "other_user_id": (
+                            context["other_user"].id
+                            if context.get("other_user")
+                            else ""
+                        ),
+                        "last_message_id": self.room.last_msg_id,
+                    },
+                    "user": {
+                        "is_room_muted": context["is_room_muted"],
+                        "can_interact_room": context["can_interact_room"],
+                        "can_moderate_chat": (
+                            request.user.is_superuser
+                            or (
+                                self.membership
+                                and self.membership.role
+                                in (UserRoom.Role.ADMIN, UserRoom.Role.MODERATOR)
+                            )
+                        ),
+                    },
+                    "header_html": render_to_string(
+                        "chat/room_header.html", context, request=request
+                    ),
+                    "messages_html": render_to_string(
+                        "chat/message_list.html", context, request=request
+                    ),
+                    "message_template": render_to_string(
+                        "chat/message.html",
+                        message_template_context,
+                        request=request,
+                    ),
+                }
+            )
         if not only_messages:
             return super().get(request, *args, **kwargs)
-
         return render(
             request,
             "chat/message_list.html",
             {
                 "object_list": self.messages,
+                "room_object": self.room,
                 "has_next": self.has_next(),
                 "can_chat": can_use_community_features(request.user, request.profile),
+                "can_interact_room": (
+                    RoomPolicy(
+                        request.user,
+                        request.profile,
+                        self.room,
+                        get_membership(self.room, request.profile),
+                    ).can_post()
+                    and not is_chat_muted(request.profile)
+                    and not active_room_mute(self.room, request.profile, timezone.now())
+                    and can_use_community_features(request.user, request.profile)
+                ),
+                **message_permission_context(
+                    self.messages, request.user, request.profile, self.room
+                ),
                 **reaction_render_context(self.messages, request.profile),
                 **reply_render_context(self.messages, request.user),
             },
@@ -179,25 +297,86 @@ class ChatView(ListView):
         context["last_msg"] = event.last()
         context["status_sections"] = get_status_context(self.request.profile)
         context["room"] = self.room_id
+        context["room_object"] = self.room
+        context["room_avatar_url"] = self.room.get_avatar_url()
+        context["is_lobby"] = self.room.channel_kind == Room.ChannelKind.LOBBY
         context["has_next"] = self.has_next()
-        context["unread_count_lobby"] = get_unread_count(None, self.request.profile)
+        lobby = get_lobby()
+        context["unread_count_lobby"] = get_unread_count(lobby, self.request.profile)
+        context["lobby_room"] = lobby
+        lobby_membership = get_membership(lobby, self.request.profile)
+        context["lobby_hidden"] = (
+            lobby_membership.is_hidden if lobby_membership else False
+        )
         context["is_chat_muted"] = is_chat_muted(self.request.profile)
         context["can_chat"] = can_use_community_features(
             self.request.user, self.request.profile
         )
-        context["can_mute_chat_temporarily"] = can_mute_chat_temporarily(
-            self.request.user
+        context["can_create_channel"] = (
+            self.request.user.is_superuser
+            or Organization.objects.filter(admins=self.request.profile)
+            .exclude(chat_room__isnull=False)
+            .exists()
         )
         context["can_mute_chat_permanently"] = can_mute_chat_permanently(
             self.request.user
         )
-        context["chat_channel"] = encrypt_channel(
-            "chat_" + str(self.request.profile.id)
-        )
-        context["chat_lobby_channel"] = encrypt_channel("chat_lobby")
+        context["management_override"] = self.management_override
+        if self.management_override:
+            context["chat_event_channels"] = []
+            context["chat_event_grant"] = ""
+        else:
+            event_room_ids = {
+                item["room"]
+                for section in context["status_sections"]
+                for item in section["room_list"]
+            }
+            event_room_ids.add(self.room.id)
+            if not context["lobby_hidden"]:
+                event_room_ids.add(lobby.id)
+            context["chat_event_channels"] = chat_event_channels(
+                self.request.profile.id,
+                sorted(event_room_ids),
+            )
+            context["chat_event_grant"] = create_chat_event_grant(
+                self.request.profile.id,
+                event_room_ids,
+                context["chat_event_channels"],
+            )
         context.update(reaction_render_context(self.messages, self.request.profile))
         context.update(reply_render_context(self.messages, self.request.user))
-        if self.room:
+        membership = self.membership
+        context["room_membership"] = membership
+        context["room_policy"] = RoomPolicy(
+            self.request.user,
+            self.request.profile,
+            self.room,
+            membership,
+        )
+        context["room_can_manage"] = context["room_policy"].can_manage()
+        context["room_can_view_moderation"] = context[
+            "room_policy"
+        ].can_view_moderation()
+        context["room_is_archived"] = self.room.archived_at is not None
+        context["is_room_muted"] = bool(
+            active_room_mute(self.room, self.request.profile, timezone.now())
+        )
+        context["can_interact_room"] = (
+            context["can_chat"]
+            and not context["is_chat_muted"]
+            and not context["is_room_muted"]
+            and context["room_policy"].can_post()
+        )
+        context.update(
+            message_permission_context(
+                self.messages,
+                self.request.user,
+                self.request.profile,
+                self.room,
+                membership,
+            )
+        )
+        if self.room.room_type == Room.Type.DIRECT:
             other_user = self.room.other_user(self.request.profile)
             if other_user:
                 context["other_user"] = other_user
@@ -208,8 +387,13 @@ class ChatView(ListView):
                     context["is_ignored"] = Ignore.is_ignored(
                         self.request.profile, context["other_user"]
                     )
-        else:
+        elif self.room.channel_kind == Room.ChannelKind.LOBBY:
             context["online_count"] = get_online_count()
+        else:
+            context["room_name"] = self.room.name
+            context["room_member_count"] = UserRoom.objects.filter(
+                room=self.room, state=UserRoom.State.ACTIVE
+            ).count()
         context["message_template"] = {
             "author_id": self.request.profile.id,
             "id": "$id",
@@ -227,9 +411,13 @@ def hide_lobby_message(
     log_action=True,
 ):
     """Hide a single lobby message and log the action."""
+    lobby = get_lobby()
+    if message.room_id != lobby.id:
+        raise ValueError("hide_lobby_message only accepts persisted Lobby messages")
     message.hidden = True
     message.save(update_fields=["hidden"])
-    get_first_msg_id.dirty(None)
+    get_first_msg_id.dirty(lobby.id)
+    transaction.on_commit(lambda: Room.dirty_cache(lobby.id))
     if log_action:
         ChatModerationLog.log_action(
             message=message,
@@ -240,7 +428,7 @@ def hide_lobby_message(
         )
 
 
-def notify_chat_mute(profile, mute_until=None, reason=""):
+def notify_chat_mute(profile, mute_until=None, reason="", moderator=None):
     if mute_until:
         until = timezone.localtime(mute_until).strftime("%Y-%m-%d %H:%M")
         summary = _("Your chat access has been muted until %(until)s.") % {
@@ -260,7 +448,7 @@ def notify_chat_mute(profile, mute_until=None, reason=""):
         owner=profile,
         category=NotificationCategory.CHAT_MUTE,
         html_link=html_link,
-        author=None,
+        author=moderator,
         extra_data={
             "type": "chat_mute_notice",
             "mute_until": until,
@@ -283,9 +471,10 @@ def mute_chat_user(
     moderator=None,
     reason="",
     mute_type="permanent",
+    hide_room_messages=False,
     log_action=True,
 ):
-    """Mute a user, hide lobby messages, log the action, and notify them."""
+    """Suspend a user from all chat, with optional current-channel cleanup."""
     now = timezone.now()
     mute_until = None
     duration_days = None
@@ -304,8 +493,52 @@ def mute_chat_user(
     message.author.mute_reason = reason
     message.author.save(update_fields=["mute", "mute_until", "mute_reason"])
     Profile.dirty_cache(message.author_id)
-    Message.objects.filter(room=None, author=message.author).update(hidden=True)
-    get_first_msg_id.dirty(None)
+    hidden_message_count = 0
+    if hide_room_messages:
+        last_message_id = 0
+        while True:
+            message_ids = list(
+                Message.objects.filter(
+                    room=message.room,
+                    author=message.author,
+                    hidden=False,
+                    id__gt=last_message_id,
+                )
+                .order_by("id")
+                .values_list("id", flat=True)[:CHAT_MODERATION_BATCH_SIZE]
+            )
+            if not message_ids:
+                break
+            hidden_message_count += Message.objects.filter(id__in=message_ids).update(
+                hidden=True
+            )
+            last_message_id = message_ids[-1]
+        replacement = (
+            Message.objects.filter(
+                room=message.room,
+                hidden=False,
+                kind=Message.Kind.USER,
+            )
+            .order_by("-id")
+            .values("id", "time")
+            .first()
+        )
+        Room.objects.filter(id=message.room_id).update(
+            last_msg_id=replacement["id"] if replacement else None,
+            last_activity_at=replacement["time"] if replacement else None,
+        )
+        get_first_msg_id.dirty(message.room_id)
+        transaction.on_commit(lambda: Room.dirty_cache(message.room_id))
+        transaction.on_commit(
+            lambda: broadcast_room_event(
+                message.room_id,
+                {
+                    "type": "user_messages_hidden",
+                    "room": message.room_id,
+                    "user": message.author_id,
+                },
+            )
+        )
     if log_action:
         ChatModerationLog.log_action(
             message=message,
@@ -316,12 +549,74 @@ def mute_chat_user(
             mute_until=mute_until,
             mute_duration_days=duration_days,
         )
-    notify_chat_mute(message.author, mute_until=mute_until, reason=reason)
+        if hidden_message_count:
+            ChatModerationLog.log_action(
+                message=message,
+                action="hide",
+                reason=reason,
+                is_automated=is_automated,
+                moderator=moderator,
+            )
+    notify_chat_mute(
+        message.author,
+        mute_until=mute_until,
+        reason=reason,
+        moderator=moderator,
+    )
     return {
         "action": action,
         "mute_until": mute_until,
         "mute_duration_days": duration_days,
+        "hidden_message_count": hidden_message_count,
     }
+
+
+@transaction.atomic
+def site_mute_chat_user(
+    message,
+    user,
+    profile,
+    *,
+    reason="",
+    mute_type="permanent",
+    hide_room_messages=False,
+    log_action=True,
+):
+    """Apply a site mute from a channel the site administrator belongs to."""
+    room = Room.objects.select_for_update().get(pk=message.room_id)
+    message = (
+        Message.objects.select_for_update().select_related("author").get(pk=message.pk)
+    )
+    memberships = {
+        membership.user_id: membership
+        for membership in UserRoom.objects.select_for_update()
+        .filter(
+            room=room,
+            user_id__in=[profile.id, message.author_id],
+        )
+        .order_by("pk")
+    }
+    policy = RoomPolicy(user, profile, room, memberships.get(profile.id))
+    if (
+        room.room_type != Room.Type.CHANNEL
+        or not policy.is_superuser_override
+        or not policy.can_moderate_target(memberships.get(message.author_id))
+    ):
+        raise RoomPermissionDenied(_("You cannot mute this member."))
+
+    with revisions.create_revision():
+        revisions.set_comment(
+            _("Site-wide mute: %(message)s") % {"message": message.body}
+        )
+        revisions.set_user(user)
+        return mute_chat_user(
+            message,
+            moderator=profile,
+            reason=reason,
+            mute_type=mute_type,
+            hide_room_messages=hide_room_messages,
+            log_action=log_action,
+        )
 
 
 def delete_message(request):
@@ -339,49 +634,15 @@ def delete_message(request):
     except:
         return HttpResponseBadRequest()
 
-    if (
-        not request.user.has_perm("judge.change_comment")
-        and request.profile != mess.author
-    ):
-        return HttpResponseBadRequest()
-
-    room_id = mess.room_id
-
-    if not room_id and request.user.has_perm("judge.change_comment"):
-        # Lobby message deleted by staff — shared helper handles hide + cache + log
-        hide_lobby_message(mess, moderator=request.profile)
-        return JsonResponse(ret)
-
-    mess.hidden = True
-    mess.save()
-
-    get_first_msg_id.dirty(room_id)
-
-    # If deleting the last message, update room's last_msg_id
-    if room_id:
-        room = Room.objects.get(id=room_id)
-        if room.last_msg_id == messid:
-            # Find the new last visible message
-            new_last_msg = (
-                Message.objects.filter(room_id=room_id, hidden=False)
-                .order_by("-id")
-                .first()
+    try:
+        hide_room_message(mess, request.user, request.profile)
+    except Exception as error:
+        if hasattr(error, "status"):
+            return JsonResponse(
+                {"error": error.message, "code": error.code}, status=error.status
             )
-            room.last_msg_id = new_last_msg.id if new_last_msg else None
-            room.save(update_fields=["last_msg_id"])
-
-        # Dirty the room cache to update last_message in sidebar
-        Room.dirty_cache(room_id)
-
-        # Decrement unread_count for users who haven't seen this message yet
-        user_rooms = UserRoom.objects.filter(
-            room_id=room_id, last_seen__lt=mess.time, unread_count__gt=0
-        ).exclude(user=mess.author)
-        for user_room in user_rooms:
-            user_room.unread_count = max(0, user_room.unread_count - 1)
-            user_room.save(update_fields=["unread_count"])
-            get_unread_boxes.dirty(user_room.user)
-
+        return HttpResponseBadRequest()
+    get_first_msg_id.dirty(mess.room_id)
     return JsonResponse(ret)
 
 
@@ -394,79 +655,151 @@ def mute_message(request):
     if not request.user.is_authenticated:
         return HttpResponseBadRequest()
 
-    if not can_mute_chat(request.user):
-        return HttpResponseBadRequest()
-
     try:
         messid = int(request.POST.get("message"))
-        mess = Message.objects.get(id=messid)
+        mess = Message.objects.select_related("room", "author").get(id=messid)
     except:
         return HttpResponseBadRequest()
 
-    if mess.room_id or mess.author_id == request.profile.id:
+    if not mess.author_id or mess.author_id == request.profile.id:
         return HttpResponseBadRequest()
 
     mute_type = request.POST.get("mute_type", "permanent")
+    scope = request.POST.get("scope")
     reason = request.POST.get("reason", "").strip()
+    hide_room_messages = request.POST.get("hide_room_messages") == "1"
 
-    if mute_type == "temporary":
-        if not can_mute_chat_temporarily(request.user):
-            return HttpResponseBadRequest()
-    elif mute_type == "permanent":
-        if not can_mute_chat_permanently(request.user):
+    if mute_type not in ("temporary", "permanent"):
+        return HttpResponseBadRequest()
+    if scope is None:
+        scope = "site" if mute_type == "permanent" else "room"
+
+    if scope == "site":
+        try:
+            site_mute_chat_user(
+                mess,
+                request.user,
+                request.profile,
+                reason=reason,
+                mute_type=mute_type,
+                hide_room_messages=hide_room_messages,
+            )
+        except RoomError as error:
+            return JsonResponse(
+                {"error": error.message, "code": error.code},
+                status=error.status,
+            )
+    elif scope == "room" and mute_type == "temporary" and not hide_room_messages:
+        try:
+            mute_member(
+                mess.room,
+                request.user,
+                request.profile,
+                mess.author,
+                reason,
+            )
+        except Exception as error:
+            if hasattr(error, "status"):
+                return JsonResponse(
+                    {"error": error.message, "code": error.code},
+                    status=error.status,
+                )
             return HttpResponseBadRequest()
     else:
         return HttpResponseBadRequest()
 
-    if (
-        not reason
-        and mute_type == "temporary"
-        and not can_mute_chat_permanently(request.user)
-    ):
-        return JsonResponse({"error": _("Reason is required.")}, status=400)
-
-    with revisions.create_revision():
-        revisions.set_comment(_("Mute chat") + ": " + mess.body)
-        revisions.set_user(request.user)
-        mute_chat_user(
-            mess,
-            moderator=request.profile,
-            reason=reason,
-            mute_type=mute_type,
-        )
-
     return JsonResponse(ret)
 
 
-def check_valid_message(request, room):
+def check_valid_message(request, room, membership):
     if request.in_contest and request.participation.contest.use_clarifications:
-        return False
+        raise RoomPermissionDenied(_("Chat is disabled during this contest."))
 
-    if not room and len(request.POST["body"]) > 200:
-        return False
+    body = request.POST["body"].strip()
+    if room.channel_kind == Room.ChannelKind.LOBBY and len(body) > 200:
+        raise RoomError(
+            _("Lobby messages may contain at most 200 characters."),
+            code="message_too_long",
+        )
 
+    policy = RoomPolicy(request.user, request.profile, room, membership)
+    if not policy.can_post():
+        raise RoomPermissionDenied(_("You cannot post in this room."))
+    if is_chat_muted(request.profile):
+        raise RoomPermissionDenied(_("You are muted from chat."), code="chat_muted")
+    if active_room_mute(room, request.profile, timezone.now()):
+        raise RoomPermissionDenied(
+            _("You are muted in this room."),
+            code="room_muted",
+        )
+    if not can_use_community_features(request.user, request.profile):
+        raise RoomPermissionDenied(
+            _("Solve a problem before using chat."),
+            code="community_access_required",
+        )
+
+    last_msg = (
+        Message.objects.filter(room=room, kind=Message.Kind.USER)
+        .values("author_id", "body")
+        .first()
+    )
     if (
-        not can_access_room(request, room)
-        or is_chat_muted(request.profile)
-        or not can_use_community_features(request.user, request.profile)
+        room.room_type in (Room.Type.DIRECT, Room.Type.GROUP)
+        and last_msg
+        and last_msg["author_id"] == request.profile.id
+        and last_msg["body"] == body
     ):
-        return False
+        raise RoomError(
+            _("Consecutive duplicate messages are not allowed."),
+            code="duplicate_message",
+        )
 
-    last_msg = Message.objects.filter(room=room).first()
-    if (
-        last_msg
-        and last_msg.author == request.profile
-        and last_msg.body == request.POST["body"].strip()
-    ):
-        return False
-
-    if not room:
-        four_last_msg = Message.objects.filter(room=room).order_by("-id")[:4]
+    now = timezone.now()
+    if room.channel_kind == Room.ChannelKind.LOBBY:
+        four_last_msg = list(
+            Message.objects.filter(room=room, kind=Message.Kind.USER)
+            .order_by("-id")
+            .values_list("author_id", "time")[:4]
+        )
         if len(four_last_msg) >= 4:
-            same_author = all(msg.author == request.profile for msg in four_last_msg)
-            time_diff = timezone.now() - four_last_msg[3].time
+            same_author = all(
+                author_id == request.profile.id for author_id, _ in four_last_msg
+            )
+            time_diff = now - four_last_msg[3][1]
             if same_author and time_diff.total_seconds() < 300:
-                return False
+                retry_after = max(1, math.ceil(300 - time_diff.total_seconds()))
+                error = RoomError(
+                    _("Please wait %(seconds)s seconds before posting again.")
+                    % {"seconds": retry_after},
+                    code="message_rate_limited",
+                    status=429,
+                )
+                error.retry_after = retry_after
+                raise error
+    elif room.room_type == Room.Type.CHANNEL:
+        window_seconds = getattr(settings, "CHAT_CHANNEL_MESSAGE_WINDOW_SECONDS", 10)
+        message_limit = getattr(settings, "CHAT_CHANNEL_MESSAGE_LIMIT", 10)
+        recent_times = list(
+            Message.objects.filter(
+                room=room,
+                author=request.profile,
+                kind=Message.Kind.USER,
+                time__gte=now - timezone.timedelta(seconds=window_seconds),
+            )
+            .order_by("-time")
+            .values_list("time", flat=True)[:message_limit]
+        )
+        if len(recent_times) >= message_limit:
+            elapsed = (now - recent_times[-1]).total_seconds()
+            retry_after = max(1, math.ceil(window_seconds - elapsed))
+            error = RoomError(
+                _("Please wait %(seconds)s seconds before posting again.")
+                % {"seconds": retry_after},
+                code="message_rate_limited",
+                status=429,
+            )
+            error.retry_after = retry_after
+            raise error
 
     return True
 
@@ -477,90 +810,96 @@ def post_message(request):
 
     if request.method != "POST":
         return HttpResponseBadRequest()
-    if len(request.POST["body"]) > 5000 or len(request.POST["body"].strip()) == 0:
-        return HttpResponseBadRequest()
-
-    room = None
-    if request.POST["room"]:
-        room = Room.objects.get(id=request.POST["room"])
-
-    if not check_valid_message(request, room):
-        return HttpResponseBadRequest()
-
-    reply_to = None
-    reply_to_raw = request.POST.get("reply_to")
-    if reply_to_raw:
-        try:
-            candidate = Message.objects.filter(hidden=False).get(id=int(reply_to_raw))
-            # Only link a parent from the SAME room (None == lobby). A cross-room
-            # or vanished/hidden parent is dropped silently so the post still lands.
-            if candidate.room_id == (room.id if room else None):
-                reply_to = candidate
-        except (ValueError, Message.DoesNotExist):
-            reply_to = None
-
-    new_message = Message(
-        author=request.profile,
-        body=request.POST["body"],
-        room=room,
-        reply_to=reply_to,
-    )
-    new_message.save()
-
-    if not room:
-        event.post(
-            encrypt_channel("chat_lobby"),
+    body = request.POST.get("body", "")
+    if len(body) > 5000 or not body.strip():
+        return JsonResponse(
             {
-                "type": "lobby",
-                "author_id": request.profile.id,
-                "message": new_message.id,
-                "room": "None",
-                "tmp_id": request.POST.get("tmp_id"),
+                "error": _("Messages must contain between 1 and 5,000 characters."),
+                "code": "invalid_message_length",
             },
+            status=400,
         )
-        if not get_first_msg_id(None):
-            get_first_msg_id.dirty(None)
-    else:
-        Room.dirty_cache(room.id)
-        room.last_msg_id = new_message.id
-        room.save()
 
-        # Dirty the user room list cache for all users in the room
-        for user in room.get_users():
-            get_user_room_list.dirty(user.id)
+    try:
+        room = (
+            Room.objects.get(id=request.POST["room"])
+            if request.POST.get("room")
+            else get_lobby()
+        )
+    except Room.DoesNotExist:
+        return HttpResponseBadRequest()
 
-            event_data = {
-                "type": "private",
-                "author_id": request.profile.id,
-                "message": new_message.id,
-                "room": room.id,
-                "tmp_id": request.POST.get("tmp_id"),
-            }
+    try:
+        with transaction.atomic():
+            # Serialize validation and insertion per sender/room. This makes the
+            # duplicate and flood rules authoritative under concurrent requests,
+            # and orders posting against membership removal and room mutes.
+            membership = (
+                UserRoom.objects.select_for_update()
+                .filter(room=room, user=request.profile)
+                .first()
+            )
+            check_valid_message(request, room, membership)
 
-            if user.id != request.profile.id:
-                # Update unread count first, then include in event
-                UserRoom.objects.filter(user=user, room=room).update(
-                    unread_count=F("unread_count") + 1
+            reply_to = None
+            reply_to_raw = request.POST.get("reply_to")
+            if reply_to_raw:
+                try:
+                    candidate = Message.objects.filter(hidden=False).get(
+                        id=int(reply_to_raw)
+                    )
+                    # Only link a parent from the same persisted room. A cross-room
+                    # or vanished/hidden parent is dropped so the post still lands.
+                    if (
+                        candidate.room_id == room.id
+                        and candidate.kind == Message.Kind.USER
+                    ):
+                        reply_to = candidate
+                except (ValueError, Message.DoesNotExist):
+                    reply_to = None
+
+            new_message = Message.objects.create(
+                author=request.profile,
+                body=request.POST["body"],
+                room=room,
+                reply_to=reply_to,
+            )
+            Room.objects.filter(pk=room.id).filter(
+                Q(last_msg_id__isnull=True) | Q(last_msg_id__lt=new_message.id)
+            ).update(
+                last_msg_id=new_message.id,
+                last_activity_at=new_message.time,
+            )
+            UserRoom.objects.filter(pk=membership.pk).update(
+                last_read_message_id=new_message.id,
+                last_seen=timezone.now(),
+                unread_count=0,
+            )
+            transaction.on_commit(
+                lambda: broadcast_room_event(
+                    room.id,
+                    {
+                        "type": "message",
+                        "author_id": request.profile.id,
+                        "message": new_message.id,
+                        "room": room.id,
+                        "tmp_id": request.POST.get("tmp_id"),
+                    },
                 )
-                get_unread_boxes.dirty(user)
-                # Get the new unread count for this room
-                user_room = UserRoom.objects.filter(user=user, room=room).first()
-                if user_room:
-                    event_data["unread_count"] = user_room.unread_count
-                    # Include other user's ID for badge update
-                    event_data["other_user_id"] = request.profile.id
-            elif len(room.get_user_ids()) == 1:
-                event_data["other_user_id"] = request.profile.id
-
-            event.post(encrypt_channel("chat_" + str(user.id)), event_data)
-
-        if not get_first_msg_id(room.id):
-            get_first_msg_id.dirty(room.id)
+            )
+    except RoomError as error:
+        payload = {"error": error.message, "code": error.code}
+        if hasattr(error, "retry_after"):
+            payload["retry_after"] = error.retry_after
+        return JsonResponse(payload, status=error.status)
+    Room.dirty_cache(room.id)
+    get_first_msg_id.dirty(room.id)
 
     return JsonResponse(ret)
 
 
 @login_required
+@transaction.atomic
 def react_message(request):
     """Add / change / remove the requesting user's single reaction on a message.
 
@@ -581,21 +920,32 @@ def react_message(request):
         return HttpResponseBadRequest()
 
     reaction = request.POST.get("reaction")
-    if reaction not in CHAT_REACTION_CODES:
+    if reaction not in CHAT_REACTION_CODES or message.kind != Message.Kind.USER:
         return HttpResponseBadRequest()
 
     room = message.room
-    if not can_access_room(request, room):
+    membership = (
+        UserRoom.objects.select_for_update()
+        .filter(room=room, user=request.profile)
+        .first()
+    )
+    if not RoomPolicy(request.user, request.profile, room, membership).can_react():
         return HttpResponseForbidden()
 
     # A muted user is silenced from chat interaction, reactions included.
-    if is_chat_muted(request.profile) or not can_use_community_features(
-        request.user, request.profile
+    if (
+        is_chat_muted(request.profile)
+        or not can_use_community_features(request.user, request.profile)
+        or active_room_mute(room, request.profile, timezone.now())
     ):
         return HttpResponseForbidden()
 
     profile = request.profile
-    existing = MessageReaction.objects.filter(message=message, user=profile).first()
+    existing = (
+        MessageReaction.objects.select_for_update()
+        .filter(message=message, user=profile)
+        .first()
+    )
     if existing is None:
         try:
             # Savepoint so a lost insert race doesn't poison an outer transaction.
@@ -622,15 +972,14 @@ def react_message(request):
         message.id
     ]
     summary["my_reaction"] = my_reaction
-    broadcast_reaction(request, message, room, summary)
+    transaction.on_commit(lambda: broadcast_reaction(request, message, room, summary))
     return JsonResponse(summary)
 
 
 def broadcast_reaction(request, message, room, summary):
     """Push a reaction update over the event daemon.
 
-    Mirrors post_message: lobby reactions go to the shared "chat_lobby" channel,
-    room reactions fan out to each member's personal channel.
+    One room-scoped event replaces per-member fanout for every room type.
     """
     payload = {
         "type": "reaction",
@@ -643,14 +992,8 @@ def broadcast_reaction(request, message, room, summary):
         # Already public via counts/the who-reacted list, so no new info is leaked.
         "actor_reaction": summary.get("my_reaction"),
     }
-    if not room:
-        payload["room"] = "None"
-        event.post(encrypt_channel("chat_lobby"), payload)
-    else:
-        payload["room"] = room.id
-        # Only ids are needed here; get_user_ids() avoids materializing profiles.
-        for user_id in room.get_user_ids():
-            event.post(encrypt_channel("chat_" + str(user_id)), payload)
+    payload["room"] = room.id
+    broadcast_room_event(room.id, payload)
 
 
 def reaction_render_context(messages, profile):
@@ -665,6 +1008,68 @@ def reaction_render_context(messages, profile):
         "chat_reaction_emoji": CHAT_REACTION_EMOJI,
         "chat_reaction_labels": CHAT_REACTION_LABELS,
         "chat_reaction_image_urls": get_reaction_image_urls(),
+    }
+
+
+def message_permission_context(messages, user, profile, room, membership=None):
+    if membership is None:
+        membership = get_membership(room, profile)
+    policy = RoomPolicy(user, profile, room, membership)
+    author_ids = {message.author_id for message in messages if message.author_id}
+    memberships = {
+        row.user_id: row
+        for row in UserRoom.objects.filter(
+            room=room,
+            user_id__in=author_ids,
+            state=UserRoom.State.ACTIVE,
+        )
+    }
+    prior_room_mutes = {}
+    if policy.is_admin or policy.is_moderator or policy.is_superuser_override:
+        prior_room_mutes = dict(
+            RoomMute.objects.filter(room=room, target_id__in=author_ids)
+            .values("target_id")
+            .annotate(total=Count("id"))
+            .values_list("target_id", "total")
+        )
+    prior_site_mutes = {}
+    if user.is_superuser and room.room_type == Room.Type.CHANNEL:
+        prior_site_mutes = dict(
+            ChatModerationLog.objects.filter(
+                message__author_id__in=author_ids,
+                action="mute_temp",
+            )
+            .values("message__author_id")
+            .annotate(total=Count("id"))
+            .values_list("message__author_id", "total")
+        )
+    return {
+        "can_hide_messages": {
+            message.id: policy.can_hide_message(
+                message, memberships.get(message.author_id)
+            )
+            for message in messages
+        },
+        "can_mute_messages": {
+            message.id: policy.can_moderate_target(memberships.get(message.author_id))
+            for message in messages
+        },
+        "room_mute_duration_days": {
+            message.id: min(
+                prior_room_mutes.get(message.author_id, 0) + 1,
+                ROOM_MUTE_MAX_DAYS,
+            )
+            for message in messages
+            if message.author_id
+        },
+        "site_mute_duration_days": {
+            message.id: min(
+                prior_site_mutes.get(message.author_id, 0) + 1,
+                CHAT_TEMP_MUTE_CAP_DAYS,
+            )
+            for message in messages
+            if message.author_id
+        },
     }
 
 
@@ -714,7 +1119,9 @@ def get_reply_quotes(messages, viewer=None):
 
     # Bulk-warm both caches (constant number of queries, not per-author) so the
     # get_public_username() calls in the loop never hit the DB.
-    author_ids = {p["author_id"] for p in parents.values() if not p["hidden"]}
+    author_ids = {
+        p["author_id"] for p in parents.values() if not p["hidden"] and p["author_id"]
+    }
     if author_ids:
         Profile.get_cached_instances(*author_ids)
         get_profile_public_identity.batch([(aid,) for aid in author_ids])
@@ -734,8 +1141,10 @@ def get_reply_quotes(messages, viewer=None):
             quotes[message.id] = {
                 "parent_id": pid,
                 "author_id": parent["author_id"],
-                "author_name": Profile(id=parent["author_id"]).get_public_username(
-                    viewer
+                "author_name": (
+                    Profile(id=parent["author_id"]).get_public_username(viewer)
+                    if parent["author_id"]
+                    else _("Deleted user")
                 ),
                 "snippet": build_reply_snippet(parent["body"]),
                 "unavailable": False,
@@ -830,7 +1239,10 @@ def reaction_list(request):
 
 
 def can_access_room(request, room):
-    return not room or room.contain(request.profile)
+    if room is None:
+        return False
+    membership = get_membership(room, request.profile)
+    return RoomPolicy(request.user, request.profile, room, membership).can_view()
 
 
 @login_required
@@ -853,6 +1265,20 @@ def chat_message_ajax(request):
         {
             "message": message,
             "can_chat": can_use_community_features(request.user, request.profile),
+            "can_interact_room": (
+                RoomPolicy(
+                    request.user,
+                    request.profile,
+                    room,
+                    get_membership(room, request.profile),
+                ).can_post()
+                and not is_chat_muted(request.profile)
+                and not active_room_mute(room, request.profile, timezone.now())
+                and can_use_community_features(request.user, request.profile)
+            ),
+            **message_permission_context(
+                [message], request.user, request.profile, room
+            ),
             **reaction_render_context([message], request.profile),
             **reply_render_context([message], request.user),
         },
@@ -871,21 +1297,14 @@ def update_last_seen(request, **kwargs):
         return HttpResponseBadRequest()
     try:
         profile = request.profile
-        room = None
-        if room_id:
-            room = Room.objects.filter(id=int(room_id)).first()
-    except Room.DoesNotExist:
+        room = Room.objects.filter(id=int(room_id)).first() if room_id else get_lobby()
+    except (Room.DoesNotExist, TypeError, ValueError):
         return HttpResponseBadRequest()
 
-    if not can_access_room(request, room):
+    if room is None or not can_access_room(request, room):
         return HttpResponseBadRequest()
 
-    user_room, _ = UserRoom.objects.get_or_create(user=profile, room=room)
-    user_room.last_seen = timezone.now()
-    user_room.unread_count = 0
-    user_room.save()
-
-    get_unread_boxes.dirty(profile)
+    mark_room_read(room, profile)
 
     return JsonResponse({"msg": "updated"})
 
@@ -987,56 +1406,86 @@ def get_online_status(profile, other_profile_ids, rooms=None):
     return ret
 
 
-def get_status_context(profile, include_ignored=False):
-    if include_ignored:
-        ignored_users = []
-    else:
-        ignored_users = get_ignored_user_ids(profile)
-
-    # Get user's room list sorted by last_msg_time
-    user_rooms = get_user_room_list(profile.id)[:20]
-
-    # Prefetch room info for all rooms
-    Room.prefetch_room_cache(user_rooms)
-
-    # Get other users from rooms
-    recent_profile_ids = []
-    recent_rooms = []
-
-    for room_id in user_rooms:
-        other_user_id = Room(id=room_id).other_user_id(profile)
-        if other_user_id and other_user_id not in ignored_users:
-            recent_profile_ids.append(other_user_id)
-            recent_rooms.append(room_id)
-
-    admin_ids = [
-        i
-        for i in get_admin_ids()
-        if i != profile.id and i not in ignored_users and i not in recent_profile_ids
-    ]
-
-    Profile.prefetch_cache_last_access(*(recent_profile_ids + admin_ids))
-
-    return [
+def get_status_context(profile, include_ignored=False, section=None):
+    ignored_room_ids = (
+        set() if include_ignored else Ignore.get_ignored_room_ids(profile)
+    )
+    if section not in ROOM_LIST_SECTIONS:
+        section = None
+    memberships, has_more = get_room_page(
+        profile,
+        exclude_room_ids=ignored_room_ids,
+        section=section,
+    )
+    sections = [
         {
+            "key": section or "all",
             "title": _("Recent"),
-            "user_list": get_online_status(profile, recent_profile_ids, recent_rooms),
-        },
-        {
-            "title": _("Admin"),
-            "user_list": get_online_status(profile, admin_ids),
-        },
+            "memberships": memberships,
+            "has_more": has_more,
+            "next_cursor": encode_room_list_cursor(memberships, has_more),
+            "room_list": [],
+        }
     ]
+    Room.prefetch_room_cache([row.room_id for row in memberships])
+    unread_counts = unread_counts_for_memberships(memberships)
+    ignored_users = set() if include_ignored else get_ignored_user_ids(profile)
+    other_ids = {
+        membership.room.other_user_id(profile)
+        for membership in memberships
+        if membership.room.room_type == Room.Type.DIRECT
+    }
+    other_ids.discard(None)
+    Profile.get_cached_instances(*other_ids)
+    Profile.prefetch_cache_last_access(*other_ids)
+
+    for section in sections:
+        for membership in section.pop("memberships"):
+            room = membership.room
+            row = {
+                "room": room.id,
+                "room_type": room.room_type,
+                "channel_kind": room.channel_kind,
+                "name": room.name,
+                "avatar_url": room.get_avatar_url(),
+                "last_msg": room.get_last_message(),
+                "unread_count": unread_counts.get(room.id, 0),
+            }
+            if room.room_type == Room.Type.DIRECT:
+                other_id = room.other_user_id(profile)
+                if other_id in ignored_users:
+                    continue
+                if other_id:
+                    other = Profile(id=other_id)
+                    row.update(
+                        {
+                            "user": other,
+                            "name": (
+                                _("Saved Messages")
+                                if other_id == profile.id
+                                else other.get_public_username(profile.user)
+                            ),
+                            "is_self": other_id == profile.id,
+                            "is_online": get_user_online_status(other),
+                        }
+                    )
+            section["room_list"].append(row)
+    return sections
 
 
 @login_required
 def online_status_ajax(request):
+    lobby = get_lobby()
+    lobby_membership = get_membership(lobby, request.profile)
+    section = request.GET.get("section") or None
     return render(
         request,
         "chat/online_status.html",
         {
-            "status_sections": get_status_context(request.profile),
-            "unread_count_lobby": get_unread_count(None, request.profile),
+            "status_sections": get_status_context(request.profile, section=section),
+            "unread_count_lobby": get_unread_count(lobby, request.profile),
+            "lobby_room": lobby,
+            "lobby_hidden": lobby_membership.is_hidden if lobby_membership else False,
         },
     )
 
@@ -1079,23 +1528,27 @@ def get_or_create_room(request):
 
 
 def get_unread_count(rooms, user):
-    if rooms:
-        return UserRoom.objects.filter(
-            user=user, room__in=rooms, unread_count__gt=0
-        ).values("unread_count", "room")
-    else:  # lobby
-        user_room = UserRoom.objects.filter(user=user, room__isnull=True).first()
-        if not user_room:
+    if isinstance(rooms, Room):
+        membership = UserRoom.objects.filter(
+            user=user, room=rooms, state=UserRoom.State.ACTIVE
+        ).first()
+        if not membership or membership.is_hidden:
             return 0
-        last_seen = user_room.last_seen
-        max_lobby_count = 100
-        res = (
-            Message.objects.filter(room__isnull=True, time__gte=last_seen)
-            .exclude(author=user, hidden=True)[:max_lobby_count]
-            .count()
+        return unread_counts_for_memberships([membership]).get(rooms.id, 0)
+    memberships = list(
+        UserRoom.objects.filter(
+            user=user,
+            room_id__in=rooms,
+            state=UserRoom.State.ACTIVE,
+            is_hidden=False,
         )
-
-        return res
+    )
+    counts = unread_counts_for_memberships(memberships)
+    return [
+        {"room": membership.room_id, "unread_count": counts[membership.room_id]}
+        for membership in memberships
+        if membership.room_id in counts
+    ]
 
 
 @login_required
@@ -1112,7 +1565,6 @@ def toggle_ignore(request, **kwargs):
         return HttpResponseBadRequest()
 
     Ignore.toggle_ignore(request.profile, other_user)
-    get_unread_boxes.dirty(request.profile)
     next_url = request.GET.get("next", "/")
     return HttpResponseRedirect(next_url)
 

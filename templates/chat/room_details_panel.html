@@ -1,0 +1,14 @@
+<aside id="chat-details-panel" class="chat-details-panel" aria-hidden="true" aria-labelledby="chat-details-title">
+  <div class="chat-details-header">
+    <span id="chat-details-room-icon" class="chat-modal-heading-icon" aria-hidden="true"><i class="fa fa-users"></i></span>
+    <div class="chat-details-heading-text">
+      <h3 id="chat-details-title">{{ _('Room details') }}</h3>
+      <p id="chat-details-summary">{{ _('Loading room information...') }}</p>
+    </div>
+    <button type="button" class="chat-modal-icon-button chat-details-close" aria-label="{{ _('Close') }}" title="{{ _('Close') }}">
+      <i class="fa fa-times" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div id="chat-details-content" class="chat-details-content"><i class="fa fa-spinner fa-pulse" aria-hidden="true"></i></div>
+  <p class="chat-modal-error chat-details-error" aria-live="polite"></p>
+</aside>

@@ -1,9 +1,11 @@
 from django.db.models import F, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils.encoding import smart_str
 from django.views.generic.list import BaseListView
 
+from chat_box.models import Room, UserRoom
 from chat_box.utils import encrypt_url
 
 from judge.jinja2.gravatar import gravatar
@@ -224,6 +226,8 @@ class AssigneeSelect2View(UserSearchSelect2View):
 
 
 class ChatUserSearchSelect2View(UserSearchSelect2View):
+    result_limit_per_kind = 10
+
     def get_json_result_from_object(self, pk):
         if not self.request.user.is_authenticated:
             raise Http404()
@@ -231,12 +235,78 @@ class ChatUserSearchSelect2View(UserSearchSelect2View):
         return {
             "text": profile.username,
             "id": encrypt_url(self.request.profile.id, pk),
+            "kind": "user",
             "gravatar_url": gravatar(
                 pk,
                 self.gravatar_size,
             ),
             "display_rank": profile.get_display_rank(),
         }
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            raise Http404()
+        self.request = request
+        self.term = kwargs.get("term", request.GET.get("term", "")).strip()[:100]
+        self.gravatar_size = request.GET.get("gravatar_size", 32)
+        if not self.term:
+            return JsonResponse({"results": [], "more": False})
+
+        user_ids = list(
+            self.get_queryset()
+            .order_by("user__username")
+            .values_list("pk", flat=True)[: self.result_limit_per_kind + 1]
+        )
+        room_rows = list(
+            UserRoom.objects.filter(
+                user=request.profile,
+                state=UserRoom.State.ACTIVE,
+                room__room_type__in=[Room.Type.GROUP, Room.Type.CHANNEL],
+                room__name__icontains=self.term,
+            )
+            .order_by("-room__last_activity_at", "-room_id")
+            .values(
+                "room_id",
+                "room__name",
+                "room__room_type",
+                "room__channel_kind",
+                "room__avatar",
+            )[: self.result_limit_per_kind + 1]
+        )
+        more = (
+            len(user_ids) > self.result_limit_per_kind
+            or len(room_rows) > self.result_limit_per_kind
+        )
+        visible_user_ids = user_ids[: self.result_limit_per_kind]
+        visible_room_ids = [
+            room["room_id"] for room in room_rows[: self.result_limit_per_kind]
+        ]
+        # Both serializers below use CacheableModel properties. Warm each model
+        # once so typeahead remains a fixed-query endpoint on a cold cache.
+        Profile.get_cached_instances(*visible_user_ids)
+        cached_rooms = {
+            room.id: room for room in Room.get_cached_instances(*visible_room_ids)
+        }
+        room_results = [
+            {
+                "text": room["room__name"],
+                "id": "room:%s" % room["room_id"],
+                "kind": "room",
+                "room_type": room["room__room_type"],
+                "channel_kind": room["room__channel_kind"],
+                "avatar_url": cached_rooms[room["room_id"]].get_avatar_url(),
+                "url": reverse("chat", args=[room["room_id"]]),
+            }
+            for room in room_rows[: self.result_limit_per_kind]
+            if room["room_id"] in cached_rooms
+        ]
+        user_results = [self.get_json_result_from_object(pk) for pk in visible_user_ids]
+        return JsonResponse(
+            {
+                "results": room_results + user_results,
+                "more": more,
+            }
+        )
 
 
 class ProblemAuthorSearchSelect2View(UserSearchSelect2View):

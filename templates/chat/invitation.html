@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Chat invitation') }}{% endblock %}
+{% block title_row %}{% endblock %}
+{% block title_ruler %}{% endblock %}
+
+{% block body %}
+  <div class="chat-invitation-page">
+    <section class="chat-invitation-card">
+      {% if invitation_error %}
+        <span class="chat-invitation-avatar chat-invitation-error-icon" aria-hidden="true">
+          <i class="fa fa-link"></i>
+        </span>
+        <p class="chat-invitation-eyebrow">{{ _('Chat invitation') }}</p>
+        <h1>{{ _('This invitation is unavailable') }}</h1>
+        <p class="chat-invitation-description">{{ invitation_error }}</p>
+        <a class="action-btn chat-invitation-primary" href="{{ url('chat', '') }}">{{ _('Back to chat') }}</a>
+      {% else %}
+        <span class="chat-invitation-avatar" aria-hidden="true">
+          {% if room_avatar_url %}
+            <img src="{{ room_avatar_url }}" alt="">
+          {% else %}
+            <i class="fa {{ 'fa-users' if room.room_type == 'group' else 'fa-hashtag' }}"></i>
+          {% endif %}
+        </span>
+        <p class="chat-invitation-eyebrow">{{ _("You've been invited to join") }}</p>
+        <h1>{{ room.name }}</h1>
+        <div class="chat-invitation-meta">
+          <span>
+            <i class="fa {{ 'fa-users' if room.room_type == 'group' else 'fa-hashtag' }}" aria-hidden="true"></i>
+            {{ _('Group') if room.room_type == 'group' else _('Custom channel') }}
+          </span>
+          <span>
+            <i class="fa fa-user" aria-hidden="true"></i>
+            {% trans count=member_count %}{{ count }} member{% pluralize %}{{ count }} members{% endtrans %}
+          </span>
+        </div>
+        <p class="chat-invitation-description">
+          {{ _('Members can view previous messages after joining.') }}
+        </p>
+        {% if already_member %}
+          <a class="action-btn chat-invitation-primary" href="{{ url('chat', room.id) }}">{{ _('Open room') }}</a>
+          <p class="chat-invitation-note">{{ _('You are already a member of this room.') }}</p>
+        {% else %}
+          <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="action-btn chat-invitation-primary">{{ _('Join room') }}</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

@@ -18,6 +18,8 @@ package-lock.json
 package.json
 /src
 websocket/config.js
+websocket/config.local.js
+celerybeat-schedule*
 
 .DS_Store
 # AI tools (synced from separate private repo via .claude-config/sync.sh)

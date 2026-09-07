@@ -31,6 +31,22 @@
             <i class="fa fa-user-plus"></i>{{ _('Add members') }}</a>
         </div>
       {% endif %}
+      {% if can_join_organization_chat %}
+        <div class="link-row">
+          <form method="post" action="{{ url('chat_organization_channel_join', organization.id) }}">
+            {% csrf_token %}
+            <a href="#" onclick="this.closest('form').submit(); return false;">
+              <i class="fa fa-comments"></i>{{ _('Join channel') }}
+            </a>
+          </form>
+        </div>
+      {% elif organization_chat_membership_active %}
+        <div class="link-row">
+          <a href="{{ url('chat', organization_chat_room_id) }}">
+            <i class="fa fa-comments"></i>{{ _('Open channel') }}
+          </a>
+        </div>
+      {% endif %}
       {% if can_edit %}
         <div class="link-row">
           {% if organization.access_code %}

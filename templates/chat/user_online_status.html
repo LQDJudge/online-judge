@@ -1,18 +1,32 @@
 <div class="back-button">
   <i class="fa fa-arrow-left"></i>
 </div>
-{% if other_user %}
+{% if room_object and room_object.channel_kind == 'lobby' %}
+  <div class="status-container chat-header-avatar">
+    <img src="{{ static('icons/icon.svg') }}" class="info-pic lobby-icon">
+  </div>
+{% elif room_object and room_object.room_type != 'direct' %}
+  <div class="status-container chat-header-avatar">
+    {% if room_avatar_url %}
+      <img src="{{ room_avatar_url }}" class="info-pic room-avatar" alt="">
+    {% else %}
+      <span class="info-pic status-room-icon" aria-hidden="true"><i class="fa {{ 'fa-hashtag' if room_object.room_type == 'channel' else 'fa-users' }}"></i></span>
+    {% endif %}
+  </div>
+{% elif other_user %}
   <div class="status-container chat-header-avatar">
     <img src="{{ public_gravatar(other_user, request.user, 135) }}" class="info-pic user-img">
     <span class="info-circle {{ 'online' if other_online else 'offline' }}"></span>
   </div>
 {% else %}
   <div class="status-container chat-header-avatar">
-    <img src="{{ static('icons/icon.svg') }}" class="info-pic lobby-icon">
+    <span class="info-pic status-room-icon" aria-hidden="true"><i class="fa fa-user"></i></span>
   </div>
 {% endif %}
 <span class="info-name username">
-  {% if other_user %}
+  {% if room_object and room_object.room_type != 'direct' %}
+    {{ room_object.name }}
+  {% elif other_user %}
     {% if is_self_room %}
       {{link_user(other_user)}}<span class="gray">&nbsp;({{ _('You') }})</span>
     {% else %}
@@ -21,8 +35,8 @@
     {% if not other_online %}
       <span class="active-span-mobile">{{ relative_time(other_user.last_access, abs=_('Online {time}'), rel=_('Online {time}'), format=_('d/m')) }}</span>
     {% endif %}
-  {% else%}
-    {{ _('Lobby') }}
+  {% else %}
+    {{ _('Deleted user') }}
   {% endif %}
 </span>
 <span class="spacer"></span>
@@ -30,21 +44,8 @@
   <span class="active-span">{{ relative_time(other_user.last_access, abs=_('Last online on {time}'), rel=_('Online {time}'), format=_('g:i a d/m/Y')) }}</span>
 {% endif %}
 
-{% if other_user and not is_self_room %}
-  <div class="setting-wrapper">
-    <div class="control-button small user-setting-button">
-      <i class="fa fa-ellipsis-h"></i>
-    </div>
-    <div class="setting-content">
-      <a href="{{url('toggle_ignore', other_user.id)}}" class="{{'green' if is_ignored else 'red'}}">
-        {% if is_ignored %}
-          {{_('Unignore')}}
-        {% else %}
-          {{_('Ignore')}}
-        {% endif %}
-      </a>
-    </div>
-  </div>
-{% elif not other_user %}
+{% if room_object and room_object.channel_kind == 'lobby' %}
   <span class="active-span">{% trans count=online_count %}{{ count }} users are online{% endtrans %}</span>
+{% elif room_object and room_object.room_type != 'direct' %}
+  <span class="active-span">{% trans count=room_member_count %}{{ count }} members{% endtrans %}</span>
 {% endif %}

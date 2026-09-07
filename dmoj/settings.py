@@ -103,6 +103,7 @@ DMOJ_STATS_SUBMISSION_RESULT_COLORS = {
 }
 DMOJ_PROFILE_IMAGE_ROOT = "profile_images"
 DMOJ_ORGANIZATION_IMAGE_ROOT = "organization_images"
+DMOJ_CHAT_ROOM_IMAGE_ROOT = "chat_room_images"
 DMOJ_COURSE_IMAGE_ROOT = "course_images"
 
 DMOJ_USER_MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -474,6 +475,13 @@ EVENT_DAEMON_AMQP_EXCHANGE = "dmoj-events"
 EVENT_DAEMON_SUBMISSION_KEY = (
     "6Sdmkx^%pk@GsifDfXcwX*Y7LRF%RGT8vmFpSxFBT$fwS7trc8raWfN#CSfQuKApx&$B#Gh2L7p%W!Ww"
 )
+
+# Generalized chat limits. Local settings may tune these without changing code.
+CHAT_GROUP_CREATION_LIMIT = 5
+CHAT_GROUP_CREATION_WINDOW_SECONDS = 60 * 60
+CHAT_CHANNEL_MESSAGE_LIMIT = 10
+CHAT_CHANNEL_MESSAGE_WINDOW_SECONDS = 10
+CHAT_ROOM_LIST_PAGE_SIZE = 20
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/

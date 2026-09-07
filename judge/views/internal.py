@@ -23,9 +23,16 @@ from django.utils.translation import gettext as _, get_language
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, TemplateView, View
 
-from chat_box.models import ChatModerationLog
+from chat_box.models import (
+    ChatModerationLog,
+    Room,
+    RoomModerationLog,
+    RoomMute,
+    UserRoom,
+)
 from chat_box.utils import encrypt_channel
-from chat_box.views import hide_lobby_message, mute_chat_user
+from chat_box.services.moderation import hide_message as hide_room_message
+from chat_box.views import hide_lobby_message, site_mute_chat_user
 from judge import event_poster as event
 from judge.blog_composer.cache import get_session
 from judge.judgeapi import bridge_status
@@ -2183,17 +2190,70 @@ class InternalChatModeration(InternalView, ListView):
         )
 
     def get_queryset(self):
-        queryset = ChatModerationLog.objects.exclude(action="keep").select_related(
-            "message__author__user", "moderator__user"
+        scope = self.request.GET.get("scope", "legacy")
+        search = self.request.GET.get("search", "").strip()
+        action_filter = self.request.GET.get("action", "")
+        room_type_filter = self.request.GET.get("room_type", "")
+        accessible_room_ids = UserRoom.objects.filter(
+            user=self.request.profile,
+            state=UserRoom.State.ACTIVE,
+        ).values("room_id")
+
+        if scope == "rooms":
+            queryset = RoomModerationLog.objects.select_related(
+                "room", "actor__user", "target__user"
+            ).filter(room_id__in=accessible_room_ids)
+            if action_filter in RoomModerationLog.Action.values:
+                queryset = queryset.filter(action=action_filter)
+            if room_type_filter in Room.Type.values:
+                queryset = queryset.filter(room__room_type=room_type_filter)
+            if search:
+                queryset = queryset.filter(
+                    Q(room__name__icontains=search)
+                    | Q(actor__user__username__icontains=search)
+                    | Q(target__user__username__icontains=search)
+                    | Q(reason__icontains=search)
+                )
+            return queryset.order_by("-created_at")
+
+        if scope == "room_mutes":
+            queryset = RoomMute.objects.select_related(
+                "room", "target__user", "muted_by__user", "revoked_by__user"
+            ).filter(room_id__in=accessible_room_ids)
+            if action_filter == "active":
+                queryset = queryset.filter(
+                    revoked_at__isnull=True,
+                    expires_at__gt=timezone.now(),
+                )
+            elif action_filter == "revoked":
+                queryset = queryset.filter(revoked_at__isnull=False)
+            elif action_filter == "expired":
+                queryset = queryset.filter(
+                    revoked_at__isnull=True,
+                    expires_at__lte=timezone.now(),
+                )
+            if room_type_filter in Room.Type.values:
+                queryset = queryset.filter(room__room_type=room_type_filter)
+            if search:
+                queryset = queryset.filter(
+                    Q(room__name__icontains=search)
+                    | Q(target__user__username__icontains=search)
+                    | Q(muted_by__user__username__icontains=search)
+                    | Q(reason__icontains=search)
+                )
+            return queryset.order_by("-created_at")
+
+        queryset = (
+            ChatModerationLog.objects.exclude(action="keep")
+            .select_related("message__author__user", "moderator__user")
+            .filter(message__room_id__in=accessible_room_ids)
         )
 
-        action_filter = self.request.GET.get("action", "")
         if action_filter == "mute":
             queryset = queryset.filter(action__in=["mute", "mute_temp", "mute_perm"])
         elif action_filter:
             queryset = queryset.filter(action=action_filter)
 
-        search = self.request.GET.get("search", "").strip()
         if search:
             queryset = queryset.filter(
                 Q(message__author__user__username__icontains=search)
@@ -2229,8 +2289,14 @@ class InternalChatModeration(InternalView, ListView):
         )
 
     def post(self, request, *args, **kwargs):
+        accessible_room_ids = UserRoom.objects.filter(
+            user=request.profile,
+            state=UserRoom.State.ACTIVE,
+        ).values("room_id")
         log = get_object_or_404(
-            ChatModerationLog.objects.select_related("message", "message__author"),
+            ChatModerationLog.objects.select_related(
+                "message", "message__author", "message__room"
+            ).filter(message__room_id__in=accessible_room_ids),
             id=request.POST.get("log"),
         )
         action = request.POST.get("action")
@@ -2241,18 +2307,27 @@ class InternalChatModeration(InternalView, ListView):
             self._resolve_log(log, "keep", reason, moderator)
             messages.success(request, _("Chat moderation case kept."))
         elif action == "hide":
-            hide_lobby_message(
-                log.message,
-                moderator=moderator,
-                reason=reason,
-                log_action=False,
-            )
+            if log.message.room.channel_kind == Room.ChannelKind.LOBBY:
+                hide_lobby_message(
+                    log.message,
+                    moderator=moderator,
+                    reason=reason,
+                    log_action=False,
+                )
+            else:
+                hide_room_message(
+                    log.message,
+                    request.user,
+                    moderator,
+                    reason,
+                )
             self._resolve_log(log, "hide", reason, moderator)
             messages.success(request, _("Chat message hidden."))
         elif action == "mute_temp":
-            mute_result = mute_chat_user(
+            mute_result = site_mute_chat_user(
                 log.message,
-                moderator=moderator,
+                request.user,
+                moderator,
                 reason=reason,
                 mute_type="temporary",
                 log_action=False,
@@ -2267,9 +2342,10 @@ class InternalChatModeration(InternalView, ListView):
             )
             messages.success(request, _("User temporarily muted."))
         elif action == "mute_perm":
-            mute_result = mute_chat_user(
+            mute_result = site_mute_chat_user(
                 log.message,
-                moderator=moderator,
+                request.user,
+                moderator,
                 reason=reason,
                 mute_type="permanent",
                 log_action=False,
@@ -2296,6 +2372,12 @@ class InternalChatModeration(InternalView, ListView):
         context["title"] = self.title
         context["action_filter"] = self.request.GET.get("action", "")
         context["search_query"] = self.request.GET.get("search", "")
+        scope = self.request.GET.get("scope", "legacy")
+        context["moderation_scope"] = (
+            scope if scope in ("legacy", "rooms", "room_mutes") else "legacy"
+        )
+        context["room_type_filter"] = self.request.GET.get("room_type", "")
+        context["room_type_choices"] = Room.Type.choices
         query_params = self.request.GET.copy()
         if "page" in query_params:
             del query_params["page"]

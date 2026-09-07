@@ -39,6 +39,7 @@ from django.views.generic.detail import (
 from django.contrib.sites.shortcuts import get_current_site
 from reversion import revisions
 
+from chat_box.models import Room, RoomBan, UserRoom
 from judge.caching import cache_wrapper
 from judge.forms import (
     EditOrganizationForm,
@@ -681,6 +682,36 @@ class OrganizationHome(OrganizationHomeView, FeedView):
         # Member avatars for preview (up to 5, using cached instances)
         preview_ids = member_ids[:5]
         context["member_preview"] = Profile.get_cached_instances(*preview_ids)
+
+        if self.request.user.is_authenticated:
+            chat_room = (
+                Room.objects.filter(
+                    organization=self.organization,
+                    room_type=Room.Type.CHANNEL,
+                    channel_kind=Room.ChannelKind.ORGANIZATION,
+                )
+                .only("id")
+                .first()
+            )
+            if chat_room is not None:
+                chat_membership = UserRoom.objects.filter(
+                    room=chat_room,
+                    user=self.request.profile,
+                ).first()
+                context["organization_chat_room_id"] = chat_room.id
+                context["organization_chat_membership_active"] = bool(
+                    chat_membership and chat_membership.state == UserRoom.State.ACTIVE
+                )
+                context["can_join_organization_chat"] = bool(
+                    chat_membership
+                    and chat_membership.state
+                    in (UserRoom.State.LEFT, UserRoom.State.REMOVED)
+                    and not RoomBan.objects.filter(
+                        room=chat_room,
+                        target=self.request.profile,
+                        revoked_at__isnull=True,
+                    ).exists()
+                )
 
         # Mixed feed
         if hasattr(self, "feed_result") and self.feed_result:

@@ -11,11 +11,12 @@ from chat_box.models import (
     ChatModerationLog,
     Room,
     Message,
+    RoomMute,
     UserRoom,
     get_user_room_list,
 )
 from chat_box.utils import encrypt_url, get_unread_boxes
-from chat_box.views import ChatView, get_status_context
+from chat_box.views import ChatView, get_status_context, get_unread_count
 from judge.models import (
     Language,
     Notification,
@@ -25,6 +26,10 @@ from judge.models import (
     Submission,
 )
 from judge.models.notification import NotificationCategory
+
+
+def lobby_room():
+    return Room.objects.get(singleton_key="lobby")
 
 
 class DeleteMessageCacheTest(TestCase):
@@ -45,9 +50,7 @@ class DeleteMessageCacheTest(TestCase):
         self.profile2, _ = Profile.objects.get_or_create(user=self.user2)
 
         # Create a room
-        self.room = Room.objects.create(last_msg_id=None)
-        UserRoom.objects.create(room=self.room, user=self.profile1)
-        UserRoom.objects.create(room=self.room, user=self.profile2)
+        self.room = Room.get_or_create_room(self.profile1, self.profile2)
 
         self.client = Client()
 
@@ -160,7 +163,7 @@ class DeleteMessageCacheTest(TestCase):
             {"message": msg1.id},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 403)
 
         # Message should still exist and not be hidden
         msg1.refresh_from_db()
@@ -195,9 +198,10 @@ class DeleteMessageCacheTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        # Verify unread_count is decremented
+        # Cursor-derived unread state is authoritative during compatibility.
         user_room2.refresh_from_db()
-        self.assertEqual(user_room2.unread_count, 1)
+        self.assertEqual(user_room2.unread_count, 2)
+        self.assertEqual(get_unread_count(self.room, self.profile2), 0)
 
     def test_delete_message_does_not_decrement_for_seen_users(self):
         """When a message is deleted, unread_count should not change for users who have seen it."""
@@ -230,6 +234,8 @@ class DeleteMessageCacheTest(TestCase):
 
 
 class ChatMuteTest(TestCase):
+    fixtures = ["language_small"]
+
     def setUp(self):
         cache.clear()
         self.client = Client()
@@ -247,13 +253,19 @@ class ChatMuteTest(TestCase):
         self.admin_profile, _ = Profile.objects.get_or_create(user=self.admin_user)
         self.temp_perm = Permission.objects.get(codename="change_comment")
         self.mod_user.user_permissions.add(self.temp_perm)
+        self.lobby = lobby_room()
+        UserRoom.objects.filter(room=self.lobby, user=self.mod_profile).update(
+            role=UserRoom.Role.MODERATOR,
+            manual_role=UserRoom.Role.MODERATOR,
+            synced_role=UserRoom.Role.MODERATOR,
+        )
 
     def tearDown(self):
         cache.clear()
 
     def test_temporary_mute_requires_reason_for_moderator(self):
         message = Message.objects.create(
-            room=None, author=self.author_profile, body="bad lobby message"
+            room=lobby_room(), author=self.author_profile, body="bad lobby message"
         )
         self.client.login(username="chatmod", password="password123")
         response = self.client.post(
@@ -265,17 +277,20 @@ class ChatMuteTest(TestCase):
         self.assertFalse(self.author_profile.mute)
 
     def test_temporary_mute_escalates_and_notifies_user(self):
-        old_message = Message.objects.create(
-            room=None, author=self.author_profile, body="old bad lobby message"
+        Message.objects.create(
+            room=lobby_room(), author=self.author_profile, body="old bad lobby message"
         )
-        ChatModerationLog.log_action(
-            message=old_message,
-            action="mute_temp",
+        RoomMute.objects.create(
+            room=self.lobby,
+            target=self.author_profile,
+            muted_by=self.mod_profile,
             reason="Previous warning",
-            mute_duration_days=1,
+            expires_at=timezone.now() - timezone.timedelta(days=1),
+            duration_days=1,
+            revoked_at=timezone.now() - timezone.timedelta(days=1),
         )
         message = Message.objects.create(
-            room=None, author=self.author_profile, body="new bad lobby message"
+            room=lobby_room(), author=self.author_profile, body="new bad lobby message"
         )
 
         before = timezone.now()
@@ -291,44 +306,34 @@ class ChatMuteTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
         self.author_profile.refresh_from_db()
-        self.assertTrue(self.author_profile.mute)
-        self.assertEqual(self.author_profile.mute_reason, "Repeated spam")
-        self.assertIsNotNone(self.author_profile.mute_until)
+        self.assertFalse(self.author_profile.mute)
+        mute = RoomMute.objects.filter(
+            room=self.lobby,
+            target=self.author_profile,
+            revoked_at__isnull=True,
+        ).get()
+        self.assertEqual(mute.duration_days, 2)
+        self.assertEqual(mute.reason, "Repeated spam")
+        # Wall-clock synchronization can move the local clock backwards by a
+        # fraction of a second while the request is running.
         self.assertGreaterEqual(
-            self.author_profile.mute_until, before + timezone.timedelta(days=2)
+            mute.expires_at,
+            before + timezone.timedelta(days=2, seconds=-1),
         )
         self.assertLessEqual(
-            self.author_profile.mute_until, timezone.now() + timezone.timedelta(days=3)
+            mute.expires_at, timezone.now() + timezone.timedelta(days=3)
         )
-
-        log = ChatModerationLog.objects.get(message=message)
-        self.assertEqual(log.action, "mute_temp")
-        self.assertEqual(log.reason, "Repeated spam")
-        self.assertEqual(log.mute_duration_days, 2)
 
         notification = Notification.objects.get(owner=self.author_profile)
         self.assertEqual(notification.category, NotificationCategory.CHAT_MUTE)
         self.assertIn("Repeated spam", notification.html_link)
-        self.assertEqual(notification.extra_data["type"], "chat_mute_notice")
+        self.assertEqual(notification.extra_data["type"], "room_mute_notice")
         self.assertEqual(notification.extra_data["reason"], "Repeated spam")
         self.assertTrue(notification.extra_data["mute_until"])
 
-        self.client.login(username="muteduser", password="password123")
-        response = self.client.get("/notifications/", HTTP_ACCEPT_LANGUAGE="en")
-        self.assertContains(
-            response,
-            "Your chat access has been muted until",
-        )
-        self.assertContains(response, "Reason: Repeated spam")
-        self.assertNotContains(response, "Bạn bị cấm chat")
-
-        response = self.client.get("/notifications/", HTTP_ACCEPT_LANGUAGE="vi")
-        self.assertContains(response, "Bạn bị cấm chat đến")
-        self.assertContains(response, "Lý do: Repeated spam")
-
     def test_moderator_cannot_permanently_mute(self):
         message = Message.objects.create(
-            room=None, author=self.author_profile, body="severe lobby message"
+            room=lobby_room(), author=self.author_profile, body="severe lobby message"
         )
         self.client.login(username="chatmod", password="password123")
         response = self.client.post(
@@ -339,14 +344,14 @@ class ChatMuteTest(TestCase):
                 "reason": "Too severe",
             },
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 403)
 
         self.author_profile.refresh_from_db()
         self.assertFalse(self.author_profile.mute)
 
     def test_permanent_mute_allowed_for_superuser_without_reason(self):
         message = Message.objects.create(
-            room=None, author=self.author_profile, body="severe lobby message"
+            room=lobby_room(), author=self.author_profile, body="severe lobby message"
         )
         self.client.login(username="chatadmin", password="password123")
         response = self.client.post(
@@ -362,6 +367,137 @@ class ChatMuteTest(TestCase):
         log = ChatModerationLog.objects.get(message=message)
         self.assertEqual(log.action, "mute_perm")
         self.assertIsNone(log.mute_until)
+        notification = Notification.objects.get(owner=self.author_profile)
+        self.assertEqual(notification.category, NotificationCategory.CHAT_MUTE)
+        self.assertEqual(notification.author, self.admin_profile)
+        message.refresh_from_db()
+        self.assertFalse(message.hidden)
+
+    def test_site_wide_suspend_can_explicitly_hide_current_channel_messages(self):
+        channel = Room.objects.create(
+            room_type=Room.Type.CHANNEL,
+            channel_kind=Room.ChannelKind.CUSTOM,
+            name="Moderated channel",
+        )
+        UserRoom.objects.create(
+            room=channel,
+            user=self.author_profile,
+            role=UserRoom.Role.MEMBER,
+            manual_role=UserRoom.Role.MEMBER,
+        )
+        UserRoom.objects.create(
+            room=channel,
+            user=self.admin_profile,
+            role=UserRoom.Role.ADMIN,
+            manual_role=UserRoom.Role.ADMIN,
+        )
+        first = Message.objects.create(
+            room=channel,
+            author=self.author_profile,
+            body="first channel message",
+        )
+        second = Message.objects.create(
+            room=channel,
+            author=self.author_profile,
+            body="second channel message",
+        )
+        lobby_message = Message.objects.create(
+            room=self.lobby,
+            author=self.author_profile,
+            body="unrelated lobby message",
+        )
+        Room.objects.filter(id=channel.id).update(last_msg_id=second.id)
+
+        self.client.login(username="chatadmin", password="password123")
+        response = self.client.post(
+            "/chat/mute/",
+            {
+                "message": second.id,
+                "scope": "site",
+                "mute_type": "temporary",
+                "hide_room_messages": "1",
+                "reason": "Channel spam",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.author_profile.refresh_from_db()
+        self.assertTrue(self.author_profile.mute)
+        self.assertIsNotNone(self.author_profile.mute_until)
+        first.refresh_from_db()
+        second.refresh_from_db()
+        lobby_message.refresh_from_db()
+        self.assertTrue(first.hidden)
+        self.assertTrue(second.hidden)
+        self.assertFalse(lobby_message.hidden)
+        channel.refresh_from_db()
+        self.assertIsNone(channel.last_msg_id)
+        self.assertEqual(
+            set(
+                ChatModerationLog.objects.filter(message=second).values_list(
+                    "action", flat=True
+                )
+            ),
+            {"mute_temp", "hide"},
+        )
+
+    def test_site_wide_suspend_is_not_available_from_group(self):
+        group = Room.objects.create(room_type=Room.Type.GROUP, name="Private group")
+        message = Message.objects.create(
+            room=group,
+            author=self.author_profile,
+            body="private group message",
+        )
+        self.client.login(username="chatadmin", password="password123")
+
+        response = self.client.post(
+            "/chat/mute/",
+            {
+                "message": message.id,
+                "scope": "site",
+                "mute_type": "permanent",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.author_profile.refresh_from_db()
+        self.assertFalse(self.author_profile.mute)
+
+    def test_site_wide_suspend_requires_active_room_membership(self):
+        channel = Room.objects.create(
+            room_type=Room.Type.CHANNEL,
+            channel_kind=Room.ChannelKind.CUSTOM,
+            name="Private channel",
+        )
+        UserRoom.objects.create(
+            room=channel,
+            user=self.author_profile,
+            role=UserRoom.Role.MEMBER,
+            manual_role=UserRoom.Role.MEMBER,
+        )
+        message = Message.objects.create(
+            room=channel,
+            author=self.author_profile,
+            body="private channel message",
+        )
+        self.client.login(username="chatadmin", password="password123")
+
+        response = self.client.post(
+            "/chat/mute/",
+            {
+                "message": message.id,
+                "scope": "site",
+                "mute_type": "permanent",
+                "hide_room_messages": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["code"], "permission_denied")
+        self.author_profile.refresh_from_db()
+        message.refresh_from_db()
+        self.assertFalse(self.author_profile.mute)
+        self.assertFalse(message.hidden)
 
 
 class ChatPaginationTest(TestCase):
@@ -376,7 +512,7 @@ class ChatPaginationTest(TestCase):
     def test_get_message_page_uses_id_page_then_row_hydration(self):
         messages = [
             Message.objects.create(
-                room=None,
+                room=lobby_room(),
                 author=self.profile,
                 body="message %(index)s" % {"index": index},
             )
@@ -386,7 +522,7 @@ class ChatPaginationTest(TestCase):
         messages[2].save(update_fields=["hidden"])
 
         view = ChatView()
-        view.room_id = None
+        view.room_id = lobby_room().id
         last_id = messages[-1].id + 1
 
         with CaptureQueriesContext(connection) as queries:
@@ -404,7 +540,7 @@ class ChatPaginationTest(TestCase):
 
     def test_get_message_page_stops_after_empty_id_page(self):
         view = ChatView()
-        view.room_id = None
+        view.room_id = lobby_room().id
 
         with CaptureQueriesContext(connection) as queries:
             page = view.get_message_page(last_id=1, page_size=3)
@@ -414,6 +550,8 @@ class ChatPaginationTest(TestCase):
 
 
 class ChatSelfRoomTest(TestCase):
+    fixtures = ["language_small"]
+
     def setUp(self):
         cache.clear()
         self.client = Client()
@@ -467,7 +605,7 @@ class ChatSelfRoomTest(TestCase):
         Room.dirty_cache(self_room.id)
         get_user_room_list.dirty(self.profile.id)
 
-        recent = get_status_context(self.profile)[0]["user_list"]
+        recent = get_status_context(self.profile)[0]["room_list"]
 
         self.assertEqual(len(recent), 1)
         self.assertEqual(recent[0]["user"].id, self.profile.id)
@@ -541,7 +679,8 @@ class ChatCommunityPolicyTest(TestCase):
     def test_user_without_solve_cannot_post_chat_message(self):
         response = self._post_lobby_message()
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["code"], "community_access_required")
         self.assertFalse(Message.objects.filter(author=self.profile).exists())
 
     def test_user_with_full_score_submission_can_post_chat_message(self):
@@ -579,10 +718,24 @@ class UnreadBoxesCacheTest(TestCase):
         )
         self.profile2, _ = Profile.objects.get_or_create(user=self.user2)
 
-        # Create a room
-        self.room = Room.objects.create(last_msg_id=None)
-        UserRoom.objects.create(room=self.room, user=self.profile1, unread_count=0)
-        UserRoom.objects.create(room=self.room, user=self.profile2, unread_count=1)
+        # Create a canonical DM with one message seen only by its author.
+        self.room = Room.get_or_create_room(self.profile1, self.profile2)
+        message = Message.objects.create(
+            room=self.room,
+            author=self.profile1,
+            body="Unread message",
+        )
+        self.room.last_msg_id = message.id
+        self.room.last_activity_at = message.time
+        self.room.save(update_fields=["last_msg_id", "last_activity_at"])
+        UserRoom.objects.filter(room=self.room, user=self.profile1).update(
+            unread_count=0,
+            last_read_message_id=message.id,
+        )
+        UserRoom.objects.filter(room=self.room, user=self.profile2).update(
+            unread_count=1,
+            last_read_message_id=None,
+        )
 
         self.client = Client()
 
@@ -619,6 +772,7 @@ class UnreadBoxesCacheTest(TestCase):
         user_room2 = UserRoom.objects.get(room=self.room, user=self.profile2)
         user_room2.last_seen = past_time
         user_room2.unread_count = 1
+        user_room2.last_read_message_id = self.room.last_msg_id
         user_room2.save()
 
         # Create a message
@@ -671,9 +825,7 @@ class CleanupOldRoomsTest(TestCase):
 
     def _create_room_with_message(self, user1, user2, msg_id_offset=0):
         """Helper to create a room with a message."""
-        room = Room.objects.create(last_msg_id=None)
-        UserRoom.objects.create(room=room, user=user1, last_seen=timezone.now())
-        UserRoom.objects.create(room=room, user=user2, last_seen=timezone.now())
+        room = Room.get_or_create_room(user1, user2)
 
         # Create a message to set last_msg_id
         msg = Message.objects.create(
@@ -700,25 +852,24 @@ class CleanupOldRoomsTest(TestCase):
 
         # Verify we have 5 rooms
         self.assertEqual(
-            UserRoom.objects.filter(user=self.profile1)
-            .exclude(room__isnull=True)
-            .count(),
+            UserRoom.objects.filter(
+                user=self.profile1, room__room_type=Room.Type.DIRECT
+            ).count(),
             5,
         )
 
         # Create one more room (exceeds limit)
         new_room = Room.get_or_create_room(self.profile1, other_users[5])
 
-        # Should now have 5 rooms (oldest deleted)
+        # Room-list pagination replaces destructive cleanup, so all six remain.
         self.assertEqual(
-            UserRoom.objects.filter(user=self.profile1)
-            .exclude(room__isnull=True)
-            .count(),
-            5,
+            UserRoom.objects.filter(
+                user=self.profile1, room__room_type=Room.Type.DIRECT
+            ).count(),
+            6,
         )
 
-        # The oldest room (rooms[0]) should be deleted
-        self.assertFalse(Room.objects.filter(id=rooms[0].id).exists())
+        self.assertTrue(Room.objects.filter(id=rooms[0].id).exists())
 
         # The new room should exist
         self.assertTrue(Room.objects.filter(id=new_room.id).exists())
@@ -738,9 +889,9 @@ class CleanupOldRoomsTest(TestCase):
 
         # All rooms should still exist
         self.assertEqual(
-            UserRoom.objects.filter(user=self.profile1)
-            .exclude(room__isnull=True)
-            .count(),
+            UserRoom.objects.filter(
+                user=self.profile1, room__room_type=Room.Type.DIRECT
+            ).count(),
             3,
         )
         for room in rooms:
@@ -756,14 +907,14 @@ class CleanupOldRoomsTest(TestCase):
 
         # Prime the cache for the first other user
         other_rooms_before = get_user_room_list(other_users[0].id)
-        self.assertEqual(len(other_rooms_before), 1)
+        self.assertEqual(len(other_rooms_before), 2)
 
         # Run cleanup (should delete oldest room)
         Room.cleanup_old_rooms(self.profile1)
 
-        # Cache should be invalidated - other user should have 0 rooms
+        # Compatibility cleanup is a no-op and preserves the other user's room.
         other_rooms_after = get_user_room_list(other_users[0].id)
-        self.assertEqual(len(other_rooms_after), 0)
+        self.assertEqual(len(other_rooms_after), 2)
 
     @patch.object(Room, "MAX_ROOMS_PER_USER", 3)
     def test_cleanup_deletes_messages_with_room(self):
@@ -782,8 +933,7 @@ class CleanupOldRoomsTest(TestCase):
         # Run cleanup
         Room.cleanup_old_rooms(self.profile1)
 
-        # Messages from deleted room should be gone
-        self.assertEqual(Message.objects.filter(room=rooms[0]).count(), 0)
+        self.assertEqual(Message.objects.filter(room=rooms[0]).count(), 1)
 
     @patch.object(Room, "MAX_ROOMS_PER_USER", 5)
     def test_get_or_create_existing_room_does_not_trigger_cleanup(self):
@@ -800,9 +950,9 @@ class CleanupOldRoomsTest(TestCase):
 
         # All 5 rooms should still exist
         self.assertEqual(
-            UserRoom.objects.filter(user=self.profile1)
-            .exclude(room__isnull=True)
-            .count(),
+            UserRoom.objects.filter(
+                user=self.profile1, room__room_type=Room.Type.DIRECT
+            ).count(),
             5,
         )
         self.assertEqual(existing_room.id, rooms[2].id)

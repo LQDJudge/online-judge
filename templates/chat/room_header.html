@@ -1,0 +1,9 @@
+{% include 'chat/user_online_status.html' %}
+{% if room_membership and room_membership.is_hidden %}
+  <button type="button" id="chat-unhide-room" class="action-btn small">{{ _('Unhide room') }}</button>
+{% endif %}
+<button type="button" id="chat-room-details" class="chat-room-details-button"
+        aria-label="{{ _('Room details') }}" title="{{ _('Room details') }}"
+        aria-controls="chat-details-panel" aria-expanded="false">
+  <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+</button>

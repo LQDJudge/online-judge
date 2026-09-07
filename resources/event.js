@@ -1,8 +1,9 @@
-function EventReceiver(socketUrl, channels, last_msg, onmessage) {
+function EventReceiver(socketUrl, channels, last_msg, onmessage, grant) {
   // Configuration
   this.socketUrl = socketUrl;
   this.channels = channels;
   this.last_msg = last_msg || 0;
+  this.grant = grant || '';
   
   // Set message handler
   if (onmessage) {
@@ -27,7 +28,8 @@ function EventReceiver(socketUrl, channels, last_msg, onmessage) {
     // Create new Socket.IO connection with client role
     socket = io(this.socketUrl, {
       auth: {
-        role: 'client'
+        role: 'client',
+        grant: this.grant
       },
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
@@ -51,6 +53,13 @@ function EventReceiver(socketUrl, channels, last_msg, onmessage) {
     socket.on('message', (data) => {
       this.onmessage(data.message);
       this.last_msg = data.id;
+    });
+
+    socket.on('chat-revoked', (data) => {
+      this.onmessage({
+        type: 'room_access_revoked',
+        room: data.room_id
+      });
     });
     
     socket.on('error', (error) => {
@@ -104,5 +113,11 @@ function EventReceiver(socketUrl, channels, last_msg, onmessage) {
         filter: newChannels
       });
     }
+  };
+
+  this.updateAuthorization = (newGrant, newChannels) => {
+    this.grant = newGrant || '';
+    this.channels = newChannels || [];
+    connect();
   };
 }

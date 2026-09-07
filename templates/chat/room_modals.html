@@ -1,0 +1,130 @@
+<div id="chat-group-modal" class="chat-modal-backdrop" aria-hidden="true">
+  <div class="chat-modal chat-room-form-modal" role="dialog" aria-modal="true" aria-labelledby="chat-group-title">
+    <div class="chat-modal-heading">
+      <span class="chat-modal-heading-icon" aria-hidden="true"><i class="fa fa-users"></i></span>
+      <div>
+        <h3 id="chat-group-title">{{ _('Create a group') }}</h3>
+        <p>{{ _('Start a private conversation for up to 50 members.') }}</p>
+      </div>
+    </div>
+    <div class="chat-form-field">
+      <label for="chat-group-name">{{ _('Group name') }}</label>
+      <input id="chat-group-name" type="text" maxlength="100" autocomplete="off" placeholder="{{ _('Enter a group name') }}">
+    </div>
+    {% if request.user.is_superuser %}
+      <div class="chat-form-field">
+        <label for="chat-group-members">{{ _('Initial members') }} <span class="chat-optional-label">{{ _('Optional') }}</span></label>
+        <select id="chat-group-members" multiple></select>
+        <p class="chat-field-hint">{{ _('Search by username. You can select up to 49 other members.') }}</p>
+      </div>
+    {% endif %}
+    <p class="chat-modal-error" aria-live="polite"></p>
+    <div class="chat-modal-actions">
+      <button type="button" class="action-btn small background-gray chat-modal-cancel">{{ _('Cancel') }}</button>
+      <button type="button" id="chat-group-create" class="action-btn">{{ _('Create group') }}</button>
+    </div>
+  </div>
+</div>
+
+<div id="chat-channel-modal" class="chat-modal-backdrop" aria-hidden="true">
+  <div class="chat-modal chat-room-form-modal" role="dialog" aria-modal="true" aria-labelledby="chat-channel-title">
+    <div class="chat-modal-heading">
+      <span class="chat-modal-heading-icon" aria-hidden="true"><i class="fa fa-hashtag"></i></span>
+      <div>
+        <h3 id="chat-channel-title">{{ _('Create a channel') }}</h3>
+        <p>{{ _('Create a space for a larger community.') }}</p>
+      </div>
+    </div>
+    <div class="chat-form-field">
+      <label for="chat-channel-kind">{{ _('Channel type') }}</label>
+      <select id="chat-channel-kind">
+        <option value="organization">{{ _('Organization channel') }}</option>
+        {% if request.user.is_superuser %}<option value="custom">{{ _('Custom channel') }}</option>{% endif %}
+      </select>
+    </div>
+    <div id="chat-channel-organization-fields">
+      <div class="chat-form-field">
+        <label for="chat-channel-organization">{{ _('Organization') }}</label>
+        <select id="chat-channel-organization"></select>
+        <p class="chat-field-hint">{{ _('Membership follows the selected organization automatically.') }}</p>
+      </div>
+    </div>
+    <div id="chat-channel-custom-fields" hidden>
+      <div class="chat-form-field">
+        <label for="chat-channel-name">{{ _('Channel name') }}</label>
+        <input id="chat-channel-name" type="text" maxlength="100" autocomplete="off" placeholder="{{ _('Enter a channel name') }}">
+      </div>
+      <div class="chat-form-field">
+        <label for="chat-channel-members">{{ _('Initial members') }} <span class="chat-optional-label">{{ _('Optional') }}</span></label>
+        <select id="chat-channel-members" multiple></select>
+        <p class="chat-field-hint">{{ _('Search by username to add members now. You can also invite them later.') }}</p>
+      </div>
+    </div>
+    <p class="chat-modal-error" aria-live="polite"></p>
+    <div class="chat-modal-actions">
+      <button type="button" class="action-btn small background-gray chat-modal-cancel">{{ _('Cancel') }}</button>
+      <button type="button" id="chat-channel-create" class="action-btn">{{ _('Create channel') }}</button>
+    </div>
+  </div>
+</div>
+
+<div id="chat-room-list-modal" class="chat-modal-backdrop" aria-hidden="true">
+  <div class="chat-modal chat-room-list-modal" role="dialog" aria-modal="true" aria-labelledby="chat-room-list-title">
+    <div class="chat-modal-heading">
+      <span id="chat-room-list-icon" class="chat-modal-heading-icon" aria-hidden="true"><i class="fa fa-eye-slash"></i></span>
+      <div>
+        <h3 id="chat-room-list-title"></h3>
+        <p id="chat-room-list-description"></p>
+      </div>
+    </div>
+    <div class="chat-room-list-search">
+      <i class="fa fa-search" aria-hidden="true"></i>
+      <label class="sr-only" for="chat-room-list-search">{{ _('Search rooms') }}</label>
+      <input id="chat-room-list-search" type="search" autocomplete="off" placeholder="{{ _('Search rooms') }}">
+    </div>
+    <div id="chat-room-list-content" class="chat-room-list-content"></div>
+    <p class="chat-modal-error" aria-live="polite"></p>
+    <div class="chat-modal-actions">
+      <button type="button" id="chat-room-list-more" class="action-btn small" hidden>{{ _('Load more') }}</button>
+      <button type="button" class="action-btn small background-gray chat-modal-cancel">{{ _('Close') }}</button>
+    </div>
+  </div>
+</div>
+
+<div id="chat-member-action-modal" class="chat-modal-backdrop" aria-hidden="true">
+  <div class="chat-modal chat-room-form-modal chat-member-action-modal" role="dialog" aria-modal="true" aria-labelledby="chat-member-action-title">
+    <div class="chat-modal-heading">
+      <span class="chat-modal-heading-icon" aria-hidden="true"><i id="chat-member-action-icon" class="fa fa-user-minus"></i></span>
+      <div>
+        <h3 id="chat-member-action-title"></h3>
+        <p id="chat-member-action-summary"></p>
+      </div>
+    </div>
+    <div class="chat-form-field">
+      <label for="chat-member-action-reason" id="chat-member-action-reason-label">{{ _('Reason') }}</label>
+      <textarea id="chat-member-action-reason" rows="4" maxlength="500"></textarea>
+    </div>
+    <p class="chat-modal-error" aria-live="polite"></p>
+    <div class="chat-modal-actions">
+      <button type="button" class="action-btn small background-gray chat-modal-cancel">{{ _('Cancel') }}</button>
+      <button type="button" id="chat-member-action-confirm" class="action-btn background-red"></button>
+    </div>
+  </div>
+</div>
+
+<div id="chat-leave-room-modal" class="chat-modal-backdrop" aria-hidden="true">
+  <div class="chat-modal chat-room-form-modal" role="dialog" aria-modal="true" aria-labelledby="chat-leave-room-title">
+    <div class="chat-modal-heading">
+      <span class="chat-modal-heading-icon chat-modal-danger-icon" aria-hidden="true"><i class="fa fa-sign-out-alt"></i></span>
+      <div>
+        <h3 id="chat-leave-room-title">{{ _('Leave this room?') }}</h3>
+        <p id="chat-leave-room-summary"></p>
+      </div>
+    </div>
+    <p class="chat-modal-error" aria-live="polite"></p>
+    <div class="chat-modal-actions">
+      <button type="button" class="action-btn small background-gray chat-modal-cancel">{{ _('Cancel') }}</button>
+      <button type="button" id="chat-leave-room-confirm" class="action-btn background-red">{{ _('Leave room') }}</button>
+    </div>
+  </div>
+</div>

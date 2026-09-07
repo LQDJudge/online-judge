@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import RedirectView
 
 import chat_box.views as chat
+import chat_box.room_views as chat_rooms
 from judge import authentication
 from judge.forms import CustomAuthenticationForm
 from judge.sitemap import (
@@ -1842,6 +1843,92 @@ urlpatterns = [
         r"^chat/",
         include(
             [
+                re_path(r"^rooms/$", chat_rooms.room_list_view, name="chat_room_list"),
+                re_path(
+                    r"^groups/create/$",
+                    chat_rooms.create_group_view,
+                    name="chat_group_create",
+                ),
+                re_path(
+                    r"^channels/create/$",
+                    chat_rooms.create_channel_view,
+                    name="chat_channel_create",
+                ),
+                re_path(
+                    r"^channels/options/$",
+                    chat_rooms.channel_options_view,
+                    name="chat_channel_options",
+                ),
+                re_path(
+                    r"^organizations/(?P<organization_id>\d+)/join/$",
+                    chat_rooms.organization_channel_join_view,
+                    name="chat_organization_channel_join",
+                ),
+                re_path(
+                    r"^members/search/$",
+                    chat_rooms.member_search_view,
+                    name="chat_member_search",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/events/grant/$",
+                    chat_rooms.event_grant_view,
+                    name="chat_event_grant",
+                ),
+                re_path(
+                    r"^invite/(?P<token>[^/]+)/$",
+                    chat_rooms.invitation_join_view,
+                    name="chat_invitation",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/details/$",
+                    chat_rooms.room_details_view,
+                    name="chat_room_details",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/rename/$",
+                    chat_rooms.rename_room_view,
+                    name="chat_room_rename",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/avatar/$",
+                    chat_rooms.room_avatar_view,
+                    name="chat_room_avatar",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/leave/$",
+                    chat_rooms.leave_room_view,
+                    name="chat_room_leave",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/visibility/$",
+                    chat_rooms.room_visibility_view,
+                    name="chat_room_visibility",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/archive/$",
+                    chat_rooms.archive_room_view,
+                    name="chat_room_archive",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/restore/$",
+                    chat_rooms.restore_room_view,
+                    name="chat_room_restore",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/invitation/$",
+                    chat_rooms.invitation_view,
+                    name="chat_room_invitation",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/members/$",
+                    chat_rooms.member_action_view,
+                    name="chat_room_member_action",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/moderation/$",
+                    chat_rooms.moderation_view,
+                    name="chat_room_moderation",
+                ),
                 re_path(
                     r"^(?P<room_id>\d*)$",
                     login_required(chat.ChatView.as_view()),

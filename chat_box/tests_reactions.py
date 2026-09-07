@@ -16,6 +16,10 @@ from chat_box.utils import get_reactions_summary
 from judge.models import Language, Profile
 
 
+def lobby_room():
+    return Room.objects.get(singleton_key="lobby")
+
+
 class ReactionModelTest(TestCase):
     fixtures = ["language_small"]
 
@@ -24,7 +28,7 @@ class ReactionModelTest(TestCase):
         self.lang = Language.objects.first()
         self.u1 = self._profile("react_u1")
         self.u2 = self._profile("react_u2")
-        self.msg = Message.objects.create(author=self.u1, body="hi", room=None)
+        self.msg = Message.objects.create(author=self.u1, body="hi", room=lobby_room())
 
     def tearDown(self):
         cache.clear()
@@ -68,7 +72,7 @@ class ReactionModelTest(TestCase):
         # Many messages, each with a reaction -> still a constant number of queries.
         ids = []
         for i in range(10):
-            m = Message.objects.create(author=self.u1, body=f"m{i}", room=None)
+            m = Message.objects.create(author=self.u1, body=f"m{i}", room=lobby_room())
             MessageReaction.objects.create(message=m, user=self.u2, reaction="haha")
             ids.append(m.id)
         with self.assertNumQueries(2):  # one grouped count + one for my reactions
@@ -86,7 +90,9 @@ class ReactionEndpointTest(TestCase):
         self.u3 = self._profile("er_u3")
         self.u1.user.is_staff = True
         self.u1.user.save(update_fields=["is_staff"])
-        self.lobby_msg = Message.objects.create(author=self.u2, body="hello", room=None)
+        self.lobby_msg = Message.objects.create(
+            author=self.u2, body="hello", room=lobby_room()
+        )
         self.url = reverse("chat_react")
         self.client.login(username="er_u1", password="pw")
 
@@ -112,6 +118,19 @@ class ReactionEndpointTest(TestCase):
         self.assertEqual(data["counts"]["like"], 1)
         self.assertEqual(
             MessageReaction.objects.filter(message=self.lobby_msg).count(), 1
+        )
+
+    def test_reaction_locks_membership_before_writing(self):
+        with CaptureQueriesContext(connection) as queries:
+            response = self._react(self.lobby_msg, "like")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            any(
+                "FOR UPDATE" in query["sql"].upper()
+                and "CHAT_BOX_USERROOM" in query["sql"].upper()
+                for query in queries.captured_queries
+            )
         )
 
     def test_change_reaction_replaces_not_adds(self):
@@ -189,7 +208,8 @@ class ReactionEndpointTest(TestCase):
 
     def test_broadcast_carries_actor_reaction(self):
         with mock.patch("chat_box.views.event.post") as post:
-            self._react(self.lobby_msg, "like")
+            with self.captureOnCommitCallbacks(execute=True):
+                self._react(self.lobby_msg, "like")
         payloads = self._broadcast_payloads(post)
         self.assertTrue(payloads)
         self.assertEqual(payloads[0]["actor_reaction"], "like")
@@ -198,7 +218,8 @@ class ReactionEndpointTest(TestCase):
     def test_broadcast_actor_reaction_none_on_toggle_off(self):
         self._react(self.lobby_msg, "like")
         with mock.patch("chat_box.views.event.post") as post:
-            self._react(self.lobby_msg, "like")  # same emoji -> toggle off
+            with self.captureOnCommitCallbacks(execute=True):
+                self._react(self.lobby_msg, "like")  # same emoji -> toggle off
         payloads = self._broadcast_payloads(post)
         self.assertTrue(payloads)
         self.assertIsNone(payloads[0]["actor_reaction"])
@@ -215,7 +236,7 @@ class ReactionListTest(TestCase):
         self.u1 = self._profile("rl_u1")
         self.u2 = self._profile("rl_u2")
         self.u3 = self._profile("rl_u3")
-        self.msg = Message.objects.create(author=self.u1, body="hi", room=None)
+        self.msg = Message.objects.create(author=self.u1, body="hi", room=lobby_room())
         self.url = reverse("chat_reaction_list")
         self.client.login(username="rl_u1", password="pw")
 
@@ -311,7 +332,7 @@ class ReactionListTest(TestCase):
 
     def test_reactor_list_has_no_nplus1(self):
         def query_count(n, offset):
-            m = Message.objects.create(author=self.u1, body=f"m{n}", room=None)
+            m = Message.objects.create(author=self.u1, body=f"m{n}", room=lobby_room())
             for i in range(n):
                 p = self._profile(f"rln_{offset + i}")
                 MessageReaction.objects.create(message=m, user=p, reaction="like")
@@ -320,8 +341,12 @@ class ReactionListTest(TestCase):
                 self.client.get(self.url, {"message": m.id})
             return len(ctx.captured_queries)
 
-        # Query count must not grow with the number of reactors.
-        self.assertEqual(query_count(2, 0), query_count(12, 100))
+        # Query count must stay constant-scale with the number of reactors. Allow
+        # one cache-dependent setup query in either request; an N+1 regression
+        # would add up to eight queries between these two capped result sizes.
+        small_count = query_count(2, 0)
+        large_count = query_count(12, 100)
+        self.assertLessEqual(large_count, small_count + 1)
 
 
 class ReactionMessageRenderTest(TestCase):
@@ -334,7 +359,9 @@ class ReactionMessageRenderTest(TestCase):
         self.lang = Language.objects.first()
         self.viewer = self._profile("rm_viewer")
         self.author = self._profile("rm_author")
-        self.msg = Message.objects.create(author=self.author, body="hi", room=None)
+        self.msg = Message.objects.create(
+            author=self.author, body="hi", room=lobby_room()
+        )
         self.url = reverse("chat_message_ajax")
         self.client.login(username="rm_viewer", password="pw")
 

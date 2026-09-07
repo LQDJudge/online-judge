@@ -106,25 +106,64 @@
     <h2>{{ _("Moderation Log") }}</h2>
 
     <div class="chat-moderation-controls">
+      <a class="action-btn small {% if moderation_scope == 'legacy' %}background-gray{% endif %}"
+         href="{{ url('internal_chat_moderation') }}">
+        {{ _("Lobby cases") }}
+      </a>
+      <a class="action-btn small {% if moderation_scope == 'rooms' %}background-gray{% endif %}"
+         href="{{ url('internal_chat_moderation') }}?scope=rooms">
+        {{ _("Room activity") }}
+      </a>
+      <a class="action-btn small {% if moderation_scope == 'room_mutes' %}background-gray{% endif %}"
+         href="{{ url('internal_chat_moderation') }}?scope=room_mutes&action=active">
+        {{ _("Room mutes") }}
+      </a>
+    </div>
+
+    <div class="chat-moderation-controls">
       <a class="action-btn small {% if not action_filter %}background-gray{% endif %}"
-         href="{{ url('internal_chat_moderation') }}{% if search_query %}?search={{ search_query }}{% endif %}">
+         href="{{ url('internal_chat_moderation') }}?scope={{ moderation_scope }}{% if search_query %}&search={{ search_query }}{% endif %}">
         {{ _("All") }}
       </a>
-      <a class="action-btn small {% if action_filter == 'hide' %}background-gray{% endif %}"
-         href="{{ url('internal_chat_moderation') }}?action=hide{% if search_query %}&search={{ search_query }}{% endif %}">
-        {{ _("Hidden") }}
-      </a>
-      <a class="action-btn small {% if action_filter == 'review' %}background-gray{% endif %}"
-         href="{{ url('internal_chat_moderation') }}?action=review{% if search_query %}&search={{ search_query }}{% endif %}">
-        {{ _("Needs review") }}
-      </a>
-      <a class="action-btn small {% if action_filter == 'mute' %}background-gray{% endif %}"
-         href="{{ url('internal_chat_moderation') }}?action=mute{% if search_query %}&search={{ search_query }}{% endif %}">
-        {{ _("Muted") }}
-      </a>
+      {% if moderation_scope == "legacy" %}
+        <a class="action-btn small {% if action_filter == 'hide' %}background-gray{% endif %}"
+           href="{{ url('internal_chat_moderation') }}?scope=legacy&action=hide{% if search_query %}&search={{ search_query }}{% endif %}">
+          {{ _("Hidden") }}
+        </a>
+        <a class="action-btn small {% if action_filter == 'review' %}background-gray{% endif %}"
+           href="{{ url('internal_chat_moderation') }}?scope=legacy&action=review{% if search_query %}&search={{ search_query }}{% endif %}">
+          {{ _("Needs review") }}
+        </a>
+        <a class="action-btn small {% if action_filter == 'mute' %}background-gray{% endif %}"
+           href="{{ url('internal_chat_moderation') }}?scope=legacy&action=mute{% if search_query %}&search={{ search_query }}{% endif %}">
+          {{ _("Muted") }}
+        </a>
+      {% elif moderation_scope == "room_mutes" %}
+        <a class="action-btn small {% if action_filter == 'active' %}background-gray{% endif %}"
+           href="{{ url('internal_chat_moderation') }}?scope=room_mutes&action=active{% if search_query %}&search={{ search_query }}{% endif %}">
+          {{ _("Active") }}
+        </a>
+        <a class="action-btn small {% if action_filter == 'expired' %}background-gray{% endif %}"
+           href="{{ url('internal_chat_moderation') }}?scope=room_mutes&action=expired{% if search_query %}&search={{ search_query }}{% endif %}">
+          {{ _("Expired") }}
+        </a>
+        <a class="action-btn small {% if action_filter == 'revoked' %}background-gray{% endif %}"
+           href="{{ url('internal_chat_moderation') }}?scope=room_mutes&action=revoked{% if search_query %}&search={{ search_query }}{% endif %}">
+          {{ _("Revoked") }}
+        </a>
+      {% endif %}
       <form method="get">
+        <input type="hidden" name="scope" value="{{ moderation_scope }}">
         {% if action_filter %}
           <input type="hidden" name="action" value="{{ action_filter }}">
+        {% endif %}
+        {% if moderation_scope != "legacy" %}
+          <select name="room_type" aria-label="{{ _('Room type') }}">
+            <option value="">{{ _("All room types") }}</option>
+            {% for value, label in room_type_choices %}
+              <option value="{{ value }}"{% if room_type_filter == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
         {% endif %}
         <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search username or message...') }}">
         <button type="submit" class="action-btn small">{{ _("Search") }}</button>
@@ -136,111 +175,177 @@
     {% endif %}
 
     <div class="internal-table-scroll">
-      <table class="table chat-moderation-table">
-        <thead>
-          <tr>
-            <th class="chat-time-column">{{ _("Time") }}</th>
-            <th class="chat-user-column">{{ _("User") }}</th>
-            <th class="chat-message-column">{{ _("Message") }}</th>
-            <th class="chat-action-column">{{ _("Action") }}</th>
-            <th class="chat-reason-column">{{ _("Reason") }}</th>
-            <th class="chat-expires-column">{{ _("Expires") }}</th>
-            <th class="chat-source-column">{{ _("Source") }}</th>
-            <th class="chat-button-column"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for log in logs %}
+      {% if moderation_scope == "rooms" %}
+        <table class="table chat-moderation-table room-activity-table">
+          <thead>
             <tr>
-              <td>
-                <span class="gray">{{ log.created_at | date(_("N j, Y, g:i a")) }}</span>
-              </td>
-              <td>
-                {% if log.message.author %}
-                  <a href="{{ url('user_page', log.message.author.user.username) }}">
-                    {{ log.message.author.user.username }}
-                  </a>
-                {% else %}
-                  <span class="gray">{{ _("Unknown") }}</span>
-                {% endif %}
-              </td>
-              <td class="chat-message-cell" title="{{ log.message.body }}">
-                {{ log.message.body[:80] }}{% if log.message.body|length > 80 %}...{% endif %}
-              </td>
-              <td>
-                {% if log.action in ["mute", "mute_temp", "mute_perm"] %}
-                  <span class="red">{{ _("Muted") }}</span>
-                {% elif log.action == "hide" %}
-                  <span class="gray">{{ _("Hidden") }}</span>
-                {% elif log.action == "review" %}
-                  <span class="blue">{{ _("Needs review") }}</span>
-                {% else %}
-                  <span class="green">{{ _("Kept") }}</span>
-                {% endif %}
-              </td>
-              <td class="chat-message-cell" title="{{ log.reason }}">
-                {% if log.reason %}
-                  {{ log.reason[:80] }}{% if log.reason|length > 80 %}...{% endif %}
-                {% else %}
-                  <span class="gray">-</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if log.mute_until %}
-                  {{ log.mute_until | date(_("N j, Y, g:i a")) }}
-                {% elif log.action in ["mute", "mute_perm"] %}
-                  {{ _("Forever") }}
-                {% else %}
-                  <span class="gray">-</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if log.is_automated %}
-                  {{ _("Auto") }}
-                {% elif log.moderator %}
-                  <a href="{{ url('user_page', log.moderator.user.username) }}">
-                    {{ log.moderator.user.username }}
-                  </a>
-                {% else %}
-                  {{ _("Manual") }}
-                {% endif %}
-              </td>
-              <td>
-                {% if log.action == "review" %}
-                  <form method="post" class="chat-moderation-action-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="log" value="{{ log.id }}">
-                    <input type="hidden" name="reason" value="{{ log.reason }}">
-                    <button type="submit" name="action" value="keep" class="action-btn small">{{ _("Keep") }}</button>
-                  </form>
-                  <form method="post" class="chat-moderation-action-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="log" value="{{ log.id }}">
-                    <input type="hidden" name="reason" value="{{ log.reason }}">
-                    <button type="submit" name="action" value="hide" class="action-btn small">{{ _("Hide") }}</button>
-                  </form>
-                  <button type="button"
-                          class="chat-review-mute-button action-btn small"
-                          data-log-id="{{ log.id }}"
-                          data-reason="{{ log.reason }}">
-                    {{ _("Mute") }}
-                  </button>
-                {% elif log.action in ["mute", "mute_temp", "mute_perm"] and log.message.author and log.message.author.mute %}
-                  <button class="unmute-button action-btn small" data-profile-id="{{ log.message.author.id }}">
-                    {{ _("Unmute") }}
-                  </button>
-                {% endif %}
-              </td>
+              <th>{{ _("Time") }}</th>
+              <th>{{ _("Room") }}</th>
+              <th>{{ _("Action") }}</th>
+              <th>{{ _("Actor") }}</th>
+              <th>{{ _("Target") }}</th>
+              <th>{{ _("Reason") }}</th>
             </tr>
-          {% else %}
+          </thead>
+          <tbody>
+            {% for log in logs %}
+              <tr>
+                <td><span class="gray">{{ log.created_at | date(_("N j, Y, g:i a")) }}</span></td>
+                <td>
+                  <a href="{{ url('chat', log.room_id) }}">{{ log.room.name or _("Direct message") }}</a>
+                </td>
+                <td>{{ log.get_action_display() }}</td>
+                <td>{{ log.actor.user.username if log.actor else _("System") }}</td>
+                <td>{{ log.target.user.username if log.target else "-" }}</td>
+                <td>{{ log.reason or "-" }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6" class="gray">{{ _("No room activity found") }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% elif moderation_scope == "room_mutes" %}
+        <table class="table chat-moderation-table room-mutes-table">
+          <thead>
             <tr>
-              <td colspan="8" class="gray">
-                {{ _("No moderation logs found") }}
-              </td>
+              <th>{{ _("Time") }}</th>
+              <th>{{ _("Room") }}</th>
+              <th>{{ _("User") }}</th>
+              <th>{{ _("Moderator") }}</th>
+              <th>{{ _("Reason") }}</th>
+              <th>{{ _("Expires") }}</th>
+              <th>{{ _("Revoked") }}</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for mute in logs %}
+              <tr>
+                <td><span class="gray">{{ mute.created_at | date(_("N j, Y, g:i a")) }}</span></td>
+                <td><a href="{{ url('chat', mute.room_id) }}">{{ mute.room.name or _("Direct message") }}</a></td>
+                <td>{{ mute.target.user.username }}</td>
+                <td>{{ mute.muted_by.user.username if mute.muted_by else _("System") }}</td>
+                <td>{{ mute.reason }}</td>
+                <td>{{ mute.expires_at | date(_("N j, Y, g:i a")) }}</td>
+                <td>
+                  {% if mute.revoked_at %}
+                    {{ mute.revoked_at | date(_("N j, Y, g:i a")) }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="7" class="gray">{{ _("No room mutes found") }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <table class="table chat-moderation-table">
+          <thead>
+            <tr>
+              <th class="chat-time-column">{{ _("Time") }}</th>
+              <th class="chat-user-column">{{ _("User") }}</th>
+              <th class="chat-message-column">{{ _("Message") }}</th>
+              <th class="chat-action-column">{{ _("Action") }}</th>
+              <th class="chat-reason-column">{{ _("Reason") }}</th>
+              <th class="chat-expires-column">{{ _("Expires") }}</th>
+              <th class="chat-source-column">{{ _("Source") }}</th>
+              <th class="chat-button-column"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+              <tr>
+                <td>
+                  <span class="gray">{{ log.created_at | date(_("N j, Y, g:i a")) }}</span>
+                </td>
+                <td>
+                  {% if log.message.author %}
+                    <a href="{{ url('user_page', log.message.author.user.username) }}">
+                      {{ log.message.author.user.username }}
+                    </a>
+                  {% else %}
+                    <span class="gray">{{ _("Unknown") }}</span>
+                  {% endif %}
+                </td>
+                <td class="chat-message-cell" title="{{ log.message.body }}">
+                  {{ log.message.body[:80] }}{% if log.message.body|length > 80 %}...{% endif %}
+                </td>
+                <td>
+                  {% if log.action in ["mute", "mute_temp", "mute_perm"] %}
+                    <span class="red">{{ _("Muted") }}</span>
+                  {% elif log.action == "hide" %}
+                    <span class="gray">{{ _("Hidden") }}</span>
+                  {% elif log.action == "review" %}
+                    <span class="blue">{{ _("Needs review") }}</span>
+                  {% else %}
+                    <span class="green">{{ _("Kept") }}</span>
+                  {% endif %}
+                </td>
+                <td class="chat-message-cell" title="{{ log.reason }}">
+                  {% if log.reason %}
+                    {{ log.reason[:80] }}{% if log.reason|length > 80 %}...{% endif %}
+                  {% else %}
+                    <span class="gray">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if log.mute_until %}
+                    {{ log.mute_until | date(_("N j, Y, g:i a")) }}
+                  {% elif log.action in ["mute", "mute_perm"] %}
+                    {{ _("Forever") }}
+                  {% else %}
+                    <span class="gray">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if log.is_automated %}
+                    {{ _("Auto") }}
+                  {% elif log.moderator %}
+                    <a href="{{ url('user_page', log.moderator.user.username) }}">
+                      {{ log.moderator.user.username }}
+                    </a>
+                  {% else %}
+                    {{ _("Manual") }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if log.action == "review" %}
+                    <form method="post" class="chat-moderation-action-form">
+                      {% csrf_token %}
+                      <input type="hidden" name="log" value="{{ log.id }}">
+                      <input type="hidden" name="reason" value="{{ log.reason }}">
+                      <button type="submit" name="action" value="keep" class="action-btn small">{{ _("Keep") }}</button>
+                    </form>
+                    <form method="post" class="chat-moderation-action-form">
+                      {% csrf_token %}
+                      <input type="hidden" name="log" value="{{ log.id }}">
+                      <input type="hidden" name="reason" value="{{ log.reason }}">
+                      <button type="submit" name="action" value="hide" class="action-btn small">{{ _("Hide") }}</button>
+                    </form>
+                    <button type="button"
+                            class="chat-review-mute-button action-btn small"
+                            data-log-id="{{ log.id }}"
+                            data-reason="{{ log.reason }}">
+                      {{ _("Mute") }}
+                    </button>
+                  {% elif log.action in ["mute", "mute_temp", "mute_perm"] and log.message.author and log.message.author.mute %}
+                    <button class="unmute-button action-btn small" data-profile-id="{{ log.message.author.id }}">
+                      {{ _("Unmute") }}
+                    </button>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="8" class="gray">
+                  {{ _("No moderation logs found") }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
     </div>
 
     {% if page_obj.num_pages > 1 %}

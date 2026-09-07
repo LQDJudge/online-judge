@@ -5,10 +5,11 @@ import time
 import socketio
 from django.conf import settings
 
-__all__ = ["EventPostingError", "EventPoster", "post", "last"]
+__all__ = ["EventPostingError", "EventPoster", "post", "post_many", "last"]
 _local = threading.local()
 _failed_at = threading.local()
 _RETRY_INTERVAL = 60
+_POST_BATCH_SIZE = 50
 
 
 class EventPostingError(RuntimeError):
@@ -98,6 +99,25 @@ class EventPoster(object):
             self._reconnect()
             return self.post(channel, message, tries + 1)
 
+    def _post_batch(self, events, tries=0):
+        try:
+            return self._emit_with_callback("post-batch", {"events": events})
+        except (socketio.exceptions.ConnectionError, socket.error) as e:
+            if tries > 10:
+                raise EventPostingError(
+                    f"Failed to post event batch after {tries} retries: {e}"
+                )
+            self._reconnect()
+            return self._post_batch(events, tries + 1)
+
+    def post_many(self, events):
+        last_id = 0
+        for start in range(0, len(events), _POST_BATCH_SIZE):
+            # Retry only the failed chunk so earlier acknowledged chunks are
+            # not knowingly duplicated.
+            last_id = self._post_batch(events[start : start + _POST_BATCH_SIZE])
+        return last_id
+
     def last(self, tries=0):
         try:
             return self._emit_with_callback("last-msg")
@@ -151,6 +171,20 @@ def post(channel, message):
         if poster is None:
             return 0
         return poster.post(channel, message)
+    except Exception:
+        _cleanup_poster()
+    return 0
+
+
+def post_many(events):
+    events = list(events)
+    if not events:
+        return 0
+    try:
+        poster = _get_poster()
+        if poster is None:
+            return 0
+        return poster.post_many(events)
     except Exception:
         _cleanup_poster()
     return 0

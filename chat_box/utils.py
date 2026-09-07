@@ -1,15 +1,23 @@
 import base64
 import hashlib
 import hmac
+import json
+import secrets
+import time
 
 from django.conf import settings
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef, Value
+from django.db.models.functions import Coalesce
 
 from cryptography.fernet import Fernet
 
-from chat_box.models import CHAT_REACTION_CODES, Ignore, MessageReaction, UserRoom
-
-from judge.caching import cache_wrapper
+from chat_box.models import (
+    CHAT_REACTION_CODES,
+    Ignore,
+    Message,
+    MessageReaction,
+    UserRoom,
+)
 
 
 def _derive_secret_bytes(purpose):
@@ -48,16 +56,45 @@ def encrypt_channel(channel):
     )
 
 
-@cache_wrapper(prefix="gub2")
+def create_chat_event_grant(profile_id, room_ids, channels, lifetime_seconds=900):
+    if isinstance(room_ids, int):
+        room_ids = [room_ids]
+    room_ids = sorted(set(room_ids))
+    payload = {
+        "channels": sorted(channels),
+        "exp": int(time.time()) + lifetime_seconds,
+        "nonce": secrets.token_urlsafe(12),
+        "room_ids": room_ids,
+        "user_id": profile_id,
+    }
+    encoded = base64.urlsafe_b64encode(
+        json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()
+    ).rstrip(b"=")
+    key = str(settings.EVENT_DAEMON_KEY or settings.SECRET_KEY).encode()
+    signature = hmac.new(key, encoded, hashlib.sha256).hexdigest().encode()
+    return (encoded + b"." + signature).decode()
+
+
 def get_unread_boxes(profile):
     ignored_rooms = Ignore.get_ignored_room_ids(profile)
-    unread_boxes = (
-        UserRoom.objects.filter(user=profile, unread_count__gt=0)
-        .exclude(room__in=ignored_rooms)
+    unread_message = Message.objects.filter(
+        room_id=OuterRef("room_id"),
+        id__gt=Coalesce(OuterRef("last_read_message_id"), Value(0)),
+        kind="user",
+        hidden=False,
+    ).exclude(author_id=profile.id)
+    return (
+        UserRoom.objects.filter(
+            user=profile,
+            state=UserRoom.State.ACTIVE,
+            is_hidden=False,
+            room__archived_at__isnull=True,
+        )
+        .exclude(room_id__in=ignored_rooms)
+        .annotate(has_unread=Exists(unread_message))
+        .filter(has_unread=True)
         .count()
     )
-
-    return unread_boxes
 
 
 def get_reactions_summary(message_ids, user, include_my_reaction=True):

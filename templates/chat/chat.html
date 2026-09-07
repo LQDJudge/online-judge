@@ -23,25 +23,48 @@
         userOnlineStatus: "{{ url('user_online_status_ajax') }}",
         getOrCreateRoom: "{{ url('get_or_create_room') }}",
         updateLastSeen: "{{ url('update_last_seen') }}",
-        userSearch: "{{ url('chat_user_search_select2_ajax') }}"
+        userSearch: "{{ url('chat_user_search_select2_ajax') }}",
+        createGroup: "{{ url('chat_group_create') }}",
+        createChannel: "{{ url('chat_channel_create') }}",
+        channelOptions: "{{ url('chat_channel_options') }}",
+        roomList: "{{ url('chat_room_list') }}",
+        roomDetails: "{{ url('chat_room_details', 0) }}",
+        memberSearch: "{{ url('chat_member_search') }}",
+        memberAction: "{{ url('chat_room_member_action', 0) }}",
+        invitation: "{{ url('chat_room_invitation', 0) }}",
+        renameRoom: "{{ url('chat_room_rename', 0) }}",
+        roomAvatar: "{{ url('chat_room_avatar', 0) }}",
+        leaveRoom: "{{ url('chat_room_leave', 0) }}",
+        roomVisibility: "{{ url('chat_room_visibility', 0) }}",
+        archiveRoom: "{{ url('chat_room_archive', 0) }}",
+        restoreRoom: "{{ url('chat_room_restore', 0) }}",
+        moderation: "{{ url('chat_room_moderation', 0) }}",
+        eventGrant: "{{ url('chat_event_grant', 0) }}"
       },
       user: {
         id: {{ request.profile.id }},
-        isStaff: {{ request.user.has_perm('judge.change_comment')|tojson }},
-        canModerateChat: {{ (can_mute_chat_temporarily or can_mute_chat_permanently)|tojson }},
+        isStaff: {{ request.user.is_superuser|tojson }},
+        canModerateChat: {{ (request.user.is_superuser or (room_membership and room_membership.role in ['admin', 'moderator']))|tojson }},
         canMutePermanently: {{ can_mute_chat_permanently|tojson }},
         isMuted: {{ is_chat_muted|tojson }},
+        isRoomMuted: {{ is_room_muted|tojson }},
+        canInteractRoom: {{ can_interact_room|tojson }},
         canChat: {{ can_chat|tojson }}
       },
       room: {
-        id: "{{ room if room else '' }}",
+        id: "{{ room }}",
+        type: "{{ room_object.room_type }}",
+        channelKind: "{{ room_object.channel_kind or '' }}",
+        isArchived: {{ room_is_archived|tojson }},
+        managementOnly: {{ management_override|tojson }},
+        maxLength: {{ 200 if is_lobby else 5000 }},
         otherUserId: "{{ other_user.id if other_user else '' }}",
         lastMsgId: {{ last_msg if last_msg else 'null' }}
       },
       event: {
         daemonLocation: "{{ EVENT_DAEMON_LOCATION }}",
-        lobbyChannel: "{{ chat_lobby_channel }}",
-        chatChannel: "{{ chat_channel }}"
+        channels: {{ chat_event_channels|tojson }},
+        grant: "{{ chat_event_grant }}"
       },
       reactions: {{ chat_reactions|tojson }},
       reactionImages: {{ chat_reaction_image_urls|tojson }},
@@ -51,22 +74,111 @@
         newMessages: "{{ _('New message(s)') }}",
         newMessage: "{{ _('New message') }}",
         chatBox: "{{ _('Chat Box') }}",
+        roomDetails: "{{ _('Room details') }}",
+        loadingRoomInformation: "{{ _('Loading room information...') }}",
         deleteConfirm: "{{ _('Delete this message?') }}",
-        muteTitle: "{{ _('Mute user') }}",
-        muteConfirm: "{{ _('Mute this user and delete all lobby messages?') }}",
+        muteUserTitle: "{{ _('Mute user') }}",
+        muteInRoomSummary: "{{ _('This prevents the user from posting, replying, or reacting in this room until %(time)s.', time='%(time)s') }}",
+        muteMemberSummary: "{{ _('This prevents %(user)s from posting, replying, or reacting in this room.', user='%(user)s') }}",
+        siteWideMuteSummary: "{{ _('This site-wide mute prevents participation in every chat room and also restricts comments and other community posting.') }}",
         muteDuration: "{{ _('Mute duration') }}",
         muteTemporary: "{{ _('Temporary') }}",
+        muteTemporaryOneDay: "{{ _('Temporary (1 day)') }}",
+        muteTemporaryDays: "{{ _('Temporary (%(days)s days)', days='%(days)s') }}",
         muteForever: "{{ _('Forever') }}",
         muteReason: "{{ _('Reason') }}",
         muteReasonRequired: "{{ _('Reason is required.') }}",
         muteReasonPlaceholder: "{{ _('Explain why this user is being muted...') }}",
+        moderationReasonPlaceholder: "{{ _('Explain why you are taking this action...') }}",
         cancel: "{{ _('Cancel') }}",
         confirmMute: "{{ _('Confirm mute') }}",
         chatMuted: "{{ _('You are muted from chat.') }}",
+        roomMuted: "{{ _('You are muted in this room.') }}",
+        roomArchived: "{{ _('This room is archived and read-only.') }}",
         chatRestricted: "{{ _('Solve a problem to chat.') }}",
+        managementOnlyView: "{{ _('Management-only view.') }}",
         emoji: "{{ _('Emoji') }}",
-        searchPlaceholder: "{{ _('Search by handle...') }}",
+        searchPlaceholder: "{{ _('Search') }}",
         enterMessage: "{{ _('Enter your message') }}",
+        members: "{{ _('members') }}",
+        membersHeading: "{{ _('Members') }}",
+        lobbyModerators: "{{ _('Lobby moderators') }}",
+        noLobbyModerators: "{{ _('No Lobby moderators.') }}",
+        searchMembers: "{{ _('Search members') }}",
+        noMatchingMembers: "{{ _('No matching members.') }}",
+        firstMembersShown: "{{ _('Showing the first 100 members.') }}",
+        roomSettings: "{{ _('Room settings') }}",
+        roomName: "{{ _('Room name') }}",
+        roomAvatar: "{{ _('Room avatar') }}",
+        roomAvatarHelp: "{{ _('JPG, PNG, GIF, or WebP up to 5MB.') }}",
+        chooseRoomAvatar: "{{ _('Choose an image first.') }}",
+        upload: "{{ _('Upload') }}",
+        uploading: "{{ _('Uploading...') }}",
+        uploadFailed: "{{ _('Upload failed') }}",
+        removeAvatar: "{{ _('Remove') }}",
+        invitePeople: "{{ _('Invite') }}",
+        invitationHelp: "{{ _('Anyone with this link can join until an admin resets or disables it.') }}",
+        searchUsersToAdd: "{{ _('Search users') }}",
+        roomActions: "{{ _('Room actions') }}",
+        moderationTools: "{{ _('Moderation') }}",
+        moderationHelp: "{{ _('Manage muted and blocked members.') }}",
+        moreActions: "{{ _('More actions') }}",
+        role: "{{ _('Role') }}",
+        unableCreateGroup: "{{ _('Unable to create group.') }}",
+        unableCreateChannel: "{{ _('Unable to create channel.') }}",
+        noAvailableOrganizations: "{{ _('No organizations you administer are available for a new channel.') }}",
+        unableLoadRoom: "{{ _('Unable to load room details.') }}",
+        loadMore: "{{ _('Load more') }}",
+        invite: "{{ _('Invitation link') }}",
+        copy: "{{ _('Copy') }}",
+        copied: "{{ _('Copied') }}",
+        rename: "{{ _('Rename') }}",
+        leave: "{{ _('Leave room') }}",
+        leaveRoomTitle: "{{ _('Leave this room?') }}",
+        leaveRoomSummary: "{{ _('Leave %(room)s? You may not be able to access its messages until you join again.', room='%(room)s') }}",
+        archive: "{{ _('Archive room') }}",
+        restore: "{{ _('Restore room') }}",
+        addMember: "{{ _('Add member') }}",
+        addMembers: "{{ _('Add members') }}",
+        remove: "{{ _('Remove member') }}",
+        ban: "{{ _('Block member') }}",
+        muteInRoom: "{{ _('Mute') }}",
+        removeMemberTitle: "{{ _('Remove member') }}",
+        removeMemberSummary: "{{ _('Remove %(user)s from this room? They will lose access until they join again.', user='%(user)s') }}",
+        banMemberTitle: "{{ _('Block member') }}",
+        banMemberSummary: "{{ _('Block %(user)s from this room? They cannot rejoin until an administrator unblocks them.', user='%(user)s') }}",
+        promoteLobbyModerator: "{{ _('Appoint') }}",
+        revokeLobbyModerator: "{{ _('Revoke') }}",
+        administrator: "{{ _('Admin') }}",
+        moderator: "{{ _('Moderator') }}",
+        member: "{{ _('Member') }}",
+        inheritedOrganizationRole: "{{ _('%(role)s from organization', role='%(role)s') }}",
+        hideRoom: "{{ _('Hide room') }}",
+        unhideRoom: "{{ _('Unhide room') }}",
+        hiddenRooms: "{{ _('Hidden rooms') }}",
+        archivedRooms: "{{ _('Archived rooms') }}",
+        hiddenRoomsDescription: "{{ _('Rooms hidden from your sidebar.') }}",
+        archivedRoomsDescription: "{{ _('Read-only rooms kept for history.') }}",
+        searchUsers: "{{ _('Search users') }}",
+        directMessage: "{{ _('Direct message') }}",
+        group: "{{ _('Group') }}",
+        channel: "{{ _('Channel') }}",
+        lobby: "{{ _('Lobby') }}",
+        noRooms: "{{ _('No rooms found.') }}",
+        ignore: "{{ _('Ignore') }}",
+        unignore: "{{ _('Unignore') }}",
+        rotateInvitation: "{{ _('Reset link') }}",
+        revokeInvitation: "{{ _('Disable link') }}",
+        invitationRevoked: "{{ _('Link disabled.') }}",
+        activeMutes: "{{ _('Muted members') }}",
+        noActiveMutes: "{{ _('No muted members.') }}",
+        mutedUntil: "{{ _('Muted until %(time)s', time='%(time)s') }}",
+        muteReasonDetail: "{{ _('Reason: %(reason)s', reason='%(reason)s') }}",
+        unmute: "{{ _('Unmute') }}",
+        bans: "{{ _('Blocked members') }}",
+        noBans: "{{ _('No blocked members.') }}",
+        unban: "{{ _('Unblock') }}",
+        unableSend: "{{ _('Unable to send this message.') }}",
         {# Pass user='%(user)s' so newstyle gettext's `msg % vars` is a no-op that
            keeps the literal placeholder for the client's interpolate() to fill. #}
         replyingTo: "{{ _('Replying to %(user)s', user='%(user)s') }}",
@@ -89,12 +201,44 @@
     <div id="chat-container" class="chat-container">
       <div id="chat-online" class="chat-sidebar chat-left-panel sidebox">
         <div id="chat-online-content" class="chat-sidebar-content">
-          <div id="search-container" class="chat-search-container">
-            <form id="chat-search-form" name="form" action="{{ url('get_or_create_room') }}" method="post">
-              {% csrf_token %}
-              <input id="search-handle" type="text" name="search"
-                     placeholder="{{ _('Search by handle...') }}">
-            </form>
+          <div class="chat-search-row">
+            <div id="search-container" class="chat-search-container">
+              <form id="chat-search-form" name="form" action="{{ url('get_or_create_room') }}" method="post">
+                {% csrf_token %}
+                <input id="search-handle" type="text" name="search"
+                       placeholder="{{ _('Search') }}">
+              </form>
+            </div>
+            <div class="setting-wrapper chat-actions-wrapper">
+              <button type="button" id="chat-actions-toggle"
+                      class="user-setting-button chat-actions-toggle"
+                      title="{{ _('More') }}" aria-label="{{ _('More') }}"
+                      aria-haspopup="menu" aria-expanded="false">
+                <i class="fa fa-ellipsis-h" aria-hidden="true"></i>
+              </button>
+              <div id="chat-actions-menu" class="setting-content chat-actions-menu" role="menu">
+                {% if can_chat %}
+                  <button type="button" id="chat-new-group" role="menuitem">
+                    <i class="fa fa-users" aria-hidden="true"></i>
+                    <span>{{ _('New group') }}</span>
+                  </button>
+                {% endif %}
+                {% if can_create_channel %}
+                  <button type="button" id="chat-new-channel" role="menuitem">
+                    <i class="fa fa-hashtag" aria-hidden="true"></i>
+                    <span>{{ _('New channel') }}</span>
+                  </button>
+                {% endif %}
+                <button type="button" id="chat-hidden-rooms" role="menuitem">
+                  <i class="fa fa-eye-slash" aria-hidden="true"></i>
+                  <span>{{ _('Hidden rooms') }}</span>
+                </button>
+                <button type="button" id="chat-archived-rooms" role="menuitem">
+                  <i class="fa fa-archive" aria-hidden="true"></i>
+                  <span>{{ _('Archived rooms') }}</span>
+                </button>
+              </div>
+            </div>
           </div>
           <div id="chat-online-list">
             {% include "chat/online_status.html" %}
@@ -103,7 +247,7 @@
       </div>
       <div id="chat-area" class="chat-area chat-right-panel">
         <div id="chat-info" class="chat-header">
-          {% include 'chat/user_online_status.html' %}
+          {% include 'chat/room_header.html' %}
         </div>
         <div id="chat-box" class="chat-box">
           <span id="loader" class="chat-loader">
@@ -118,11 +262,11 @@
             {{ _('Chat is disabled during contest.') }}
           </div>
         {% else %}
-          {% set chat_disabled = is_chat_muted or not can_chat %}
-          {% set chat_input_placeholder = _('You are muted from chat.') if is_chat_muted else (_('Solve a problem to chat.') if not can_chat else _('Enter your message')) %}
+          {% set chat_disabled = management_override or is_chat_muted or is_room_muted or room_is_archived or not can_chat or not can_interact_room %}
+          {% set chat_input_placeholder = _('Management-only view.') if management_override else (_('This room is archived and read-only.') if room_is_archived else (_('You are muted in this room.') if is_room_muted else (_('You are muted from chat.') if is_chat_muted else (_('Solve a problem to chat.') if not can_chat else _('Enter your message'))))) %}
           <div id="chat-input-container" class="chat-input-area {% if chat_disabled %}is-muted{% endif %}">
             <div class="chat-input-wrapper">
-              <textarea rows="1" maxlength="{{5000 if room else 200}}" id="chat-input" class="chat-input" placeholder="{{ chat_input_placeholder }}"{% if chat_disabled %} disabled aria-disabled="true"{% endif %}></textarea>
+              <textarea rows="1" maxlength="{{ 200 if is_lobby else 5000 }}" id="chat-input" class="chat-input" placeholder="{{ chat_input_placeholder }}"{% if chat_disabled %} disabled aria-disabled="true"{% endif %}></textarea>
               <div class="chat-input-icon chat-emoji-btn {% if chat_disabled %}is-disabled{% endif %}" id="emoji-button" title="{{ chat_input_placeholder if chat_disabled else _('Emoji') }}"{% if chat_disabled %} aria-disabled="true" tabindex="-1"{% endif %}>
                 <i class="icofont-slightly-smile"></i>
               </div>
@@ -131,6 +275,7 @@
               <i class="fa fa-paper-plane"></i>
             </div>
           </div>
+          <p id="chat-send-error" class="chat-modal-error" aria-live="polite"></p>
         {% endif %}
         <div class="tooltip emoji-tooltip" role="tooltip">
           <emoji-picker></emoji-picker>
@@ -139,12 +284,25 @@
           <div class="chat-modal" role="dialog" aria-modal="true" aria-labelledby="chat-mute-title">
             <h3 id="chat-mute-title">{{ _("Mute user") }}</h3>
             <p id="chat-mute-summary" class="chat-modal-summary"></p>
-            <div id="chat-mute-type-row" class="chat-mute-type-row">
-              <span class="chat-mute-type-label">{{ _("Mute duration") }}</span>
+            <div id="chat-mute-scope-row" class="chat-mute-type-row" hidden>
+              <span class="chat-mute-type-label">{{ _("Mute scope") }}</span>
+              <div class="chat-mute-type-options">
+                <label>
+                  <input type="radio" name="chat-mute-scope" value="room" checked>
+                  <span>{{ _("This room") }}</span>
+                </label>
+                <label>
+                  <input type="radio" name="chat-mute-scope" value="site">
+                  <span>{{ _("Site-wide") }}</span>
+                </label>
+              </div>
+            </div>
+            <div id="chat-mute-type-row" class="chat-mute-type-row" hidden>
+              <span class="chat-mute-type-label">{{ _("Suspension duration") }}</span>
               <div class="chat-mute-type-options">
                 <label>
                   <input type="radio" name="chat-mute-type" value="temporary" checked>
-                  <span>{{ _("Temporary") }}</span>
+                  <span id="chat-mute-temporary-label">{{ _("Temporary") }}</span>
                 </label>
                 <label>
                   <input type="radio" name="chat-mute-type" value="permanent">
@@ -152,6 +310,10 @@
                 </label>
               </div>
             </div>
+            <label id="chat-site-hide-row" class="chat-site-hide-row" hidden>
+              <input type="checkbox" id="chat-site-hide-messages">
+              <span>{{ _("Also hide this user's existing messages in this channel. This cannot be undone.") }}</span>
+            </label>
             <label for="chat-mute-reason" id="chat-mute-reason-label">{{ _("Reason") }}</label>
             <textarea id="chat-mute-reason" rows="4" maxlength="500" placeholder="{{ _('Explain why this user is being muted...') }}"></textarea>
             <p id="chat-mute-error" class="chat-modal-error" aria-live="polite"></p>
@@ -162,6 +324,8 @@
           </div>
         </div>
       </div>
+      {% include 'chat/room_details_panel.html' %}
     </div>
+    {% include 'chat/room_modals.html' %}
   </div>
 {% endblock body %}

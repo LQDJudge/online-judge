@@ -6,7 +6,7 @@ import pika
 from django.conf import settings
 from pika.exceptions import AMQPError
 
-__all__ = ["EventPoster", "post", "last"]
+__all__ = ["EventPoster", "post", "post_many", "last"]
 
 
 class EventPoster(object):
@@ -35,6 +35,14 @@ class EventPoster(object):
             self._connect()
             return self.post(channel, message, tries + 1)
 
+    def post_many(self, events):
+        last_id = 0
+        for item in events:
+            # Retry only the failed event. Retrying the complete batch could
+            # deliver its already-published prefix twice.
+            last_id = self.post(item["channel"], item["message"])
+        return last_id
+
 
 _local = threading.local()
 
@@ -48,6 +56,20 @@ def _get_poster():
 def post(channel, message):
     try:
         return _get_poster().post(channel, message)
+    except AMQPError:
+        try:
+            del _local.poster
+        except AttributeError:
+            pass
+    return 0
+
+
+def post_many(events):
+    events = list(events)
+    if not events:
+        return 0
+    try:
+        return _get_poster().post_many(events)
     except AMQPError:
         try:
             del _local.poster
