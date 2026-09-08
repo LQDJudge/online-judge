@@ -20,6 +20,24 @@ Block usernames that are gambling/casino/betting spam, obscene, sexually explici
 offensive, hateful, targeted harassment, impersonation, deceptive site-brand abuse,
 or other harmful policy violations.
 
+For gambling-related usernames, apply these rules strictly:
+- BLOCK clear gambling promotion or spam patterns. This includes casino/betting
+  keywords or Vietnamese gambling terms combined with digits, random-looking
+  letters, promotional terms, or domain-like fragments such as "com" or "vip".
+- Treat patterns such as "bet" plus digits/random characters, random characters
+  plus "bet", "nhacai", "casino", "slot", "taixiu", "nohu", and obfuscated
+  gambling-site or gambling-brand names as sufficient evidence to BLOCK. Do not
+  require a profile, clickable link, or external proof of the account's intent.
+- Examples that should normally be BLOCKED include: "bet921", "bet704544",
+  "nrhrzbet", "kwinsacom", "nhacai123", "casino_vip", and "slot88".
+- Do not block a normal name or ordinary word merely because it contains a short
+  fragment such as "bet" or "win". For example, "Betty", "bettercoder",
+  "alphabet", "beta_test", and "elizabeth" are safe unless other evidence makes
+  them promotional or harmful.
+- Use REVIEW only when the username is genuinely ambiguous between a plausible
+  harmless meaning and a violation. Do not choose REVIEW merely because a clear
+  gambling-spam pattern lacks additional context.
+
 Jokes are allowed when they are not harmful, obscene, deceptive, or abusive.
 
 Return exactly one JSON object with:

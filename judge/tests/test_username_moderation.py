@@ -23,6 +23,7 @@ from judge.models import (
 )
 from judge.models.profile import get_profile_public_identity
 from judge.tasks.username_moderation import (
+    USERNAME_MODERATION_SYSTEM_PROMPT,
     moderate_profile_case_task,
     moderate_username_task,
     parse_username_moderation_response,
@@ -48,6 +49,19 @@ class UsernameModerationTaskTest(TestCase):
     def setUp(self):
         llm_config._config = None
         self.addCleanup(setattr, llm_config, "_config", None)
+
+    def test_username_prompt_blocks_clear_gambling_patterns_without_extra_context(self):
+        self.assertIn(
+            '"bet" plus digits/random characters', USERNAME_MODERATION_SYSTEM_PROMPT
+        )
+        self.assertIn("sufficient evidence to BLOCK", USERNAME_MODERATION_SYSTEM_PROMPT)
+        self.assertIn("Do not choose REVIEW", USERNAME_MODERATION_SYSTEM_PROMPT)
+
+    def test_username_prompt_protects_normal_words_with_short_fragments(self):
+        self.assertIn('"Betty"', USERNAME_MODERATION_SYSTEM_PROMPT)
+        self.assertIn('"bettercoder"', USERNAME_MODERATION_SYSTEM_PROMPT)
+        self.assertIn('"alphabet"', USERNAME_MODERATION_SYSTEM_PROMPT)
+        self.assertIn('"beta_test"', USERNAME_MODERATION_SYSTEM_PROMPT)
 
     def test_parse_username_moderation_json_response(self):
         result = parse_username_moderation_response(
