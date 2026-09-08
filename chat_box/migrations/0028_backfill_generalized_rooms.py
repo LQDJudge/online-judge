@@ -1,5 +1,5 @@
 from django.db import migrations, transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.utils import timezone
 
 BACKFILL_BATCH_SIZE = 500
@@ -155,7 +155,14 @@ def reconcile_legacy_direct_rooms(Message, Room, RoomRedirect, UserRoom, lobby_i
     last_message_by_room = {}
     for room_id_batch in batched(duplicate_room_ids):
         last_message_by_room.update(
-            Room.objects.filter(id__in=room_id_batch).values_list("id", "last_msg_id")
+            Message.objects.filter(
+                room_id__in=room_id_batch,
+                hidden=False,
+                kind="user",
+            )
+            .values("room_id")
+            .annotate(last_msg_id=Max("id"))
+            .values_list("room_id", "last_msg_id")
         )
 
     for pair, room_ids in duplicate_rooms_by_pair.items():
@@ -543,15 +550,26 @@ def backfill_generalized_rooms(apps, schema_editor):
         ):
             room_to_members[room_id].append(user_id)
         rooms = Room.objects.in_bulk(room_ids)
-        message_times = dict(
+        room_tail_ids = dict(
             Message.objects.filter(
-                id__in={room.last_msg_id for room in rooms.values() if room.last_msg_id}
-            ).values_list("id", "time")
+                room_id__in=room_ids,
+                hidden=False,
+                kind="user",
+            )
+            .values("room_id")
+            .annotate(last_msg_id=Max("id"))
+            .values_list("room_id", "last_msg_id")
+        )
+        tail_times = dict(
+            Message.objects.filter(id__in=room_tail_ids.values()).values_list(
+                "id", "time"
+            )
         )
         room_updates = []
         for room_id in room_ids:
             room = rooms[room_id]
             members = sorted(set(room_to_members.get(room_id, [])))
+            tail_id = room_tail_ids.get(room.id)
             if room.archived_at is not None:
                 room.room_type = "direct"
                 room.channel_kind = None
@@ -559,8 +577,7 @@ def backfill_generalized_rooms(apps, schema_editor):
                 room.direct_user_low_id = None
                 room.direct_user_high_id = None
                 if room.archive_reason != "ambiguous_legacy":
-                    room.last_msg_id = None
-                    room.last_activity_at = None
+                    tail_id = None
             elif len(members) not in (1, 2):
                 raise RuntimeError(
                     "Legacy chat room %(room)s has %(count)s distinct members; "
@@ -593,7 +610,8 @@ def backfill_generalized_rooms(apps, schema_editor):
                         }
                     )
                 pair_to_room[pair] = room_id
-            room.last_activity_at = message_times.get(room.last_msg_id)
+            room.last_msg_id = tail_id
+            room.last_activity_at = tail_times.get(room.last_msg_id)
             room_updates.append(room)
         Room.objects.bulk_update(
             room_updates,

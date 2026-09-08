@@ -62,9 +62,11 @@
             <i class="fa fa-ellipsis-h"></i>
           </div>
           <div class="setting-content">
-            <a href="{{url('toggle_ignore', room_item.user.id)}}" class="red">
-              {{_('Ignore')}}
-            </a>
+            <form method="post" action="{{ url('toggle_ignore', room_item.user.id) }}">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ url('chat', '') }}">
+              <button type="submit" class="red">{{ _('Ignore') }}</button>
+            </form>
           </div>
         </div>
       {% endif %}

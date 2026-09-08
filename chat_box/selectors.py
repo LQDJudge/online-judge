@@ -5,7 +5,7 @@ from django.core import signing
 from django.db import connection
 from django.db.models import Count, Q
 
-from chat_box.models import Message, Room, RoomBan, RoomMute, UserRoom
+from chat_box.models import Message, Room, RoomMute, UserRoom
 
 ROOM_LIST_PAGE_SIZE = getattr(settings, "CHAT_ROOM_LIST_PAGE_SIZE", 20)
 ROOM_LIST_CURSOR_SALT = "chat-room-list-v1"
@@ -22,13 +22,6 @@ def get_membership(room, profile, *, for_update=False):
     if for_update:
         queryset = queryset.select_for_update()
     return queryset.filter(room_id=room.id, user_id=profile.id).first()
-
-
-def get_active_memberships(room, *, for_update=False):
-    queryset = UserRoom.objects.filter(room_id=room.id, state=UserRoom.State.ACTIVE)
-    if for_update:
-        queryset = queryset.select_for_update().order_by("pk")
-    return queryset
 
 
 def get_room_page(
@@ -170,11 +163,3 @@ def active_room_mute(room, profile, now):
         .order_by("-created_at")
         .first()
     )
-
-
-def active_room_ban(room, profile):
-    return RoomBan.objects.filter(
-        room=room,
-        target=profile,
-        revoked_at__isnull=True,
-    ).exists()

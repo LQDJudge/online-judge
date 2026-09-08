@@ -215,7 +215,6 @@ def activate_membership(
     membership.role = role
     membership.manual_role = role
     membership.synced_role = None
-    membership.site_admin_joined = False
     membership.activated_at = now
     membership.deactivated_at = None
     membership.is_hidden = False
@@ -251,7 +250,6 @@ def leave_room(room, actor_user, actor):
     membership.role = None
     membership.manual_role = None
     membership.synced_role = None
-    membership.site_admin_joined = False
     membership.deactivated_at = timezone.now()
     membership.is_hidden = False
     membership.hidden_at = None
@@ -261,7 +259,6 @@ def leave_room(room, actor_user, actor):
             "role",
             "manual_role",
             "synced_role",
-            "site_admin_joined",
             "deactivated_at",
             "is_hidden",
             "hidden_at",
@@ -486,7 +483,6 @@ def bulk_add_room_members(room, actor_user, actor, targets, *, actor_membership=
         membership.role = UserRoom.Role.MEMBER
         membership.manual_role = UserRoom.Role.MEMBER
         membership.synced_role = None
-        membership.site_admin_joined = False
         membership.activated_at = now
         membership.deactivated_at = None
         membership.last_read_message_id = room.last_msg_id
@@ -504,7 +500,6 @@ def bulk_add_room_members(room, actor_user, actor, targets, *, actor_membership=
                 "role",
                 "manual_role",
                 "synced_role",
-                "site_admin_joined",
                 "activated_at",
                 "deactivated_at",
                 "last_read_message_id",
@@ -633,7 +628,6 @@ def _deactivate_member(room, actor_user, actor, target, reason, state, action):
     target_membership.role = None
     target_membership.manual_role = None
     target_membership.synced_role = None
-    target_membership.site_admin_joined = False
     target_membership.deactivated_at = timezone.now()
     target_membership.save(
         update_fields=[
@@ -641,7 +635,6 @@ def _deactivate_member(room, actor_user, actor, target, reason, state, action):
             "role",
             "manual_role",
             "synced_role",
-            "site_admin_joined",
             "deactivated_at",
         ]
     )

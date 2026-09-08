@@ -56,10 +56,6 @@ def room_avatar_path(room, filename):
 
 
 class Room(CacheableModel):
-    # Retained only for old callers/tests during the compatibility period. Room
-    # history is no longer deleted when a user exceeds a fixed sidebar count.
-    MAX_ROOMS_PER_USER = None
-
     class Type(models.TextChoices):
         DIRECT = "direct", _("Direct message")
         GROUP = "group", _("Group")
@@ -276,14 +272,6 @@ class Room(CacheableModel):
         id_list = [(id,) for id in ids]
         _get_room.dirty_multi(id_list)
 
-    def contain(self, profile):
-        """Check if profile is a member of this room"""
-        return UserRoom.objects.filter(
-            room_id=self.id,
-            user_id=profile.id,
-            state=UserRoom.State.ACTIVE,
-        ).exists()
-
     def other_user(self, profile):
         """Get the display user for this room from the current user's perspective."""
         other_id = self.other_user_id(profile)
@@ -304,29 +292,7 @@ class Room(CacheableModel):
             # FK. Do not fall back to a membership query for every archived row.
             return None
 
-        user_ids = self.get_user_ids()
-        if len(user_ids) == 1 and user_ids[0] == profile.id:
-            return profile.id
-        if len(user_ids) == 2:
-            return user_ids[0] if user_ids[1] == profile.id else user_ids[1]
         return None
-
-    def users(self):
-        """Get all users in this room (deprecated, use get_users)"""
-        return self.get_users()
-
-    def get_users(self):
-        """Get active room users without storing unbounded membership in cache."""
-        user_ids = self.get_user_ids()
-        return Profile.get_cached_instances(*user_ids) if user_ids else []
-
-    def get_user_ids(self):
-        """Get active member IDs. Callers handling many rooms must batch instead."""
-        return list(
-            UserRoom.objects.filter(room_id=self.id, state=UserRoom.State.ACTIVE)
-            .order_by("id")
-            .values_list("user_id", flat=True)
-        )
 
     def get_last_message(self):
         """Get last message body from cached dict"""
@@ -364,10 +330,6 @@ class Room(CacheableModel):
         """Get last message time from cached dict"""
         return self.get_cached_value("last_msg_time")
 
-    def last_message_body(self):
-        """Deprecated, use get_last_message()"""
-        return self.get_last_message()
-
     @classmethod
     def prefetch_room_cache(cls, room_ids):
         """Prefetch room cache for multiple rooms"""
@@ -404,15 +366,7 @@ class Room(CacheableModel):
                 room = cls.objects.get(**lookup)
 
         cls.dirty_cache(room.id)
-        get_user_room_list.dirty(user_one.id)
-        if user_one.id != user_two.id:
-            get_user_room_list.dirty(user_two.id)
         return room
-
-    @classmethod
-    def cleanup_old_rooms(cls, user):
-        """Compatibility no-op: chat history is never deleted to limit room count."""
-        return None
 
 
 class RoomRedirect(models.Model):
@@ -898,11 +852,12 @@ class Ignore(models.Model):
 
     @classmethod
     def toggle_ignore(cls, current_user, ignored_user):
-        """Toggle the ignore status of a user."""
+        """Toggle the ignore status and return the resulting state."""
         if cls.is_ignored(current_user, ignored_user):
             cls.remove_ignore(current_user, ignored_user)
-        else:
-            cls.add_ignore(current_user, ignored_user)
+            return False
+        cls.add_ignore(current_user, ignored_user)
+        return True
 
 
 class ChatModerationLog(models.Model):
@@ -1055,43 +1010,6 @@ def _get_room(room_id):
     return results[0]
 
 
-def _get_user_room_list_batch(args_list):
-    """Batch fetch room lists for multiple users in a single query."""
-    if not args_list:
-        return []
-
-    user_ids = [args[0] for args in args_list]
-
-    # Single query to get all rooms for all users
-    user_rooms = (
-        UserRoom.objects.filter(user_id__in=user_ids)
-        .select_related("room")
-        .exclude(room__isnull=True)
-        .order_by("-room__last_msg_id")
-        .values("user_id", "room_id")
-    )
-
-    # Group by user_id, maintaining order
-    user_to_rooms = {uid: [] for uid in user_ids}
-    for entry in user_rooms:
-        user_to_rooms[entry["user_id"]].append(entry["room_id"])
-
-    return [user_to_rooms.get(uid, []) for uid in user_ids]
-
-
-@cache_wrapper(prefix="Purl2", expected_type=list, batch_fn=_get_user_room_list_batch)
-def get_user_room_list(profile_id):
-    """Get sorted list of room IDs for a user, ordered by last_msg_id (descending)"""
-    room_ids = list(
-        UserRoom.objects.filter(user_id=profile_id)
-        .select_related("room")
-        .exclude(room__isnull=True)
-        .order_by("-room__last_msg_id")
-        .values_list("room_id", flat=True)
-    )
-    return room_ids
-
-
 @cache_wrapper(prefix="giuis", expected_type=set)
 def get_ignored_user_ids(user):
     """
@@ -1134,16 +1052,3 @@ def get_first_msg_id(room_id):
     except Message.DoesNotExist:
         return None
     return msg.id
-
-
-def get_common_room_id(user_one, user_two):
-    low_id, high_id = sorted((user_one.id, user_two.id))
-    return (
-        Room.objects.filter(
-            room_type=Room.Type.DIRECT,
-            direct_user_low_id=low_id,
-            direct_user_high_id=high_id,
-        )
-        .values_list("id", flat=True)
-        .first()
-    )

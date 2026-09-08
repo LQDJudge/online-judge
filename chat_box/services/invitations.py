@@ -92,21 +92,10 @@ def resolve_invitation(token):
         ):
             raise BadSignature
     except (BadSignature, ValueError, RoomInvitation.DoesNotExist):
-        # Links generated before short invitation URLs were introduced remain
-        # valid until the room administrator rotates or revokes them.
-        try:
-            raw = INVITATION_SIGNER.unsign(token)
-            room_id, nonce = raw.split(":", 1)
-            invitation = RoomInvitation.objects.select_related("room").get(
-                room_id=int(room_id),
-                nonce=nonce,
-                revoked_at__isnull=True,
-            )
-        except (BadSignature, ValueError, RoomInvitation.DoesNotExist):
-            raise RoomNotFound(
-                _("This invitation is invalid or has been revoked."),
-                code="invalid_invitation",
-            )
+        raise RoomNotFound(
+            _("This invitation is invalid or has been revoked."),
+            code="invalid_invitation",
+        )
     if invitation.revoked_at is not None:
         raise RoomNotFound(
             _("This invitation is invalid or has been revoked."),

@@ -737,10 +737,16 @@ body:has(.chat-page) {
     top: 100%;
     overflow: hidden;
 
-    a {
+    a,
+    button {
       padding: 10px 16px;
       text-decoration: none;
       display: block;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
       font-weight: 500;
       font-size: 0.9rem;
       color: #050505;

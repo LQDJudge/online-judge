@@ -136,7 +136,9 @@ class GeneralizedRoomMigrationTests(TransactionTestCase):
             author=profiles[2],
             body="Legacy Saved Messages",
         )
-        legacy_self_dm.last_msg_id = self_message.id
+        # Exercise a stale legacy pointer into another room. The migration must
+        # derive both canonical-room selection and previews from actual history.
+        legacy_self_dm.last_msg_id = first_unread.id
         legacy_self_dm.save(update_fields=["last_msg_id"])
 
         duplicate_self_dm = OldRoom.objects.create()

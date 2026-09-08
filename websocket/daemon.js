@@ -3,7 +3,14 @@ const queue = require('qu');
 const { Server } = require('socket.io');
 const http = require('http');
 const express = require('express');
-const { isChatChannel, verifyChatGrant } = require('./chat_grant');
+const {
+  chatGrantAllowsChannel,
+  isAllowedOrigin,
+  isChatChannel,
+  parseStartMessage,
+  validateChannelFilter,
+  verifyChatGrant
+} = require('./chat_grant');
 
 // Create Express app and HTTP server
 const app = express();
@@ -15,8 +22,14 @@ const BACKEND_AUTH_TOKEN = config.backend_auth_token;
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: config.allowed_origins,
     methods: ["GET", "POST"]
+  },
+  allowRequest: (request, callback) => {
+    callback(
+      null,
+      isAllowedOrigin(request.headers.origin, config.allowed_origins)
+    );
   },
   transports: ['websocket', 'polling'],
   pingTimeout: config.connection_timeout || 300000,
@@ -54,8 +67,17 @@ messages.post = function(channel, message) {
     this.shift();
   }
   
-  // Emit to all subscribers of this channel
-  io.to(channel).emit('message', messageObj);
+  // Route every delivery through the per-socket authorization gate. A raw
+  // room broadcast would let an expired chat grant keep receiving live events.
+  const subscribers = io.sockets.adapter.rooms.get(channel);
+  if (subscribers) {
+    Array.from(subscribers).forEach(socketId => {
+      const client = io.sockets.sockets.get(socketId);
+      if (client && typeof client.got_message === 'function') {
+        client.got_message(messageObj);
+      }
+    });
+  }
   
   return messageObj.id;
 };
@@ -111,8 +133,9 @@ function answerSender(socket, callback, response, eventName) {
 
 // Authentication middleware for socket connections
 io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
-  const role = socket.handshake.auth.role || 'client';
+  const auth = socket.handshake.auth || {};
+  const token = auth.token;
+  const role = auth.role || 'client';
   
   // If role is sender, require valid token
   if (role === 'sender') {
@@ -218,8 +241,7 @@ io.on('connection', (socket) => {
   
   // Setup got_message function for this socket
   socket.got_message = (message) => {
-    if (isChatChannel(message.channel) &&
-        (!socket.chatGrant || socket.chatGrant.exp <= Math.floor(Date.now() / 1000))) {
+    if (!chatGrantAllowsChannel(socket.chatGrant, message.channel)) {
       socket.emit('error', {
         status: 'error',
         code: 'chat-grant-expired',
@@ -235,14 +257,27 @@ io.on('connection', (socket) => {
   // Client commands
   socket.on('start-msg', (data) => {
     socket.metadata.lastActivity = Date.now();
-    socket.last_msg = data.start || 0;
+    const start = parseStartMessage(data);
+    if (start === null) {
+      socket.emit('error', {
+        status: 'error',
+        code: 'invalid-start',
+        message: 'Invalid starting message ID'
+      });
+      return;
+    }
+    socket.last_msg = start;
     socket.emit('status', { status: 'success' });
   });
   
   socket.on('set-filter', (data) => {
     socket.metadata.lastActivity = Date.now();
-    
-    if (!Array.isArray(data.filter) || data.filter.length === 0) {
+
+    const validated = validateChannelFilter(
+      data,
+      max_subscriptions_per_connection
+    );
+    if (validated.code === 'invalid-filter') {
       socket.emit('error', {
         status: 'error',
         code: 'invalid-filter',
@@ -251,7 +286,7 @@ io.on('connection', (socket) => {
       return;
     }
     
-    if (data.filter.length > max_subscriptions_per_connection) {
+    if (validated.code === 'too-many-subscriptions') {
       socket.emit('error', {
         status: 'error',
         code: 'too-many-subscriptions',
@@ -260,12 +295,7 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Validate channels
-    const validChannels = data.filter.every(channel => {
-      return typeof channel === 'string' && channel.length > 0 && channel.length <= 100;
-    });
-    
-    if (!validChannels) {
+    if (validated.code === 'invalid-channel') {
       socket.emit('error', {
         status: 'error',
         code: 'invalid-channel',
@@ -274,11 +304,11 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const requestedChatChannels = data.filter.filter(isChatChannel);
+    const requestedChatChannels = validated.filter.filter(isChatChannel);
     if (requestedChatChannels.length &&
-        (!socket.chatGrant || requestedChatChannels.some(
-          channel => !socket.chatGrant.channels.includes(channel)
-        ))) {
+        requestedChatChannels.some(
+          channel => !chatGrantAllowsChannel(socket.chatGrant, channel)
+        )) {
       socket.emit('error', {
         status: 'error',
         code: 'unauthorized-chat-channel',
@@ -295,7 +325,7 @@ io.on('connection', (socket) => {
     socket.channels.clear();
     
     // Join new channels
-    data.filter.forEach(channel => {
+    validated.filter.forEach(channel => {
       socket.join(channel);
       socket.channels.add(channel);
     });

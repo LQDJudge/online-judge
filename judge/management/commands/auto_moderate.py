@@ -729,6 +729,7 @@ class Command(BaseCommand):
         messages = list(
             ChatMessage.objects.filter(
                 room__singleton_key="lobby",
+                kind=ChatMessage.Kind.USER,
                 hidden=False,
                 time__gte=cutoff,
             )

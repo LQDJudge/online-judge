@@ -474,11 +474,7 @@ def room_details_view(request, room_id):
             ],
             "members_truncated": len(member_rows) > 100,
             "ignore_url": (
-                "%s?next=%s"
-                % (
-                    reverse("toggle_ignore", args=[direct_peer_id]),
-                    reverse("chat", args=[room.id]),
-                )
+                reverse("toggle_ignore", args=[direct_peer_id])
                 if direct_peer and direct_peer_id != request.profile.id
                 else None
             ),

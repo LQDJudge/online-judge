@@ -33,4 +33,57 @@ function isChatChannel(channel) {
     channel.slice(16).startsWith('chat_');
 }
 
-module.exports = { isChatChannel, verifyChatGrant };
+function chatGrantAllowsChannel(
+  claims,
+  channel,
+  nowSeconds = Math.floor(Date.now() / 1000)
+) {
+  if (!isChatChannel(channel)) return true;
+  return Boolean(
+    claims &&
+    Number.isInteger(claims.exp) &&
+    claims.exp > nowSeconds &&
+    Array.isArray(claims.channels) &&
+    claims.channels.includes(channel)
+  );
+}
+
+function parseStartMessage(data) {
+  if (!data || typeof data !== 'object' ||
+      !Number.isSafeInteger(data.start) || data.start < 0) {
+    return null;
+  }
+  return data.start;
+}
+
+function validateChannelFilter(data, maximum) {
+  if (!data || typeof data !== 'object' ||
+      !Array.isArray(data.filter) || data.filter.length === 0) {
+    return { code: 'invalid-filter' };
+  }
+  if (data.filter.length > maximum) {
+    return { code: 'too-many-subscriptions' };
+  }
+  if (!data.filter.every(channel => (
+    typeof channel === 'string' && channel.length > 0 && channel.length <= 100
+  ))) {
+    return { code: 'invalid-channel' };
+  }
+  return { filter: data.filter };
+}
+
+function isAllowedOrigin(origin, allowedOrigins) {
+  // Non-browser backend clients commonly omit Origin and authenticate with the
+  // sender secret. Browser connections always send it and must match exactly.
+  if (!origin) return true;
+  return Array.isArray(allowedOrigins) && allowedOrigins.includes(origin);
+}
+
+module.exports = {
+  chatGrantAllowsChannel,
+  isAllowedOrigin,
+  isChatChannel,
+  parseStartMessage,
+  validateChannelFilter,
+  verifyChatGrant
+};

@@ -132,7 +132,6 @@ def _sync_organization_profile_batch(
                 membership.role,
                 membership.manual_role,
                 membership.synced_role,
-                membership.site_admin_joined,
                 membership.activated_at,
                 membership.deactivated_at,
                 membership.last_read_message_id,
@@ -152,7 +151,6 @@ def _sync_organization_profile_batch(
                 membership.role = None
                 membership.manual_role = None
                 membership.synced_role = None
-                membership.site_admin_joined = False
                 membership.deactivated_at = now
                 membership.is_hidden = False
                 membership.hidden_at = None
@@ -164,7 +162,6 @@ def _sync_organization_profile_batch(
                 membership.role = None
                 membership.manual_role = None
                 membership.synced_role = None
-                membership.site_admin_joined = False
                 membership.deactivated_at = now
                 membership.is_hidden = False
                 membership.hidden_at = None
@@ -223,7 +220,6 @@ def _sync_organization_profile_batch(
             membership.role,
             membership.manual_role,
             membership.synced_role,
-            membership.site_admin_joined,
             membership.activated_at,
             membership.deactivated_at,
             membership.last_read_message_id,
@@ -244,7 +240,6 @@ def _sync_organization_profile_batch(
                 "role",
                 "manual_role",
                 "synced_role",
-                "site_admin_joined",
                 "activated_at",
                 "deactivated_at",
                 "last_read_message_id",

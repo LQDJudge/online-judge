@@ -18,7 +18,9 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
 from reversion import revisions
@@ -66,20 +68,15 @@ from chat_box.services.moderation import (
 )
 from chat_box.services.unread import mark_room_read
 from chat_box.utils import (
-    encrypt_url,
+    create_chat_event_grant,
     decrypt_url,
     encrypt_channel,
-    create_chat_event_grant,
     get_reactions_summary,
 )
 
 CHAT_TEMP_MUTE_CAP_DAYS = 30
 REACTION_LIST_PER_TYPE_LIMIT = 10
 CHAT_MODERATION_BATCH_SIZE = 500
-
-
-def can_mute_chat_permanently(user):
-    return user.is_superuser
 
 
 def clear_expired_chat_mute(profile):
@@ -120,7 +117,6 @@ class ChatView(ListView):
         self.room_id = None
         self.room = None
         self.membership = None
-        self.management_override = False
         self.messages = None
         self.first_page_size = 20  # only for first request
         self.follow_up_page_size = 50
@@ -198,7 +194,6 @@ class ChatView(ListView):
                     ),
                     status=403,
                 )
-            self.management_override = False
         except Room.DoesNotExist:
             return HttpResponseBadRequest()
 
@@ -211,8 +206,6 @@ class ChatView(ListView):
         self.room_id = request_room
         self.messages = self.get_message_page(last_id, page_size)
         if request.GET.get("switch_room"):
-            if self.management_override:
-                return HttpResponseForbidden()
             context = self.get_context_data(object_list=self.messages)
             message_template_context = dict(context)
             message_template_context.update(
@@ -318,31 +311,23 @@ class ChatView(ListView):
             .exclude(chat_room__isnull=False)
             .exists()
         )
-        context["can_mute_chat_permanently"] = can_mute_chat_permanently(
-            self.request.user
+        event_room_ids = {
+            item["room"]
+            for section in context["status_sections"]
+            for item in section["room_list"]
+        }
+        event_room_ids.add(self.room.id)
+        if not context["lobby_hidden"]:
+            event_room_ids.add(lobby.id)
+        context["chat_event_channels"] = chat_event_channels(
+            self.request.profile.id,
+            sorted(event_room_ids),
         )
-        context["management_override"] = self.management_override
-        if self.management_override:
-            context["chat_event_channels"] = []
-            context["chat_event_grant"] = ""
-        else:
-            event_room_ids = {
-                item["room"]
-                for section in context["status_sections"]
-                for item in section["room_list"]
-            }
-            event_room_ids.add(self.room.id)
-            if not context["lobby_hidden"]:
-                event_room_ids.add(lobby.id)
-            context["chat_event_channels"] = chat_event_channels(
-                self.request.profile.id,
-                sorted(event_room_ids),
-            )
-            context["chat_event_grant"] = create_chat_event_grant(
-                self.request.profile.id,
-                event_room_ids,
-                context["chat_event_channels"],
-            )
+        context["chat_event_grant"] = create_chat_event_grant(
+            self.request.profile.id,
+            event_room_ids,
+            context["chat_event_channels"],
+        )
         context.update(reaction_render_context(self.messages, self.request.profile))
         context.update(reply_render_context(self.messages, self.request.user))
         membership = self.membership
@@ -1358,54 +1343,6 @@ def user_online_status_ajax(request):
         )
 
 
-def get_online_status(profile, other_profile_ids, rooms=None):
-    if not other_profile_ids:
-        return None
-    other_profiles = Profile.get_cached_instances(*other_profile_ids)
-    last_5_minutes = timezone.now() - timezone.timedelta(minutes=5)
-    ret = []
-    if rooms:
-        unread_count = get_unread_count(rooms, profile)
-        count = {}
-        last_msg = {}
-        room_of_user = {}
-
-        # Prefetch room info for all rooms
-        Room.prefetch_room_cache(rooms)
-
-        for i in unread_count:
-            room_id = i["room"]
-            room = Room(id=room_id)
-            other_id = room.other_user_id(profile)
-            if other_id:
-                count[other_id] = i["unread_count"]
-
-        for room_id in rooms:
-            room = Room(id=room_id)
-            other_id = room.other_user_id(profile)
-            if other_id:
-                last_msg[other_id] = room.get_last_message()
-                room_of_user[other_id] = room_id
-
-    for other_profile in other_profiles:
-        is_online = False
-        if other_profile.get_last_access() >= last_5_minutes:
-            is_online = True
-        user_dict = {"user": other_profile, "is_online": is_online}
-        if rooms:
-            user_dict.update(
-                {
-                    "unread_count": count.get(other_profile.id),
-                    "last_msg": last_msg.get(other_profile.id),
-                    "room": room_of_user.get(other_profile.id),
-                }
-            )
-        user_dict["url"] = encrypt_url(profile.id, other_profile.id)
-        user_dict["is_self"] = profile.id == other_profile.id
-        ret.append(user_dict)
-    return ret
-
-
 def get_status_context(profile, include_ignored=False, section=None):
     ignored_room_ids = (
         set() if include_ignored else Ignore.get_ignored_room_ids(profile)
@@ -1552,25 +1489,32 @@ def get_unread_count(rooms, user):
 
 
 @login_required
+@require_POST
 def toggle_ignore(request, **kwargs):
-    user_id = kwargs["user_id"]
-    if not user_id:
-        return HttpResponseBadRequest()
     try:
-        other_user = Profile.objects.get(id=user_id)
-    except:
+        user_id = int(kwargs["user_id"])
+    except (KeyError, TypeError, ValueError):
+        return HttpResponseBadRequest()
+
+    # The Ignore many-to-many manager requires a database-bound Profile rather
+    # than the lightweight instances returned by get_cached_instances().
+    try:
+        other_user = Profile.objects.only("id").get(id=user_id)
+    except Profile.DoesNotExist:
         return HttpResponseBadRequest()
 
     if other_user.id == request.profile.id:
         return HttpResponseBadRequest()
 
-    Ignore.toggle_ignore(request.profile, other_user)
-    next_url = request.GET.get("next", "/")
+    ignored = Ignore.toggle_ignore(request.profile, other_user)
+    fallback_url = reverse("chat", args=[""])
+    next_url = request.POST.get("next") or fallback_url
+    if not url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        next_url = fallback_url
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"ignored": ignored, "redirect": next_url})
     return HttpResponseRedirect(next_url)
-
-
-@cache_wrapper(prefix="gai", timeout=24 * 60, expected_type=list)
-def get_admin_ids():
-    return list(
-        Profile.objects.filter(display_rank="admin").values_list("id", flat=True)
-    )

@@ -7,12 +7,20 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.conf import settings
+from django.contrib import admin as django_admin
+from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import IntegrityError, close_old_connections, connection, transaction
-from django.test import RequestFactory, TestCase, TransactionTestCase, override_settings
+from django.test import (
+    Client,
+    RequestFactory,
+    TestCase,
+    TransactionTestCase,
+    override_settings,
+)
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
@@ -27,6 +35,7 @@ from judge.models.notification import (
 )
 from judge.views.select2 import ChatUserSearchSelect2View
 
+from chat_box.admin import ReadOnlyChatAdmin
 from chat_box.exceptions import RoomError, RoomNotFound, RoomPermissionDenied
 from chat_box.models import (
     ChatModerationLog,
@@ -36,13 +45,13 @@ from chat_box.models import (
     RoomBan,
     RoomInvitation,
     RoomModerationLog,
+    RoomMute,
     RoomRedirect,
     UserRoom,
 )
 from chat_box.policies import RoomPolicy
 from chat_box.room_views import room_list_view
 from chat_box.services.invitations import (
-    INVITATION_SIGNER,
     get_invitation_token,
     join_from_invitation,
     resolve_invitation,
@@ -131,6 +140,31 @@ class GeneralizedRoomTestCase(TestCase):
         )
         organization.admins.add(self.creator)
         return organization
+
+
+class ReadOnlyChatAdminTests(TestCase):
+    def test_chat_models_cannot_be_mutated_through_django_admin(self):
+        model_admin = ReadOnlyChatAdmin(Room, AdminSite())
+        request = RequestFactory().get("/admin/chat_box/room/")
+
+        self.assertFalse(model_admin.has_add_permission(request))
+        self.assertFalse(model_admin.has_change_permission(request))
+        self.assertFalse(model_admin.has_delete_permission(request))
+        self.assertIsNone(model_admin.actions)
+
+        for model in (
+            Room,
+            RoomRedirect,
+            UserRoom,
+            RoomInvitation,
+            RoomMute,
+            RoomBan,
+            RoomModerationLog,
+        ):
+            self.assertIsInstance(
+                django_admin.site._registry[model],
+                ReadOnlyChatAdmin,
+            )
 
 
 class RoomModelAndPolicyTests(GeneralizedRoomTestCase):
@@ -530,7 +564,7 @@ class InvitationTests(GeneralizedRoomTestCase):
         self.assertEqual(room_one.id, self.group.id)
         self.assertEqual(room_two.id, self.group.id)
 
-    def test_invitation_tokens_are_short_and_legacy_tokens_still_resolve(self):
+    def test_invitation_tokens_are_short_and_resolve(self):
         token = get_invitation_token(
             self.group,
             self.creator.user,
@@ -538,12 +572,6 @@ class InvitationTests(GeneralizedRoomTestCase):
         )
         self.assertRegex(token, r"^[0-9a-z]+\.[A-Za-z0-9_-]{16}$")
         self.assertEqual(resolve_invitation(token).room_id, self.group.id)
-
-        invitation = RoomInvitation.objects.get(room=self.group)
-        legacy_token = INVITATION_SIGNER.sign(
-            "%s:%s" % (self.group.id, invitation.nonce)
-        )
-        self.assertEqual(resolve_invitation(legacy_token).room_id, self.group.id)
 
     def test_rotation_and_revocation_invalidate_old_tokens(self):
         old_token = get_invitation_token(
@@ -937,7 +965,6 @@ class OrganizationChannelTests(GeneralizedRoomTestCase):
         super_profile.organizations.add(self.organization)
         membership = UserRoom.objects.get(room=self.room, user=super_profile)
         self.assertEqual(membership.state, UserRoom.State.ACTIVE)
-        self.assertFalse(membership.site_admin_joined)
         self.assertEqual(
             self.client.get(reverse("chat", args=[self.room.id])).status_code,
             200,
@@ -2166,15 +2193,57 @@ class RoomRouteAndListTests(GeneralizedRoomTestCase):
         self.assertFalse(payload["ignored"])
         self.assertEqual(
             payload["ignore_url"],
-            "%s?next=%s"
-            % (
-                reverse("toggle_ignore", args=[self.member.id]),
-                reverse("chat", args=[room.id]),
-            ),
+            reverse("toggle_ignore", args=[self.member.id]),
         )
 
         Ignore.add_ignore(self.creator, self.member)
         self.assertTrue(self.client.get(url).json()["ignored"])
+
+    def test_ignore_requires_post_and_rejects_external_redirects(self):
+        self.client.force_login(self.creator.user)
+        url = reverse("toggle_ignore", args=[self.member.id])
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 405)
+        self.assertFalse(Ignore.is_ignored(self.creator, self.member))
+
+        response = self.client.post(
+            url,
+            {"next": "https://example.com/steal"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("chat", args=[""]),
+            fetch_redirect_response=False,
+        )
+        self.assertTrue(Ignore.is_ignored(self.creator, self.member))
+
+    def test_ignore_ajax_returns_safe_redirect_and_new_state(self):
+        self.client.force_login(self.creator.user)
+        url = reverse("toggle_ignore", args=[self.member.id])
+
+        response = self.client.post(
+            url,
+            {"next": reverse("chat", args=[""])},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"ignored": True, "redirect": reverse("chat", args=[""])},
+        )
+
+    def test_ignore_rejects_post_without_csrf_token(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.creator.user)
+
+        response = client.post(reverse("toggle_ignore", args=[self.member.id]))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Ignore.is_ignored(self.creator, self.member))
 
     def test_invitation_form_post_joins_and_redirects_to_room(self):
         room = self.create_group("Invitation redirect")

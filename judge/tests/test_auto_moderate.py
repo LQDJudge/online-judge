@@ -9,7 +9,7 @@ from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
-from chat_box.models import ChatModerationLog, Message
+from chat_box.models import ChatModerationLog, Message, Room
 from judge.management.commands.auto_moderate import (
     CHAT_SYSTEM_PROMPT,
     COMMENT_SYSTEM_PROMPT,
@@ -83,6 +83,14 @@ class AutoModerateCommandTest(TestCase):
             content_type=ContentType.objects.get_for_model(BlogPost),
             object_id=post.id,
             body=body,
+        )
+
+    def create_chat_message(self, author, body, *, kind=Message.Kind.USER):
+        return Message.objects.create(
+            room=Room.objects.get(singleton_key="lobby"),
+            author=author,
+            body=body,
+            kind=kind,
         )
 
     def test_comment_context_details_batch_blog_lookup(self):
@@ -222,10 +230,9 @@ class AutoModerateCommandTest(TestCase):
         profile, _ = Profile.objects.get_or_create(
             user=user, defaults={"language": self.language}
         )
-        message = Message.objects.create(
-            room=None,
-            author=profile,
-            body="This needs context before hiding",
+        message = self.create_chat_message(
+            profile,
+            "This needs context before hiding",
         )
         get_config.return_value = FakeConfig()
         unused_service = MagicMock()
@@ -270,10 +277,9 @@ class AutoModerateCommandTest(TestCase):
         profile, _ = Profile.objects.get_or_create(
             user=user, defaults={"language": self.language}
         )
-        message = Message.objects.create(
-            room=None,
-            author=profile,
-            body="Older message still inside custom moderation window",
+        message = self.create_chat_message(
+            profile,
+            "Older message still inside custom moderation window",
         )
         Message.objects.filter(id=message.id).update(
             time=timezone.now() - timezone.timedelta(minutes=90)
@@ -319,10 +325,8 @@ class AutoModerateCommandTest(TestCase):
         profile, _ = Profile.objects.get_or_create(
             user=user, defaults={"language": self.language}
         )
-        first = Message.objects.create(room=None, author=profile, body="First message")
-        second = Message.objects.create(
-            room=None, author=profile, body="Second message"
-        )
+        first = self.create_chat_message(profile, "First message")
+        second = self.create_chat_message(profile, "Second message")
         get_config.return_value = FakeConfig()
         unused_service = MagicMock()
         chat_service = MagicMock()
@@ -336,6 +340,40 @@ class AutoModerateCommandTest(TestCase):
         self.assertFalse(ChatModerationLog.objects.filter(message=second).exists())
         self.assertIn("Missing moderation results for chat messages", output.getvalue())
         self.assertIn("Errors: 1", output.getvalue())
+
+    @override_settings(POE_API_KEY="test-key", POE_BOT_NAME="Gemini-3-Flash")
+    @patch("judge.management.commands.auto_moderate.LLMService")
+    @patch("judge.management.commands.auto_moderate.get_config")
+    def test_chat_moderation_skips_system_messages(self, get_config, llm_service):
+        class FakeConfig:
+            api_key = "test-key"
+            sleep_time = 0.5
+            timeout = 30
+
+            def get_bot_name_for_moderation(self):
+                return "Muse-Glimmer-30B-EL"
+
+            def get_parameters_for_moderation(self):
+                return {"enable_thinking": False}
+
+        user = User.objects.create_user("chat_system_event_user", password="pw")
+        profile, _ = Profile.objects.get_or_create(
+            user=user, defaults={"language": self.language}
+        )
+        message = self.create_chat_message(
+            profile,
+            "User joined the room",
+            kind=Message.Kind.SYSTEM,
+        )
+        get_config.return_value = FakeConfig()
+        unused_service = MagicMock()
+        chat_service = MagicMock()
+        llm_service.side_effect = [unused_service, chat_service]
+
+        call_command("auto_moderate", "--chat-only", stdout=StringIO())
+
+        chat_service.call_llm.assert_not_called()
+        self.assertFalse(ChatModerationLog.objects.filter(message=message).exists())
 
     @override_settings(POE_API_KEY="test-key", POE_BOT_NAME="Gemini-3-Flash")
     @patch("judge.management.commands.auto_moderate.LLMService")
@@ -423,15 +461,13 @@ class AutoModerateCommandTest(TestCase):
         other_profile, _ = Profile.objects.get_or_create(
             user=other_user, defaults={"language": self.language}
         )
-        matching_message = Message.objects.create(
-            room=None,
-            author=matching_profile,
-            body="This message contains needlebody text",
+        matching_message = self.create_chat_message(
+            matching_profile,
+            "This message contains needlebody text",
         )
-        other_message = Message.objects.create(
-            room=None,
-            author=other_profile,
-            body="This message should not match",
+        other_message = self.create_chat_message(
+            other_profile,
+            "This message should not match",
         )
         ChatModerationLog.objects.create(
             message=matching_message,

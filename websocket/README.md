@@ -43,6 +43,8 @@ This will install:
 
 3. Configure settings in `config.js`:
 - Set `backend_auth_token` to match `EVENT_DAEMON_KEY` in Django settings
+- Set `allowed_origins` to the exact browser origins allowed to connect (for
+  example, `['https://your-domain.com']` in production)
 - Adjust `http_host` and `http_port` as needed
 - Configure connection limits and timeouts
 

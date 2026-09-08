@@ -45,7 +45,6 @@
         id: {{ request.profile.id }},
         isStaff: {{ request.user.is_superuser|tojson }},
         canModerateChat: {{ (request.user.is_superuser or (room_membership and room_membership.role in ['admin', 'moderator']))|tojson }},
-        canMutePermanently: {{ can_mute_chat_permanently|tojson }},
         isMuted: {{ is_chat_muted|tojson }},
         isRoomMuted: {{ is_room_muted|tojson }},
         canInteractRoom: {{ can_interact_room|tojson }},
@@ -56,7 +55,6 @@
         type: "{{ room_object.room_type }}",
         channelKind: "{{ room_object.channel_kind or '' }}",
         isArchived: {{ room_is_archived|tojson }},
-        managementOnly: {{ management_override|tojson }},
         maxLength: {{ 200 if is_lobby else 5000 }},
         otherUserId: "{{ other_user.id if other_user else '' }}",
         lastMsgId: {{ last_msg if last_msg else 'null' }}
@@ -69,7 +67,6 @@
       reactions: {{ chat_reactions|tojson }},
       reactionImages: {{ chat_reaction_image_urls|tojson }},
       i18n: {
-        react: "{{ _('React') }}",
         whoReacted: "{{ _('See who reacted') }}",
         newMessages: "{{ _('New message(s)') }}",
         newMessage: "{{ _('New message') }}",
@@ -81,11 +78,8 @@
         muteInRoomSummary: "{{ _('This prevents the user from posting, replying, or reacting in this room until %(time)s.', time='%(time)s') }}",
         muteMemberSummary: "{{ _('This prevents %(user)s from posting, replying, or reacting in this room.', user='%(user)s') }}",
         siteWideMuteSummary: "{{ _('This site-wide mute prevents participation in every chat room and also restricts comments and other community posting.') }}",
-        muteDuration: "{{ _('Mute duration') }}",
-        muteTemporary: "{{ _('Temporary') }}",
         muteTemporaryOneDay: "{{ _('Temporary (1 day)') }}",
         muteTemporaryDays: "{{ _('Temporary (%(days)s days)', days='%(days)s') }}",
-        muteForever: "{{ _('Forever') }}",
         muteReason: "{{ _('Reason') }}",
         muteReasonRequired: "{{ _('Reason is required.') }}",
         muteReasonPlaceholder: "{{ _('Explain why this user is being muted...') }}",
@@ -96,7 +90,6 @@
         roomMuted: "{{ _('You are muted in this room.') }}",
         roomArchived: "{{ _('This room is archived and read-only.') }}",
         chatRestricted: "{{ _('Solve a problem to chat.') }}",
-        managementOnlyView: "{{ _('Management-only view.') }}",
         emoji: "{{ _('Emoji') }}",
         searchPlaceholder: "{{ _('Search') }}",
         enterMessage: "{{ _('Enter your message') }}",
@@ -128,13 +121,11 @@
         unableCreateChannel: "{{ _('Unable to create channel.') }}",
         noAvailableOrganizations: "{{ _('No organizations you administer are available for a new channel.') }}",
         unableLoadRoom: "{{ _('Unable to load room details.') }}",
-        loadMore: "{{ _('Load more') }}",
         invite: "{{ _('Invitation link') }}",
         copy: "{{ _('Copy') }}",
         copied: "{{ _('Copied') }}",
         rename: "{{ _('Rename') }}",
         leave: "{{ _('Leave room') }}",
-        leaveRoomTitle: "{{ _('Leave this room?') }}",
         leaveRoomSummary: "{{ _('Leave %(room)s? You may not be able to access its messages until you join again.', room='%(room)s') }}",
         archive: "{{ _('Archive room') }}",
         restore: "{{ _('Restore room') }}",
@@ -262,8 +253,8 @@
             {{ _('Chat is disabled during contest.') }}
           </div>
         {% else %}
-          {% set chat_disabled = management_override or is_chat_muted or is_room_muted or room_is_archived or not can_chat or not can_interact_room %}
-          {% set chat_input_placeholder = _('Management-only view.') if management_override else (_('This room is archived and read-only.') if room_is_archived else (_('You are muted in this room.') if is_room_muted else (_('You are muted from chat.') if is_chat_muted else (_('Solve a problem to chat.') if not can_chat else _('Enter your message'))))) %}
+          {% set chat_disabled = is_chat_muted or is_room_muted or room_is_archived or not can_chat or not can_interact_room %}
+          {% set chat_input_placeholder = _('This room is archived and read-only.') if room_is_archived else (_('You are muted in this room.') if is_room_muted else (_('You are muted from chat.') if is_chat_muted else (_('Solve a problem to chat.') if not can_chat else _('Enter your message')))) %}
           <div id="chat-input-container" class="chat-input-area {% if chat_disabled %}is-muted{% endif %}">
             <div class="chat-input-wrapper">
               <textarea rows="1" maxlength="{{ 200 if is_lobby else 5000 }}" id="chat-input" class="chat-input" placeholder="{{ chat_input_placeholder }}"{% if chat_disabled %} disabled aria-disabled="true"{% endif %}></textarea>

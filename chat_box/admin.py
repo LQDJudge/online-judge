@@ -11,8 +11,23 @@ from chat_box.models import (
 )
 
 
+class ReadOnlyChatAdmin(admin.ModelAdmin):
+    """Keep inspection in Django admin without bypassing chat domain services."""
+
+    actions = None
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Room)
-class RoomAdmin(admin.ModelAdmin):
+class RoomAdmin(ReadOnlyChatAdmin):
     list_display = (
         "id",
         "room_type",
@@ -33,14 +48,14 @@ class RoomAdmin(admin.ModelAdmin):
 
 
 @admin.register(RoomRedirect)
-class RoomRedirectAdmin(admin.ModelAdmin):
+class RoomRedirectAdmin(ReadOnlyChatAdmin):
     list_display = ("old_room_id", "canonical_room_id", "created_at")
     search_fields = ("=old_room_id", "=canonical_room__id")
     raw_id_fields = ("canonical_room",)
 
 
 @admin.register(UserRoom)
-class UserRoomAdmin(admin.ModelAdmin):
+class UserRoomAdmin(ReadOnlyChatAdmin):
     list_display = ("id", "room_id", "user_id", "state", "role", "is_hidden")
     list_filter = ("state", "role", "is_hidden")
     search_fields = ("=room__id", "user__user__username")
@@ -48,14 +63,14 @@ class UserRoomAdmin(admin.ModelAdmin):
 
 
 @admin.register(RoomInvitation)
-class RoomInvitationAdmin(admin.ModelAdmin):
+class RoomInvitationAdmin(ReadOnlyChatAdmin):
     list_display = ("room_id", "created_by_id", "created_at", "revoked_at")
     search_fields = ("=room__id", "room__name", "created_by__user__username")
     raw_id_fields = ("room", "created_by")
 
 
 @admin.register(RoomMute)
-class RoomMuteAdmin(admin.ModelAdmin):
+class RoomMuteAdmin(ReadOnlyChatAdmin):
     list_display = (
         "id",
         "room_id",
@@ -70,7 +85,7 @@ class RoomMuteAdmin(admin.ModelAdmin):
 
 
 @admin.register(RoomBan)
-class RoomBanAdmin(admin.ModelAdmin):
+class RoomBanAdmin(ReadOnlyChatAdmin):
     list_display = (
         "id",
         "room_id",
@@ -85,7 +100,7 @@ class RoomBanAdmin(admin.ModelAdmin):
 
 
 @admin.register(RoomModerationLog)
-class RoomModerationLogAdmin(admin.ModelAdmin):
+class RoomModerationLogAdmin(ReadOnlyChatAdmin):
     list_display = ("id", "room_id", "action", "actor_id", "target_id", "created_at")
     list_filter = ("action",)
     search_fields = (
