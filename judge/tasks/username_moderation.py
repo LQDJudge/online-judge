@@ -11,6 +11,8 @@ from llm_service.llm_api import LLMService
 
 logger = logging.getLogger(__name__)
 
+PROFILE_MODERATION_RETRY_DELAYS = (60, 300, 900, 3600)
+
 
 USERNAME_MODERATION_SYSTEM_PROMPT = """
 You are a strict username moderation classifier for an educational programming site.
@@ -65,6 +67,17 @@ Flag only clearly unsafe public content:
 - unrelated commercial spam or mass promotion
 - harmful impersonation, such as claiming to be site admin/staff/support or
   speaking as the official site/team
+
+BLOCK obvious gambling or commercial spam even when you cannot visit its links.
+Visible evidence is sufficient when the self-description is mostly promotional
+links, SEO/advertising text, calls to buy/register/contact, repeated unrelated
+commercial links, or gambling-site/domain branding. Do not choose REVIEW merely
+because you cannot externally verify a destination whose visible text is already
+clearly promotional or gambling-related.
+
+Use REVIEW for a bare or opaque link only when the visible text and domain provide
+no clear harmful or promotional signal. A normal personal portfolio, GitHub,
+school, social, or programming-project link is allowed.
 
 Do not block normal personal information, school information, social links,
 portfolio links, programming achievements, or ordinary self-expression.
@@ -154,13 +167,7 @@ def mark_stale_profile_moderation_case(case):
     )
 
 
-@shared_task(bind=True)
-def moderate_profile_case_task(
-    self, case_id, delete_safe_case=False, trigger_user_id=None
-):
-    case = ProfileModerationCase.objects.select_related("user", "user__profile").get(
-        id=case_id
-    )
+def get_profile_moderation_skip_result(case):
     if case.status == ProfileModerationCase.STATUS_REVIEWED:
         return {"skipped": True, "reason": "already reviewed"}
 
@@ -170,6 +177,71 @@ def moderate_profile_case_task(
         mark_stale_profile_moderation_case(case)
         return {"skipped": True, "reason": "stale profile self-description"}
 
+    return None
+
+
+def mark_profile_moderation_failure(case, reason, response=None):
+    case.decision = ProfileModerationCase.DECISION_REVIEW
+    case.category = ProfileModerationCase.CATEGORY_OTHER
+    case.confidence = None
+    case.reason = reason
+    case.raw_response = {"response": response}
+    case.is_automated = True
+    case.save(
+        update_fields=[
+            "decision",
+            "category",
+            "confidence",
+            "reason",
+            "raw_response",
+            "is_automated",
+            "updated_at",
+        ]
+    )
+    return {"error": reason, "decision": case.decision}
+
+
+def retry_or_mark_profile_moderation_failure(task, case, response):
+    retry_number = getattr(task.request, "retries", 0)
+    if retry_number < len(PROFILE_MODERATION_RETRY_DELAYS):
+        next_retry = retry_number + 1
+        case.decision = ProfileModerationCase.DECISION_PENDING
+        case.category = ProfileModerationCase.CATEGORY_OTHER
+        case.confidence = None
+        case.reason = "AI moderation unavailable; retry %d of %d scheduled." % (
+            next_retry,
+            len(PROFILE_MODERATION_RETRY_DELAYS),
+        )
+        case.raw_response = {"response": response}
+        case.is_automated = True
+        case.save(
+            update_fields=[
+                "decision",
+                "category",
+                "confidence",
+                "reason",
+                "raw_response",
+                "is_automated",
+                "updated_at",
+            ]
+        )
+        raise task.retry(countdown=PROFILE_MODERATION_RETRY_DELAYS[retry_number])
+
+    return mark_profile_moderation_failure(
+        case,
+        "AI moderation failed after retry attempts: no parseable response.",
+        response=response,
+    )
+
+
+def _moderate_profile_case(task, case_id, delete_safe_case, trigger_user_id):
+    case = ProfileModerationCase.objects.select_related("user", "user__profile").get(
+        id=case_id
+    )
+    skip_result = get_profile_moderation_skip_result(case)
+    if skip_result is not None:
+        return skip_result
+
     prompt, system_prompt = get_profile_moderation_prompt(case)
     feature = (
         "profile_moderation"
@@ -177,6 +249,8 @@ def moderate_profile_case_task(
         else "username_moderation"
     )
 
+    response = None
+    failure_reason = None
     try:
         config = get_config()
         llm = LLMService(
@@ -199,27 +273,25 @@ def moderate_profile_case_task(
         result = parse_profile_moderation_response(response)
     except Exception as exc:
         logger.exception("Profile moderation failed for case %s", case_id)
-        case.decision = ProfileModerationCase.DECISION_REVIEW
-        case.reason = "AI profile moderation failed: %s" % exc
-        case.is_automated = True
-        case.save(update_fields=["decision", "reason", "is_automated", "updated_at"])
-        return {"error": str(exc), "decision": case.decision}
+        failure_reason = "AI profile moderation failed: %s" % exc
+        result = None
+
+    case = ProfileModerationCase.objects.select_related("user", "user__profile").get(
+        id=case_id
+    )
+    skip_result = get_profile_moderation_skip_result(case)
+    if skip_result is not None:
+        return skip_result
+
+    if failure_reason is not None:
+        return mark_profile_moderation_failure(case, failure_reason)
 
     if result is None:
-        case.decision = ProfileModerationCase.DECISION_REVIEW
-        case.reason = "AI moderation returned an unparsable response."
-        case.raw_response = {"response": response}
-        case.is_automated = True
-        case.save(
-            update_fields=[
-                "decision",
-                "reason",
-                "raw_response",
-                "is_automated",
-                "updated_at",
-            ]
+        return retry_or_mark_profile_moderation_failure(
+            task,
+            case,
+            response,
         )
-        return {"error": "unparsable", "decision": case.decision}
 
     case.decision = result["decision"]
     case.category = result["category"]
@@ -281,8 +353,23 @@ def moderate_profile_case_task(
     }
 
 
-@shared_task(bind=True)
+@shared_task(bind=True, max_retries=len(PROFILE_MODERATION_RETRY_DELAYS))
+def moderate_profile_case_task(
+    self, case_id, delete_safe_case=False, trigger_user_id=None
+):
+    return _moderate_profile_case(
+        self,
+        case_id,
+        delete_safe_case=delete_safe_case,
+        trigger_user_id=trigger_user_id,
+    )
+
+
+@shared_task(bind=True, max_retries=len(PROFILE_MODERATION_RETRY_DELAYS))
 def moderate_username_task(self, case_id, delete_safe_case=False, trigger_user_id=None):
-    return moderate_profile_case_task(
-        case_id, delete_safe_case=delete_safe_case, trigger_user_id=trigger_user_id
+    return _moderate_profile_case(
+        self,
+        case_id,
+        delete_safe_case=delete_safe_case,
+        trigger_user_id=trigger_user_id,
     )

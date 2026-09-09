@@ -1,5 +1,17 @@
 {% extends "two-column-content.html" %}
 
+{% block js_media %}
+  {% compress js %}
+    <script type="text/javascript">
+      $(function () {
+        $(".profile-moderation-confirm-form").on("submit", function () {
+          return confirm($(this).data("confirm"));
+        });
+      });
+    </script>
+  {% endcompress %}
+{% endblock %}
+
 {% block left_sidebar %}
   {% include "internal/left-sidebar.html" %}
 {% endblock %}
@@ -49,6 +61,34 @@
         <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search profile moderation...') }}">
         <button type="submit" class="action-btn small">{{ _("Search") }}</button>
       </form>
+      {% if bulk_rerun_case_ids %}
+        <form method="post"
+              action="{{ request.get_full_path() }}"
+              class="profile-moderation-confirm-form"
+              data-confirm="{{ _('Rerun AI moderation for every Needs review case shown on this page?') }}">
+          {% csrf_token %}
+          {% for case_id in bulk_rerun_case_ids %}
+            <input type="hidden" name="cases" value="{{ case_id }}">
+          {% endfor %}
+          <button type="submit" name="action" value="rerun_page" class="action-btn small">
+            {% trans count=bulk_rerun_case_ids|length %}Rerun AI for Needs review on this page ({{ count }}){% endtrans %}
+          </button>
+        </form>
+      {% endif %}
+      {% if bulk_disable_case_ids %}
+        <form method="post"
+              action="{{ request.get_full_path() }}"
+              class="profile-moderation-confirm-form"
+              data-confirm="{{ _('Disable every active user shown on this page? This affects up to 50 users.') }}">
+          {% csrf_token %}
+          {% for case_id in bulk_disable_case_ids %}
+            <input type="hidden" name="cases" value="{{ case_id }}">
+          {% endfor %}
+          <button type="submit" name="action" value="disable_page" class="action-btn small red">
+            {% trans count=bulk_disable_user_count %}Disable all active users on this page ({{ count }}){% endtrans %}
+          </button>
+        </form>
+      {% endif %}
     </div>
 
     {% if page_obj.num_pages > 1 %}
@@ -81,7 +121,10 @@
                 <div class="profile-moderation-snapshot">{{ case.display_value }}</div>
               </td>
               <td title="{{ case.reason }}">
-                {% if case.decision == 'block' %}
+                {% set ai_failed = case.decision == 'review' and case.confidence is none and case.is_automated %}
+                {% if ai_failed %}
+                  <span class="red">{{ _("Error") }}</span>
+                {% elif case.decision == 'block' %}
                   <span class="red">{{ case.get_decision_display() }}</span>
                 {% elif case.decision == 'allow' %}
                   <span class="green">{{ case.get_decision_display() }}</span>
@@ -90,13 +133,15 @@
                 {% else %}
                   <span class="gray">{{ _("Queued") }}</span>
                 {% endif %}
-                <br>
-                <span class="gray">
-                  {{ case.get_category_display() }}
-                  {% if case.confidence is not none %}
-                    &middot; {{ (case.confidence * 100)|floatformat(0) }}%
-                  {% endif %}
-                </span>
+                {% if not ai_failed and case.decision != 'pending' %}
+                  <br>
+                  <span class="gray">
+                    {{ case.get_category_display() }}
+                    {% if case.confidence is not none %}
+                      &middot; {{ (case.confidence * 100)|floatformat(0) }}%
+                    {% endif %}
+                  </span>
+                {% endif %}
               </td>
               <td>
                 {% if case.user.is_active %}

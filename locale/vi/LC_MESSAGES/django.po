@@ -7550,6 +7550,28 @@ msgstr "Đã ẩn bình luận."
 msgid "Profile Moderation"
 msgstr "Kiểm duyệt hồ sơ"
 
+#: judge/views/internal.py
+msgid "Invalid bulk moderation request."
+msgstr "Yêu cầu kiểm duyệt hàng loạt không hợp lệ."
+
+#: judge/views/internal.py
+#, python-format
+msgid ""
+"Disabled %(user_count)d active users and resolved %(case_count)d moderation "
+"cases from this page."
+msgstr ""
+"Đã vô hiệu hóa %(user_count)d người dùng đang hoạt động và xử lý "
+"%(case_count)d trường hợp kiểm duyệt trên trang này."
+
+#: judge/views/internal.py
+msgid "Queued for AI moderation rerun."
+msgstr "Đã đưa vào hàng đợi để AI kiểm duyệt lại."
+
+#: judge/views/internal.py
+#, python-format
+msgid "Queued %(case_count)d moderation cases for AI rerun."
+msgstr "Đã đưa %(case_count)d trường hợp vào hàng đợi để AI kiểm duyệt lại."
+
 #: judge/views/internal.py:2630
 msgid "Profile moderation case allowed."
 msgstr "Đã cho phép trường hợp kiểm duyệt hồ sơ."
@@ -13389,6 +13411,28 @@ msgstr "Trường hợp đã chặn"
 #: templates/internal/username_moderation.html:49
 msgid "Search profile moderation..."
 msgstr "Tìm kiếm kiểm duyệt hồ sơ..."
+
+#: templates/internal/username_moderation.html
+msgid ""
+"Disable every active user shown on this page? This affects up to 50 users."
+msgstr ""
+"Vô hiệu hóa tất cả người dùng đang hoạt động hiển thị trên trang này? Thao "
+"tác này ảnh hưởng đến tối đa 50 người dùng."
+
+#: templates/internal/username_moderation.html
+#, python-format
+msgid "Disable all active users on this page (%(count)s)"
+msgstr ""
+"Vô hiệu hóa tất cả người dùng đang hoạt động trên trang này (%(count)s)"
+
+#: templates/internal/username_moderation.html
+msgid "Rerun AI moderation for every Needs review case shown on this page?"
+msgstr "Chạy lại kiểm duyệt AI cho mọi trường hợp cần xem xét trên trang này?"
+
+#: templates/internal/username_moderation.html
+#, python-format
+msgid "Rerun AI for Needs review on this page (%(count)s)"
+msgstr "Chạy lại AI cho các trường hợp cần xem xét trên trang này (%(count)s)"
 
 #: templates/internal/username_moderation.html:64
 msgid "Snapshot"

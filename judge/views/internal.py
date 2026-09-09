@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.contrib.auth.views import redirect_to_login
 from django.db import transaction
 from django.db.models import Avg, Count, Q, Sum
@@ -71,12 +72,14 @@ from judge.models.notification import Notification, NotificationCategory
 from judge.models.problem import get_distinct_problem_points
 from judge.models.public_request import PublicRequest
 from judge.models.problem_review import ProblemReviewCheckResult, ProblemReviewRun
+from judge.models.profile import get_profile_public_identity
 from judge.review.hashing import compute_input_hash
 from judge.review.system_bot import post_system_comment_on_review
 from judge.review.triggers import trigger_problem_review_for
 from judge.review.verdict import batched_verdicts
 from judge.tasks import rescore_problem
 from judge.tasks.llm import improve_markdown_task, tag_problem_task
+from judge.tasks.username_moderation import moderate_profile_case_task
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.problem_equivalence import (
     ProblemEquivalenceError,
@@ -2620,11 +2623,115 @@ class InternalProfileModeration(InternalView, ListView):
 
         return queryset.order_by("-created_at")
 
+    def get_bulk_case_ids(self, request):
+        try:
+            case_ids = list(
+                dict.fromkeys(int(case_id) for case_id in request.POST.getlist("cases"))
+            )
+        except (TypeError, ValueError):
+            return []
+        if not case_ids or len(case_ids) > self.paginate_by:
+            return []
+        return case_ids
+
     def post(self, request, *args, **kwargs):
-        case = get_object_or_404(ProfileModerationCase, id=request.POST.get("case"))
         action = request.POST.get("action")
         moderator = request.profile
 
+        if action == "disable_page":
+            case_ids = self.get_bulk_case_ids(request)
+            if not case_ids:
+                messages.error(request, _("Invalid bulk moderation request."))
+            else:
+                cases = list(
+                    ProfileModerationCase.objects.select_related(
+                        "user", "user__profile"
+                    ).filter(id__in=case_ids, user__is_active=True)
+                )
+                user_ids = {case.user_id for case in cases}
+                profile_ids = {case.user.profile.id for case in cases}
+                decided_at = timezone.now()
+
+                with transaction.atomic():
+                    disabled_user_count = User.objects.filter(
+                        id__in=user_ids, is_active=True
+                    ).update(is_active=False)
+                    updated_case_count = ProfileModerationCase.objects.filter(
+                        id__in=[case.id for case in cases]
+                    ).update(
+                        status=ProfileModerationCase.STATUS_REVIEWED,
+                        decision=ProfileModerationCase.DECISION_BLOCK,
+                        public_identity_hidden=True,
+                        moderator=moderator,
+                        decided_at=decided_at,
+                        updated_at=decided_at,
+                    )
+
+                    def dirty_profile_caches():
+                        Profile.dirty_cache(*profile_ids)
+                        get_profile_public_identity.dirty_multi(
+                            [(profile_id,) for profile_id in profile_ids]
+                        )
+
+                    transaction.on_commit(dirty_profile_caches)
+
+                messages.success(
+                    request,
+                    _(
+                        "Disabled %(user_count)d active users and resolved "
+                        "%(case_count)d moderation cases from this page."
+                    )
+                    % {
+                        "user_count": disabled_user_count,
+                        "case_count": updated_case_count,
+                    },
+                )
+            return HttpResponseRedirect(request.get_full_path())
+
+        if action == "rerun_page":
+            case_ids = self.get_bulk_case_ids(request)
+            if not case_ids:
+                messages.error(request, _("Invalid bulk moderation request."))
+            else:
+                with transaction.atomic():
+                    rerun_case_ids = list(
+                        ProfileModerationCase.objects.select_for_update()
+                        .filter(
+                            id__in=case_ids,
+                            status=ProfileModerationCase.STATUS_PENDING,
+                            decision=ProfileModerationCase.DECISION_REVIEW,
+                            is_automated=True,
+                        )
+                        .values_list("id", flat=True)
+                    )
+                    rerun_count = ProfileModerationCase.objects.filter(
+                        id__in=rerun_case_ids,
+                        status=ProfileModerationCase.STATUS_PENDING,
+                        decision=ProfileModerationCase.DECISION_REVIEW,
+                        is_automated=True,
+                    ).update(
+                        decision=ProfileModerationCase.DECISION_PENDING,
+                        category=ProfileModerationCase.CATEGORY_OTHER,
+                        confidence=None,
+                        reason=_("Queued for AI moderation rerun."),
+                        raw_response=None,
+                        updated_at=timezone.now(),
+                    )
+
+                    def enqueue_moderation_cases():
+                        for case_id in rerun_case_ids:
+                            moderate_profile_case_task.delay(case_id)
+
+                    transaction.on_commit(enqueue_moderation_cases)
+
+                messages.success(
+                    request,
+                    _("Queued %(case_count)d moderation cases for AI rerun.")
+                    % {"case_count": rerun_count},
+                )
+            return HttpResponseRedirect(request.get_full_path())
+
+        case = get_object_or_404(ProfileModerationCase, id=request.POST.get("case"))
         if action == "allow":
             case.allow(moderator=moderator)
             messages.success(request, _("Profile moderation case allowed."))
@@ -2657,6 +2764,21 @@ class InternalProfileModeration(InternalView, ListView):
         context["status_choices"] = ProfileModerationCase.STATUS_CHOICES
         context["decision_choices"] = ProfileModerationCase.DECISION_CHOICES
         context["category_choices"] = ProfileModerationCase.CATEGORY_CHOICES
+        cases = list(context["cases"])
+        context["cases"] = cases
+        context["bulk_disable_case_ids"] = [
+            case.id for case in cases if case.user.is_active
+        ]
+        context["bulk_disable_user_count"] = len(
+            {case.user_id for case in cases if case.user.is_active}
+        )
+        context["bulk_rerun_case_ids"] = [
+            case.id
+            for case in cases
+            if case.status == ProfileModerationCase.STATUS_PENDING
+            and case.decision == ProfileModerationCase.DECISION_REVIEW
+            and case.is_automated
+        ]
 
         query_params = self.request.GET.copy()
         if "page" in query_params:

@@ -1,8 +1,9 @@
 from datetime import timedelta
 from io import StringIO
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+from celery.exceptions import Retry
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -23,10 +24,13 @@ from judge.models import (
 )
 from judge.models.profile import get_profile_public_identity
 from judge.tasks.username_moderation import (
+    PROFILE_ABOUT_MODERATION_SYSTEM_PROMPT,
+    PROFILE_MODERATION_RETRY_DELAYS,
     USERNAME_MODERATION_SYSTEM_PROMPT,
     moderate_profile_case_task,
     moderate_username_task,
     parse_username_moderation_response,
+    retry_or_mark_profile_moderation_failure,
 )
 from llm_service import config as llm_config
 
@@ -62,6 +66,16 @@ class UsernameModerationTaskTest(TestCase):
         self.assertIn('"bettercoder"', USERNAME_MODERATION_SYSTEM_PROMPT)
         self.assertIn('"alphabet"', USERNAME_MODERATION_SYSTEM_PROMPT)
         self.assertIn('"beta_test"', USERNAME_MODERATION_SYSTEM_PROMPT)
+
+    def test_profile_prompt_blocks_obvious_advertising_without_link_access(self):
+        self.assertIn(
+            "BLOCK obvious gambling or commercial spam",
+            PROFILE_ABOUT_MODERATION_SYSTEM_PROMPT,
+        )
+        self.assertIn(
+            "Do not choose REVIEW merely",
+            PROFILE_ABOUT_MODERATION_SYSTEM_PROMPT,
+        )
 
     def test_parse_username_moderation_json_response(self):
         result = parse_username_moderation_response(
@@ -132,6 +146,45 @@ class UsernameModerationTaskTest(TestCase):
         self.assertFalse(case.public_identity_hidden)
         self.assertEqual(case.status, UsernameModerationCase.STATUS_PENDING)
         self.assertEqual(case.decision, UsernameModerationCase.DECISION_REVIEW)
+
+    @override_settings(POE_API_KEY="test-key")
+    @patch("judge.tasks.username_moderation.LLMService.call_llm", return_value=None)
+    def test_empty_response_schedules_retry_without_creating_review(self, call_llm):
+        user = User.objects.create_user(username="retry_later")
+        Profile.objects.create(user=user, language=self.language)
+        case = UsernameModerationCase.objects.create(user=user, username=user.username)
+
+        with patch.object(
+            moderate_username_task, "retry", side_effect=Retry()
+        ) as retry:
+            with self.assertRaises(Retry):
+                moderate_username_task(case.id)
+
+        case.refresh_from_db()
+        self.assertEqual(case.decision, UsernameModerationCase.DECISION_PENDING)
+        self.assertEqual(case.category, UsernameModerationCase.CATEGORY_OTHER)
+        self.assertIsNone(case.confidence)
+        self.assertIn("retry 1 of 4 scheduled", case.reason)
+        retry.assert_called_once_with(countdown=PROFILE_MODERATION_RETRY_DELAYS[0])
+
+    def test_exhausted_retries_create_explicit_failed_review(self):
+        user = User.objects.create_user(username="retry_exhausted")
+        Profile.objects.create(user=user, language=self.language)
+        case = UsernameModerationCase.objects.create(user=user, username=user.username)
+        task = SimpleNamespace(
+            request=SimpleNamespace(retries=len(PROFILE_MODERATION_RETRY_DELAYS)),
+            retry=MagicMock(),
+        )
+
+        result = retry_or_mark_profile_moderation_failure(task, case, None)
+
+        case.refresh_from_db()
+        self.assertIn("error", result)
+        self.assertEqual(case.decision, UsernameModerationCase.DECISION_REVIEW)
+        self.assertEqual(case.category, UsernameModerationCase.CATEGORY_OTHER)
+        self.assertIsNone(case.confidence)
+        self.assertIn("failed after retry attempts", case.reason)
+        task.retry.assert_not_called()
 
     @patch(
         "judge.tasks.username_moderation.get_config", side_effect=ValueError("no key")
@@ -254,6 +307,69 @@ class UsernameModerationTaskTest(TestCase):
         self.assertEqual(case.decision, ProfileModerationCase.DECISION_ALLOW)
         self.assertFalse(case.public_identity_hidden)
         self.assertEqual(profile.get_public_username(), user.username)
+
+    @override_settings(POE_API_KEY="test-key")
+    @patch("judge.tasks.username_moderation.LLMService.call_llm")
+    def test_human_decision_during_ai_call_is_not_overwritten(self, call_llm):
+        user = User.objects.create_user(username="human_decision_user")
+        Profile.objects.create(user=user, language=self.language)
+        case = UsernameModerationCase.objects.create(user=user, username=user.username)
+
+        def disable_during_call(*args, **kwargs):
+            case.disable_user(hide_identity=True)
+            return (
+                '{"decision":"allow","category":"safe","confidence":0.99,'
+                '"reason":"Safe username"}'
+            )
+
+        call_llm.side_effect = disable_during_call
+
+        result = moderate_username_task(case.id)
+
+        user.refresh_from_db()
+        case.refresh_from_db()
+        self.assertEqual(result, {"skipped": True, "reason": "already reviewed"})
+        self.assertFalse(user.is_active)
+        self.assertEqual(case.decision, UsernameModerationCase.DECISION_BLOCK)
+        self.assertTrue(case.public_identity_hidden)
+
+    @override_settings(POE_API_KEY="test-key")
+    @patch("judge.tasks.username_moderation.LLMService.call_llm")
+    def test_about_change_during_ai_call_makes_case_stale(self, call_llm):
+        user = User.objects.create_user(username="about_changed_during_call")
+        profile = Profile.objects.create(
+            user=user,
+            language=self.language,
+            about="Old promotional profile text",
+        )
+        case = ProfileModerationCase.objects.create(
+            user=user,
+            target=ProfileModerationCase.TARGET_ABOUT,
+            username=user.username,
+            value_snapshot=profile.about,
+            source=ProfileModerationCase.SOURCE_PROFILE_EDIT,
+        )
+
+        def change_about_during_call(*args, **kwargs):
+            profile.about = "Updated safe profile text"
+            profile.save(update_fields=["about"])
+            return (
+                '{"decision":"block","category":"spam","confidence":0.99,'
+                '"reason":"Promotional profile"}'
+            )
+
+        call_llm.side_effect = change_about_during_call
+
+        result = moderate_profile_case_task(case.id)
+
+        user.refresh_from_db()
+        case.refresh_from_db()
+        self.assertEqual(
+            result, {"skipped": True, "reason": "stale profile self-description"}
+        )
+        self.assertTrue(user.is_active)
+        self.assertEqual(case.decision, ProfileModerationCase.DECISION_ALLOW)
+        self.assertFalse(case.public_identity_hidden)
 
 
 @override_settings(LANGUAGE_CODE="en")
@@ -519,6 +635,63 @@ class UsernameModerationInternalViewTest(TestCase):
         self.assertContains(response, "username-action-column")
         self.assertNotContains(response, "Reviewed")
 
+    def test_internal_page_offers_bulk_disable_for_active_users(self):
+        UsernameModerationCase.objects.create(
+            user=self.user,
+            username=self.user.username,
+            target=UsernameModerationCase.TARGET_ABOUT,
+            value_snapshot="Second case for the same user",
+            decision=UsernameModerationCase.DECISION_REVIEW,
+        )
+        self.client.login(username="admin", password="pw")
+
+        response = self.client.get(reverse("internal_username_moderation"))
+
+        self.assertContains(response, 'name="action" value="disable_page"')
+        self.assertContains(response, "Disable all active users on this page (1)")
+        self.assertEqual(len(response.context["bulk_disable_case_ids"]), 2)
+
+    def test_internal_page_offers_ai_rerun_only_for_needs_review_cases(self):
+        self.case.is_automated = True
+        self.case.save(update_fields=["is_automated", "updated_at"])
+        queued_user = User.objects.create_user(username="queued_case_user")
+        Profile.objects.create(user=queued_user, language=self.language)
+        UsernameModerationCase.objects.create(
+            user=queued_user,
+            username=queued_user.username,
+            decision=UsernameModerationCase.DECISION_PENDING,
+        )
+        self.client.login(username="admin", password="pw")
+
+        response = self.client.get(reverse("internal_username_moderation"))
+
+        self.assertContains(response, 'name="action" value="rerun_page"')
+        self.assertContains(response, "Rerun AI for Needs review on this page (1)")
+
+    def test_internal_page_distinguishes_ai_failure_from_scored_review(self):
+        self.case.is_automated = True
+        self.case.reason = "AI moderation returned an unparsable response."
+        self.case.save(update_fields=["is_automated", "reason", "updated_at"])
+        scored_user = User.objects.create_user(username="scored_review")
+        Profile.objects.create(user=scored_user, language=self.language)
+        UsernameModerationCase.objects.create(
+            user=scored_user,
+            username=scored_user.username,
+            decision=UsernameModerationCase.DECISION_REVIEW,
+            category=UsernameModerationCase.CATEGORY_SPAM,
+            confidence=0.62,
+            is_automated=True,
+        )
+        self.client.login(username="admin", password="pw")
+
+        response = self.client.get(reverse("internal_username_moderation"))
+
+        self.assertContains(response, '<span class="red">Error</span>', html=True)
+        self.assertContains(
+            response, '<span class="blue">Needs review</span>', html=True
+        )
+        self.assertContains(response, "62%")
+
     def test_disable_action_disables_and_hides_identity(self):
         self.client.login(username="admin", password="pw")
 
@@ -533,6 +706,148 @@ class UsernameModerationInternalViewTest(TestCase):
         self.assertFalse(self.user.is_active)
         self.assertTrue(self.case.public_identity_hidden)
         self.assertEqual(self.case.moderator, self.admin_profile)
+
+    def test_bulk_disable_disables_unique_active_users_and_resolves_page_cases(self):
+        duplicate_case = UsernameModerationCase.objects.create(
+            user=self.user,
+            username=self.user.username,
+            target=UsernameModerationCase.TARGET_ABOUT,
+            value_snapshot="Second case for the same user",
+            decision=UsernameModerationCase.DECISION_REVIEW,
+        )
+        second_user = User.objects.create_user(username="second_case_user")
+        second_profile = Profile.objects.create(
+            user=second_user, language=self.language
+        )
+        second_case = UsernameModerationCase.objects.create(
+            user=second_user,
+            username=second_user.username,
+            decision=UsernameModerationCase.DECISION_REVIEW,
+        )
+        unrelated_user = User.objects.create_user(username="unrelated_case_user")
+        Profile.objects.create(user=unrelated_user, language=self.language)
+        unrelated_case = UsernameModerationCase.objects.create(
+            user=unrelated_user,
+            username=unrelated_user.username,
+            decision=UsernameModerationCase.DECISION_REVIEW,
+        )
+        profile_identity = get_profile_public_identity(self.user.profile.id)
+        second_identity = get_profile_public_identity(second_profile.id)
+        self.assertTrue(profile_identity["is_active"])
+        self.assertTrue(second_identity["is_active"])
+        self.client.login(username="admin", password="pw")
+        url = reverse("internal_username_moderation") + "?decision=review"
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                url,
+                {
+                    "cases": [self.case.id, duplicate_case.id, second_case.id],
+                    "action": "disable_page",
+                },
+            )
+
+        self.assertRedirects(response, url, fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        second_user.refresh_from_db()
+        unrelated_user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+        self.assertFalse(second_user.is_active)
+        self.assertTrue(unrelated_user.is_active)
+        for case in (self.case, duplicate_case, second_case):
+            case.refresh_from_db()
+            self.assertEqual(case.status, UsernameModerationCase.STATUS_REVIEWED)
+            self.assertEqual(case.decision, UsernameModerationCase.DECISION_BLOCK)
+            self.assertTrue(case.public_identity_hidden)
+            self.assertEqual(case.moderator, self.admin_profile)
+        unrelated_case.refresh_from_db()
+        self.assertEqual(
+            unrelated_case.decision, UsernameModerationCase.DECISION_REVIEW
+        )
+        self.assertTrue(
+            get_profile_public_identity(self.user.profile.id)["public_identity_hidden"]
+        )
+        self.assertFalse(get_profile_public_identity(second_profile.id)["is_active"])
+
+    def test_bulk_disable_rejects_more_cases_than_one_page(self):
+        self.client.login(username="admin", password="pw")
+
+        response = self.client.post(
+            reverse("internal_username_moderation"),
+            {
+                "cases": list(range(1, 52)),
+                "action": "disable_page",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    @patch("judge.views.internal.moderate_profile_case_task.delay")
+    def test_ai_rerun_queues_only_pending_needs_review_cases(self, delay):
+        unrelated_user = User.objects.create_user(username="queued_unrelated_user")
+        Profile.objects.create(user=unrelated_user, language=self.language)
+        unrelated_case = UsernameModerationCase.objects.create(
+            user=unrelated_user,
+            username=unrelated_user.username,
+            decision=UsernameModerationCase.DECISION_REVIEW,
+            category=UsernameModerationCase.CATEGORY_SPAM,
+            confidence=0.75,
+        )
+        already_queued_user = User.objects.create_user(username="already_queued_user")
+        Profile.objects.create(user=already_queued_user, language=self.language)
+        already_queued_case = UsernameModerationCase.objects.create(
+            user=already_queued_user,
+            username=already_queued_user.username,
+            decision=UsernameModerationCase.DECISION_PENDING,
+        )
+        self.case.category = UsernameModerationCase.CATEGORY_GAMBLING
+        self.case.confidence = 0.8
+        self.case.raw_response = {"decision": "review"}
+        self.case.is_automated = True
+        self.case.save(
+            update_fields=[
+                "category",
+                "confidence",
+                "raw_response",
+                "is_automated",
+                "updated_at",
+            ]
+        )
+        self.client.login(username="admin", password="pw")
+        url = reverse("internal_username_moderation") + "?decision=review"
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                url,
+                {
+                    "cases": [
+                        self.case.id,
+                        self.case.id,
+                        unrelated_case.id,
+                        already_queued_case.id,
+                    ],
+                    "action": "rerun_page",
+                },
+            )
+
+        self.assertRedirects(response, url, fetch_redirect_response=False)
+        self.case.refresh_from_db()
+        self.assertEqual(self.case.decision, UsernameModerationCase.DECISION_PENDING)
+        self.assertEqual(self.case.category, UsernameModerationCase.CATEGORY_OTHER)
+        self.assertIsNone(self.case.confidence)
+        self.assertIsNone(self.case.raw_response)
+        self.assertIn("Queued for AI moderation rerun", self.case.reason)
+        delay.assert_called_once_with(self.case.id)
+        unrelated_case.refresh_from_db()
+        self.assertEqual(
+            unrelated_case.decision, UsernameModerationCase.DECISION_REVIEW
+        )
+        already_queued_case.refresh_from_db()
+        self.assertEqual(
+            already_queued_case.decision, UsernameModerationCase.DECISION_PENDING
+        )
 
     def test_allow_action_reviews_and_unhides_identity(self):
         self.case.public_identity_hidden = True
