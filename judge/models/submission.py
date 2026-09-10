@@ -78,7 +78,7 @@ class Submission(models.Model):
     date = models.DateTimeField(
         verbose_name=_("submission time"), auto_now_add=True, db_index=True
     )
-    time = models.FloatField(verbose_name=_("execution time"), null=True, db_index=True)
+    time = models.FloatField(verbose_name=_("execution time"), null=True)
     memory = models.FloatField(verbose_name=_("memory usage"), null=True)
     points = models.FloatField(
         verbose_name=_("points granted"), null=True, db_index=True
