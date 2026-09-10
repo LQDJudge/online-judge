@@ -506,9 +506,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
     def get_cached_instances(cls, *ids):
         # Prefetch cache data and filter out deleted problems
         cached_results = _get_problem.batch([(id,) for id in ids])
-        return [
-            cls(id=id) for id, result in zip(ids, cached_results) if result is not None
-        ]
+        return cls.instances_from_cached_results(ids, cached_results)
 
     @classmethod
     def prefetch_cache_i18n_name(cls, lang, *ids):

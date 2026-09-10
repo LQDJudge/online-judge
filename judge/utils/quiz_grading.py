@@ -8,8 +8,11 @@ import json
 import re
 from typing import Tuple
 
+from django.apps import apps
 from django.urls import reverse
 from django.utils import timezone
+
+from judge import event_poster as event
 
 
 def normalize_sa(s, case_sensitive=False):
@@ -38,7 +41,7 @@ def sa_exact_match(text, answers, case_sensitive=False):
     return any(normalized == normalize_sa(a, case_sensitive) for a in answers)
 
 
-def grade_multiple_choice(answer) -> Tuple[float, bool]:
+def grade_multiple_choice(answer, max_points=None) -> Tuple[float, bool]:
     """
     Grade MC/TF question - single correct choice.
 
@@ -48,8 +51,6 @@ def grade_multiple_choice(answer) -> Tuple[float, bool]:
     Returns:
         Tuple of (points_earned, is_correct)
     """
-    from judge.models.quiz import QuizQuestionAssignment
-
     question = answer.question
     correct_answers = question.correct_answers
 
@@ -61,19 +62,22 @@ def grade_multiple_choice(answer) -> Tuple[float, bool]:
 
     is_correct = selected_id == correct_id
 
-    # Get points from assignment
-    try:
-        assignment = QuizQuestionAssignment.objects.get(
-            quiz=answer.attempt.quiz, question=question
-        )
-        points = assignment.points if is_correct else 0
-    except QuizQuestionAssignment.DoesNotExist:
-        points = 1.0 if is_correct else 0  # Default fallback
+    if max_points is None:
+        try:
+            assignment_model = answer.attempt.quiz.quiz_questions.model
+            assignment = assignment_model.objects.get(
+                quiz=answer.attempt.quiz, question=question
+            )
+            max_points = assignment.points
+        except assignment_model.DoesNotExist:
+            max_points = 1.0
+
+    points = max_points if is_correct else 0
 
     return (points, is_correct)
 
 
-def grade_multiple_answer(answer) -> Tuple[float, bool]:
+def grade_multiple_answer(answer, max_points=None) -> Tuple[float, bool]:
     """
     Grade MA question using the configured grading strategy.
 
@@ -89,8 +93,6 @@ def grade_multiple_answer(answer) -> Tuple[float, bool]:
     Returns:
         Tuple of (points_earned, is_correct)
     """
-    from judge.models.quiz import QuizQuestionAssignment
-
     question = answer.question
     correct_answers = question.correct_answers
 
@@ -120,14 +122,15 @@ def grade_multiple_answer(answer) -> Tuple[float, bool]:
     total_correct = len(correct_ids)
     total_wrong = len(wrong_ids)
 
-    # Get max points from assignment
-    try:
-        assignment = QuizQuestionAssignment.objects.get(
-            quiz=answer.attempt.quiz, question=question
-        )
-        max_points = assignment.points
-    except QuizQuestionAssignment.DoesNotExist:
-        max_points = 1.0  # Default fallback
+    if max_points is None:
+        try:
+            assignment_model = answer.attempt.quiz.quiz_questions.model
+            assignment = assignment_model.objects.get(
+                quiz=answer.attempt.quiz, question=question
+            )
+            max_points = assignment.points
+        except assignment_model.DoesNotExist:
+            max_points = 1.0
 
     # Get grading strategy (default to all_or_nothing for backwards compatibility)
     strategy = (
@@ -173,7 +176,7 @@ def grade_multiple_answer(answer) -> Tuple[float, bool]:
     return (points, is_correct)
 
 
-def grade_short_answer(answer) -> Tuple[float, bool, bool]:
+def grade_short_answer(answer, max_points=None) -> Tuple[float, bool, bool]:
     """
     Grade SA question - match against patterns.
 
@@ -183,8 +186,6 @@ def grade_short_answer(answer) -> Tuple[float, bool, bool]:
     Returns:
         Tuple of (points_earned, is_correct, needs_manual_grading)
     """
-    from judge.models.quiz import QuizQuestionAssignment
-
     question = answer.question
     correct_answers = question.correct_answers
     text = (answer.answer or "").strip()
@@ -217,14 +218,17 @@ def grade_short_answer(answer) -> Tuple[float, bool, bool]:
             except re.error:
                 continue
 
-    # Get points from assignment
-    try:
-        assignment = QuizQuestionAssignment.objects.get(
-            quiz=answer.attempt.quiz, question=question
-        )
-        points = assignment.points if is_correct else 0
-    except QuizQuestionAssignment.DoesNotExist:
-        points = 1.0 if is_correct else 0  # Default fallback
+    if max_points is None:
+        try:
+            assignment_model = answer.attempt.quiz.quiz_questions.model
+            assignment = assignment_model.objects.get(
+                quiz=answer.attempt.quiz, question=question
+            )
+            max_points = assignment.points
+        except assignment_model.DoesNotExist:
+            max_points = 1.0
+
+    points = max_points if is_correct else 0
 
     # If correct, no manual review needed
     # If incorrect but has non-empty answer, flag for manual review
@@ -248,7 +252,7 @@ def grade_essay(answer) -> Tuple[float, bool, bool]:
     return (0, False, True)
 
 
-def grade_answer(answer) -> Tuple[float, bool, bool]:
+def grade_answer(answer, max_points=None) -> Tuple[float, bool, bool]:
     """
     Grade a single answer based on question type.
 
@@ -261,15 +265,15 @@ def grade_answer(answer) -> Tuple[float, bool, bool]:
     qtype = answer.question.question_type
 
     if qtype in ("MC", "TF"):
-        points, is_correct = grade_multiple_choice(answer)
+        points, is_correct = grade_multiple_choice(answer, max_points)
         return (points, is_correct, False)
 
     elif qtype == "MA":
-        points, is_correct = grade_multiple_answer(answer)
+        points, is_correct = grade_multiple_answer(answer, max_points)
         return (points, is_correct, False)
 
     elif qtype == "SA":
-        return grade_short_answer(answer)
+        return grade_short_answer(answer, max_points)
 
     elif qtype == "ES":
         return grade_essay(answer)
@@ -303,7 +307,7 @@ def auto_grade_answer(answer) -> bool:
     return True
 
 
-def auto_grade_quiz_attempt(attempt) -> float:
+def auto_grade_quiz_attempt(attempt, assignments=None, answers=None) -> float:
     """
     Auto-grade all answers in an attempt.
 
@@ -313,33 +317,48 @@ def auto_grade_quiz_attempt(attempt) -> float:
     Returns:
         Total score achieved
     """
+    if assignments is None:
+        assignments = list(attempt.quiz.quiz_questions.select_related("question"))
+    else:
+        assignments = list(assignments)
+
+    if answers is None:
+        answers = list(attempt.answers.select_related("question"))
+    else:
+        answers = list(answers)
+
+    assignment_points = {
+        assignment.question_id: assignment.points for assignment in assignments
+    }
+    graded_at = timezone.now()
     total_score = 0
 
-    for answer in attempt.answers.all():
+    for answer in answers:
         qtype = answer.question.question_type
+        max_points = assignment_points.get(answer.question_id, 1.0)
 
         if qtype in ("MC", "TF"):
-            points, is_correct = grade_multiple_choice(answer)
+            points, is_correct = grade_multiple_choice(answer, max_points)
             answer.points = points
             answer.is_correct = is_correct
             answer.partial_credit = 1.0 if is_correct else 0.0
-            answer.graded_at = timezone.now()
+            answer.graded_at = graded_at
 
         elif qtype == "MA":
-            points, is_correct = grade_multiple_answer(answer)
+            points, is_correct = grade_multiple_answer(answer, max_points)
             answer.points = points
             answer.is_correct = is_correct
             answer.partial_credit = 1.0 if is_correct else 0.0
-            answer.graded_at = timezone.now()
+            answer.graded_at = graded_at
 
         elif qtype == "SA":
-            points, is_correct, needs_manual = grade_short_answer(answer)
+            points, is_correct, needs_manual = grade_short_answer(answer, max_points)
             answer.points = points
             answer.is_correct = is_correct
             answer.partial_credit = 1.0 if is_correct else 0.0
             # Always mark as graded — wrong answers get 0 points,
             # teacher can manually adjust via grading dashboard if needed
-            answer.graded_at = timezone.now()
+            answer.graded_at = graded_at
 
         elif qtype == "ES":
             # Essay always needs manual grading
@@ -348,16 +367,15 @@ def auto_grade_quiz_attempt(attempt) -> float:
             answer.partial_credit = 0.0
             # Don't set graded_at - needs manual review
 
-        answer.save()
         total_score += answer.points
 
-    # Calculate max score from assignments
-    from judge.models.quiz import QuizQuestionAssignment
+    if answers:
+        attempt.answers.model.objects.bulk_update(
+            answers,
+            ["points", "is_correct", "partial_credit", "graded_at"],
+        )
 
-    max_score = 0
-    assignments = QuizQuestionAssignment.objects.filter(quiz=attempt.quiz)
-    for assignment in assignments:
-        max_score += assignment.points
+    max_score = sum(assignment.points for assignment in assignments)
 
     # Update attempt score and max_score
     attempt.score = total_score
@@ -369,11 +387,9 @@ def auto_grade_quiz_attempt(attempt) -> float:
         try:
             attempt.contest_participation.recompute_results()
             # Post ranking-update event for live scoreboard
-            from judge.models import Contest
-            from judge import event_poster as event
-
+            contest_model = apps.get_model("judge", "Contest")
             contest = attempt.contest_participation.contest
-            if contest.scoreboard_visibility == Contest.SCOREBOARD_VISIBLE:
+            if contest.scoreboard_visibility == contest_model.SCOREBOARD_VISIBLE:
                 event.post(
                     "contest_%s" % contest.key,
                     {"type": "ranking-update"},
@@ -382,9 +398,8 @@ def auto_grade_quiz_attempt(attempt) -> float:
             pass
 
     # Update best quiz attempt cache for course lesson grade tracking
-    from judge.models import BestQuizAttempt
-
-    BestQuizAttempt.update_from_attempt(attempt)
+    best_attempt_model = apps.get_model("judge", "BestQuizAttempt")
+    best_attempt_model.update_from_attempt(attempt)
 
     return total_score
 
@@ -399,12 +414,10 @@ def calculate_attempt_score(attempt) -> Tuple[float, float]:
     Returns:
         Tuple of (score, max_score)
     """
-    from judge.models.quiz import QuizQuestionAssignment
-
     total_score = 0
     max_score = 0
 
-    assignments = QuizQuestionAssignment.objects.filter(quiz=attempt.quiz)
+    assignments = attempt.quiz.quiz_questions.all()
     assignment_points = {a.question_id: a.points for a in assignments}
 
     for answer in attempt.answers.all():
@@ -421,8 +434,6 @@ def notify_graders_for_essay(attempt):
     Args:
         attempt: QuizAttempt instance
     """
-    from judge.models.notification import Notification, NotificationCategory
-
     # Check if there are essay questions that need grading
     has_essays = attempt.answers.filter(
         question__question_type="ES",
@@ -450,9 +461,10 @@ def notify_graders_for_essay(attempt):
     html_link = f'<a href="{grade_url}">{quiz.title}</a>'
 
     # Send notifications
-    Notification.objects.bulk_create_notifications(
+    notification_model = apps.get_model("judge", "Notification")
+    notification_model.objects.bulk_create_notifications(
         user_ids=list(grader_ids),
-        category=NotificationCategory.QUIZ_NEEDS_GRADING,
+        category="quiz_needs_grading",
         html_link=html_link,
         author=attempt.user,
         extra_data={

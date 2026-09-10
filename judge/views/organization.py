@@ -784,7 +784,11 @@ class OrganizationUsers(
         )
         if context["users"]:
             rank_map = build_profile_rank_map(
-                self.object_list, context["users"], self.order, self.all_sorts
+                self.object_list,
+                context["users"],
+                self.order,
+                self.all_sorts,
+                combine_counts=True,
             )
             context["users"] = [(rank_map[u.id], u) for u in context["users"]]
         else:

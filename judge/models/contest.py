@@ -4,7 +4,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
-from django.db.models import CASCADE, Q, Count, Max, Min
+from django.db.models import CASCADE, Q, Count, Exists, Max, Min, OuterRef
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -716,60 +716,78 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     @classmethod
     def get_visible_contests(cls, user, show_own_contests_only=False):
         if not user.is_authenticated:
-            return (
-                cls.objects.filter(
-                    is_visible=True,
-                    is_organization_private=False,
-                    is_private=False,
-                    is_in_course=False,
-                )
-                .defer("description")
-                .distinct()
-            )
+            return cls.objects.filter(
+                is_visible=True,
+                is_organization_private=False,
+                is_private=False,
+                is_in_course=False,
+            ).defer("description")
 
         queryset = cls.objects.defer("description")
         if (
-            not (
-                user.has_perm("judge.see_private_contest")
-                or user.has_perm("judge.edit_all_contest")
-            )
-            or show_own_contests_only
-        ):
-            q = Q(is_visible=True)
-            q &= (
-                Q(view_contest_scoreboard=user.profile)
-                | Q(
-                    is_organization_private=False,
-                    is_private=False,
-                    is_in_course=False,
-                )
-                | Q(
-                    is_organization_private=False,
-                    is_private=True,
-                    private_contestants=user.profile,
-                )
-                | Q(
-                    is_organization_private=True,
-                    is_private=False,
-                    organizations__in=user.profile.organizations.all(),
-                )
-                | Q(
-                    is_organization_private=True,
-                    is_private=True,
-                    organizations__in=user.profile.organizations.all(),
-                    private_contestants=user.profile,
-                )
-                | Q(
-                    is_in_course=True,
-                    course__course__courserole__user=user.profile,
-                )
-            )
+            user.has_perm("judge.see_private_contest")
+            or user.has_perm("judge.edit_all_contest")
+        ) and not show_own_contests_only:
+            return queryset
 
-            q |= Q(authors=user.profile)
-            q |= Q(curators=user.profile)
-            q |= Q(testers=user.profile)
-            queryset = queryset.filter(q)
-        return queryset.distinct()
+        profile = user.profile
+        scoreboard_access = Exists(
+            cls.view_contest_scoreboard.through.objects.filter(
+                contest_id=OuterRef("pk"), profile_id=profile.id
+            )
+        )
+        private_access = Exists(
+            cls.private_contestants.through.objects.filter(
+                contest_id=OuterRef("pk"), profile_id=profile.id
+            )
+        )
+        organization_access = Exists(
+            cls.organizations.through.objects.filter(
+                contest_id=OuterRef("pk"),
+                organization_id__in=profile.organizations.values("id"),
+            )
+        )
+        course_access = Exists(
+            cls.objects.filter(
+                pk=OuterRef("pk"),
+                course__course__courserole__user_id=profile.id,
+            )
+        )
+        author_access = Exists(
+            cls.authors.through.objects.filter(
+                contest_id=OuterRef("pk"), profile_id=profile.id
+            )
+        )
+        curator_access = Exists(
+            cls.curators.through.objects.filter(
+                contest_id=OuterRef("pk"), profile_id=profile.id
+            )
+        )
+        tester_access = Exists(
+            cls.testers.through.objects.filter(
+                contest_id=OuterRef("pk"), profile_id=profile.id
+            )
+        )
+
+        visible_scope = (
+            scoreboard_access
+            | Q(
+                is_organization_private=False,
+                is_private=False,
+                is_in_course=False,
+            )
+            | (Q(is_organization_private=False, is_private=True) & private_access)
+            | (Q(is_organization_private=True, is_private=False) & organization_access)
+            | (
+                Q(is_organization_private=True, is_private=True)
+                & organization_access
+                & private_access
+            )
+            | (Q(is_in_course=True) & course_access)
+        )
+        visibility = Q(is_visible=True) & visible_scope
+        visibility |= author_access | curator_access | tester_access
+        return queryset.filter(visibility)
 
     def rate(self):
         Rating.objects.filter(
@@ -1028,6 +1046,7 @@ class ContestProblem(ImmutableIdentityMixin, models.Model):
             raise ValidationError(_("Initial AC score cannot be less than points."))
 
     def save(self, *args, **kwargs):
+        recompute_participations = kwargs.pop("recompute_participations", True)
         self.validate_immutable_identity()
         self.full_clean()  # Validate before saving
         # Check if is_result_hidden changed
@@ -1052,8 +1071,9 @@ class ContestProblem(ImmutableIdentityMixin, models.Model):
             ContestSubmission.objects.filter(problem=self).exclude(
                 is_result_hidden=self.is_result_hidden
             ).update(is_result_hidden=self.is_result_hidden)
-            for participation in self.contest.users.filter(virtual__gte=0):
-                participation.recompute_results()
+            if recompute_participations:
+                for participation in self.contest.users.filter(virtual__gte=0):
+                    participation.recompute_results()
 
     save.alters_data = True
 

@@ -66,6 +66,66 @@ from judge.utils.views import (
     paginate_query_context,
 )
 from judge.utils.history import RevisionDiffMixin
+from judge.utils.quiz_grading import (
+    auto_grade_quiz_attempt,
+    notify_graders_for_essay,
+)
+
+
+def _save_submitted_quiz_answers(attempt, post_data, assignments):
+    """Persist a submitted answer set with query count independent of quiz size."""
+    assignments = list(assignments)
+    existing_answers = {
+        answer.question_id: answer
+        for answer in QuizAnswer.objects.filter(attempt=attempt)
+    }
+    now = timezone.now()
+    answers_to_create = []
+    answers_to_update = []
+
+    for assignment in assignments:
+        question = assignment.question
+        key = f"q_{question.id}"
+        answer = existing_answers.get(question.id)
+
+        if key in post_data:
+            if question.question_type == "MA":
+                answer_text = json.dumps(post_data.getlist(key))
+            else:
+                answer_text = post_data.get(key, "")
+        elif answer is not None:
+            # Answers may already have been saved through the AJAX endpoint.
+            answer.question = question
+            continue
+        else:
+            answer_text = ""
+
+        if answer is None:
+            answers_to_create.append(
+                QuizAnswer(
+                    attempt=attempt,
+                    question=question,
+                    answer=answer_text,
+                    answered_at=now,
+                )
+            )
+        else:
+            answer.question = question
+            if answer.answer != answer_text:
+                answer.answer = answer_text
+                answer.answered_at = now
+                answers_to_update.append(answer)
+
+    if answers_to_create:
+        QuizAnswer.objects.bulk_create(answers_to_create)
+    if answers_to_update:
+        QuizAnswer.objects.bulk_update(
+            answers_to_update,
+            ["answer", "answered_at"],
+        )
+
+    return list(QuizAnswer.objects.filter(attempt=attempt).select_related("question"))
+
 
 # =============================================================================
 # Permission Mixins
@@ -2150,47 +2210,52 @@ class QuizSaveAnswer(LoginRequiredMixin, View):
         question_id = data.get("question_id")
         answer = data.get("answer", "")
 
-        try:
-            attempt = QuizAttempt.objects.select_related("contest_participation").get(
-                id=attempt_id, user=request.profile, is_submitted=False
+        with transaction.atomic():
+            try:
+                attempt = (
+                    QuizAttempt.objects.select_for_update()
+                    .select_related("contest_participation")
+                    .get(id=attempt_id, user=request.profile, is_submitted=False)
+                )
+            except QuizAttempt.DoesNotExist:
+                return JsonResponse({"error": "Attempt not found"}, status=404)
+
+            # Server-side time enforcement: quiz time limit
+            if attempt.is_expired():
+                attempt.auto_submit()
+                return JsonResponse(
+                    {"error": "Time expired", "expired": True}, status=400
+                )
+
+            # Server-side time enforcement: contest time
+            if attempt.contest_participation:
+                participation = attempt.contest_participation
+                if participation.ended:
+                    attempt.auto_submit()
+                    return JsonResponse(
+                        {"error": "Contest ended", "expired": True}, status=400
+                    )
+                time_remaining = participation.time_remaining
+                if time_remaining is None or time_remaining.total_seconds() <= 0:
+                    attempt.auto_submit()
+                    return JsonResponse(
+                        {"error": "Contest time ended", "expired": True}, status=400
+                    )
+
+            try:
+                question = QuizQuestion.objects.get(id=question_id)
+                if not QuizQuestionAssignment.objects.filter(
+                    quiz=attempt.quiz, question=question
+                ).exists():
+                    return JsonResponse({"error": "Invalid question"}, status=400)
+            except QuizQuestion.DoesNotExist:
+                return JsonResponse({"error": "Question not found"}, status=404)
+
+            quiz_answer, created = QuizAnswer.objects.update_or_create(
+                attempt=attempt,
+                question=question,
+                defaults={"answer": answer, "answered_at": timezone.now()},
             )
-        except QuizAttempt.DoesNotExist:
-            return JsonResponse({"error": "Attempt not found"}, status=404)
-
-        # Server-side time enforcement: quiz time limit
-        if attempt.is_expired():
-            attempt.auto_submit()
-            return JsonResponse({"error": "Time expired", "expired": True}, status=400)
-
-        # Server-side time enforcement: contest time
-        if attempt.contest_participation:
-            participation = attempt.contest_participation
-            if participation.ended:
-                attempt.auto_submit()
-                return JsonResponse(
-                    {"error": "Contest ended", "expired": True}, status=400
-                )
-            time_remaining = participation.time_remaining
-            if time_remaining is None or time_remaining.total_seconds() <= 0:
-                attempt.auto_submit()
-                return JsonResponse(
-                    {"error": "Contest time ended", "expired": True}, status=400
-                )
-
-        try:
-            question = QuizQuestion.objects.get(id=question_id)
-            if not QuizQuestionAssignment.objects.filter(
-                quiz=attempt.quiz, question=question
-            ).exists():
-                return JsonResponse({"error": "Invalid question"}, status=400)
-        except QuizQuestion.DoesNotExist:
-            return JsonResponse({"error": "Question not found"}, status=404)
-
-        quiz_answer, created = QuizAnswer.objects.update_or_create(
-            attempt=attempt,
-            question=question,
-            defaults={"answer": answer, "answered_at": timezone.now()},
-        )
 
         return JsonResponse(
             {
@@ -2210,85 +2275,49 @@ class QuizSubmit(LoginRequiredMixin, View):
     """
 
     def post(self, request, *args, **kwargs):
-        attempt = get_object_or_404(
-            QuizAttempt.objects.select_related("contest_participation"),
-            pk=kwargs["attempt_id"],
-            quiz__code=kwargs["code"],
-            user=request.profile,
-        )
-
-        if attempt.is_submitted:
-            messages.warning(request, _("This attempt was already submitted."))
-            return redirect(
-                "quiz_result", code=attempt.quiz.code, attempt_id=attempt.id
+        with transaction.atomic():
+            attempt = get_object_or_404(
+                QuizAttempt.objects.select_for_update().select_related(
+                    "contest_participation"
+                ),
+                pk=kwargs["attempt_id"],
+                quiz__code=kwargs["code"],
+                user=request.profile,
             )
 
-        # Check if time has expired - still process but note it
-        time_expired = attempt.is_expired()
-        contest_expired = False
-        if attempt.contest_participation:
-            participation = attempt.contest_participation
-            if participation.ended:
-                contest_expired = True
-            else:
-                time_remaining = participation.time_remaining
-                if time_remaining is None or time_remaining.total_seconds() <= 0:
+            if attempt.is_submitted:
+                messages.warning(request, _("This attempt was already submitted."))
+                return redirect(
+                    "quiz_result", code=attempt.quiz.code, attempt_id=attempt.id
+                )
+
+            # Check if time has expired - still process but note it
+            time_expired = attempt.is_expired()
+            contest_expired = False
+            if attempt.contest_participation:
+                participation = attempt.contest_participation
+                if participation.ended:
                     contest_expired = True
+                else:
+                    time_remaining = participation.time_remaining
+                    if time_remaining is None or time_remaining.total_seconds() <= 0:
+                        contest_expired = True
 
-        with transaction.atomic():
             # Get all questions in this quiz
-            quiz_questions = attempt.quiz.quiz_questions.select_related("question")
-            answered_question_ids = set()
-
-            # Process form data and create/update answers
-            for key, value in request.POST.items():
-                if key.startswith("q_"):
-                    try:
-                        question_id = int(key[2:])  # Remove "q_" prefix
-                        question = QuizQuestion.objects.get(pk=question_id)
-                        # Verify question belongs to this quiz
-                        if not QuizQuestionAssignment.objects.filter(
-                            quiz=attempt.quiz, question=question
-                        ).exists():
-                            continue
-                        answered_question_ids.add(question_id)
-
-                        # For checkboxes (multiple answer), collect all values
-                        if question.question_type == "MA":
-                            values = request.POST.getlist(key)
-                            answer_text = json.dumps(values)
-                        else:
-                            answer_text = value
-
-                        # Create or update the answer
-                        answer, created = QuizAnswer.objects.update_or_create(
-                            attempt=attempt,
-                            question=question,
-                            defaults={"answer": answer_text},
-                        )
-                    except (ValueError, QuizQuestion.DoesNotExist):
-                        continue
-
-            # Create empty answers for unanswered questions
-            for assignment in quiz_questions:
-                if assignment.question_id not in answered_question_ids:
-                    QuizAnswer.objects.get_or_create(
-                        attempt=attempt,
-                        question=assignment.question,
-                        defaults={"answer": ""},
-                    )
+            quiz_questions = list(
+                attempt.quiz.quiz_questions.select_related("question")
+            )
+            answers = _save_submitted_quiz_answers(
+                attempt, request.POST, quiz_questions
+            )
 
             attempt.end_time = timezone.now()
             attempt.is_submitted = True
             attempt.save(update_fields=["end_time", "is_submitted"])
 
-            # Auto-grade all answers using utility function
-            from judge.utils.quiz_grading import (
-                auto_grade_quiz_attempt,
-                notify_graders_for_essay,
+            auto_grade_quiz_attempt(
+                attempt, assignments=quiz_questions, answers=answers
             )
-
-            auto_grade_quiz_attempt(attempt)
 
             # Notify graders if there are essay questions that need grading
             notify_graders_for_essay(attempt)
@@ -2427,17 +2456,29 @@ class QuizUploadFile(LoginRequiredMixin, View):
         except QuizQuestion.DoesNotExist:
             return JsonResponse({"error": "Question not found"}, status=404)
 
-        # Get or create the answer
-        answer, created = QuizAnswer.objects.get_or_create(
-            attempt=attempt, question=question, defaults={"answer": ""}
-        )
+        with transaction.atomic():
+            # Serialize answer creation with autosave and final submission. The
+            # attempt may have been submitted while the upload was validated.
+            try:
+                attempt = QuizAttempt.objects.select_for_update().get(
+                    id=attempt.id,
+                    user=request.profile,
+                    is_submitted=False,
+                )
+            except QuizAttempt.DoesNotExist:
+                return JsonResponse({"error": "Attempt not found"}, status=404)
 
-        # Create the file attachment (filename is randomized in quiz_answer_file_path)
-        file_obj = QuizAnswerFile.objects.create(
-            answer=answer,
-            file=uploaded_file,
-            original_filename=original_filename,
-        )
+            # Get or create the answer
+            answer, created = QuizAnswer.objects.get_or_create(
+                attempt=attempt, question=question, defaults={"answer": ""}
+            )
+
+            # Create the attachment (filename is randomized by the upload path).
+            file_obj = QuizAnswerFile.objects.create(
+                answer=answer,
+                file=uploaded_file,
+                original_filename=original_filename,
+            )
 
         return JsonResponse(
             {
@@ -3875,68 +3916,42 @@ class LessonQuizSubmit(LessonQuizMixin, LoginRequiredMixin, View):
     """Submit quiz in lesson context."""
 
     def post(self, request, *args, **kwargs):
-        attempt = get_object_or_404(
-            QuizAttempt.objects.select_related("contest_participation"),
-            pk=kwargs["attempt_id"],
-            quiz__code=kwargs["code"],
-            user=request.profile,
-        )
-
-        self.validate_attempt_context(attempt)
-
-        if attempt.is_submitted:
-            messages.warning(request, _("This attempt was already submitted."))
-            return redirect(
-                "lesson_quiz_result",
-                **self.get_lesson_url_kwargs(attempt_id=attempt.id),
+        with transaction.atomic():
+            attempt = get_object_or_404(
+                QuizAttempt.objects.select_for_update().select_related(
+                    "contest_participation"
+                ),
+                pk=kwargs["attempt_id"],
+                quiz__code=kwargs["code"],
+                user=request.profile,
             )
 
-        # Reuse the core submission logic from QuizSubmit
-        time_expired = attempt.is_expired()
+            self.validate_attempt_context(attempt)
 
-        with transaction.atomic():
-            quiz_questions = attempt.quiz.quiz_questions.select_related("question")
-            answered_question_ids = set()
+            if attempt.is_submitted:
+                messages.warning(request, _("This attempt was already submitted."))
+                return redirect(
+                    "lesson_quiz_result",
+                    **self.get_lesson_url_kwargs(attempt_id=attempt.id),
+                )
 
-            for key, value in request.POST.items():
-                if key.startswith("q_"):
-                    try:
-                        question_id = int(key[2:])
-                        question = QuizQuestion.objects.get(pk=question_id)
-                        answered_question_ids.add(question_id)
+            # Reuse the core submission logic from QuizSubmit
+            time_expired = attempt.is_expired()
 
-                        if question.question_type == "MA":
-                            values = request.POST.getlist(key)
-                            answer_text = json.dumps(values)
-                        else:
-                            answer_text = value
-
-                        QuizAnswer.objects.update_or_create(
-                            attempt=attempt,
-                            question=question,
-                            defaults={"answer": answer_text},
-                        )
-                    except (ValueError, QuizQuestion.DoesNotExist):
-                        continue
-
-            for assignment in quiz_questions:
-                if assignment.question_id not in answered_question_ids:
-                    QuizAnswer.objects.get_or_create(
-                        attempt=attempt,
-                        question=assignment.question,
-                        defaults={"answer": ""},
-                    )
+            quiz_questions = list(
+                attempt.quiz.quiz_questions.select_related("question")
+            )
+            answers = _save_submitted_quiz_answers(
+                attempt, request.POST, quiz_questions
+            )
 
             attempt.end_time = timezone.now()
             attempt.is_submitted = True
             attempt.save(update_fields=["end_time", "is_submitted"])
 
-            from judge.utils.quiz_grading import (
-                auto_grade_quiz_attempt,
-                notify_graders_for_essay,
+            auto_grade_quiz_attempt(
+                attempt, assignments=quiz_questions, answers=answers
             )
-
-            auto_grade_quiz_attempt(attempt)
             notify_graders_for_essay(attempt)
 
         session_key = f"quiz_attempt_{attempt.quiz.code}"

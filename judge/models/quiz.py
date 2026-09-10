@@ -2,7 +2,7 @@ import os
 import uuid
 import json
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
@@ -10,6 +10,7 @@ from judge.models.profile import Profile
 from judge.models.contest import ContestParticipation
 from judge.models.course import CourseLesson, Course
 from judge.utils.identity import ImmutableIdentityMixin
+from judge.utils.quiz_grading import auto_grade_answer, auto_grade_quiz_attempt
 
 MAX_QUESTION_POINTS = 1000
 MAX_QUIZ_TIME_LIMIT_MINUTES = 7 * 24 * 60
@@ -860,22 +861,29 @@ class QuizAttempt(models.Model):
         Auto-submit this attempt when time expires.
         Grades all answers and marks the attempt as submitted.
         """
-        if self.is_submitted:
-            return
+        with transaction.atomic():
+            attempt = (
+                type(self)
+                .objects.select_for_update()
+                .select_related("contest_participation")
+                .get(pk=self.pk)
+            )
+            if attempt.is_submitted:
+                self.is_submitted = True
+                self.end_time = attempt.end_time
+                self.score = attempt.score
+                self.max_score = attempt.max_score
+                return
 
-        self.is_submitted = True
-        self.end_time = timezone.now()
-        self.save(update_fields=["is_submitted", "end_time"])
+            attempt.is_submitted = True
+            attempt.end_time = timezone.now()
+            attempt.save(update_fields=["is_submitted", "end_time"])
+            auto_grade_quiz_attempt(attempt)
 
-        # Auto-grade all answers
-        for answer in self.answers.all():
-            answer.auto_grade()
-
-        # Calculate the final score
-        self.calculate_score()
-
-        # Update best quiz attempt cache for course lesson grade tracking
-        BestQuizAttempt.update_from_attempt(self)
+            self.is_submitted = attempt.is_submitted
+            self.end_time = attempt.end_time
+            self.score = attempt.score
+            self.max_score = attempt.max_score
 
 
 class QuizAnswer(models.Model):
@@ -966,8 +974,6 @@ class QuizAnswer(models.Model):
             True if the answer was auto-graded (even if incorrect)
             False if the answer cannot be auto-graded (e.g., essay)
         """
-        from judge.utils.quiz_grading import auto_grade_answer
-
         return auto_grade_answer(self)
 
     def get_formatted_answer(self):

@@ -83,6 +83,16 @@ class ContestTagAdmin(admin.ModelAdmin):
 
 
 class ContestProblemInlineForm(ModelForm):
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            # ContestAdmin.save_related() schedules one rescore after all inline
+            # rows are saved. Avoid recomputing every participation once here and
+            # then repeating the same work in the background task.
+            instance.save(recompute_participations=False)
+            self.save_m2m()
+        return instance
+
     class Meta:
         widgets = {
             "problem": AdminHeavySelect2Widget(data_view="problem_select2"),

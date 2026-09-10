@@ -261,9 +261,7 @@ class Organization(CacheableModel):
     def get_cached_instances(cls, *ids):
         # Prefetch cache data and filter out deleted organizations
         cached_results = _get_organization.batch([(id,) for id in ids])
-        return [
-            cls(id=id) for id, result in zip(ids, cached_results) if result is not None
-        ]
+        return cls.instances_from_cached_results(ids, cached_results)
 
     def is_admin(self, profile):
         return profile.id in self.get_admin_ids()
@@ -434,9 +432,7 @@ class Profile(CacheableModel):
     def get_cached_instances(cls, *ids):
         # Prefetch cache data and filter out deleted profiles
         cached_results = _get_profile.batch([(id,) for id in ids])
-        return [
-            cls(id=id) for id, result in zip(ids, cached_results) if result is not None
-        ]
+        return cls.instances_from_cached_results(ids, cached_results)
 
     @classmethod
     def prefetch_cache_about(cls, *ids):

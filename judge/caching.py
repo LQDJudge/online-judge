@@ -183,6 +183,22 @@ class CacheableModel(models.Model):
     def dirty_cache(cls, *ids):
         raise NotImplementedError("Subclasses must implement dirty_cache()")
 
+    @classmethod
+    def instances_from_cached_results(cls, ids, cached_results, filter_missing=True):
+        """Build lightweight model instances from results already fetched in a batch."""
+        instances = []
+        for object_id, cached_dict in zip(ids, cached_results):
+            if cached_dict is None and filter_missing:
+                continue
+
+            instance = cls(id=object_id)
+            if cached_dict is not None:
+                # Keep the exact object returned by the cache. It is treated as read-only
+                # by CacheableModel and avoids both a copy and another cache lookup.
+                instance._cached_dict = cached_dict
+            instances.append(instance)
+        return instances
+
     def get_cached_value(self, key, default_value=None):
         """Get a value from the cached dictionary."""
         if not hasattr(self, "_cached_dict") or self._cached_dict is None:

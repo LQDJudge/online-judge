@@ -1,7 +1,9 @@
-from django.test import TestCase
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
+from django.test import TestCase
 
 from judge.models import (
     Organization,
@@ -218,6 +220,37 @@ class CacheableModelTestCase(TestCase):
 
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0].id, problem1_id)
+
+    def test_batch_results_hydrate_instances_without_follow_up_cache_gets(self):
+        org = Organization.objects.create(
+            name="Hydrated Org",
+            slug="hydrated-org",
+            short_name="HO",
+            about="Hydrated organization",
+            registrant=self.profile,
+            is_open=True,
+        )
+        problem = Problem.objects.create(
+            code="hydrated_problem",
+            name="Hydrated Problem",
+            group=self.problem_group,
+            time_limit=1.0,
+            memory_limit=262144,
+            points=5.0,
+        )
+
+        cached_org = Organization.get_cached_instances(org.id)[0]
+        cached_profile = Profile.get_cached_instances(self.profile.id)[0]
+        cached_problem = Problem.get_cached_instances(problem.id)[0]
+
+        with patch("judge.caching.cache.get") as cache_get:
+            self.assertEqual(cached_org.name, "Hydrated Org")
+            self.assertEqual(cached_org.slug, "hydrated-org")
+            self.assertEqual(cached_profile.username, "test_cache_user")
+            self.assertEqual(cached_problem.name, "Hydrated Problem")
+            self.assertEqual(cached_problem.code, "hydrated_problem")
+
+        cache_get.assert_not_called()
 
 
 class OrganizationCacheInvalidationTestCase(TestCase):

@@ -264,8 +264,10 @@ class Room(CacheableModel):
     @classmethod
     def get_cached_instances(cls, *ids):
         # Prefetch cache data
-        _get_room.batch([(id,) for id in ids])
-        return [cls(id=id) for id in ids]
+        cached_results = _get_room.batch([(id,) for id in ids])
+        return cls.instances_from_cached_results(
+            ids, cached_results, filter_missing=False
+        )
 
     @classmethod
     def dirty_cache(cls, *ids):

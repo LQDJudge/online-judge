@@ -4,8 +4,11 @@ Quiz System Unit Tests
 Tests for quiz grading, attempts, and workflows.
 """
 
-from django.test import TestCase, TransactionTestCase
 from django.contrib.auth.models import User
+from django.db import connection
+from django.http import QueryDict
+from django.test import TestCase, TransactionTestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
@@ -32,6 +35,7 @@ from judge.utils.quiz_grading import (
     auto_grade_quiz_attempt,
     calculate_attempt_score,
 )
+from judge.views.quiz import _save_submitted_quiz_answers
 
 
 class QuizQuestionTestCase(TestCase):
@@ -1118,6 +1122,148 @@ class QuizAttemptTestCase(TestCase):
         attempt.refresh_from_db()
         self.assertEqual(float(attempt.score), 15.0)  # 5 + 10
         self.assertEqual(float(attempt.max_score), 15.0)
+
+    def test_auto_grade_query_count_does_not_scale_per_question(self):
+        attempt = QuizAttempt.objects.create(
+            user=self.profile, quiz=self.quiz, attempt_number=1
+        )
+        extra_questions = []
+        for index in range(20):
+            extra_questions.append(
+                QuizQuestion.objects.create(
+                    question_type="MC",
+                    title=f"Bulk question {index}",
+                    content="Choose b",
+                    choices=[
+                        {"id": "a", "text": "Wrong"},
+                        {"id": "b", "text": "Correct"},
+                    ],
+                    correct_answers={"answers": "b"},
+                )
+            )
+        QuizQuestionAssignment.objects.bulk_create(
+            [
+                QuizQuestionAssignment(
+                    quiz=self.quiz, question=question, points=1, order=index + 3
+                )
+                for index, question in enumerate(extra_questions)
+            ]
+        )
+        QuizAnswer.objects.bulk_create(
+            [
+                QuizAnswer(attempt=attempt, question=question, answer="b")
+                for question in [self.mc_question, self.sa_question, *extra_questions]
+            ]
+        )
+
+        with CaptureQueriesContext(connection) as queries:
+            auto_grade_quiz_attempt(attempt)
+
+        self.assertLessEqual(len(queries), 8)
+        self.assertEqual(QuizAnswer.objects.filter(attempt=attempt).count(), 22)
+
+    def test_submission_answer_batch_preserves_ajax_answers(self):
+        attempt = QuizAttempt.objects.create(
+            user=self.profile, quiz=self.quiz, attempt_number=1
+        )
+        QuizAnswer.objects.create(
+            attempt=attempt, question=self.mc_question, answer="b"
+        )
+        post_data = QueryDict("", mutable=True)
+        post_data[f"q_{self.sa_question.id}"] = "5"
+        post_data["q_999999"] = "invalid"
+        assignments = list(
+            self.quiz.quiz_questions.select_related("question").order_by("order")
+        )
+
+        with CaptureQueriesContext(connection) as queries:
+            answers = _save_submitted_quiz_answers(attempt, post_data, assignments)
+
+        self.assertLessEqual(len(queries), 3)
+        self.assertEqual(
+            {answer.question_id: answer.answer for answer in answers},
+            {
+                self.mc_question.id: "b",
+                self.sa_question.id: "5",
+            },
+        )
+
+    def test_submit_locks_attempt_and_grades_posted_answers(self):
+        attempt = QuizAttempt.objects.create(
+            user=self.profile, quiz=self.quiz, attempt_number=1
+        )
+        self.client.force_login(self.user)
+
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.post(
+                reverse(
+                    "quiz_submit",
+                    kwargs={"code": self.quiz.code, "attempt_id": attempt.id},
+                ),
+                {
+                    f"q_{self.mc_question.id}": "b",
+                    f"q_{self.sa_question.id}": "5",
+                },
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(any("FOR UPDATE" in query["sql"].upper() for query in queries))
+        attempt.refresh_from_db()
+        self.assertTrue(attempt.is_submitted)
+        self.assertEqual(float(attempt.score), 15.0)
+
+    def test_auto_submit_query_count_does_not_scale_per_answer(self):
+        attempt = QuizAttempt.objects.create(
+            user=self.profile, quiz=self.quiz, attempt_number=1
+        )
+        extra_questions = QuizQuestion.objects.bulk_create(
+            [
+                QuizQuestion(
+                    question_type="MC",
+                    title=f"Auto-submit question {index}",
+                    content="Choose b",
+                    choices=[
+                        {"id": "a", "text": "Wrong"},
+                        {"id": "b", "text": "Correct"},
+                    ],
+                    correct_answers={"answers": "b"},
+                )
+                for index in range(20)
+            ]
+        )
+        QuizQuestionAssignment.objects.bulk_create(
+            [
+                QuizQuestionAssignment(
+                    quiz=self.quiz,
+                    question=question,
+                    points=1,
+                    order=index + 3,
+                )
+                for index, question in enumerate(extra_questions)
+            ]
+        )
+        QuizAnswer.objects.bulk_create(
+            [
+                QuizAnswer(
+                    attempt=attempt,
+                    question=question,
+                    answer="5" if question == self.sa_question else "b",
+                )
+                for question in [
+                    self.mc_question,
+                    self.sa_question,
+                    *extra_questions,
+                ]
+            ]
+        )
+
+        with CaptureQueriesContext(connection) as queries:
+            attempt.auto_submit()
+
+        self.assertLessEqual(len(queries), 10)
+        attempt.refresh_from_db()
+        self.assertTrue(attempt.is_submitted)
+        self.assertEqual(float(attempt.score), 35.0)
 
     def test_calculate_attempt_score(self):
         """Test calculating attempt score"""

@@ -317,6 +317,7 @@ class Comment(CacheableModel, MPTTModel):
             if result is None:
                 continue
             instance = cls(id=comment_id)
+            instance._cached_dict = result
             instances.append(instance)
             if result.get("author_id"):
                 author_ids.add(result["author_id"])

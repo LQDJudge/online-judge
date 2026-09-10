@@ -12,6 +12,7 @@ from judge.models import (
     Contest,
     ContestParticipation,
     ContestProblem,
+    Course,
     Language,
     OfficialContest,
     OfficialContestCategory,
@@ -19,8 +20,10 @@ from judge.models import (
     Problem,
     ProblemGroup,
     Profile,
+    Organization,
     Submission,
 )
+from judge.models.course import CourseContest, CourseRole, RoleInCourse
 from judge.views.contests import ContestList
 
 
@@ -368,3 +371,106 @@ class ContestListSemanticsTest(TestCase):
             official_response.context_data["contest_progress"],
         )
         self.assertContains(official_response, "Progress:", count=1)
+
+
+class ContestVisibilityQueryTest(TestCase):
+    fixtures = ["language_small"]
+
+    def setUp(self):
+        self.user = User.objects.create_user("visible-contest-user", password="pw")
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user, defaults={"language": Language.objects.first()}
+        )
+        self.other = User.objects.create_user("visible-contest-other", password="pw")
+        self.other_profile, _ = Profile.objects.get_or_create(
+            user=self.other, defaults={"language": Language.objects.first()}
+        )
+        now = timezone.now()
+        self.contest_defaults = {
+            "start_time": now - timedelta(hours=1),
+            "end_time": now + timedelta(hours=1),
+            "is_visible": True,
+        }
+
+    def make_contest(self, key, **kwargs):
+        defaults = dict(self.contest_defaults)
+        defaults.update(kwargs)
+        return Contest.objects.create(key=key, name=key, **defaults)
+
+    def visible_ids(self, user, show_own=False):
+        return set(
+            Contest.get_visible_contests(user, show_own).values_list("id", flat=True)
+        )
+
+    def test_public_private_and_scoreboard_visibility(self):
+        public = self.make_contest("exists-public")
+        private = self.make_contest("exists-private", is_private=True)
+        scoreboard = self.make_contest("exists-scoreboard", is_private=True)
+        private.private_contestants.add(self.profile)
+        scoreboard.view_contest_scoreboard.add(self.profile)
+
+        self.assertSetEqual(
+            self.visible_ids(self.user), {public.id, private.id, scoreboard.id}
+        )
+        self.assertSetEqual(self.visible_ids(self.other), {public.id})
+
+    def test_organization_and_course_visibility(self):
+        organization = Organization.objects.create(
+            name="Visibility Org",
+            slug="visibility-org",
+            short_name="VO",
+            registrant=self.profile,
+        )
+        organization.members.add(self.profile)
+        organization_contest = self.make_contest(
+            "exists-org", is_organization_private=True
+        )
+        organization_contest.organizations.add(organization)
+
+        course = Course.objects.create(
+            name="Visibility Course", slug="visibility-course", about=""
+        )
+        CourseRole.objects.create(
+            course=course, user=self.profile, role=RoleInCourse.STUDENT
+        )
+        course_contest = self.make_contest("exists-course", is_in_course=True)
+        CourseContest.objects.create(course=course, contest=course_contest, points=0)
+
+        self.assertSetEqual(
+            self.visible_ids(self.user),
+            {organization_contest.id, course_contest.id},
+        )
+        self.assertFalse(self.visible_ids(self.other))
+
+    def test_editors_see_invisible_contests(self):
+        authored = self.make_contest("exists-authored", is_visible=False)
+        curated = self.make_contest("exists-curated", is_visible=False)
+        tested = self.make_contest("exists-tested", is_visible=False)
+        authored.authors.add(self.profile)
+        curated.curators.add(self.profile)
+        tested.testers.add(self.profile)
+
+        self.assertSetEqual(
+            self.visible_ids(self.user), {authored.id, curated.id, tested.id}
+        )
+
+    def test_superuser_show_own_uses_normal_visibility_rules(self):
+        self.user.is_superuser = True
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_superuser", "is_staff"])
+        public = self.make_contest("exists-super-public")
+        inaccessible = self.make_contest(
+            "exists-super-inaccessible", is_visible=False, is_private=True
+        )
+
+        self.assertIn(inaccessible.id, self.visible_ids(self.user))
+        self.assertSetEqual(self.visible_ids(self.user, show_own=True), {public.id})
+
+    def test_privileged_user_without_profile_uses_fast_path(self):
+        privileged = User.objects.create_superuser(
+            "profileless-contest-admin", password="pw"
+        )
+        public = self.make_contest("exists-profileless-admin")
+        self.assertFalse(Profile.objects.filter(user=privileged).exists())
+
+        self.assertIn(public.id, self.visible_ids(privileged))

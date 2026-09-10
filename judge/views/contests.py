@@ -435,14 +435,18 @@ class ContestList(
         past_filter = Q(end_time__lt=self._now)
         if self.include_official_live and not self.official:
             past_filter &= Q(official__isnull=True)
-        temporal_counts = self._get_queryset().aggregate(
-            current=Count(
-                "id",
-                filter=Q(start_time__lte=self._now, end_time__gte=self._now),
-                distinct=True,
-            ),
-            future=Count("id", filter=Q(start_time__gt=self._now), distinct=True),
-            past=Count("id", filter=past_filter, distinct=True),
+        temporal_counts = (
+            self._get_queryset()
+            .values("id", "start_time", "end_time")
+            .aggregate(
+                current=Count(
+                    "id",
+                    filter=Q(start_time__lte=self._now, end_time__gte=self._now),
+                    distinct=True,
+                ),
+                future=Count("id", filter=Q(start_time__gt=self._now), distinct=True),
+                past=Count("id", filter=past_filter, distinct=True),
+            )
         )
         return {
             "active": active_count,
@@ -2732,6 +2736,7 @@ class ContestRowsUpdate:
         saved_objects = []
         self.formset.new_objects = []
         self.formset.changed_objects = []
+        self.has_changes = bool(self.plan.deleted_objects)
 
         for obj in self.plan.deleted_objects:
             obj.delete()
@@ -2741,15 +2746,17 @@ class ContestRowsUpdate:
             if obj is None:
                 obj = ContestProblem(contest=self.contest)
                 is_new = True
+                self.has_changes = True
             else:
                 is_new = False
                 if not self._has_model_changes(obj, form):
                     saved_objects.append(obj)
                     continue
+                self.has_changes = True
 
             self._copy_form_values(obj, form)
             obj.contest = self.contest
-            obj.save()
+            obj.save(recompute_participations=False)
             saved_objects.append(obj)
 
             if is_new:
@@ -2953,6 +2960,7 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
                 revisions.set_comment(_("Edited from site"))
                 revisions.set_user(self.request.user)
                 rows_update.save()
+                self.rows_changed = rows_update.has_changes
                 return self.form_valid(form)
         except (IntegrityError, ValidationError) as error:
             return self._rows_validation_error_response(form, rows_formset, error)
@@ -2989,7 +2997,9 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         # SingleObjectFormView inherits FormView (not ModelFormMixin), so
         # FormView.form_valid does NOT save — call form.save() directly.
         self.object = form.save()
-        maybe_trigger_contest_rescore(form, self.object, True)
+        maybe_trigger_contest_rescore(
+            form, self.object, getattr(self, "rows_changed", False)
+        )
         messages.success(self.request, _("Contest saved."))
         return HttpResponseRedirect(self.get_success_url())
 

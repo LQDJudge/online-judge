@@ -17,10 +17,12 @@ Covers the fixes layered on the standalone-edit feature branch:
 from unittest.mock import patch
 
 from django.contrib.auth.models import Group, Permission, User
+from django.forms import modelform_factory
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone, translation
 
+from judge.admin.contest import ContestProblemInlineForm
 from judge.forms import CONTEST_EDIT_FIELD_SECTIONS, ContestEditForm
 from judge.models import (
     Contest,
@@ -503,6 +505,121 @@ class ContestEditAtomicityTests(ContestEditTestBase):
         contest.organizations.clear()
         contest.refresh_from_db()
         self.assertFalse(contest.is_organization_private)
+
+
+class ContestEditRescoreTests(ContestEditTestBase):
+    def test_admin_inline_defers_participation_recompute(self):
+        problem = self._make_problem("rescore-admin-hidden")
+        contest_problem = ContestProblem.objects.create(
+            contest=self.public_contest,
+            problem=problem,
+            order=1,
+            points=100,
+        )
+        ContestParticipation.objects.create(
+            contest=self.public_contest, user=self.author.profile
+        )
+        form_class = modelform_factory(
+            ContestProblem,
+            form=ContestProblemInlineForm,
+            fields=("is_result_hidden",),
+        )
+        form = form_class(
+            data={"is_result_hidden": "on"},
+            instance=contest_problem,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+
+        with patch.object(ContestParticipation, "recompute_results") as recompute:
+            form.save()
+
+        recompute.assert_not_called()
+        contest_problem.refresh_from_db()
+        self.assertTrue(contest_problem.is_result_hidden)
+
+    def test_hidden_result_change_syncs_flags_without_synchronous_recompute(self):
+        problem = self._make_problem("rescore-hidden")
+        contest_problem = ContestProblem.objects.create(
+            contest=self.public_contest,
+            problem=problem,
+            order=1,
+            points=100,
+        )
+        participation = ContestParticipation.objects.create(
+            contest=self.public_contest, user=self.author.profile
+        )
+        contest_submission = ContestSubmission.objects.create(
+            submission=self._make_submission(problem),
+            problem=contest_problem,
+            participation=participation,
+            points=100,
+        )
+        post = self._contest_edit_post_data(
+            self.public_contest,
+            [
+                {
+                    "id": contest_problem.id,
+                    "problem_id": problem.id,
+                    "partial": True,
+                    "is_result_hidden": True,
+                }
+            ],
+        )
+        post["format_config"] = ""
+        self.client.force_login(self.author)
+
+        with patch.object(
+            ContestParticipation, "recompute_results"
+        ) as recompute, patch(
+            "judge.utils.contest.rescore_contest.s"
+        ) as task_signature, self.captureOnCommitCallbacks(
+            execute=True
+        ):
+            response = self.client.post(
+                reverse("contest_edit", args=[self.public_contest.key]), post
+            )
+
+        self.assertEqual(response.status_code, 302)
+        recompute.assert_not_called()
+        task_signature.assert_called_once_with(self.public_contest.key)
+        task_signature.return_value.delay.assert_called_once_with()
+        contest_submission.refresh_from_db()
+        self.assertTrue(contest_submission.is_result_hidden)
+
+    def test_unchanged_rows_do_not_force_rescore(self):
+        self.public_contest.format_config = {}
+        self.public_contest.save(update_fields=["format_config"])
+        problem = self._make_problem("rescore-unchanged")
+        contest_problem = ContestProblem.objects.create(
+            contest=self.public_contest,
+            problem=problem,
+            order=1,
+            points=100,
+        )
+        post = self._contest_edit_post_data(
+            self.public_contest,
+            [
+                {
+                    "id": contest_problem.id,
+                    "problem_id": problem.id,
+                    "partial": True,
+                }
+            ],
+        )
+        self.client.force_login(self.author)
+
+        with patch(
+            "judge.views.contests.maybe_trigger_contest_rescore"
+        ) as trigger_rescore:
+            response = self.client.post(
+                reverse("contest_edit", args=[self.public_contest.key]), post
+            )
+
+        self.assertEqual(response.status_code, 302)
+        trigger_rescore.assert_called_once()
+        _form, contest, rows_changed = trigger_rescore.call_args.args
+        self.assertEqual(contest.id, self.public_contest.id)
+        self.assertFalse(rows_changed)
 
 
 class ContestEditSemanticRowsTests(ContestEditTestBase):
