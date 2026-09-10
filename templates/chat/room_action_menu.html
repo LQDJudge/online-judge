@@ -1,0 +1,39 @@
+{% if room_actions.ignore_url or room_actions.hide or room_actions.unhide or room_actions.leave or room_actions.archive or room_actions.restore %}
+  <div class="setting-wrapper chat-room-actions-wrapper" data-room="{{ room_id }}" data-room-name="{{ room_name }}">
+    <button type="button" class="control-button small setting-button chat-room-actions-toggle"
+            aria-label="{{ _('More actions') }}" title="{{ _('More actions') }}"
+            aria-haspopup="menu" aria-expanded="false">
+      <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+    </button>
+    <div class="setting-content chat-room-action-menu" role="menu">
+      {% if room_actions.ignore_url %}
+        <button type="button" class="red" role="menuitem" data-chat-room-action="ignore"
+                data-action-url="{{ room_actions.ignore_url }}">{{ _('Ignore') }}</button>
+      {% endif %}
+      {% if room_actions.hide %}
+        <button type="button" role="menuitem" data-chat-room-action="hide">
+          <i class="fa fa-eye-slash" aria-hidden="true"></i>
+          <span>{{ _('Hide room') }}</span>
+        </button>
+      {% endif %}
+      {% if room_actions.unhide %}
+        <button type="button" role="menuitem" data-chat-room-action="unhide">{{ _('Unhide room') }}</button>
+      {% endif %}
+      {% if room_actions.leave %}
+        <button type="button" class="red" role="menuitem" data-chat-room-action="leave">
+          <i class="fa fa-sign-out-alt" aria-hidden="true"></i>
+          <span>{{ _('Leave room') }}</span>
+        </button>
+      {% endif %}
+      {% if room_actions.archive %}
+        <button type="button" class="red" role="menuitem" data-chat-room-action="archive">
+          <i class="fa fa-archive" aria-hidden="true"></i>
+          <span>{{ _('Archive room') }}</span>
+        </button>
+      {% endif %}
+      {% if room_actions.restore %}
+        <button type="button" role="menuitem" data-chat-room-action="restore">{{ _('Restore room') }}</button>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}

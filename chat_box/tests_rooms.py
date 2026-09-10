@@ -1353,6 +1353,36 @@ class LobbyAndCustomChannelTests(GeneralizedRoomTestCase):
 
 
 class UnreadCursorTests(GeneralizedRoomTestCase):
+    def test_lobby_unread_does_not_count_toward_navbar_badge(self):
+        lobby = Room.objects.get(singleton_key="lobby")
+        message = Message.objects.create(
+            room=lobby,
+            author=self.creator,
+            body="Lobby announcement",
+        )
+        Room.objects.filter(id=lobby.id).update(
+            last_msg_id=message.id,
+            last_activity_at=message.time,
+        )
+
+        self.assertEqual(get_unread_count(lobby, self.member), 1)
+        self.assertEqual(get_unread_boxes(self.member), 0)
+
+    def test_archived_room_unread_does_not_count_toward_navbar_badge(self):
+        room = Room.get_or_create_room(self.creator, self.member)
+        message = Message.objects.create(
+            room=room,
+            author=self.creator,
+            body="Archived unread",
+        )
+        Room.objects.filter(id=room.id).update(
+            archived_at=timezone.now(),
+            last_msg_id=message.id,
+            last_activity_at=message.time,
+        )
+
+        self.assertEqual(get_unread_boxes(self.member), 0)
+
     def test_unread_uses_cursor_and_hidden_messages_disappear(self):
         room = Room.get_or_create_room(self.creator, self.member)
         message = Message.objects.create(
@@ -2029,6 +2059,33 @@ class RoomRouteAndListTests(GeneralizedRoomTestCase):
         self.assertContains(response, "chat-system-message")
         self.assertContains(response, "room_member")
 
+    def test_sidebar_room_menu_contains_available_room_actions(self):
+        room = self.create_group("Action menu room")
+        self.client.force_login(self.creator.user)
+
+        response = self.client.get(reverse("chat", args=[room.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-room="%s"' % room.id)
+        self.assertContains(response, 'class="fa fa-ellipsis-v"')
+        self.assertContains(response, 'data-chat-room-action="hide"')
+        self.assertContains(response, 'class="fa fa-eye-slash"')
+        self.assertContains(
+            response, 'class="red" role="menuitem" data-chat-room-action="leave"'
+        )
+        self.assertContains(response, 'class="fa fa-sign-out-alt"')
+        self.assertContains(
+            response, 'class="red" role="menuitem" data-chat-room-action="archive"'
+        )
+        self.assertContains(response, 'class="fa fa-archive"')
+        self.assertContains(response, 'id="chat-archive-room-modal"')
+        self.assertContains(response, 'id="chat-archive-room-reason"')
+        self.assertContains(response, 'id="chat-archive-room-confirm"')
+
+        details = self.client.get(reverse("chat_room_details", args=[room.id])).json()
+        self.assertNotIn("hide", details["permissions"])
+        self.assertNotIn("archive", details["permissions"])
+
     def test_room_switch_returns_messages_header_and_runtime_permissions(self):
         room = self.create_group("Smooth switch room")
         message = Message.objects.create(
@@ -2627,6 +2684,52 @@ class RoomRouteAndListTests(GeneralizedRoomTestCase):
         self.assertIn(current.id, claims["room_ids"])
         self.assertIn(lobby.id, claims["room_ids"])
 
+    def test_event_grant_omits_hidden_or_archived_current_room(self):
+        hidden = self.create_group("Hidden current room")
+        archived = self.create_group("Archived current room")
+        UserRoom.objects.filter(room=hidden, user=self.creator).update(is_hidden=True)
+        Room.objects.filter(id=archived.id).update(archived_at=timezone.now())
+        self.client.force_login(self.creator.user)
+
+        for room in (hidden, archived):
+            response = self.client.get(
+                reverse("chat_event_grant", args=[room.id]),
+                {"room_ids": str(room.id)},
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertNotIn(room_event_channel(room.id), response.json()["channels"])
+
+    @patch("chat_box.room_views.revoke_room_subscriptions")
+    def test_hiding_room_revokes_existing_event_subscriptions(self, revoke):
+        room = self.create_group("Revoke hidden room")
+        self.client.force_login(self.creator.user)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse("chat_room_visibility", args=[room.id]),
+                {"hidden": "1"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        revoke.assert_called_once_with(self.creator.id, room.id)
+
+    def test_default_chat_uses_visible_room_when_lobby_is_hidden(self):
+        room = self.create_group("Visible default room")
+        lobby = Room.objects.get(singleton_key="lobby")
+        UserRoom.objects.filter(room=lobby, user=self.creator).update(is_hidden=True)
+        self.client.force_login(self.creator.user)
+
+        response = self.client.get(reverse("chat", args=[""]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["room"], room.id)
+        self.assertIn(
+            room_event_channel(room.id), response.context["chat_event_channels"]
+        )
+        self.assertNotIn(
+            room_event_channel(lobby.id), response.context["chat_event_channels"]
+        )
+
     def test_unhide_route_advances_cursor_to_current_tail(self):
         room = Room.get_or_create_room(self.creator, self.member)
         message = Message.objects.create(
@@ -2799,10 +2902,43 @@ class RoomRouteAndListTests(GeneralizedRoomTestCase):
             [room["id"] for room in named_response.json()["rooms"]],
             [matching_group.id],
         )
+        self.assertTrue(named_response.json()["rooms"][0]["actions"]["unhide"])
         self.assertEqual(
             [room["id"] for room in direct_response.json()["rooms"]],
             [direct.id],
         )
+
+    def test_archived_room_list_exposes_restore_action(self):
+        room = self.create_group("Archived action room")
+        archive_room(room, self.creator.user, self.creator, "Done")
+        self.client.force_login(self.creator.user)
+
+        response = self.client.get(reverse("chat_room_list"), {"archived": "1"})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()["rooms"]
+        archived_room = next(item for item in payload if item["id"] == room.id)
+        self.assertTrue(archived_room["actions"]["restore"])
+        self.assertFalse(archived_room["actions"]["archive"])
+
+    def test_archive_route_validates_and_persists_reason(self):
+        room = self.create_group("Archive reason room")
+        self.client.force_login(self.creator.user)
+        url = reverse("chat_room_archive", args=[room.id])
+
+        response = self.client.post(url, {"reason": "Project complete"})
+
+        self.assertEqual(response.status_code, 200)
+        room.refresh_from_db()
+        self.assertEqual(room.archive_reason, "Project complete")
+
+        restore_room(room, self.creator.user, self.creator)
+        response = self.client.post(url, {"reason": "x" * 65})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "archive_reason_too_long")
+        room.refresh_from_db()
+        self.assertIsNone(room.archived_at)
 
     def test_paginated_direct_room_includes_real_avatar_metadata(self):
         direct = Room.get_or_create_room(self.creator, self.member)

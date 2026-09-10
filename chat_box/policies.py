@@ -125,6 +125,16 @@ class RoomPolicy:
             self.is_active_member and self.room.channel_kind != Room.ChannelKind.LOBBY
         )
 
+    def room_actions(self):
+        """Return query-free room-list actions available to this member."""
+        return {
+            "hide": self.can_hide_room() and not self.membership.is_hidden,
+            "unhide": self.can_hide_room() and self.membership.is_hidden,
+            "leave": self.can_leave() and self.room.room_type != Room.Type.DIRECT,
+            "archive": self.can_archive(),
+            "restore": self.can_restore(),
+        }
+
     def can_change_role(self, target_membership):
         return (
             self.can_manage()

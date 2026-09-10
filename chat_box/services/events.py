@@ -20,17 +20,34 @@ def authorized_event_room_ids(profile, current_room_id, requested_room_ids=None)
             profile,
             exclude_room_ids=ignored_room_ids,
         )
+        current_is_authorized = (
+            UserRoom.objects.filter(
+                user=profile,
+                room_id=current_room_id,
+                state=UserRoom.State.ACTIVE,
+                is_hidden=False,
+                room__archived_at__isnull=True,
+            )
+            .exclude(room_id__in=ignored_room_ids)
+            .exists()
+        )
     else:
         requested_room_ids = sorted(set(requested_room_ids))[:63]
+        candidate_room_ids = set(requested_room_ids)
+        candidate_room_ids.add(current_room_id)
         memberships = list(
             UserRoom.objects.filter(
                 user=profile,
-                room_id__in=requested_room_ids,
+                room_id__in=candidate_room_ids,
                 state=UserRoom.State.ACTIVE,
                 is_hidden=False,
+                room__archived_at__isnull=True,
             )
             .exclude(room_id__in=ignored_room_ids)
             .select_related("room")
+        )
+        current_is_authorized = any(
+            membership.room_id == current_room_id for membership in memberships
         )
     optional_room_ids = {membership.room_id for membership in memberships}
     lobby_id = (
@@ -43,10 +60,10 @@ def authorized_event_room_ids(profile, current_room_id, requested_room_ids=None)
         .values_list("room_id", flat=True)
         .first()
     )
-    # Always reserve a subscription for the open room, then Lobby when visible.
-    # Fill the remaining budget with sidebar rooms before sorting for the grant.
-    room_ids = [current_room_id]
-    if lobby_id and lobby_id != current_room_id:
+    # Reserve a subscription for the open room only while it is visible, then
+    # Lobby when visible. Fill the remaining budget with sidebar rooms.
+    room_ids = [current_room_id] if current_is_authorized else []
+    if lobby_id and lobby_id not in room_ids:
         room_ids.append(lobby_id)
     for room_id in sorted(optional_room_ids.difference(room_ids)):
         if len(room_ids) >= 63:

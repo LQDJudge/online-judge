@@ -128,3 +128,24 @@
     </div>
   </div>
 </div>
+
+<div id="chat-archive-room-modal" class="chat-modal-backdrop" aria-hidden="true">
+  <div class="chat-modal chat-room-form-modal" role="dialog" aria-modal="true" aria-labelledby="chat-archive-room-title">
+    <div class="chat-modal-heading">
+      <span class="chat-modal-heading-icon chat-modal-danger-icon" aria-hidden="true"><i class="fa fa-archive"></i></span>
+      <div>
+        <h3 id="chat-archive-room-title">{{ _('Archive room') }}</h3>
+        <p id="chat-archive-room-summary"></p>
+      </div>
+    </div>
+    <div class="chat-form-field">
+      <label for="chat-archive-room-reason">{{ _('Reason') }}</label>
+      <textarea id="chat-archive-room-reason" rows="3" maxlength="64"></textarea>
+    </div>
+    <p class="chat-modal-error" aria-live="polite"></p>
+    <div class="chat-modal-actions">
+      <button type="button" class="action-btn small background-gray chat-modal-cancel">{{ _('Cancel') }}</button>
+      <button type="button" id="chat-archive-room-confirm" class="action-btn background-red">{{ _('Archive room') }}</button>
+    </div>
+  </div>
+</div>

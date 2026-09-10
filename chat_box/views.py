@@ -60,7 +60,11 @@ from chat_box.selectors import (
     get_room_page,
     unread_counts_for_memberships,
 )
-from chat_box.services.events import broadcast_room_event, chat_event_channels
+from chat_box.services.events import (
+    authorized_event_room_ids,
+    broadcast_room_event,
+    chat_event_channels,
+)
 from chat_box.services.moderation import (
     ROOM_MUTE_MAX_DAYS,
     hide_message as hide_room_message,
@@ -176,6 +180,15 @@ class ChatView(ListView):
                     redirected_room = True
             else:
                 self.room = get_lobby()
+                lobby_membership = get_membership(self.room, request.profile)
+                if lobby_membership and lobby_membership.is_hidden:
+                    visible_memberships, _has_more = get_room_page(
+                        request.profile,
+                        limit=1,
+                        exclude_room_ids=Ignore.get_ignored_room_ids(request.profile),
+                    )
+                    if visible_memberships:
+                        self.room = visible_memberships[0].room
             self.membership = get_membership(self.room, request.profile)
             policy = RoomPolicy(
                 request.user,
@@ -301,6 +314,16 @@ class ChatView(ListView):
         context["lobby_hidden"] = (
             lobby_membership.is_hidden if lobby_membership else False
         )
+        context["lobby_actions"] = (
+            RoomPolicy(
+                self.request.user,
+                self.request.profile,
+                lobby,
+                lobby_membership,
+            ).room_actions()
+            if lobby_membership
+            else {}
+        )
         context["is_chat_muted"] = is_chat_muted(self.request.profile)
         context["can_chat"] = can_use_community_features(
             self.request.user, self.request.profile
@@ -311,14 +334,17 @@ class ChatView(ListView):
             .exclude(chat_room__isnull=False)
             .exists()
         )
-        event_room_ids = {
+        requested_event_room_ids = {
             item["room"]
             for section in context["status_sections"]
             for item in section["room_list"]
         }
-        event_room_ids.add(self.room.id)
-        if not context["lobby_hidden"]:
-            event_room_ids.add(lobby.id)
+        requested_event_room_ids.update((self.room.id, lobby.id))
+        event_room_ids = authorized_event_room_ids(
+            self.request.profile,
+            self.room.id,
+            requested_event_room_ids,
+        )
         context["chat_event_channels"] = chat_event_channels(
             self.request.profile.id,
             sorted(event_room_ids),
@@ -1387,6 +1413,9 @@ def get_status_context(profile, include_ignored=False, section=None):
                 "avatar_url": room.get_avatar_url(),
                 "last_msg": room.get_last_message(),
                 "unread_count": unread_counts.get(room.id, 0),
+                "actions": RoomPolicy(
+                    profile.user, profile, room, membership
+                ).room_actions(),
             }
             if room.room_type == Room.Type.DIRECT:
                 other_id = room.other_user_id(profile)
@@ -1406,6 +1435,10 @@ def get_status_context(profile, include_ignored=False, section=None):
                             "is_online": get_user_online_status(other),
                         }
                     )
+                    if other_id != profile.id:
+                        row["actions"]["ignore_url"] = reverse(
+                            "toggle_ignore", args=[other_id]
+                        )
             section["room_list"].append(row)
     return sections
 
@@ -1423,6 +1456,16 @@ def online_status_ajax(request):
             "unread_count_lobby": get_unread_count(lobby, request.profile),
             "lobby_room": lobby,
             "lobby_hidden": lobby_membership.is_hidden if lobby_membership else False,
+            "lobby_actions": (
+                RoomPolicy(
+                    request.user,
+                    request.profile,
+                    lobby,
+                    lobby_membership,
+                ).room_actions()
+                if lobby_membership
+                else {}
+            ),
         },
     )
 

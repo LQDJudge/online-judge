@@ -712,6 +712,60 @@
       this.setUnreadBadge(roomId, current + 1);
     },
 
+    buildRoomActionMenu: function(room) {
+      var actions = room.actions || {};
+      var actionLabels = {
+        ignore: ChatConfig.i18n.ignore,
+        hide: ChatConfig.i18n.hideRoom,
+        unhide: ChatConfig.i18n.unhideRoom,
+        leave: ChatConfig.i18n.leave,
+        archive: ChatConfig.i18n.archive,
+        restore: ChatConfig.i18n.restore
+      };
+      var actionIcons = {
+        hide: 'fa-eye-slash',
+        leave: 'fa-sign-out-alt',
+        archive: 'fa-archive'
+      };
+      var actionNames = ['ignore', 'hide', 'unhide', 'leave', 'archive', 'restore'];
+      var enabledActions = actionNames.filter(function(action) {
+        return action === 'ignore' ? !!actions.ignore_url : !!actions[action];
+      });
+      if (!enabledActions.length) return $();
+
+      var $menu = $('<div class="setting-content chat-room-action-menu" role="menu">');
+      enabledActions.forEach(function(action) {
+        var $action = $('<button type="button" role="menuitem">')
+          .attr('data-chat-room-action', action);
+        if (actionIcons[action]) {
+          $action.append(
+            $('<i class="fa" aria-hidden="true">').addClass(actionIcons[action])
+          );
+        }
+        $action.append($('<span>').text(actionLabels[action]));
+        if (action === 'ignore' || action === 'leave' || action === 'archive') {
+          $action.addClass('red');
+        }
+        if (action === 'ignore') $action.attr('data-action-url', actions.ignore_url);
+        $menu.append($action);
+      });
+
+      return $('<div class="setting-wrapper chat-room-actions-wrapper">')
+        .attr('data-room', room.id)
+        .attr('data-room-name', room.name)
+        .append(
+          $('<button type="button" class="control-button small setting-button chat-room-actions-toggle">')
+            .attr({
+              'aria-label': ChatConfig.i18n.moreActions,
+              title: ChatConfig.i18n.moreActions,
+              'aria-haspopup': 'menu',
+              'aria-expanded': 'false'
+            })
+            .append($('<i class="fa fa-ellipsis-v" aria-hidden="true">')),
+          $menu
+        );
+    },
+
     moveRoomToTop: function(roomId) {
       var $row = $('#room_row_' + roomId);
       if (!$row.length) {
@@ -1610,12 +1664,14 @@
     },
 
     bindRoomSelection: function() {
-      $(document).on('click', '.click_space', function() {
+      $(document).on('click', '.click_space', function(event) {
+        if ($(event.target).closest('.setting-wrapper').length) return;
         var $row = $(this);
         ChatEvents.loadKnownRoom($row.data('room'), $row);
       });
 
-      $(document).on('click', '#lobby_row', function() {
+      $(document).on('click', '#lobby_row', function(event) {
+        if ($(event.target).closest('.setting-wrapper').length) return;
         var $row = $(this);
         ChatEvents.loadKnownRoom($row.data('room'), $row);
       });
@@ -1733,6 +1789,7 @@
     bindRoomManagement: function() {
       var pendingMemberAction = null;
       var pendingLeaveRoom = null;
+      var pendingArchiveRoom = null;
       var openModal = function(selector) {
         $(selector).addClass('is-open').attr('aria-hidden', 'false');
         $(selector).find('input, select, button').filter(':visible').first().focus();
@@ -1742,6 +1799,13 @@
         $modal.find('.chat-modal-error').text('');
         if ($modal.is('#chat-member-action-modal')) pendingMemberAction = null;
         if ($modal.is('#chat-leave-room-modal')) pendingLeaveRoom = null;
+        if ($modal.is('#chat-archive-room-modal')) pendingArchiveRoom = null;
+      };
+      var showRoomActionError = function(response) {
+        window.alert(
+          response && response.responseJSON ?
+            response.responseJSON.error : ChatConfig.i18n.unableLoadRoom
+        );
       };
       var openMemberActionModal = function(action, roomId, member, onSuccess) {
         var isBan = action === 'ban';
@@ -1864,6 +1928,35 @@
             $button.prop('disabled', false);
           });
       });
+      $('#chat-archive-room-confirm').on('click', function() {
+        if (!pendingArchiveRoom) return;
+        var room = pendingArchiveRoom;
+        var $modal = $('#chat-archive-room-modal');
+        var $button = $(this).prop('disabled', true);
+        ChatAPI.roomAction(ChatConfig.urls.archiveRoom, room.id, {
+          reason: $('#chat-archive-room-reason').val().trim()
+        })
+          .done(function() {
+            pendingArchiveRoom = null;
+            closeModal($modal);
+            if (room.id === ChatState.roomId) {
+              window.location.reload();
+              return;
+            }
+            $('#room_row_' + room.id).remove();
+            ChatEvents.refreshStatus(false, function() {
+              ChatWebSocket.refreshAuthorization();
+            });
+          })
+          .fail(function(response) {
+            $modal.find('.chat-modal-error').text(
+              response.responseJSON ? response.responseJSON.error : ChatConfig.i18n.unableLoadRoom
+            );
+          })
+          .always(function() {
+            $button.prop('disabled', false);
+          });
+      });
       $('#chat-new-group').on('click', function() {
         $('#chat-group-name').val('');
         $('#chat-group-members').val(null).trigger('change');
@@ -1962,6 +2055,76 @@
         ChatAPI.roomAction(ChatConfig.urls.roomVisibility, ChatState.roomId, { hidden: '0' })
           .done(function() { window.location.reload(); });
       });
+      $(document).on('click', '[data-chat-room-action]', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var $action = $(this);
+        var $wrapper = $action.closest('.chat-room-actions-wrapper');
+        var roomId = String($wrapper.attr('data-room'));
+        var roomName = $wrapper.attr('data-room-name') || '';
+        var action = $action.attr('data-chat-room-action');
+        $wrapper.find('.setting-content').hide();
+        $wrapper.find('.setting-button').attr('aria-expanded', 'false');
+
+        if (action === 'ignore') {
+          ChatAPI.toggleIgnore($action.attr('data-action-url'))
+            .done(function(result) {
+              window.location.href = result.redirect || ChatConfig.urls.chat;
+            })
+            .fail(showRoomActionError);
+          return;
+        }
+        if (action === 'leave') {
+          pendingLeaveRoom = {id: roomId, name: roomName};
+          $('#chat-leave-room-summary').text(interpolate(
+            ChatConfig.i18n.leaveRoomSummary,
+            {room: roomName},
+            true
+          ));
+          openModal('#chat-leave-room-modal');
+          return;
+        }
+        if (action === 'archive') {
+          pendingArchiveRoom = {id: roomId, name: roomName};
+          $('#chat-archive-room-summary').text(interpolate(
+            ChatConfig.i18n.archiveRoomSummary,
+            {room: roomName},
+            true
+          ));
+          $('#chat-archive-room-reason').val('');
+          openModal('#chat-archive-room-modal');
+          $('#chat-archive-room-reason').focus();
+          return;
+        }
+
+        var request;
+        if (action === 'hide' || action === 'unhide') {
+          request = ChatAPI.roomAction(ChatConfig.urls.roomVisibility, roomId, {
+            hidden: action === 'hide' ? '1' : '0'
+          });
+        } else if (action === 'restore') {
+          request = ChatAPI.roomAction(ChatConfig.urls.restoreRoom, roomId);
+        } else {
+          return;
+        }
+        $action.prop('disabled', true);
+        request.done(function() {
+          if (roomId === ChatState.roomId && action === 'hide') {
+            window.location.href = ChatConfig.urls.chat;
+            return;
+          }
+          if (roomId === ChatState.roomId || action === 'restore') {
+            window.location.reload();
+            return;
+          }
+          $wrapper.closest('.status-row, .chat-managed-room').remove();
+          ChatEvents.refreshStatus(false, function() {
+            ChatWebSocket.refreshAuthorization();
+          });
+        }).fail(showRoomActionError).always(function() {
+          $action.prop('disabled', false);
+        });
+      });
 
       var openRoomList = function(kind) {
         var filters = kind === 'hidden' ? { hidden: '1' } : { archived: '1' };
@@ -2002,14 +2165,7 @@
                   ChatEvents.loadKnownRoom(room.id, null, room.url);
                 }).appendTo($identity);
               $('<span class="chat-managed-room-type">').text(typeLabel).appendTo($identity);
-              if (kind === 'hidden') {
-                $('<button type="button" class="action-btn small">')
-                  .text(ChatConfig.i18n.unhideRoom)
-                  .on('click', function() {
-                    ChatAPI.roomAction(ChatConfig.urls.roomVisibility, room.id, { hidden: '0' })
-                      .done(function() { $row.remove(); });
-                  }).appendTo($row);
-              }
+              $row.attr('data-room', room.id).append(ChatUI.buildRoomActionMenu(room));
               $content.append($row);
             });
             if (!$content.children().length) {
@@ -2059,6 +2215,11 @@
         }
         if ($('#chat-leave-room-modal').hasClass('is-open')) {
           closeModal($('#chat-leave-room-modal'));
+          event.stopImmediatePropagation();
+          return;
+        }
+        if ($('#chat-archive-room-modal').hasClass('is-open')) {
+          closeModal($('#chat-archive-room-modal'));
           event.stopImmediatePropagation();
           return;
         }
@@ -2427,6 +2588,20 @@
               $noMatches.prop('hidden', visible !== 0);
             });
           }
+          if (data.ignored && data.ignore_url) {
+            var $unignoreActions = $('<div class="chat-details-secondary-actions">');
+            $('<button type="button" class="action-btn background-gray">')
+              .text(ChatConfig.i18n.unignore)
+              .on('click', function() {
+                ChatAPI.toggleIgnore(data.ignore_url)
+                  .done(function(result) {
+                    window.location.href = result.redirect || ChatConfig.urls.chat;
+                  })
+                  .fail(showError);
+              })
+              .appendTo($unignoreActions);
+            memberSection.body.append($unignoreActions);
+          }
           $content.append(memberSection.section);
 
           if (data.permissions.rename || data.permissions.change_avatar) {
@@ -2606,63 +2781,6 @@
               }).appendTo($inviteActions);
             inviteSection.body.append($inviteActions);
             $content.append(inviteSection.section);
-          }
-
-          var $roomActions = $('<div class="chat-details-room-actions">');
-          if (data.ignore_url) {
-            $('<button type="button" class="action-btn background-gray">')
-              .text(data.ignored ? ChatConfig.i18n.unignore : ChatConfig.i18n.ignore)
-              .on('click', function() {
-                ChatAPI.toggleIgnore(data.ignore_url)
-                  .done(function(result) {
-                    window.location.href = result.redirect || ChatConfig.urls.chat;
-                  })
-                  .fail(showError);
-              })
-              .appendTo($roomActions);
-          }
-          if (data.permissions.hide) {
-            $('<button type="button" class="action-btn background-gray">')
-              .text(ChatConfig.i18n.hideRoom).on('click', function() {
-                ChatAPI.roomAction(ChatConfig.urls.roomVisibility, data.id, { hidden: '1' })
-                  .done(function() { window.location.href = ChatConfig.urls.chat; })
-                  .fail(showError);
-              }).appendTo($roomActions);
-          }
-          if (data.permissions.leave) {
-            $('<button type="button" class="action-btn chat-leave-room-button">')
-              .text(ChatConfig.i18n.leave).on('click', function() {
-                pendingLeaveRoom = {id: data.id, name: data.name};
-                $('#chat-leave-room-summary').text(interpolate(
-                  ChatConfig.i18n.leaveRoomSummary,
-                  {room: data.name},
-                  true
-                ));
-                openModal('#chat-leave-room-modal');
-              }).appendTo($roomActions);
-          }
-          if (data.permissions.archive) {
-            $('<button type="button" class="action-btn background-gray">')
-              .text(ChatConfig.i18n.archive).on('click', function() {
-                ChatAPI.roomAction(ChatConfig.urls.archiveRoom, data.id)
-                  .done(function() { window.location.reload(); })
-                  .fail(showError);
-              }).appendTo($roomActions);
-          }
-          if (data.permissions.restore) {
-            $('<button type="button" class="action-btn">')
-              .text(ChatConfig.i18n.restore).on('click', function() {
-                ChatAPI.roomAction(ChatConfig.urls.restoreRoom, data.id)
-                  .done(function() { window.location.reload(); })
-                  .fail(showError);
-              }).appendTo($roomActions);
-          }
-          if ($roomActions.children().length) {
-            var actionsSection = createSection(
-              'fa-cog', ChatConfig.i18n.roomActions, 'chat-details-actions'
-            );
-            actionsSection.body.append($roomActions);
-            $content.append(actionsSection.section);
           }
 
           if (data.permissions.view_moderation) {
@@ -2851,25 +2969,7 @@
                   room.unread_count > 99 ? '99+' : room.unread_count
                 ));
               }
-              if (room.room_type === 'direct' && !room.is_self && room.ignore_url) {
-                var $ignoreButton = $('<button type="button" class="red">')
-                  .text(ChatConfig.i18n.ignore)
-                  .on('click', function() {
-                    ChatAPI.toggleIgnore(room.ignore_url)
-                      .done(function(result) {
-                        window.location.href = result.redirect || ChatConfig.urls.chat;
-                      })
-                      .fail(showError);
-                  });
-                $row.append(
-                  $('<div class="setting-wrapper">').append(
-                    $('<div class="control-button small setting-button">').append(
-                      $('<i class="fa fa-ellipsis-h" aria-hidden="true">')
-                    ),
-                    $('<div class="setting-content">').append($ignoreButton)
-                  )
-                );
-              }
+              $row.append(ChatUI.buildRoomActionMenu(room));
               $list.append($row);
             });
             $button.data('cursor', data.next_cursor || '');
@@ -3067,7 +3167,7 @@
       });
     },
 
-    refreshStatus: function(refreshChatInfo) {
+    refreshStatus: function(refreshChatInfo, onSuccess) {
       var requestToken = ++ChatState.statusLoadToken;
       ChatAPI.getOnlineStatus(ChatState.roomFilter)
         .done(function(data) {
@@ -3078,6 +3178,7 @@
           }
           ChatElements.chatOnlineList.html(data);
           ChatUI.highlightSelectedRoom();
+          if (onSuccess) onSuccess();
         })
         .fail(function() {
           if (requestToken !== ChatState.statusLoadToken) return;
@@ -3171,7 +3272,15 @@
       if (message.type === 'room_access_revoked') {
         if (String(message.room) === ChatState.roomId) {
           window.location.href = ChatConfig.urls.chat;
+        } else {
+          ChatEvents.refreshStatus();
         }
+        return;
+      }
+      if (message.type === 'room_visibility_changed') {
+        ChatEvents.refreshStatus(false, function() {
+          ChatWebSocket.refreshAuthorization();
+        });
         return;
       }
       if (message.type === 'chat_muted') {
@@ -3214,8 +3323,11 @@
       }
 
       if (message.type === 'room_archived') {
-        ChatConfig.room.isArchived = true;
-        ChatUI.applyMutedState();
+        if (String(message.room) === ChatState.roomId) {
+          ChatConfig.room.isArchived = true;
+          ChatUI.applyMutedState();
+        }
+        ChatEvents.refreshStatus();
         return;
       }
 

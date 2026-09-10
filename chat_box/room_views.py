@@ -57,8 +57,11 @@ from chat_box.services.events import (
     authorized_event_room_ids,
     broadcast_personal_event,
     chat_event_channels,
+    revoke_room_subscriptions,
 )
 from chat_box.utils import create_chat_event_grant
+
+ARCHIVE_REASON_MAX_LENGTH = Room._meta.get_field("archive_reason").max_length
 
 
 def room_api(view):
@@ -370,6 +373,9 @@ def room_list_view(request):
             "archived": bool(room.archived_at),
             "url": reverse("chat", args=[room.id]),
             "avatar_url": room.get_avatar_url(),
+            "actions": RoomPolicy(
+                request.user, request.profile, room, membership
+            ).room_actions(),
         }
         other_user_id = direct_user_by_room.get(room.id)
         if other_user_id:
@@ -387,6 +393,8 @@ def room_list_view(request):
                     "is_self": other_user_id == request.profile.id,
                 }
             )
+            if other_user_id != request.profile.id:
+                room_payload["actions"]["ignore_url"] = room_payload["ignore_url"]
         payload.append(room_payload)
     next_cursor = encode_room_list_cursor(memberships, has_more)
     return JsonResponse(
@@ -488,10 +496,6 @@ def room_details_view(request, room_id):
                 "invite": policy.can_invite(),
                 "manage": policy.can_manage(),
                 "view_moderation": policy.can_view_moderation(),
-                "leave": policy.can_leave() and room.room_type != Room.Type.DIRECT,
-                "archive": policy.can_archive(),
-                "restore": policy.can_restore(),
-                "hide": policy.can_hide_room(),
                 "direct_add": policy.can_direct_add(),
                 "change_avatar": policy.can_change_avatar(),
                 "manage_lobby_moderators": (
@@ -572,6 +576,10 @@ def room_visibility_view(request, room_id):
         membership.last_seen = timezone.now()
         update_fields.extend(["last_read_message_id", "unread_count", "last_seen"])
     membership.save(update_fields=update_fields)
+    if hidden:
+        transaction.on_commit(
+            lambda: revoke_room_subscriptions(request.profile.id, room.id)
+        )
     transaction.on_commit(
         lambda: broadcast_personal_event(
             request.profile.id,
@@ -588,11 +596,18 @@ def room_visibility_view(request, room_id):
 @room_api
 def archive_room_view(request, room_id):
     _require_post(request)
+    reason = request.POST.get("reason", "").strip()
+    if len(reason) > ARCHIVE_REASON_MAX_LENGTH:
+        raise RoomError(
+            _("Archive reason cannot exceed %(limit)s characters.")
+            % {"limit": ARCHIVE_REASON_MAX_LENGTH},
+            code="archive_reason_too_long",
+        )
     room = archive_room(
         _room(room_id),
         request.user,
         request.profile,
-        request.POST.get("reason", "").strip(),
+        reason,
     )
     return JsonResponse({"archived": True, "room": room.id})
 

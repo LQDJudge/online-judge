@@ -9845,6 +9845,20 @@ msgstr ""
 msgid "Archive room"
 msgstr "Lưu trữ phòng"
 
+#: templates/chat/chat.html:130
+#, python-format
+msgid ""
+"Archive %(room)s? The room will become read-only, and its message history "
+"will remain available."
+msgstr ""
+"Lưu trữ %(room)s? Phòng sẽ chuyển sang chế độ chỉ đọc và lịch sử tin nhắn "
+"vẫn có thể truy cập được."
+
+#: chat_box/room_views.py
+#, python-format
+msgid "Archive reason cannot exceed %(limit)s characters."
+msgstr "Lý do lưu trữ không được vượt quá %(limit)s ký tự."
+
 #: templates/chat/chat.html:140
 msgid "Restore room"
 msgstr "Khôi phục phòng"

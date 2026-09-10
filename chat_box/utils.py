@@ -90,6 +90,7 @@ def get_unread_boxes(profile):
             is_hidden=False,
             room__archived_at__isnull=True,
         )
+        .exclude(room__singleton_key="lobby")
         .exclude(room_id__in=ignored_rooms)
         .annotate(has_unread=Exists(unread_message))
         .filter(has_unread=True)
