@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy
 
 from judge.contest_format.ioi import IOIContestFormat
 from judge.contest_format.registry import register_contest_format
+from judge.models.problem_data import ProblemTestCase
 from judge.timezone import from_database_time, to_database_time
 
 
@@ -35,70 +36,94 @@ class NewIOIContestFormat(IOIContestFormat):
         if self.contest.freeze_after and not include_frozen:
             frozen_time = participation.start + self.contest.freeze_after
 
+        # Match the bridge: batch numbers count S rows in order, not their IDs
+        # or order values. Reordering cases after judging requires a rejudge.
+        batch_modes = {}
+        for problem_id, scoring in (
+            ProblemTestCase.objects.filter(
+                dataset_id__in=self.contest.contest_problems.values("problem_id"),
+                type="S",
+            )
+            .order_by("dataset_id", "order")
+            .values_list("dataset_id", "batch_scoring")
+        ):
+            batch_modes.setdefault(problem_id, []).append(scoring)
+
+        best = {}
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT q.prob,
-                       q.prob_points,
-                       MIN(q.date) as `date`,
-                       q.batch_points,
-                       q.total_batch_points,
-                       q.batch,
-                       q.subid
-                FROM (
-                         SELECT cp.id          as `prob`,
-                                cp.points      as `prob_points`,
-                                sub.id         as `subid`,
-                                sub.date       as `date`,
-                                tc.points      as `points`,
-                                tc.batch       as `batch`,
-                                SUM(tc.points) as `batch_points`,
-                                SUM(tc.total)  as `total_batch_points`
-                         FROM judge_contestproblem cp
-                                  INNER JOIN
-                              judge_contestsubmission cs
-                              ON (cs.problem_id = cp.id AND cs.participation_id = %s)
-                                  LEFT OUTER JOIN
-                              judge_submission sub
-                              ON (sub.id = cs.submission_id AND sub.status = 'D')
-                                  INNER JOIN judge_submissiontestcase tc
-                              ON sub.id = tc.submission_id
-                         WHERE sub.date < %s
-                         GROUP BY cp.id, tc.batch, sub.id
-                     ) q
-                         INNER JOIN (
-                    SELECT prob, batch, MAX(r.batch_points) as max_batch_points
-                    FROM (
-                             SELECT cp.id          as `prob`,
-                                    tc.batch       as `batch`,
-                                    SUM(tc.points) as `batch_points`
-                             FROM judge_contestproblem cp
-                                      INNER JOIN
-                                  judge_contestsubmission cs
-                                  ON (cs.problem_id = cp.id AND cs.participation_id = %s)
-                                      LEFT OUTER JOIN
-                                  judge_submission sub
-                                  ON (sub.id = cs.submission_id AND sub.status = 'D')
-                                      INNER JOIN judge_submissiontestcase tc
-                                  ON sub.id = tc.submission_id
-                             WHERE sub.date < %s
-                             GROUP BY cp.id, tc.batch, sub.id
-                         ) r
-                    GROUP BY prob, batch
-                ) p
-                ON p.prob = q.prob AND (p.batch = q.batch OR p.batch is NULL AND q.batch is NULL)
-                WHERE p.max_batch_points = q.batch_points
-                GROUP BY q.prob, q.batch
-            """,
-                (
-                    participation.id,
-                    to_database_time(frozen_time),
-                    participation.id,
-                    to_database_time(frozen_time),
-                ),
+                SELECT cp.id,
+                       cp.problem_id,
+                       cp.points,
+                       sub.date,
+                       sub.id,
+                       tc.batch,
+                       SUM(tc.points),
+                       SUM(tc.total),
+                       MIN(CASE WHEN tc.total = 0 THEN 0.0
+                                ELSE tc.points / tc.total END)
+                FROM judge_contestproblem cp
+                INNER JOIN judge_contestsubmission cs
+                    ON cs.problem_id = cp.id AND cs.participation_id = %s
+                INNER JOIN judge_submission sub
+                    ON sub.id = cs.submission_id AND sub.status = 'D'
+                INNER JOIN judge_submissiontestcase tc
+                    ON tc.submission_id = sub.id
+                WHERE sub.date < %s
+                GROUP BY cp.id, cp.problem_id, cp.points, sub.date, sub.id, tc.batch
+                """,
+                (participation.id, to_database_time(frozen_time)),
             )
 
-            return cursor.fetchall()
+            for (
+                contest_problem_id,
+                problem_id,
+                problem_points,
+                date,
+                submission_id,
+                batch,
+                points,
+                total,
+                min_fraction,
+            ) in cursor:
+                modes = batch_modes.get(problem_id, ())
+                if (
+                    batch is not None
+                    and 1 <= batch <= len(modes)
+                    and modes[batch - 1] == "min"
+                    and total > 0
+                ):
+                    points = min_fraction * total
+
+                # Select after scoring, keeping every field from the same best
+                # submission. Equal scores use earliest date, then smallest ID.
+                key = (contest_problem_id, batch)
+                previous = best.get(key)
+                if (
+                    previous is None
+                    or points > previous[3]
+                    or (
+                        points == previous[3]
+                        and (date, submission_id) < (previous[2], previous[6])
+                    )
+                ):
+                    best[key] = (
+                        contest_problem_id,
+                        problem_points,
+                        date,
+                        points,
+                        total,
+                        batch,
+                        submission_id,
+                    )
+
+        return [
+            best[key]
+            for key in sorted(
+                best, key=lambda key: (key[0], -1 if key[1] is None else key[1])
+            )
+        ]
 
     def update_participation(self, participation):
         hidden_subtasks = self.get_hidden_subtasks()
