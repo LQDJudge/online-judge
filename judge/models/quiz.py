@@ -1116,9 +1116,6 @@ class BestQuizAttempt(models.Model):
         unique_together = ("user", "lesson_quiz")
         verbose_name = _("Best Quiz Attempt")
         verbose_name_plural = _("Best Quiz Attempts")
-        indexes = [
-            models.Index(fields=["user", "lesson_quiz"]),
-        ]
 
     def __str__(self):
         return f"{self.user.user.username} - {self.lesson_quiz.quiz.title}: {self.score}/{self.max_score}"

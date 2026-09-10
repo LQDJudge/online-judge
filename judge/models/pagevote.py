@@ -19,9 +19,6 @@ class PageVote(models.Model):
     class Meta:
         verbose_name = _("pagevote")
         verbose_name_plural = _("pagevotes")
-        indexes = [
-            models.Index(fields=["content_type", "object_id"]),
-        ]
         unique_together = ("content_type", "object_id")
 
     def vote_score(self, profile):

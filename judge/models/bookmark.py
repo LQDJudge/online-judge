@@ -40,9 +40,6 @@ class BookMark(models.Model):
     class Meta:
         verbose_name = _("bookmark")
         verbose_name_plural = _("bookmarks")
-        indexes = [
-            models.Index(fields=["content_type", "object_id"]),
-        ]
         unique_together = ("content_type", "object_id")
 
     def __str__(self):

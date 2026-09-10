@@ -22,7 +22,6 @@ class Block(models.Model):
         verbose_name = _("block")
         verbose_name_plural = _("blocks")
         indexes = [
-            models.Index(fields=["blocker_type", "blocker_id"], name="blocker_idx"),
             models.Index(fields=["blocked_type", "blocked_id"], name="blocked_idx"),
         ]
         unique_together = (

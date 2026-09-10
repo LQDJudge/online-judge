@@ -326,10 +326,10 @@ class Profile(CacheableModel):
         on_delete=models.SET_DEFAULT,
         default=Language.get_default_language_pk,
     )
-    points = models.FloatField(default=0, db_index=True)
-    performance_points = models.FloatField(default=0, db_index=True)
+    points = models.FloatField(default=0)
+    performance_points = models.FloatField(default=0)
     contribution_points = models.IntegerField(default=0, db_index=True)
-    problem_count = models.IntegerField(default=0, db_index=True)
+    problem_count = models.IntegerField(default=0)
     ace_theme = models.CharField(max_length=30, choices=ACE_THEMES, default="github")
     last_access = models.DateTimeField(
         verbose_name=_("last access time"), default=now, db_index=True
@@ -362,7 +362,6 @@ class Profile(CacheableModel):
         verbose_name=_("muted until"),
         null=True,
         blank=True,
-        db_index=True,
         help_text=_("If set, the mute expires at this time."),
     )
     mute_reason = models.TextField(
@@ -823,7 +822,7 @@ class OrganizationProfile(models.Model):
         verbose_name=_("user"),
         related_name="last_visit",
         on_delete=models.CASCADE,
-        db_index=True,
+        db_index=False,
     )
     organization = models.ForeignKey(
         Organization,
@@ -834,7 +833,6 @@ class OrganizationProfile(models.Model):
     last_visit_time = models.DateTimeField(
         verbose_name=_("last visit"),
         default=now,
-        db_index=True,
     )
 
     @classmethod
@@ -1455,7 +1453,6 @@ class UsernameModerationCase(models.Model):
         max_length=1,
         choices=STATUS_CHOICES,
         default=STATUS_PENDING,
-        db_index=True,
         verbose_name=_("status"),
     )
     decision = models.CharField(
@@ -1469,7 +1466,6 @@ class UsernameModerationCase(models.Model):
         max_length=20,
         choices=CATEGORY_CHOICES,
         default=CATEGORY_OTHER,
-        db_index=True,
         verbose_name=_("category"),
     )
     confidence = models.FloatField(null=True, blank=True, verbose_name=_("confidence"))

@@ -839,7 +839,7 @@ class ContestParticipation(models.Model):
     real_start = models.DateTimeField(
         verbose_name=_("start time"), default=timezone.now, db_column="start"
     )
-    score = models.FloatField(verbose_name=_("score"), default=0, db_index=True)
+    score = models.FloatField(verbose_name=_("score"), default=0)
     cumtime = models.BigIntegerField(verbose_name=_("cumulative time"), default=0)
     is_disqualified = models.BooleanField(
         verbose_name=_("is disqualified"),
@@ -1001,7 +1001,7 @@ class ContestProblem(ImmutableIdentityMixin, models.Model):
     )
     partial = models.BooleanField(default=True, verbose_name=_("partial"))
     is_pretested = models.BooleanField(default=False, verbose_name=_("is pretested"))
-    order = models.PositiveIntegerField(db_index=True, verbose_name=_("order"))
+    order = models.PositiveIntegerField(verbose_name=_("order"))
     show_testcases = models.BooleanField(
         verbose_name=_("visible testcases"),
         default=False,

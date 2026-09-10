@@ -173,7 +173,6 @@ class Room(CacheableModel):
         indexes = [
             models.Index(fields=["room_type", "channel_kind"]),
             models.Index(fields=["archived_at", "last_activity_at"]),
-            models.Index(fields=["organization_id_snapshot"]),
         ]
         constraints = [
             models.UniqueConstraint(

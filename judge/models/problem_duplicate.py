@@ -17,9 +17,7 @@ class ProblemDuplicateReport(models.Model):
     min_score = models.FloatField(default=0.97)
     limit = models.PositiveIntegerField(default=100)
     neighbors = models.PositiveIntegerField(default=10)
-    status = models.CharField(
-        max_length=1, choices=STATUS_CHOICES, default=PENDING, db_index=True
-    )
+    status = models.CharField(max_length=1, choices=STATUS_CHOICES, default=PENDING)
     task_id = models.CharField(max_length=64, blank=True, db_index=True)
     requested_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

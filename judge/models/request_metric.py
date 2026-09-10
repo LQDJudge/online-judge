@@ -12,12 +12,8 @@ class RequestMetric(models.Model):
     full_url = models.TextField(_("full URL"), blank=True)
     method = models.CharField(_("method"), max_length=10, blank=True)
     status_code = models.PositiveSmallIntegerField(_("status code"), db_index=True)
-    is_authenticated = models.BooleanField(
-        _("authenticated"), default=False, db_index=True
-    )
-    username = models.CharField(
-        _("username"), max_length=150, blank=True, db_index=True
-    )
+    is_authenticated = models.BooleanField(_("authenticated"), default=False)
+    username = models.CharField(_("username"), max_length=150, blank=True)
     response_time_ms = models.FloatField(_("response time (ms)"), db_index=True)
     db_query_count = models.PositiveIntegerField(
         _("database query count"), blank=True, null=True
@@ -35,6 +31,4 @@ class RequestMetric(models.Model):
         ordering = ["-time"]
         indexes = [
             models.Index(fields=["url_name", "-time"], name="req_metric_url_time"),
-            models.Index(fields=["response_time_ms"], name="req_metric_resp_time"),
-            models.Index(fields=["time"], name="req_metric_time"),
         ]

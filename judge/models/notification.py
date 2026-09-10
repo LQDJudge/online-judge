@@ -341,7 +341,6 @@ class Notification(models.Model):
         verbose_name=_("category"),
         max_length=50,
         choices=NotificationCategory.choices,
-        db_index=True,
     )
     html_link = models.TextField(
         default="",
@@ -380,7 +379,6 @@ class Notification(models.Model):
         indexes = [
             models.Index(fields=["owner", "is_read"]),
             models.Index(fields=["category", "-time"]),
-            models.Index(fields=["time"]),  # For cleanup operations
         ]
         verbose_name = _("notification")
         verbose_name_plural = _("notifications")

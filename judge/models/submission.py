@@ -440,9 +440,6 @@ class BestSubmission(models.Model):
         unique_together = ("user", "problem")
         verbose_name = _("Best Submission")
         verbose_name_plural = _("Best Submissions")
-        indexes = [
-            models.Index(fields=["user", "problem"]),
-        ]
 
     def __str__(self):
         return f"{self.user.user.username} - {self.problem.code}: {self.points}/{self.case_total}"

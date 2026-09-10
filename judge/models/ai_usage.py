@@ -51,10 +51,8 @@ class AIUsageLog(models.Model):
     username = models.CharField(
         _("username"), max_length=150, blank=True, db_index=True
     )
-    feature = models.CharField(_("feature"), max_length=100, blank=True, db_index=True)
-    bot_name = models.CharField(
-        _("bot name"), max_length=100, blank=True, db_index=True
-    )
+    feature = models.CharField(_("feature"), max_length=100, blank=True)
+    bot_name = models.CharField(_("bot name"), max_length=100, blank=True)
     status = models.CharField(
         _("status"), max_length=20, choices=STATUS_CHOICES, db_index=True
     )
