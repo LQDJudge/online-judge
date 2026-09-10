@@ -153,6 +153,40 @@ class LessonQuizPopupTest(TestCase):
         self.assertEqual(quiz_item["attempts_count"], 1)
         self.assertFalse(quiz_item["can_attempt"])
 
+    def test_course_and_lesson_grades_share_quiz_score_semantics(self):
+        self.lesson_quiz.points = 100
+        self.lesson_quiz.save(update_fields=["points"])
+        self.client.force_login(self.student.user)
+
+        lesson_resp = self.client.get(
+            reverse("course_grades_lesson", args=[self.course.slug, self.lesson.id])
+        )
+        lesson_student = next(
+            student
+            for student in lesson_resp.context["grades"]
+            if student.id == self.student.id
+        )
+        lesson_grade = lesson_resp.context["grades"][lesson_student]
+        self.assertEqual(lesson_grade["total"]["percentage"], 100)
+        self.assertEqual(lesson_grade[f"quiz_{self.lesson_quiz.id}"]["achieved"], 100)
+
+        course_resp = self.client.get(reverse("course_grades", args=[self.course.slug]))
+        course_student = next(
+            student
+            for student in course_resp.context["grade_total"]
+            if student.id == self.student.id
+        )
+        # The second, empty lesson carries the other half of the course weight.
+        self.assertEqual(
+            course_resp.context["grade_lessons"][course_student][self.lesson.id][
+                "percentage"
+            ],
+            100,
+        )
+        self.assertEqual(
+            course_resp.context["grade_total"][course_student]["percentage"], 50
+        )
+
     def test_result_link_shown_to_owner(self):
         self.client.force_login(self.student.user)  # owner of the attempt
         resp = self.client.get(self._url())

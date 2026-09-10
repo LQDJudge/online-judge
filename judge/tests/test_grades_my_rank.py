@@ -9,15 +9,24 @@ from django.utils import timezone
 
 from judge.models import (
     Contest,
+    ContestParticipation,
+    ContestProblem,
     Course,
     CourseContest,
     CourseLesson,
     CourseRole,
     Language,
+    Problem,
+    ProblemGroup,
     Profile,
 )
 from judge.models.course import RoleInCourse
-from judge.views.course import _locate_student
+from judge.views.course import (
+    _build_lesson_grade_details,
+    _locate_student,
+    bulk_calculate_lessons_progress,
+    calculate_total_progress,
+)
 
 
 class FakeStudent:
@@ -127,6 +136,55 @@ class GradesMyRankIntegrationTest(TestCase):
         expected = reverse("contest_ranking", args=[self.contest.key])
         self.assertContains(resp, expected + "?user=sa")
 
+    def test_nonzero_contest_grade_matches_detailed_and_compact_results(self):
+        group = ProblemGroup.objects.create(name="grade", full_name="Grade")
+        problem = Problem.objects.create(
+            code="grade-problem",
+            name="Grade problem",
+            description="d",
+            group=group,
+            time_limit=1.0,
+            memory_limit=65536,
+            points=100,
+            is_public=True,
+        )
+        ContestProblem.objects.create(
+            contest=self.contest,
+            problem=problem,
+            points=100,
+            order=1,
+        )
+        ContestParticipation.objects.create(
+            contest=self.contest,
+            user=self.sb,
+            score=40,
+        )
+        self.client.force_login(self.sa.user)
+
+        resp = self.client.get(self._grades_url())
+
+        self.assertEqual(resp.status_code, 200)
+        student = next(
+            profile
+            for profile in resp.context["grade_total"]
+            if profile.id == self.sb.id
+        )
+        contest_grade = resp.context["grade_contests"][student][self.course_contest.id]
+        self.assertEqual(contest_grade["achieved_points"], 40)
+        self.assertEqual(contest_grade["total_points"], 100)
+        self.assertEqual(contest_grade["percentage"], 40)
+
+        detailed_total = calculate_total_progress(
+            resp.context["grade_lessons"][student],
+            resp.context["grade_contests"][student],
+        )
+        self.assertEqual(resp.context["grade_total"][student], detailed_total)
+        self.assertEqual(
+            resp.context["grade_total"][student],
+            {"achieved_points": 40, "total_points": 200, "percentage": 20},
+        )
+        self.assertEqual(resp.context["global_rank"][self.sb.id], 1)
+
     def _lesson_url(self):
         return reverse("course_grades_lesson", args=[self.course.slug, self.lesson.id])
 
@@ -165,3 +223,41 @@ class GradesMyRankIntegrationTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'class="highlight"')
         self.assertContains(resp, 'id="my-grades-row"')
+
+    @mock.patch(
+        "judge.views.course.bulk_calculate_lessons_progress",
+        wraps=bulk_calculate_lessons_progress,
+    )
+    def test_course_grade_details_are_limited_to_page_students(self, calculate):
+        self.client.force_login(self.sa.user)
+
+        resp = self.client.get(self._grades_url())
+
+        self.assertEqual(resp.status_code, 200)
+        compact_calls = [
+            call
+            for call in calculate.call_args_list
+            if not call.kwargs.get("include_details", True)
+        ]
+        detailed_calls = [
+            call
+            for call in calculate.call_args_list
+            if call.kwargs.get("include_details", True)
+        ]
+        self.assertEqual(len(compact_calls), 1)
+        self.assertEqual(len(compact_calls[0].args[0]), 3)
+        self.assertEqual(len(detailed_calls), 1)
+        self.assertEqual(len(detailed_calls[0].args[0]), 2)
+
+    @mock.patch(
+        "judge.views.course._build_lesson_grade_details",
+        wraps=_build_lesson_grade_details,
+    )
+    def test_lesson_grade_details_are_limited_to_page_students(self, build_details):
+        self.client.force_login(self.sa.user)
+
+        resp = self.client.get(self._lesson_url())
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(build_details.call_count, 1)
+        self.assertEqual(len(build_details.call_args.args[0]), 2)
