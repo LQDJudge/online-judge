@@ -251,7 +251,7 @@ class UsernameModerationTaskTest(TestCase):
 
     @override_settings(POE_API_KEY="test-key")
     @patch("judge.tasks.username_moderation.LLMService.call_llm")
-    def test_about_block_hides_identity_without_disabling_user(self, call_llm):
+    def test_about_spam_block_disables_user_and_hides_identity(self, call_llm):
         call_llm.return_value = (
             '{"decision":"block","category":"spam","confidence":0.96,'
             '"reason":"Scam profile text"}'
@@ -274,7 +274,37 @@ class UsernameModerationTaskTest(TestCase):
 
         user.refresh_from_db()
         case.refresh_from_db()
-        self.assertTrue(user.is_active)
+        self.assertFalse(user.is_active)
+        self.assertTrue(case.public_identity_hidden)
+        self.assertEqual(case.status, ProfileModerationCase.STATUS_REVIEWED)
+        self.assertEqual(case.decision, ProfileModerationCase.DECISION_BLOCK)
+
+    @override_settings(POE_API_KEY="test-key")
+    @patch("judge.tasks.username_moderation.LLMService.call_llm")
+    def test_about_offensive_block_also_disables_user(self, call_llm):
+        call_llm.return_value = (
+            '{"decision":"block","category":"offensive","confidence":0.96,'
+            '"reason":"Offensive profile text"}'
+        )
+        user = User.objects.create_user(username="about_offensive_user", is_active=True)
+        Profile.objects.create(
+            user=user,
+            language=self.language,
+            about="Targeted offensive profile text",
+        )
+        case = ProfileModerationCase.objects.create(
+            user=user,
+            target=ProfileModerationCase.TARGET_ABOUT,
+            username=user.username,
+            value_snapshot="Targeted offensive profile text",
+            source=ProfileModerationCase.SOURCE_PROFILE_EDIT,
+        )
+
+        moderate_profile_case_task(case.id)
+
+        user.refresh_from_db()
+        case.refresh_from_db()
+        self.assertFalse(user.is_active)
         self.assertTrue(case.public_identity_hidden)
         self.assertEqual(case.status, ProfileModerationCase.STATUS_REVIEWED)
         self.assertEqual(case.decision, ProfileModerationCase.DECISION_BLOCK)

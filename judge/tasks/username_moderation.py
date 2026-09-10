@@ -301,26 +301,7 @@ def _moderate_profile_case(task, case_id, delete_safe_case, trigger_user_id):
     case.is_automated = True
 
     if result["decision"] == ProfileModerationCase.DECISION_BLOCK:
-        if case.target == ProfileModerationCase.TARGET_USERNAME:
-            case.disable_user(hide_identity=True)
-        else:
-            case.status = ProfileModerationCase.STATUS_REVIEWED
-            case.public_identity_hidden = True
-            case.decided_at = now()
-            case.save(
-                update_fields=[
-                    "status",
-                    "decision",
-                    "category",
-                    "confidence",
-                    "reason",
-                    "raw_response",
-                    "public_identity_hidden",
-                    "is_automated",
-                    "decided_at",
-                    "updated_at",
-                ]
-            )
+        case.disable_user(hide_identity=True)
     elif result["decision"] == ProfileModerationCase.DECISION_ALLOW:
         if delete_safe_case and case.source == ProfileModerationCase.SOURCE_AUDIT:
             case.delete()
