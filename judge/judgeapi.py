@@ -144,15 +144,26 @@ def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=No
     except BaseException:
         logger.exception("Failed to send request to judge")
         Submission.objects.filter(id=submission.id).update(status="IE", result="IE")
+        submission.status = "IE"
+        submission.result = "IE"
+        submission.update_contest()
+        submission.reconcile_result_state()
+        submission.user.calculate_points()
         success = False
     else:
-        if (
+        invalid_response = (
             response["name"] != "submission-received"
             or response["submission-id"] != submission.id
-        ):
+        )
+        if invalid_response:
             Submission.objects.filter(id=submission.id).update(status="IE", result="IE")
+            submission.status = "IE"
+            submission.result = "IE"
+            submission.update_contest()
+            submission.reconcile_result_state()
+            submission.user.calculate_points()
         _post_update_submission(submission)
-        success = True
+        success = not invalid_response
     return success
 
 
@@ -211,6 +222,11 @@ def abort_submission(submission):
     # and returns a bad-request, the submission is not falsely shown as "Aborted" when it will still be judged.
     if not response.get("judge-aborted", True):
         Submission.objects.filter(id=submission.id).update(status="AB", result="AB")
+        submission.status = "AB"
+        submission.result = "AB"
+        submission.update_contest()
+        submission.reconcile_result_state()
+        submission.user.calculate_points()
         event.post(
             "sub_%s" % Submission.get_id_secret(submission.id),
             {"type": "aborted-submission"},

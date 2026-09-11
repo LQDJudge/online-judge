@@ -110,6 +110,37 @@ class ProblemMergeTestCase(TestCase):
             end_time=now + timezone.timedelta(hours=2),
         )
 
+    def test_merge_rebuilds_best_submission_by_normalized_points(self):
+        normalized_best = Submission.objects.create(
+            user=self.profile,
+            problem=self.target,
+            language=self.language,
+            status="D",
+            result="AC",
+            points=100,
+            case_points=10,
+            case_total=10,
+        )
+        Submission.objects.create(
+            user=self.profile,
+            problem=self.source,
+            language=self.language,
+            status="D",
+            result="WA",
+            points=90,
+            case_points=900,
+            case_total=1000,
+        )
+
+        ProblemMerge(self.source.code, self.target.code, apply=True).run()
+
+        self.assertEqual(
+            BestSubmission.objects.get(
+                user=self.profile, problem=self.target
+            ).submission_id,
+            normalized_best.id,
+        )
+
     def test_dry_run_reports_without_mutating(self):
         source_submission = self.make_submission(self.source)
         report = ProblemMerge(self.source.code, self.target.code, apply=False).run()

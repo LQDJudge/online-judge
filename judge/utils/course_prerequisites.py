@@ -119,10 +119,13 @@ def update_lesson_unlock_states(user_profile, course):
     Returns:
         list: List of newly unlocked lesson IDs
     """
-    from judge.models import CourseLessonProgress
+    from judge.models import CourseLessonProgress, CourseRole
 
     lessons = list(course.lessons.all())
     if not lessons:
+        CourseRole.objects.filter(course=course, user=user_profile).update(
+            needs_progress_recalculation=False
+        )
         return []
 
     lessons_by_order = {lesson.order: lesson for lesson in lessons}
@@ -189,6 +192,9 @@ def update_lesson_unlock_states(user_profile, course):
         elif is_unlocked:
             newly_unlocked.append(lesson.id)
 
+    CourseRole.objects.filter(course=course, user=user_profile).update(
+        needs_progress_recalculation=False
+    )
     return newly_unlocked
 
 
@@ -231,10 +237,19 @@ def get_lesson_lock_status(user_profile, course):
     Returns:
         dict: {lesson_id: is_locked} - True if locked, False if unlocked
     """
-    from judge.models import CourseLessonProgress, CourseLessonPrerequisite
+    from judge.models import CourseLessonProgress, CourseLessonPrerequisite, CourseRole
 
     lessons = list(course.lessons.all())
     valid_orders = {lesson.order for lesson in lessons}
+
+    needs_recalculation = CourseRole.objects.filter(
+        course=course,
+        user=user_profile,
+        needs_progress_recalculation=True,
+    ).exists()
+
+    if needs_recalculation:
+        update_lesson_unlock_states(user_profile, course)
 
     # Check if there are any valid prerequisites (both source and target exist)
     has_valid_prerequisites = CourseLessonPrerequisite.objects.filter(
@@ -255,7 +270,7 @@ def get_lesson_lock_status(user_profile, course):
     progress_dict = {p["lesson_id"]: p["is_unlocked"] for p in progress_records}
 
     # Check if we need to initialize progress
-    if len(progress_dict) < len(list(lessons)):
+    if len(progress_dict) < len(lessons):
         # Initialize missing progress records
         update_lesson_unlock_states(user_profile, course)
         # Refresh progress dict

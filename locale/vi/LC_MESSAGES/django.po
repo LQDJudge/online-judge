@@ -17487,6 +17487,15 @@ msgstr "Chọn tất cả"
 msgid "No items yet."
 msgstr "Chưa có mục nào."
 
+msgid "Invalid answer identifier."
+msgstr "Mã câu trả lời không hợp lệ."
+
+msgid "Points must be a finite number between 0 and the question maximum."
+msgstr "Điểm phải là một số hữu hạn từ 0 đến điểm tối đa của câu hỏi."
+
+msgid "Question is not assigned to this quiz."
+msgstr "Câu hỏi này không thuộc bài trắc nghiệm."
+
 #~ msgid "FOR YOU"
 #~ msgstr "DÀNH CHO BẠN"
 

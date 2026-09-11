@@ -23,6 +23,7 @@ from judge.models import (
     SubmissionTestCase,
 )
 from judge.utils.raw_sql import use_straight_join
+from judge.utils.problems import finished_submission
 
 
 class SubmissionStatusFilter(admin.SimpleListFilter):
@@ -201,8 +202,16 @@ class SubmissionAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        if "case_points" in form.changed_data or "case_total" in form.changed_data:
+        if {
+            "points",
+            "case_points",
+            "case_total",
+            "status",
+            "result",
+        }.intersection(form.changed_data):
             obj.update_contest()
+            finished_submission(obj)
+            obj.user.calculate_points()
 
     def judge(self, request, queryset):
         if not request.user.has_perm(
@@ -285,6 +294,7 @@ class SubmissionAdmin(admin.ModelAdmin):
                 submission.points = 0
             submission.save()
             submission.update_contest()
+            finished_submission(submission)
 
         for profile in Profile.objects.filter(
             id__in=queryset.values_list("user_id", flat=True).distinct()

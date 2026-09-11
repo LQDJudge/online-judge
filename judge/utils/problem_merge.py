@@ -528,9 +528,10 @@ class ProblemMerge:
                     user_id,
                     case_points,
                     case_total,
+                    points,
                     ROW_NUMBER() OVER (
                         PARTITION BY user_id
-                        ORDER BY case_points DESC, date DESC, id DESC
+                        ORDER BY points DESC, date DESC, id DESC
                     ) AS best_submission_rank
                 FROM {submission_table}
                 WHERE problem_id = %s

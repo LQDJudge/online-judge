@@ -3,6 +3,7 @@ import uuid
 import json
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.db import models, transaction
+from django.db.models.functions import Cast
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
@@ -10,7 +11,12 @@ from judge.models.profile import Profile
 from judge.models.contest import ContestParticipation
 from judge.models.course import CourseLesson, Course
 from judge.utils.identity import ImmutableIdentityMixin
-from judge.utils.quiz_grading import auto_grade_answer, auto_grade_quiz_attempt
+from judge.utils.quiz_grading import (
+    auto_grade_answer,
+    auto_grade_quiz_attempt,
+    sync_contest_quiz_result,
+    sync_quiz_attempt_result,
+)
 
 MAX_QUESTION_POINTS = 1000
 MAX_QUIZ_TIME_LIMIT_MINUTES = 7 * 24 * 60
@@ -432,25 +438,25 @@ class Quiz(models.Model):
         """
         attempts = QuizAttempt.objects.filter(
             quiz=self, is_submitted=True
-        ).select_related("contest_participation")
+        ).select_related("contest_participation__contest")
         count = 0
-        participations_to_update = set()
+        participations_to_update = {}
 
         for attempt in attempts:
             # Re-grade each answer
             for answer in attempt.answers.all():
                 answer.auto_grade()
             # Recalculate the attempt score
-            attempt.calculate_score()
+            attempt.calculate_score(sync_contest=False)
             count += 1
 
-            # Track contest participations that need updating
-            if attempt.contest_participation:
-                participations_to_update.add(attempt.contest_participation)
+            if attempt.contest_participation_id:
+                participations_to_update[attempt.contest_participation_id] = (
+                    attempt.contest_participation
+                )
 
-        # Update all affected contest participations
-        for participation in participations_to_update:
-            participation.recompute_results()
+        for participation in participations_to_update.values():
+            sync_contest_quiz_result(participation)
 
         return count
 
@@ -808,17 +814,19 @@ class QuizAttempt(models.Model):
         time_elapsed = timezone.now() - self.start_time
         return time_elapsed.total_seconds() > (self.time_limit_minutes * 60)
 
-    def calculate_score(self):
+    def calculate_score(self, sync_contest=True):
         """Calculate and update the score for this attempt"""
-        # Sum points from all answers
-        total_score = sum(answer.points for answer in self.answers.all())
+        with transaction.atomic(savepoint=False):
+            total_score = sum(answer.points for answer in self.answers.all())
+            max_score = self.quiz.get_total_points()
 
-        # Get max score from quiz
-        max_score = self.quiz.get_total_points()
+            self.score = total_score
+            self.max_score = max_score
+            self.save(update_fields=["score", "max_score"])
+            sync_quiz_attempt_result(self, sync_contest=False)
 
-        self.score = total_score
-        self.max_score = max_score
-        self.save(update_fields=["score", "max_score"])
+        if sync_contest and self.is_submitted and self.contest_participation_id:
+            sync_contest_quiz_result(self.contest_participation, self.id)
 
         return total_score, max_score
 
@@ -1121,19 +1129,22 @@ class BestQuizAttempt(models.Model):
         return f"{self.user.user.username} - {self.lesson_quiz.quiz.title}: {self.score}/{self.max_score}"
 
     def save(self, *args, **kwargs):
-        # Track if score changed for triggering lesson grade updates
-        old_score = 0
+        old_result = None
         if self.pk:
             try:
                 old_instance = BestQuizAttempt.objects.get(pk=self.pk)
-                old_score = float(old_instance.score)
+                old_result = (
+                    float(old_instance.score),
+                    float(old_instance.max_score),
+                    old_instance.attempt_id,
+                )
             except BestQuizAttempt.DoesNotExist:
                 pass
 
         super().save(*args, **kwargs)
 
-        # If score changed, trigger lesson grade update
-        if abs(float(self.score) - old_score) > 0.001:
+        new_result = (float(self.score), float(self.max_score), self.attempt_id)
+        if old_result != new_result:
             self._update_lesson_grade()
 
     def _update_lesson_grade(self):
@@ -1201,16 +1212,26 @@ class BestQuizAttempt(models.Model):
                 lesson_quiz=lesson_quiz,
                 is_submitted=True,
             )
-            .order_by("-score")
+            .annotate(
+                score_ratio=models.Case(
+                    models.When(
+                        max_score__gt=0,
+                        then=Cast("score", models.FloatField())
+                        / Cast("max_score", models.FloatField()),
+                    ),
+                    default=models.Value(0.0),
+                    output_field=models.FloatField(),
+                )
+            )
+            .order_by("-score_ratio", "-score", "-start_time", "-id")
             .first()
         )
 
         if not best_attempt:
             # No attempts exist, delete any stale cache
             cls.objects.filter(user_id=user_id, lesson_quiz_id=lesson_quiz_id).delete()
+            cls._update_lesson_grade_for(user_id, lesson_quiz)
             return None
-
-        max_score = lesson_quiz.quiz.get_total_points()
 
         # Update or create the best attempt record
         best_cache, created = cls.objects.update_or_create(
@@ -1219,8 +1240,13 @@ class BestQuizAttempt(models.Model):
             defaults={
                 "attempt": best_attempt,
                 "score": best_attempt.score or 0,
-                "max_score": max_score,
+                "max_score": best_attempt.max_score or 0,
             },
         )
 
         return best_cache
+
+    @classmethod
+    def _update_lesson_grade_for(cls, user_id, lesson_quiz):
+        """Refresh a lesson after its final cached quiz attempt disappears."""
+        cls(user_id=user_id, lesson_quiz=lesson_quiz)._update_lesson_grade()

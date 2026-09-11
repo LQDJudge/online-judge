@@ -46,7 +46,10 @@ from judge.models import (
     Submission,
 )
 from judge.models.course import RoleInCourse, EDITABLE_ROLES
-from judge.utils.course_prerequisites import get_lesson_lock_status
+from judge.utils.course_prerequisites import (
+    get_lesson_lock_status,
+    get_lesson_prerequisites_info,
+)
 from judge.utils.formsets import validate_max_active_forms
 from judge.utils.hidden_results import (
     exclude_hidden_result_submissions,
@@ -81,9 +84,15 @@ MAX_COURSE_LESSON_QUIZZES = 100
 def _set_problem_points(
     result, user_id, problem_id, case_points, case_total, is_result_hidden=False
 ):
+    case_total = case_total or 0
+    case_points = case_points or 0
+    if case_total > 0:
+        case_points = min(max(case_points, 0), case_total)
+    else:
+        case_points = 0
     result.setdefault(user_id, {})[problem_id] = {
-        "case_points": case_points or 0,
-        "case_total": case_total or 0,
+        "case_points": case_points,
+        "case_total": case_total,
         "is_result_hidden": is_result_hidden,
     }
 
@@ -232,17 +241,14 @@ def _prepare_lesson_progress_data(students, lessons):
         attempts = BestQuizAttempt.objects.filter(
             user_id__in=student_ids,
             lesson_quiz_id__in=lesson_quiz_ids,
-        ).values("user_id", "lesson_quiz_id", "score")
-        quiz_by_id = {
-            quiz["id"]: quiz for quizzes in lesson_quizzes.values() for quiz in quizzes
-        }
+        ).values("user_id", "lesson_quiz_id", "score", "max_score")
         for attempt in attempts:
-            quiz = quiz_by_id[attempt["lesson_quiz_id"]]
             score = float(attempt["score"] or 0)
-            max_score = quiz["max_score"]
-            best_quiz_scores[(attempt["user_id"], quiz["id"])] = {
+            max_score = float(attempt["max_score"] or 0)
+            best_quiz_scores[(attempt["user_id"], attempt["lesson_quiz_id"])] = {
                 "score": score,
-                "ratio": score / float(max_score) if max_score else 0,
+                "max_score": max_score,
+                "ratio": (min(max(score / float(max_score), 0), 1) if max_score else 0),
             }
 
     return {
@@ -296,7 +302,7 @@ def _build_lesson_grade_details(students, lesson, bulk_problem_points, progress_
             ratio = attempt["ratio"] if attempt else 0
             student_grade[f"quiz_{quiz['id']}"] = {
                 "score": attempt["score"] if attempt else 0,
-                "max_score": quiz["max_score"],
+                "max_score": attempt["max_score"] if attempt else quiz["max_score"],
                 "achieved": ratio * (quiz["points"] or 0),
             }
 
@@ -412,13 +418,16 @@ def bulk_calculate_contests_progress(
                     "achieved_points": achieved_points,
                     "total_points": total_points,
                     "percentage": (
-                        achieved_points / total_points * 100 if total_points else 0
+                        min(max(achieved_points / total_points, 0), 1) * 100
+                        if total_points
+                        else 0
                     ),
                 }
 
             if total_points:
                 total_achieved_points += (
-                    achieved_points / total_points * course_contest.points
+                    min(max(achieved_points / total_points, 0), 1)
+                    * course_contest.points
                 )
             total_contest_points += course_contest.points
 
@@ -836,14 +845,6 @@ class CourseDetail(CourseDetailMixin, DetailView):
             except CourseRole.DoesNotExist:
                 pass
 
-        # Lazy recalculation: if user needs progress recalculation, do it now
-        if course_role and course_role.needs_progress_recalculation:
-            from judge.utils.course_prerequisites import update_lesson_unlock_states
-
-            update_lesson_unlock_states(self.request.profile, self.course)
-            course_role.needs_progress_recalculation = False
-            course_role.save(update_fields=["needs_progress_recalculation"])
-
         context["title"] = self.course.name
         context["page_type"] = "home"
         context["lessons"] = lessons
@@ -858,11 +859,6 @@ class CourseDetail(CourseDetailMixin, DetailView):
         )
 
         # Add lesson lock status for prerequisites feature
-        from judge.utils.course_prerequisites import (
-            get_lesson_lock_status,
-            get_lesson_prerequisites_info,
-        )
-
         # Teachers/Assistants bypass lock
         if Course.is_editable_by(self.course, self.request.profile):
             context["lesson_lock_status"] = {lesson.id: False for lesson in lessons}
@@ -963,10 +959,10 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
             {lesson_quiz.quiz_id for lesson_quiz in lesson_quizzes}
         )
         best_quiz_attempts = {
-            row["lesson_quiz_id"]: row["score"]
+            row["lesson_quiz_id"]: row
             for row in BestQuizAttempt.objects.filter(
                 user=profile, lesson_quiz_id__in=lesson_quiz_ids
-            ).values("lesson_quiz_id", "score")
+            ).values("lesson_quiz_id", "score", "max_score")
         }
         attempt_counts = {
             row["lesson_quiz_id"]: row
@@ -996,8 +992,16 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
                 {
                     "lesson_quiz": lesson_quiz,
                     "quiz": quiz,
-                    "best_score": best_quiz_attempts.get(lesson_quiz.id),
-                    "max_score": quiz_totals.get(quiz.id, 0),
+                    "best_score": (
+                        best_quiz_attempts[lesson_quiz.id]["score"]
+                        if lesson_quiz.id in best_quiz_attempts
+                        else None
+                    ),
+                    "max_score": (
+                        best_quiz_attempts[lesson_quiz.id]["max_score"]
+                        if lesson_quiz.id in best_quiz_attempts
+                        else quiz_totals.get(quiz.id, 0)
+                    ),
                     "attempts_count": submitted_attempts_count,
                     "max_attempts": lesson_quiz.max_attempts,
                     "can_attempt": can_attempt,

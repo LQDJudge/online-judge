@@ -431,6 +431,7 @@ class FakeSubmissionForGradingEnd:
     id = 123
     status = "G"
     user_id = 456
+    problem_id = 789
     id_secret = "secret"
     contest_object_id = None
     contest_object = None
@@ -590,7 +591,7 @@ class JudgeHandlerGradingEndTests(TestCase):
         self.assertNotIn(submission.id, handler._submission_result_cases)
         self.assertEqual(calls, [("free",)])
 
-    def test_grading_end_frees_judge_when_later_side_effect_raises(self):
+    def test_grading_end_reconciles_and_frees_judge_when_statistics_queue_fails(self):
         calls = []
         submission = FakeSubmissionForGradingEnd(calls)
         handler = object.__new__(JudgeHandler)
@@ -599,6 +600,9 @@ class JudgeHandlerGradingEndTests(TestCase):
         handler._submission_result_cases = {submission.id: {}}
         handler._make_json_log = lambda *args, **kwargs: "{}"
         handler._free_self = lambda packet: calls.append(("free",))
+        handler._post_update_submission = lambda *args, **kwargs: calls.append(
+            ("post-update",)
+        )
 
         with patch("judge.bridge.judge_handler.Submission") as submission_model, patch(
             "judge.bridge.judge_handler.SubmissionTestCase"
@@ -610,6 +614,14 @@ class JudgeHandlerGradingEndTests(TestCase):
             "judge.bridge.judge_handler.update_user_points.delay",
             side_effect=RuntimeError("broker unavailable"),
         ), patch(
+            "judge.bridge.judge_handler.update_problem_stats.delay"
+        ) as problem_task, patch(
+            "judge.bridge.judge_handler.finished_submission"
+        ) as finished, patch(
+            "judge.bridge.judge_handler.event.post"
+        ) as event_post, patch(
+            "judge.bridge.judge_handler.logger.exception"
+        ), patch(
             "judge.bridge.judge_handler.json_log.info"
         ):
             submission_model.objects.get.return_value = submission
@@ -618,10 +630,15 @@ class JudgeHandlerGradingEndTests(TestCase):
                 EmptyProblemTestCaseQuery()
             )
 
-            with self.assertRaises(RuntimeError):
-                handler.on_grading_end({"submission-id": submission.id})
+            handler.on_grading_end({"submission-id": submission.id})
+
+            finished.assert_called_once_with(submission)
+            problem_task.assert_called_once_with(submission.problem_id)
+            event_post.assert_called_once()
 
         self.assertIn(("save", "D", "SC"), calls)
+        self.assertIn(("update-contest",), calls)
+        self.assertIn(("post-update",), calls)
         self.assertEqual(calls[-1], ("free",))
 
 

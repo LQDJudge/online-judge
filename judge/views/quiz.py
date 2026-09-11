@@ -69,6 +69,8 @@ from judge.utils.history import RevisionDiffMixin
 from judge.utils.quiz_grading import (
     auto_grade_quiz_attempt,
     notify_graders_for_essay,
+    sync_contest_quiz_result,
+    validate_manual_answer_points,
 )
 
 
@@ -2967,27 +2969,65 @@ class AttemptGrade(LoginRequiredMixin, QuizEditorMixin, TitleMixin, DetailView):
                     answers_to_update[answer_id] = {}
                 answers_to_update[answer_id]["partial_credit"] = value
 
-        # Update each answer
-        for answer_id, data in answers_to_update.items():
-            try:
-                answer = QuizAnswer.objects.get(id=answer_id, attempt=attempt)
+        if any(not answer_id.isdigit() for answer_id in answers_to_update):
+            messages.error(request, _("Invalid answer identifier."))
+            return redirect("attempt_grade", attempt_id=attempt.id)
+
+        answers = {
+            str(answer.id): answer
+            for answer in QuizAnswer.objects.filter(
+                id__in=answers_to_update, attempt=attempt
+            )
+        }
+        assignment_points = dict(
+            QuizQuestionAssignment.objects.filter(quiz=attempt.quiz).values_list(
+                "question_id", "points"
+            )
+        )
+
+        try:
+            now = timezone.now()
+            for answer_id, data in answers_to_update.items():
+                answer = answers.get(answer_id)
+                if answer is None or answer.question_id not in assignment_points:
+                    raise ValueError
                 if "points" in data:
-                    points = float(data["points"])
+                    points = validate_manual_answer_points(
+                        data["points"], assignment_points[answer.question_id]
+                    )
                     answer.points = points
                     answer.is_correct = points > 0
                 if "feedback" in data:
                     answer.feedback = data["feedback"]
                 if "partial_credit" in data:
-                    # Convert from 0-100 percentage to 0.0-1.0 decimal
-                    partial_value = float(data["partial_credit"]) / 100.0
-                    answer.partial_credit = min(max(partial_value, 0.0), 1.0)
-                answer.graded_at = timezone.now()
+                    answer.partial_credit = (
+                        validate_manual_answer_points(data["partial_credit"], 100)
+                        / 100.0
+                    )
+                answer.graded_at = now
                 answer.graded_by = request.profile
-                answer.save()
-            except (QuizAnswer.DoesNotExist, ValueError):
-                continue
+        except ValueError:
+            messages.error(
+                request,
+                _("Points must be a finite number between 0 and the question maximum."),
+            )
+            return redirect("attempt_grade", attempt_id=attempt.id)
 
-        attempt.calculate_score()
+        with transaction.atomic():
+            QuizAnswer.objects.bulk_update(
+                answers.values(),
+                [
+                    "points",
+                    "is_correct",
+                    "feedback",
+                    "partial_credit",
+                    "graded_at",
+                    "graded_by",
+                ],
+            )
+            attempt.calculate_score(sync_contest=False)
+        if attempt.is_submitted and attempt.contest_participation_id:
+            sync_contest_quiz_result(attempt.contest_participation, attempt.id)
         messages.success(request, _("Grading saved successfully."))
         return redirect("grading_dashboard")
 
@@ -3014,16 +3054,32 @@ class AnswerGrade(LoginRequiredMixin, QuizEditorMixin, View):
             return JsonResponse({"error": "Permission denied"}, status=403)
 
         try:
-            points = float(data.get("points", 0))
+            max_points = (
+                QuizQuestionAssignment.objects.filter(
+                    quiz=answer.attempt.quiz, question_id=answer.question_id
+                )
+                .values_list("points", flat=True)
+                .first()
+            )
+            if max_points is None:
+                return JsonResponse(
+                    {"error": _("Question is not assigned to this quiz.")}, status=400
+                )
+            points = validate_manual_answer_points(data.get("points", 0), max_points)
 
-            answer.points = points
-            answer.is_correct = points > 0
-            answer.graded_at = timezone.now()
-            answer.graded_by = request.profile
-            answer.save()
+            with transaction.atomic():
+                answer.points = points
+                answer.is_correct = points > 0
+                answer.graded_at = timezone.now()
+                answer.graded_by = request.profile
+                answer.save()
 
-            # Recalculate attempt score
-            answer.attempt.calculate_score()
+                answer.attempt.calculate_score(sync_contest=False)
+
+            if answer.attempt.is_submitted and answer.attempt.contest_participation_id:
+                sync_contest_quiz_result(
+                    answer.attempt.contest_participation, answer.attempt.id
+                )
 
             return JsonResponse(
                 {
@@ -3033,7 +3089,14 @@ class AnswerGrade(LoginRequiredMixin, QuizEditorMixin, View):
                 }
             )
         except ValueError:
-            return JsonResponse({"error": "Invalid points value"}, status=400)
+            return JsonResponse(
+                {
+                    "error": _(
+                        "Points must be a finite number between 0 and the question maximum."
+                    )
+                },
+                status=400,
+            )
 
 
 # =============================================================================

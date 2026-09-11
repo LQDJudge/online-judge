@@ -254,7 +254,7 @@ class LessonGradesPopupTest(TestCase):
             + lesson_grade_url
             + r"\?focus="
             + self.student.username
-            + r'">\s*0\s*</a>',
+            + r'">\s*0(?:[,.]00)?\s*</a>',
         )
 
         lesson_resp = self.client.get(

@@ -70,6 +70,49 @@ def _problem_owner_ids(problem):
     return owner_ids
 
 
+def _queue_result_statistics(submission):
+    """Queue independent statistics updates without interrupting result handling."""
+    for task, object_id in (
+        (update_user_points, submission.user_id),
+        (update_problem_stats, submission.problem_id),
+    ):
+        try:
+            task.delay(object_id)
+        except Exception:
+            logger.exception(
+                "Failed to queue %s for submission %s", task.name, submission.id
+            )
+
+
+def _synchronize_terminal_failure(submission_id):
+    """Reconcile state after a submission ends without a grading-end packet."""
+    try:
+        submission = Submission.objects.select_related(
+            "problem",
+            "user",
+            "contest__participation",
+            "contest__problem",
+            "contest_object",
+        ).get(id=submission_id)
+        submission.update_contest()
+        finished_submission(submission)
+        _queue_result_statistics(submission)
+
+        if (
+            submission.contest_object_id
+            and submission.contest_object.scoreboard_visibility
+            == Contest.SCOREBOARD_VISIBLE
+        ):
+            event.post(
+                "contest_%s" % submission.contest_object.key,
+                {"type": "ranking-update"},
+            )
+    except Exception:
+        logger.exception(
+            "Failed to synchronize terminal state for submission %s", submission_id
+        )
+
+
 def _is_worker_no_response_error(error_message):
     message = (error_message or "").lower()
     if "worker" not in message:
@@ -599,12 +642,14 @@ class JudgeHandler(ZlibPacketHandler):
                 packet, action="processing", info="wrong-acknowledge", expected=expected
             )
         )
-        Submission.objects.filter(id=expected).update(
+        if Submission.objects.filter(id=expected).update(
             status="IE", result="IE", error=None
-        )
-        Submission.objects.filter(id=got, status="QU").update(
+        ):
+            _synchronize_terminal_failure(expected)
+        if Submission.objects.filter(id=got, status="QU").update(
             status="IE", result="IE", error=None
-        )
+        ):
+            _synchronize_terminal_failure(got)
 
     def on_submission_acknowledged(self, packet):
         if not packet.get("submission-id", None) == self._working:
@@ -874,9 +919,9 @@ class JudgeHandler(ZlibPacketHandler):
                     submission.id,
                 )
 
-            update_user_points.delay(submission.user_id)
-            update_problem_stats.delay(problem.id)
             submission.update_contest()
+            finished_submission(submission)
+            _queue_result_statistics(submission)
 
             if (
                 submission.contest_object_id
@@ -887,8 +932,6 @@ class JudgeHandler(ZlibPacketHandler):
                     "contest_%s" % submission.contest_object.key,
                     {"type": "ranking-update"},
                 )
-
-            finished_submission(submission)
 
             event.post(
                 "sub_%s" % submission.id_secret,
@@ -915,6 +958,7 @@ class JudgeHandler(ZlibPacketHandler):
         if Submission.objects.filter(id=packet["submission-id"]).update(
             status="CE", result="CE", error=packet["log"]
         ):
+            _synchronize_terminal_failure(packet["submission-id"])
             event.post(
                 "sub_%s" % Submission.get_id_secret(packet["submission-id"]),
                 {
@@ -988,6 +1032,7 @@ class JudgeHandler(ZlibPacketHandler):
         if Submission.objects.filter(id=id).update(
             status="IE", result="IE", error=message
         ):
+            _synchronize_terminal_failure(id)
             event.post(
                 "sub_%s" % Submission.get_id_secret(id), {"type": "internal-error"}
             )
@@ -1109,6 +1154,7 @@ class JudgeHandler(ZlibPacketHandler):
         if Submission.objects.filter(id=packet["submission-id"]).update(
             status="AB", result="AB"
         ):
+            _synchronize_terminal_failure(packet["submission-id"])
             event.post(
                 "sub_%s" % Submission.get_id_secret(packet["submission-id"]),
                 {"type": "aborted-submission"},

@@ -6,3 +6,4 @@ from . import submission
 from . import interface
 from . import course
 from . import bookmark
+from . import quiz

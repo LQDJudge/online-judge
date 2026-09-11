@@ -463,6 +463,10 @@ class QuizAttemptAdmin(CompareVersionAdmin):
     date_hierarchy = "start_time"
     inlines = [QuizAnswerInline]
 
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        form.instance.calculate_score()
+
     def user_link(self, obj):
         url = reverse("admin:judge_profile_change", args=[obj.user.id])
         return format_html('<a href="{}">{}</a>', url, obj.user.user.username)

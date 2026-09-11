@@ -5,14 +5,19 @@ This module contains grading algorithms for different quiz question types.
 """
 
 import json
+import logging
+import math
 import re
 from typing import Tuple
 
 from django.apps import apps
+from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
 from judge import event_poster as event
+
+logger = logging.getLogger("judge.quiz_grading")
 
 
 def normalize_sa(s, case_sensitive=False):
@@ -369,39 +374,68 @@ def auto_grade_quiz_attempt(attempt, assignments=None, answers=None) -> float:
 
         total_score += answer.points
 
-    if answers:
-        attempt.answers.model.objects.bulk_update(
-            answers,
-            ["points", "is_correct", "partial_credit", "graded_at"],
+    with transaction.atomic(savepoint=False):
+        if answers:
+            attempt.answers.model.objects.bulk_update(
+                answers,
+                ["points", "is_correct", "partial_credit", "graded_at"],
+            )
+
+        max_score = sum(assignment.points for assignment in assignments)
+
+        attempt.score = total_score
+        attempt.max_score = max_score
+        attempt.save(update_fields=["score", "max_score"])
+        sync_quiz_attempt_result(attempt, sync_contest=False)
+
+    if attempt.is_submitted and attempt.contest_participation_id:
+        sync_contest_quiz_result(attempt.contest_participation, attempt.id)
+
+    return total_score
+
+
+def sync_contest_quiz_result(participation, attempt_id=None):
+    """Recompute one contest participation and notify its live scoreboard."""
+    try:
+        participation.recompute_results()
+        contest_model = apps.get_model("judge", "Contest")
+        contest = participation.contest
+        if contest.scoreboard_visibility == contest_model.SCOREBOARD_VISIBLE:
+            event.post(
+                "contest_%s" % contest.key,
+                {"type": "ranking-update"},
+            )
+    except Exception:
+        logger.exception(
+            "Failed to synchronize contest result for quiz attempt %s",
+            attempt_id,
         )
 
-    max_score = sum(assignment.points for assignment in assignments)
 
-    # Update attempt score and max_score
-    attempt.score = total_score
-    attempt.max_score = max_score
-    attempt.save(update_fields=["score", "max_score"])
+def sync_quiz_attempt_result(attempt, sync_contest=True):
+    """Synchronize every result derived from a submitted quiz attempt."""
+    if not attempt.is_submitted:
+        return
 
-    # Update contest participation if applicable
-    if hasattr(attempt, "contest_participation") and attempt.contest_participation:
-        try:
-            attempt.contest_participation.recompute_results()
-            # Post ranking-update event for live scoreboard
-            contest_model = apps.get_model("judge", "Contest")
-            contest = attempt.contest_participation.contest
-            if contest.scoreboard_visibility == contest_model.SCOREBOARD_VISIBLE:
-                event.post(
-                    "contest_%s" % contest.key,
-                    {"type": "ranking-update"},
-                )
-        except Exception:
-            pass
+    if sync_contest and attempt.contest_participation_id:
+        sync_contest_quiz_result(attempt.contest_participation, attempt.id)
 
     # Update best quiz attempt cache for course lesson grade tracking
     best_attempt_model = apps.get_model("judge", "BestQuizAttempt")
     best_attempt_model.update_from_attempt(attempt)
 
-    return total_score
+
+def validate_manual_answer_points(raw_points, max_points):
+    """Return a valid manual score or raise ValueError."""
+    try:
+        points = float(raw_points)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Invalid points value") from exc
+
+    if not math.isfinite(points) or points < 0 or points > float(max_points):
+        raise ValueError("Points must be between 0 and the question maximum")
+
+    return points
 
 
 def calculate_attempt_score(attempt) -> Tuple[float, float]:

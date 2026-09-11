@@ -107,7 +107,7 @@
               </td>
               <td class="total-score">
                 {% if grade_total_student %}
-                  {{ grade_total_student['percentage'] | floatformat(0) }}%
+                  {{ grade_total_student['percentage'] | floatformat(2) }}%
                 {% else %}
                   0
                 {% endif %}
@@ -117,7 +117,7 @@
                 <td class="partial-score">
                   <a href="{{ url('course_grades_lesson', course.slug, lesson.id) }}?focus={{ student.username }}">
                     {% if val and val['total_points'] %}
-                      {{ (val['achieved_points'] / val['total_points'] * lesson.points) | floatformat(0) }}
+                      {{ (val['achieved_points'] / val['total_points'] * lesson.points) | floatformat(2) }}
                     {% else %}0{% endif %}
                   </a>
                 </td>
@@ -127,7 +127,7 @@
                 <td class="partial-score">
                   <a href="{{ url('contest_ranking', course_contest.contest.key) }}?user={{ student.username|urlencode }}">
                     {% if val and val['total_points'] %}
-                      {{ (val['achieved_points'] / val['total_points'] * course_contest.points) | floatformat(0) }}
+                      {{ (val['achieved_points'] / val['total_points'] * course_contest.points) | floatformat(2) }}
                     {% else %}
                       0
                     {% endif %}

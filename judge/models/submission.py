@@ -2,6 +2,7 @@ import hashlib
 import hmac
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Count
@@ -181,7 +182,7 @@ class Submission(models.Model):
         contest.points = round(
             (
                 self.case_points / self.case_total * contest_problem.points
-                if self.case_total > 0
+                if self.status == "D" and self.case_total > 0
                 else 0
             ),
             3,
@@ -192,6 +193,29 @@ class Submission(models.Model):
         contest.participation.recompute_results()
 
     update_contest.alters_data = True
+
+    def reconcile_result_state(self):
+        """Rebuild cached state derived from this submission's terminal result."""
+        BestSubmission.recalculate_for_user_problem(self.user_id, self.problem_id)
+
+        keys = [
+            "user_complete:%d" % self.user_id,
+            "user_attempted:%s" % self.user_id,
+        ]
+        try:
+            participation = self.contest.participation
+        except (AttributeError, ObjectDoesNotExist):
+            pass
+        else:
+            keys.extend(
+                [
+                    "contest_complete:%d" % participation.id,
+                    "contest_attempted:%d" % participation.id,
+                ]
+            )
+        cache.delete_many(keys)
+
+    reconcile_result_state.alters_data = True
 
     @property
     def is_graded(self):
@@ -445,38 +469,41 @@ class BestSubmission(models.Model):
         return f"{self.user.user.username} - {self.problem.code}: {self.points}/{self.case_total}"
 
     def save(self, *args, **kwargs):
-        # Track if points changed for triggering lesson grade updates
-        old_points = 0
+        old_result = None
         if self.pk:
             try:
                 old_instance = BestSubmission.objects.get(pk=self.pk)
-                old_points = old_instance.points
+                old_result = (
+                    old_instance.points,
+                    old_instance.case_total,
+                    old_instance.submission_id,
+                )
             except BestSubmission.DoesNotExist:
                 pass
 
         super().save(*args, **kwargs)
 
-        # If points changed, trigger lesson grade update for related lessons
-        if abs(self.points - old_points) > 0.001:
+        new_result = (self.points, self.case_total, self.submission_id)
+        if old_result != new_result:
             self._update_related_lesson_grades()
 
     def _update_related_lesson_grades(self):
         """Update lesson grades for lessons containing this problem."""
-        from judge.models.course import CourseLessonProblem, CourseRole
+        from judge.models.course import CourseLessonProblem
         from judge.utils.course_prerequisites import update_lesson_grade
 
-        # Find all lessons containing this problem
-        lesson_problems = CourseLessonProblem.objects.filter(
-            problem=self.problem
-        ).select_related("lesson__course")
+        # Find enrolled lessons containing this problem.
+        lesson_problems = (
+            CourseLessonProblem.objects.filter(
+                problem_id=self.problem_id,
+                lesson__course__courserole__user_id=self.user_id,
+            )
+            .select_related("lesson__course")
+            .distinct()
+        )
 
         for lesson_problem in lesson_problems:
-            lesson = lesson_problem.lesson
-            course = lesson.course
-
-            # Check if user is enrolled in this course
-            if CourseRole.objects.filter(course=course, user=self.user).exists():
-                update_lesson_grade(self.user, lesson)
+            update_lesson_grade(Profile(id=self.user_id), lesson_problem.lesson)
 
     @classmethod
     def update_from_submission(cls, submission):
@@ -519,7 +546,7 @@ class BestSubmission(models.Model):
                 problem_id=problem_id,
                 status="D",
             )
-            .order_by("-points", "-date")
+            .order_by("-points", "-date", "-id")
             .first()
         )
 
@@ -538,4 +565,5 @@ class BestSubmission(models.Model):
         else:
             # No submissions left, delete the best submission record if it exists
             cls.objects.filter(user_id=user_id, problem_id=problem_id).delete()
+            cls(user_id=user_id, problem_id=problem_id)._update_related_lesson_grades()
             return None

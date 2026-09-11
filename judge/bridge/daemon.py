@@ -6,7 +6,7 @@ from functools import partial
 from django.conf import settings
 
 from judge.bridge.django_handler import DjangoHandler
-from judge.bridge.judge_handler import JudgeHandler
+from judge.bridge.judge_handler import JudgeHandler, _synchronize_terminal_failure
 from judge.bridge.judge_list import JudgeList
 from judge.bridge.server import Server
 from judge.models import Judge, Submission
@@ -20,9 +20,16 @@ def reset_judges():
 
 def judge_daemon():
     reset_judges()
-    Submission.objects.filter(status__in=Submission.IN_PROGRESS_GRADING_STATUS).update(
+    interrupted_submission_ids = list(
+        Submission.objects.filter(
+            status__in=Submission.IN_PROGRESS_GRADING_STATUS
+        ).values_list("id", flat=True)
+    )
+    Submission.objects.filter(id__in=interrupted_submission_ids).update(
         status="IE", result="IE", error=None
     )
+    for submission_id in interrupted_submission_ids:
+        _synchronize_terminal_failure(submission_id)
     judges = JudgeList()
 
     judge_server = Server(

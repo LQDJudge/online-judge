@@ -5,7 +5,6 @@ import random
 from enum import Enum
 
 from django.conf import settings
-from django.core.cache import cache
 from django.db.models import Case, Count, ExpressionWrapper, F, Max, Q, When
 from django.db.models.fields import FloatField
 from django.utils import timezone
@@ -261,30 +260,16 @@ def finished_submission(sub, is_delete=False):
     # re-populate them from the stale (pre-update) BestSubmission row, leaving the
     # problem stuck on the "attempted" (yellow) icon until the cache times out.
     # Writing the DB first guarantees any subsequent recompute reads fresh data.
-    if is_delete:
-        # When deleting, recalculate best submission for this user/problem
-        # The CASCADE delete will remove BestSubmission if it pointed to this submission,
-        # so we need to find and set the new best submission from remaining ones
-        BestSubmission.recalculate_for_user_problem(sub.user_id, sub.problem_id)
-    else:
-        BestSubmission.update_from_submission(sub)
+    sub.reconcile_result_state()
 
-    keys = ["user_complete:%d" % sub.user_id, "user_attempted:%s" % sub.user_id]
-    if hasattr(sub, "contest"):
-        participation = sub.contest.participation
-        keys += ["contest_complete:%d" % participation.id]
-        keys += ["contest_attempted:%d" % participation.id]
-    cache.delete_many(keys)
+    # Avoid circular import: contest_recommendation imports user_completed_ids from here
+    from judge.utils.contest_recommendation import (
+        get_recommended_contests,
+        _get_user_skill,
+    )
 
-    if sub.result == "AC":
-        # Avoid circular import: contest_recommendation imports user_completed_ids from here
-        from judge.utils.contest_recommendation import (
-            get_recommended_contests,
-            _get_user_skill,
-        )
-
-        get_recommended_contests.dirty(sub.user)  # sub.user is the Profile object
-        _get_user_skill.dirty(sub.user)
+    get_recommended_contests.dirty(sub.user)  # sub.user is the Profile object
+    _get_user_skill.dirty(sub.user)
 
 
 class RecommendationType(Enum):
