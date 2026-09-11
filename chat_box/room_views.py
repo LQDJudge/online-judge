@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core import signing
 from django.db import transaction
-from django.db.models import Case, IntegerField, When
+from django.db.models import Case, IntegerField, Q, When
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -205,6 +205,58 @@ def channel_options_view(request):
     )
 
 
+@room_api
+def available_organization_channels_view(request):
+    if request.method != "GET":
+        raise RoomError(_("This action requires a GET request."), status=405)
+    term = request.GET.get("term", "").strip()[:100]
+    try:
+        page = max(int(request.GET.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
+    page_size = 20
+    start = (page - 1) * page_size
+    eligible_organizations = Organization.objects.filter(
+        Q(member=request.profile)
+        | Q(moderators=request.profile)
+        | Q(admins=request.profile)
+    ).values("id")
+    active_room_ids = UserRoom.objects.filter(
+        user=request.profile,
+        state=UserRoom.State.ACTIVE,
+    ).values("room_id")
+    banned_room_ids = RoomBan.objects.filter(
+        target=request.profile,
+        revoked_at__isnull=True,
+    ).values("room_id")
+    rooms = (
+        Room.objects.filter(
+            room_type=Room.Type.CHANNEL,
+            channel_kind=Room.ChannelKind.ORGANIZATION,
+            organization_id__in=eligible_organizations,
+            archived_at__isnull=True,
+        )
+        .exclude(id__in=active_room_ids)
+        .exclude(id__in=banned_room_ids)
+    )
+    if term:
+        rooms = rooms.filter(name__icontains=term)
+    rows = list(rooms.order_by("name", "id")[start : start + page_size + 1])
+    return JsonResponse(
+        {
+            "channels": [
+                {
+                    "id": room.id,
+                    "name": room.name,
+                    "organization_id": room.organization_id,
+                }
+                for room in rows[:page_size]
+            ],
+            "more": len(rows) > page_size,
+        }
+    )
+
+
 @login_required
 @require_POST
 def organization_channel_join_view(request, organization_id):
@@ -218,12 +270,19 @@ def organization_channel_join_view(request, organization_id):
     try:
         rejoin_organization_channel(room, request.profile)
     except RoomError as error:
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(
+                {"error": error.message, "code": error.code},
+                status=error.status,
+            )
         messages.error(request, error.message)
         return redirect(
             "organization_home",
             organization.id,
             organization.slug,
         )
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"room": room.id, "url": reverse("chat", args=[room.id])})
     return redirect("chat", room.id)
 
 

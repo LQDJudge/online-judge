@@ -1860,6 +1860,11 @@ urlpatterns = [
                     name="chat_channel_options",
                 ),
                 re_path(
+                    r"^channels/available/$",
+                    chat_rooms.available_organization_channels_view,
+                    name="chat_available_organization_channels",
+                ),
+                re_path(
                     r"^organizations/(?P<organization_id>\d+)/join/$",
                     chat_rooms.organization_channel_join_view,
                     name="chat_organization_channel_join",

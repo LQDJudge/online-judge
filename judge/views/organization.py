@@ -702,10 +702,17 @@ class OrganizationHome(OrganizationHomeView, FeedView):
                 context["organization_chat_membership_active"] = bool(
                     chat_membership and chat_membership.state == UserRoom.State.ACTIVE
                 )
+                organization_chat_eligible = False
+                if not context["organization_chat_membership_active"]:
+                    organization_chat_eligible = Organization.objects.filter(
+                        Q(id=self.organization.id),
+                        Q(member=self.request.profile)
+                        | Q(moderators=self.request.profile)
+                        | Q(admins=self.request.profile),
+                    ).exists()
                 context["can_join_organization_chat"] = bool(
-                    chat_membership
-                    and chat_membership.state
-                    in (UserRoom.State.LEFT, UserRoom.State.REMOVED)
+                    organization_chat_eligible
+                    and not context["organization_chat_membership_active"]
                     and not RoomBan.objects.filter(
                         room=chat_room,
                         target=self.request.profile,

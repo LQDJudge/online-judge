@@ -9786,6 +9786,26 @@ msgstr "Không thể tạo kênh."
 msgid "No organizations you administer are available for a new channel."
 msgstr "Không có tổ chức nào bạn quản lý có thể tạo kênh mới."
 
+#: templates/chat/chat.html
+msgid "Find organization channels"
+msgstr "Tìm kênh tổ chức"
+
+#: templates/chat/chat.html
+msgid "Discover channels you can join through your organizations."
+msgstr "Khám phá các kênh bạn có thể tham gia thông qua tổ chức của mình."
+
+#: templates/chat/chat.html
+msgid "Search organization channels"
+msgstr "Tìm kiếm kênh tổ chức"
+
+#: templates/chat/chat.html
+msgid "No organization channels are available."
+msgstr "Không có kênh tổ chức nào để tham gia."
+
+#: templates/chat/chat.html
+msgid "Unable to join channel."
+msgstr "Không thể tham gia kênh."
+
 #: templates/chat/chat.html:130
 msgid "Unable to load room details."
 msgstr "Không thể tải chi tiết phòng."
@@ -10259,8 +10279,8 @@ msgid "Custom channel"
 msgstr "Kênh tùy chỉnh"
 
 #: templates/chat/room_modals.html:49
-msgid "Membership follows the selected organization automatically."
-msgstr "Thành viên được đồng bộ tự động theo tổ chức đã chọn."
+msgid "Organization members can find and join this channel."
+msgstr "Thành viên tổ chức có thể tìm và tham gia kênh này."
 
 #: templates/chat/room_modals.html:54
 msgid "Channel name"

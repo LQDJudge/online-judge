@@ -64,6 +64,7 @@ from chat_box.services.memberships import (
     activate_membership,
     ban_member,
     leave_room,
+    rejoin_organization_channel,
     remove_member,
     set_member_role,
     unban_member,
@@ -813,6 +814,49 @@ class OrganizationChannelTests(GeneralizedRoomTestCase):
             self.creator,
             self.organization,
         )
+        rejoin_organization_channel(self.room, self.member)
+        rejoin_organization_channel(self.room, self.other)
+
+    def test_channel_creation_only_joins_creator(self):
+        organization = self.create_organization("Opt-in Organization")
+        organization.members.add(self.member)
+        organization.moderators.add(self.other)
+
+        room = create_organization_channel(
+            self.creator.user,
+            self.creator,
+            organization,
+        )
+
+        self.assertEqual(
+            set(
+                UserRoom.objects.filter(
+                    room=room,
+                    state=UserRoom.State.ACTIVE,
+                ).values_list("user_id", flat=True)
+            ),
+            {self.creator.id},
+        )
+
+    def test_new_organization_roles_are_eligible_but_not_auto_joined(self):
+        late_member = self.make_profile("late_organization_member")
+        late_moderator = self.make_profile("late_organization_moderator")
+        late_admin = self.make_profile("late_organization_admin")
+
+        late_member.organizations.add(self.organization)
+        self.organization.moderators.add(late_moderator)
+        self.organization.admins.add(late_admin)
+
+        self.assertFalse(
+            UserRoom.objects.filter(
+                room=self.room,
+                user_id__in=[late_member.id, late_moderator.id, late_admin.id],
+            ).exists()
+        )
+        membership, created = rejoin_organization_channel(self.room, late_member)
+        self.assertTrue(created)
+        self.assertEqual(membership.state, UserRoom.State.ACTIVE)
+        self.assertEqual(membership.role, UserRoom.Role.MEMBER)
 
     def test_roles_follow_organization_without_changing_org_permissions(self):
         self.assertEqual(
@@ -963,6 +1007,10 @@ class OrganizationChannelTests(GeneralizedRoomTestCase):
         )
 
         super_profile.organizations.add(self.organization)
+        self.assertFalse(
+            UserRoom.objects.filter(room=self.room, user=super_profile).exists()
+        )
+        rejoin_organization_channel(self.room, super_profile)
         membership = UserRoom.objects.get(room=self.room, user=super_profile)
         self.assertEqual(membership.state, UserRoom.State.ACTIVE)
         self.assertEqual(
@@ -970,7 +1018,7 @@ class OrganizationChannelTests(GeneralizedRoomTestCase):
             200,
         )
 
-    def test_manual_leave_is_sticky_until_org_leave_and_rejoin(self):
+    def test_manual_leave_remains_sticky_after_org_leave_and_rejoin(self):
         leave_room(self.room, self.member.user, self.member)
         sync_organization_profile(self.organization, self.member.id)
         self.assertEqual(
@@ -984,8 +1032,92 @@ class OrganizationChannelTests(GeneralizedRoomTestCase):
         )
         self.member.organizations.add(self.organization)
         membership = UserRoom.objects.get(room=self.room, user=self.member)
+        self.assertEqual(membership.state, UserRoom.State.INELIGIBLE)
+        rejoin_organization_channel(self.room, self.member)
+        membership.refresh_from_db()
         self.assertEqual(membership.state, UserRoom.State.ACTIVE)
         self.assertEqual(membership.role, UserRoom.Role.MEMBER)
+
+    def test_available_channel_discovery_and_ajax_join(self):
+        organization = self.create_organization("Discoverable Organization")
+        organization.members.add(self.member)
+        room = create_organization_channel(
+            self.creator.user,
+            self.creator,
+            organization,
+        )
+        self.client.force_login(self.member.user)
+        organization_url = reverse(
+            "organization_home",
+            args=[organization.id, organization.slug],
+        )
+
+        self.assertContains(
+            self.client.get(organization_url),
+            'action="%s"'
+            % reverse("chat_organization_channel_join", args=[organization.id]),
+        )
+
+        response = self.client.get(
+            reverse("chat_available_organization_channels"),
+            {"term": "Discoverable"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["channels"],
+            [
+                {
+                    "id": room.id,
+                    "name": room.name,
+                    "organization_id": organization.id,
+                }
+            ],
+        )
+
+        response = self.client.post(
+            reverse("chat_organization_channel_join", args=[organization.id]),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(
+            response.json(),
+            {"room": room.id, "url": reverse("chat", args=[room.id])},
+        )
+        self.assertTrue(
+            UserRoom.objects.filter(
+                room=room,
+                user=self.member,
+                state=UserRoom.State.ACTIVE,
+            ).exists()
+        )
+        self.assertEqual(
+            self.client.get(reverse("chat_available_organization_channels")).json()[
+                "channels"
+            ],
+            [],
+        )
+
+    def test_available_channel_discovery_excludes_banned_user(self):
+        organization = self.create_organization("Blocked Discovery Organization")
+        organization.members.add(self.member)
+        room = create_organization_channel(
+            self.creator.user,
+            self.creator,
+            organization,
+        )
+        RoomBan.objects.create(
+            room=room,
+            target=self.member,
+            banned_by=self.creator,
+            reason="Not allowed",
+        )
+        self.client.force_login(self.member.user)
+
+        response = self.client.get(reverse("chat_available_organization_channels"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["channels"], [])
 
     def test_manual_leave_can_be_rejoined_from_organization_home(self):
         leave_room(self.room, self.member.user, self.member)
@@ -1514,11 +1646,13 @@ class ReconciliationCommandTests(GeneralizedRoomTestCase):
         UserRoom.objects.filter(room=lobby, user=self.member).delete()
         organization = self.create_organization("Sync Organization")
         self.member.organizations.add(organization)
+        self.other.organizations.add(organization)
         room = create_organization_channel(
             self.creator.user,
             self.creator,
             organization,
         )
+        rejoin_organization_channel(room, self.member)
         UserRoom.objects.filter(room=room, user=self.member).update(
             role=UserRoom.Role.ADMIN,
             synced_role=UserRoom.Role.ADMIN,
@@ -1550,6 +1684,7 @@ class ReconciliationCommandTests(GeneralizedRoomTestCase):
         membership = UserRoom.objects.get(room=room, user=self.member)
         self.assertEqual(membership.role, UserRoom.Role.MEMBER)
         self.assertEqual(membership.synced_role, UserRoom.Role.MEMBER)
+        self.assertFalse(UserRoom.objects.filter(room=room, user=self.other).exists())
 
         output = StringIO()
         call_command(

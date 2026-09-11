@@ -316,6 +316,19 @@
       return $.get(ChatConfig.urls.roomList, data);
     },
 
+    getAvailableOrganizationChannels: function(page, term) {
+      return $.get(ChatConfig.urls.availableOrganizationChannels, {
+        page: page || 1,
+        term: term || ''
+      });
+    },
+
+    joinOrganizationChannel: function(organizationId) {
+      return $.post(
+        this.roomUrl(ChatConfig.urls.joinOrganizationChannel, organizationId)
+      );
+    },
+
     roomUrl: function(template, roomId) {
       return template.replace('/0/', '/' + roomId + '/');
     },
@@ -2131,7 +2144,9 @@
         var $modal = $('#chat-room-list-modal');
         var $content = $('#chat-room-list-content').empty();
         var $more = $('#chat-room-list-more').prop('hidden', true).off('click');
-        var $search = $('#chat-room-list-search').val('');
+        var $search = $('#chat-room-list-search')
+          .val('')
+          .attr('placeholder', ChatConfig.i18n.searchPlaceholder);
         var searchTimer = null;
         $('#chat-room-list-title').text(
           kind === 'hidden' ? ChatConfig.i18n.hiddenRooms : ChatConfig.i18n.archivedRooms
@@ -2186,6 +2201,85 @@
         });
         loadPage(null, false);
       };
+      var openAvailableOrganizationChannels = function() {
+        var $modal = $('#chat-room-list-modal');
+        var $content = $('#chat-room-list-content').empty();
+        var $more = $('#chat-room-list-more').prop('hidden', true).off('click');
+        var $search = $('#chat-room-list-search')
+          .val('')
+          .attr('placeholder', ChatConfig.i18n.searchOrganizationChannels);
+        var searchTimer = null;
+        var nextPage = 1;
+        $('#chat-room-list-title').text(ChatConfig.i18n.findOrganizationChannels);
+        $('#chat-room-list-description').text(
+          ChatConfig.i18n.availableOrganizationChannelsDescription
+        );
+        $('#chat-room-list-icon i').attr('class', 'fa fa-compass');
+        openModal('#chat-room-list-modal');
+
+        var loadPage = function(page, append) {
+          ChatAPI.getAvailableOrganizationChannels(page, $search.val().trim())
+            .done(function(result) {
+              if (!append) $content.empty();
+              (result.channels || []).forEach(function(channel) {
+                var $row = $('<div class="chat-managed-room">')
+                  .attr('data-room', channel.id);
+                $('<span class="chat-managed-room-icon">')
+                  .append($('<i class="fa fa-hashtag">'))
+                  .appendTo($row);
+                var $identity = $('<span class="chat-managed-room-identity">').appendTo($row);
+                $('<span class="chat-managed-room-link">')
+                  .text(channel.name)
+                  .appendTo($identity);
+                $('<span class="chat-managed-room-type">')
+                  .text(ChatConfig.i18n.organizationChannel)
+                  .appendTo($identity);
+                var $join = $('<button type="button" class="action-btn small">')
+                  .text(ChatConfig.i18n.join)
+                  .appendTo($row);
+                $join.on('click', function() {
+                  $join.prop('disabled', true);
+                  ChatAPI.joinOrganizationChannel(channel.organization_id)
+                    .done(function(result) {
+                      closeModal($modal);
+                      ChatEvents.refreshStatus();
+                      ChatEvents.loadKnownRoom(result.room, null, result.url);
+                    })
+                    .fail(function(response) {
+                      $modal.find('.chat-modal-error').text(
+                        response.responseJSON ?
+                          response.responseJSON.error : ChatConfig.i18n.unableJoinChannel
+                      );
+                    })
+                    .always(function() { $join.prop('disabled', false); });
+                });
+                $content.append($row);
+              });
+              if (!$content.children().length) {
+                $content.append(
+                  $('<p>').text(ChatConfig.i18n.noAvailableOrganizationChannels)
+                );
+              }
+              nextPage = page + 1;
+              $more.prop('hidden', !result.more);
+            })
+            .fail(function(response) {
+              $modal.find('.chat-modal-error').text(
+                response.responseJSON ?
+                  response.responseJSON.error : ChatConfig.i18n.unableLoadRoom
+              );
+            });
+        };
+        $more.on('click', function() { loadPage(nextPage, true); });
+        $search.off('input.chatRoomFilter').on('input.chatRoomFilter', function() {
+          clearTimeout(searchTimer);
+          searchTimer = setTimeout(function() { loadPage(1, false); }, 250);
+        });
+        loadPage(1, false);
+      };
+      $('#chat-find-organization-channels').on('click', function() {
+        openAvailableOrganizationChannels();
+      });
       $('#chat-hidden-rooms').on('click', function() { openRoomList('hidden'); });
       $('#chat-archived-rooms').on('click', function() { openRoomList('archived'); });
       $('.chat-details-close').on('click', function() {

@@ -80,10 +80,10 @@ def _sync_organization_profile_batch(
     profile_ids,
     *,
     notify=False,
-    manual_rejoin_profile_ids=(),
+    activation_profile_ids=(),
 ):
     profile_ids = sorted(set(profile_ids))
-    manual_rejoin_profile_ids = set(manual_rejoin_profile_ids)
+    activation_profile_ids = set(activation_profile_ids)
     if not profile_ids:
         return {}
     room = (
@@ -168,13 +168,11 @@ def _sync_organization_profile_batch(
                 updates.append(membership)
                 revoked_profile_ids.append(profile_id)
             continue
-        if (
-            membership
-            and membership.state in (UserRoom.State.LEFT, UserRoom.State.REMOVED)
-            and profile_id not in manual_rejoin_profile_ids
+        if profile_id not in activation_profile_ids and (
+            membership is None or membership.state != UserRoom.State.ACTIVE
         ):
-            # A manual leave or removal remains sticky until an explicit rejoin,
-            # or until organization eligibility is lost and later regained.
+            # Organization membership grants eligibility, but only an explicit
+            # join creates or reactivates chat membership.
             continue
 
         activating = membership is None or membership.state != UserRoom.State.ACTIVE
@@ -276,18 +274,18 @@ def sync_organization_profiles(
     profile_ids,
     *,
     notify=False,
-    manual_rejoin_profile_ids=(),
+    activation_profile_ids=(),
 ):
     memberships = {}
-    manual_rejoin_profile_ids = set(manual_rejoin_profile_ids)
+    activation_profile_ids = set(activation_profile_ids)
     for profile_id_batch in _batched(sorted(set(profile_ids))):
         memberships.update(
             _sync_organization_profile_batch(
                 organization,
                 profile_id_batch,
                 notify=notify,
-                manual_rejoin_profile_ids=(
-                    manual_rejoin_profile_ids.intersection(profile_id_batch)
+                activation_profile_ids=(
+                    activation_profile_ids.intersection(profile_id_batch)
                 ),
             )
         )
@@ -299,24 +297,23 @@ def sync_organization_profile(
     profile_id,
     *,
     notify=False,
-    allow_manual_rejoin=False,
+    activate=False,
 ):
     return sync_organization_profiles(
         organization,
         [profile_id],
         notify=notify,
-        manual_rejoin_profile_ids=([profile_id] if allow_manual_rejoin else ()),
+        activation_profile_ids=([profile_id] if activate else ()),
     ).get(profile_id)
 
 
-def _active_room_user_ids(room):
+def _room_user_ids(room):
     profile_ids = set()
     last_membership_id = 0
     while True:
         membership_rows = list(
             UserRoom.objects.filter(
                 room=room,
-                state=UserRoom.State.ACTIVE,
                 id__gt=last_membership_id,
             )
             .order_by("id")
@@ -382,12 +379,6 @@ def audit_organization_channel(organization):
         for profile_id, membership in memberships.items()
         if membership.state == UserRoom.State.ACTIVE
     }
-    intentionally_inactive_ids = {
-        profile_id
-        for profile_id, membership in memberships.items()
-        if membership.state in (UserRoom.State.LEFT, UserRoom.State.REMOVED)
-    }
-    missing_ids = expected_ids - active_ids - intentionally_inactive_ids
     extra_ids = active_ids - expected_ids
     wrong_roles = 0
     for profile_ids in _batched(sorted(active_ids & expected_ids)):
@@ -402,7 +393,8 @@ def audit_organization_channel(organization):
             ):
                 wrong_roles += 1
     return {
-        "missing": len(missing_ids),
+        # Eligible users without a membership are intentionally not enrolled.
+        "missing": 0,
         "extra": len(extra_ids),
         "wrong_roles": wrong_roles,
         "name_drift": room.name != organization.name,
@@ -418,10 +410,7 @@ def sync_organization_channel(organization):
     if room is None:
         return None
 
-    eligible_ids = organization_user_ids(organization)
-    active_ids = _active_room_user_ids(room)
-    # Remove stale users first. If the channel becomes empty, the first newly
-    # activated eligible user in the next pass receives the bootstrap admin role.
-    sync_organization_profiles(organization, active_ids - eligible_ids)
-    sync_organization_profiles(organization, eligible_ids)
+    # Reconcile only existing memberships. Organization eligibility must never
+    # enroll somebody in chat without an explicit join.
+    sync_organization_profiles(organization, _room_user_ids(room))
     return room

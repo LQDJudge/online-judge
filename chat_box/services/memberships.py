@@ -325,7 +325,7 @@ def direct_add_member(room, actor_user, actor, target):
         membership = sync_organization_profile(
             room.organization,
             target.id,
-            allow_manual_rejoin=True,
+            activate=True,
         )
         created = not was_active and membership.state == UserRoom.State.ACTIVE
     else:
@@ -383,7 +383,7 @@ def rejoin_organization_channel(room, actor):
     membership = sync_organization_profile(
         room.organization,
         actor.id,
-        allow_manual_rejoin=True,
+        activate=True,
     )
     if not membership or membership.state != UserRoom.State.ACTIVE:
         raise RoomPermissionDenied(_("You cannot join this organization channel."))

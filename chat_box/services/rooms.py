@@ -17,7 +17,7 @@ from chat_box.services.memberships import (
     activate_membership,
     bulk_add_room_members,
 )
-from chat_box.services.organization_sync import sync_organization_channel
+from chat_box.services.organization_sync import sync_organization_profile
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ def create_organization_channel(user, profile, organization):
             _("This organization already has a channel."),
             code="organization_channel_exists",
         )
-    sync_organization_channel(organization)
+    sync_organization_profile(organization, profile.id, activate=True)
     RoomModerationLog.objects.create(
         room=room,
         action=RoomModerationLog.Action.CREATE,

@@ -27,6 +27,8 @@
         createGroup: "{{ url('chat_group_create') }}",
         createChannel: "{{ url('chat_channel_create') }}",
         channelOptions: "{{ url('chat_channel_options') }}",
+        availableOrganizationChannels: "{{ url('chat_available_organization_channels') }}",
+        joinOrganizationChannel: "{{ url('chat_organization_channel_join', 0) }}",
         roomList: "{{ url('chat_room_list') }}",
         roomDetails: "{{ url('chat_room_details', 0) }}",
         memberSearch: "{{ url('chat_member_search') }}",
@@ -119,6 +121,13 @@
         unableCreateGroup: "{{ _('Unable to create group.') }}",
         unableCreateChannel: "{{ _('Unable to create channel.') }}",
         noAvailableOrganizations: "{{ _('No organizations you administer are available for a new channel.') }}",
+        findOrganizationChannels: "{{ _('Find organization channels') }}",
+        availableOrganizationChannelsDescription: "{{ _('Discover channels you can join through your organizations.') }}",
+        searchOrganizationChannels: "{{ _('Search organization channels') }}",
+        noAvailableOrganizationChannels: "{{ _('No organization channels are available.') }}",
+        organizationChannel: "{{ _('Organization channel') }}",
+        join: "{{ _('Join') }}",
+        unableJoinChannel: "{{ _('Unable to join channel.') }}",
         unableLoadRoom: "{{ _('Unable to load room details.') }}",
         invite: "{{ _('Invitation link') }}",
         copy: "{{ _('Copy') }}",
@@ -220,6 +229,10 @@
                     <span>{{ _('New channel') }}</span>
                   </button>
                 {% endif %}
+                <button type="button" id="chat-find-organization-channels" role="menuitem">
+                  <i class="fa fa-compass" aria-hidden="true"></i>
+                  <span>{{ _('Find organization channels') }}</span>
+                </button>
                 <button type="button" id="chat-hidden-rooms" role="menuitem">
                   <i class="fa fa-eye-slash" aria-hidden="true"></i>
                   <span>{{ _('Hidden rooms') }}</span>
