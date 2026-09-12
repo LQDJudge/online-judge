@@ -66,68 +66,11 @@ from judge.utils.views import (
     paginate_query_context,
 )
 from judge.utils.history import RevisionDiffMixin
+from judge.utils.quiz_attempts import finalize_locked_attempt
 from judge.utils.quiz_grading import (
-    auto_grade_quiz_attempt,
-    notify_graders_for_essay,
     sync_contest_quiz_result,
     validate_manual_answer_points,
 )
-
-
-def _save_submitted_quiz_answers(attempt, post_data, assignments):
-    """Persist a submitted answer set with query count independent of quiz size."""
-    assignments = list(assignments)
-    existing_answers = {
-        answer.question_id: answer
-        for answer in QuizAnswer.objects.filter(attempt=attempt)
-    }
-    now = timezone.now()
-    answers_to_create = []
-    answers_to_update = []
-
-    for assignment in assignments:
-        question = assignment.question
-        key = f"q_{question.id}"
-        answer = existing_answers.get(question.id)
-
-        if key in post_data:
-            if question.question_type == "MA":
-                answer_text = json.dumps(post_data.getlist(key))
-            else:
-                answer_text = post_data.get(key, "")
-        elif answer is not None:
-            # Answers may already have been saved through the AJAX endpoint.
-            answer.question = question
-            continue
-        else:
-            answer_text = ""
-
-        if answer is None:
-            answers_to_create.append(
-                QuizAnswer(
-                    attempt=attempt,
-                    question=question,
-                    answer=answer_text,
-                    answered_at=now,
-                )
-            )
-        else:
-            answer.question = question
-            if answer.answer != answer_text:
-                answer.answer = answer_text
-                answer.answered_at = now
-                answers_to_update.append(answer)
-
-    if answers_to_create:
-        QuizAnswer.objects.bulk_create(answers_to_create)
-    if answers_to_update:
-        QuizAnswer.objects.bulk_update(
-            answers_to_update,
-            ["answer", "answered_at"],
-        )
-
-    return list(QuizAnswer.objects.filter(attempt=attempt).select_related("question"))
-
 
 # =============================================================================
 # Permission Mixins
@@ -2013,19 +1956,8 @@ class QuizStart(LoginRequiredMixin, View):
             request.session[f"quiz_attempt_{quiz.code}"] = existing.id
             return redirect("quiz_take", code=quiz.code, attempt_id=existing.id)
 
-        # Determine time limit - use contest time remaining if in contest
-        time_limit = quiz.time_limit
-        if contest_participation:
-            # If in contest, cap time limit to contest time remaining
-            contest_time_remaining = contest_participation.time_remaining
-            if contest_time_remaining:
-                contest_minutes_remaining = int(
-                    contest_time_remaining.total_seconds() / 60
-                )
-                if time_limit:
-                    time_limit = min(time_limit, contest_minutes_remaining)
-                else:
-                    time_limit = contest_minutes_remaining
+        # The model snapshots the exact contest deadline, without minute rounding.
+        time_limit = quiz.time_limit or 0
 
         # Create new standalone/contest attempt (no lesson context)
         attempt = QuizAttempt.objects.create(
@@ -2089,7 +2021,7 @@ class QuizTake(LoginRequiredMixin, TitleMixin, DetailView):
             )
 
         # Contest time enforcement
-        if attempt.contest_participation:
+        if attempt.contest_participation and not attempt.deadline_initialized:
             participation = attempt.contest_participation
             if participation.ended:
                 attempt.auto_submit()
@@ -2155,7 +2087,7 @@ class QuizTake(LoginRequiredMixin, TitleMixin, DetailView):
         answers = QuizAnswer.objects.filter(attempt=attempt).prefetch_related("files")
         context["answers"] = {a.question_id: a for a in answers}
         context["time_remaining"] = attempt.time_remaining()
-        context["has_time_limit"] = quiz.time_limit is not None and quiz.time_limit > 0
+        context["has_time_limit"] = attempt.get_deadline() is not None
 
         # Provide standalone URLs for templates
         context["save_url"] = reverse(
@@ -2194,6 +2126,30 @@ class QuizTake(LoginRequiredMixin, TitleMixin, DetailView):
         return context
 
 
+class QuizAttemptStatus(LoginRequiredMixin, View):
+    """Owner-only, read-only status; no answers or grading information exposed."""
+
+    def handle_no_permission(self):
+        return JsonResponse({"is_authenticated": False}, status=401)
+
+    def get(self, request, *args, **kwargs):
+        attempt = get_object_or_404(
+            QuizAttempt.objects.select_related("contest_participation__contest"),
+            pk=kwargs["attempt_id"],
+            quiz__code=kwargs["code"],
+            user=request.profile,
+        )
+        response = JsonResponse(
+            {
+                "is_submitted": attempt.is_submitted,
+                "deadline": attempt.get_deadline(),
+                "server_now": timezone.now(),
+            }
+        )
+        response["Cache-Control"] = "no-store"
+        return response
+
+
 class QuizSaveAnswer(LoginRequiredMixin, View):
     """AJAX endpoint to save a single answer.
 
@@ -2217,20 +2173,32 @@ class QuizSaveAnswer(LoginRequiredMixin, View):
                 attempt = (
                     QuizAttempt.objects.select_for_update()
                     .select_related("contest_participation")
-                    .get(id=attempt_id, user=request.profile, is_submitted=False)
+                    .get(id=attempt_id, user=request.profile)
                 )
             except QuizAttempt.DoesNotExist:
                 return JsonResponse({"error": "Attempt not found"}, status=404)
 
-            # Server-side time enforcement: quiz time limit
-            if attempt.is_expired():
-                attempt.auto_submit()
+            if attempt.is_submitted:
+                return JsonResponse(
+                    {
+                        "error": str(_("This attempt was already submitted.")),
+                        "expired": True,
+                    },
+                    status=400,
+                )
+
+            # Capture once after locking; accepted answer timestamps must use
+            # this same decision time even if subsequent database work is slow.
+            captured_now = timezone.now()
+            deadline = attempt.get_deadline()
+            if deadline is not None and captured_now >= deadline:
+                finalize_locked_attempt(attempt, now=captured_now)
                 return JsonResponse(
                     {"error": "Time expired", "expired": True}, status=400
                 )
 
             # Server-side time enforcement: contest time
-            if attempt.contest_participation:
+            if attempt.contest_participation and not attempt.deadline_initialized:
                 participation = attempt.contest_participation
                 if participation.ended:
                     attempt.auto_submit()
@@ -2256,14 +2224,18 @@ class QuizSaveAnswer(LoginRequiredMixin, View):
             quiz_answer, created = QuizAnswer.objects.update_or_create(
                 attempt=attempt,
                 question=question,
-                defaults={"answer": answer, "answered_at": timezone.now()},
+                defaults={"answer": answer},
+            )
+            # auto_now on QuizAnswer would otherwise record a later write time.
+            QuizAnswer.objects.filter(pk=quiz_answer.pk).update(
+                answered_at=captured_now
             )
 
         return JsonResponse(
             {
                 "success": True,
                 "answer_id": quiz_answer.id,
-                "saved_at": timezone.now().isoformat(),
+                "saved_at": captured_now.isoformat(),
             }
         )
 
@@ -2272,7 +2244,7 @@ class QuizSubmit(LoginRequiredMixin, View):
     """Submit quiz (auto-grade, save answers).
 
     Server-side time enforcement:
-    - Auto-submits if time has expired (still processes answers)
+    - Finalizes saved answers only if time has expired
     - Clears session on submission
     """
 
@@ -2293,48 +2265,17 @@ class QuizSubmit(LoginRequiredMixin, View):
                     "quiz_result", code=attempt.quiz.code, attempt_id=attempt.id
                 )
 
-            # Check if time has expired - still process but note it
-            time_expired = attempt.is_expired()
-            contest_expired = False
-            if attempt.contest_participation:
-                participation = attempt.contest_participation
-                if participation.ended:
-                    contest_expired = True
-                else:
-                    time_remaining = participation.time_remaining
-                    if time_remaining is None or time_remaining.total_seconds() <= 0:
-                        contest_expired = True
-
-            # Get all questions in this quiz
-            quiz_questions = list(
-                attempt.quiz.quiz_questions.select_related("question")
-            )
-            answers = _save_submitted_quiz_answers(
-                attempt, request.POST, quiz_questions
-            )
-
-            attempt.end_time = timezone.now()
-            attempt.is_submitted = True
-            attempt.save(update_fields=["end_time", "is_submitted"])
-
-            auto_grade_quiz_attempt(
-                attempt, assignments=quiz_questions, answers=answers
-            )
-
-            # Notify graders if there are essay questions that need grading
-            notify_graders_for_essay(attempt)
+            time_expired = finalize_locked_attempt(attempt, request.POST)
 
         # Clear session attempt tracking
         session_key = f"quiz_attempt_{attempt.quiz.code}"
         if session_key in request.session:
             del request.session[session_key]
 
-        if time_expired or contest_expired:
+        if time_expired:
             messages.info(
                 request,
-                _(
-                    "Time had expired. Your answers were saved and the quiz has been submitted."
-                ),
+                _("Time expired. Only previously saved answers were submitted."),
             )
         else:
             messages.success(request, _("Quiz submitted successfully!"))
@@ -2429,7 +2370,7 @@ class QuizUploadFile(LoginRequiredMixin, View):
             attempt.auto_submit()
             return JsonResponse({"error": "Time expired", "expired": True}, status=400)
 
-        if attempt.contest_participation:
+        if attempt.contest_participation and not attempt.deadline_initialized:
             participation = attempt.contest_participation
             if participation.ended:
                 attempt.auto_submit()
@@ -2458,29 +2399,37 @@ class QuizUploadFile(LoginRequiredMixin, View):
         except QuizQuestion.DoesNotExist:
             return JsonResponse({"error": "Question not found"}, status=404)
 
-        with transaction.atomic():
-            # Serialize answer creation with autosave and final submission. The
-            # attempt may have been submitted while the upload was validated.
-            try:
+        # Transfer to storage without holding the attempt lock, then recheck the
+        # deadline before publishing the attachment. Reject and remove staged data
+        # if the upload finished too late or finalization won the race.
+        staged = QuizAnswerFile(answer=QuizAnswer(attempt=attempt, question=question))
+        staged.file.save(original_filename, uploaded_file, save=False)
+        attached = False
+        try:
+            with transaction.atomic():
                 attempt = QuizAttempt.objects.select_for_update().get(
-                    id=attempt.id,
-                    user=request.profile,
-                    is_submitted=False,
+                    id=attempt.id, user=request.profile
                 )
-            except QuizAttempt.DoesNotExist:
-                return JsonResponse({"error": "Attempt not found"}, status=404)
-
-            # Get or create the answer
-            answer, created = QuizAnswer.objects.get_or_create(
-                attempt=attempt, question=question, defaults={"answer": ""}
-            )
-
-            # Create the attachment (filename is randomized by the upload path).
-            file_obj = QuizAnswerFile.objects.create(
-                answer=answer,
-                file=uploaded_file,
-                original_filename=original_filename,
-            )
+                if attempt.is_submitted or attempt.is_expired():
+                    if not attempt.is_submitted:
+                        finalize_locked_attempt(attempt)
+                    return JsonResponse(
+                        {"error": str(_("Time expired")), "expired": True}, status=400
+                    )
+                answer, created = QuizAnswer.objects.get_or_create(
+                    attempt=attempt, question=question, defaults={"answer": ""}
+                )
+                file_obj = QuizAnswerFile.objects.create(
+                    answer=answer,
+                    file=staged.file.name,
+                    original_filename=original_filename,
+                )
+            attached = True
+        except QuizAttempt.DoesNotExist:
+            return JsonResponse({"error": "Attempt not found"}, status=404)
+        finally:
+            if not attached:
+                staged.file.delete(save=False)
 
         return JsonResponse(
             {
@@ -2511,15 +2460,22 @@ class QuizDeleteFile(LoginRequiredMixin, View):
         if file_obj.answer.attempt.user != request.profile:
             return JsonResponse({"error": "Permission denied"}, status=403)
 
-        # Check if attempt is still in progress
-        if file_obj.answer.attempt.is_submitted:
-            return JsonResponse(
-                {"error": "Cannot delete files from submitted attempts"}, status=400
+        with transaction.atomic():
+            attempt = get_object_or_404(
+                QuizAttempt.objects.select_for_update(), pk=file_obj.answer.attempt_id
             )
-
-        # Delete the file
-        file_obj.file.delete(save=False)
-        file_obj.delete()
+            if attempt.is_submitted:
+                return JsonResponse(
+                    {"error": str(_("Cannot delete files from submitted attempts"))},
+                    status=400,
+                )
+            if attempt.is_expired():
+                finalize_locked_attempt(attempt)
+                return JsonResponse(
+                    {"error": str(_("Time expired")), "expired": True}, status=400
+                )
+            file_obj.delete()
+            transaction.on_commit(lambda: file_obj.file.delete(save=False), robust=True)
 
         return JsonResponse({"success": True})
 
@@ -3072,7 +3028,9 @@ class AnswerGrade(LoginRequiredMixin, QuizEditorMixin, View):
                 answer.is_correct = points > 0
                 answer.graded_at = timezone.now()
                 answer.graded_by = request.profile
-                answer.save()
+                answer.save(
+                    update_fields=["points", "is_correct", "graded_at", "graded_by"]
+                )
 
                 answer.attempt.calculate_score(sync_contest=False)
 
@@ -3819,7 +3777,7 @@ class LessonQuizStart(LessonQuizMixin, LoginRequiredMixin, View):
                 user=profile, quiz=quiz, lesson_quiz=lesson_quiz
             ).count()
             + 1,
-            time_limit_minutes=quiz.time_limit,
+            time_limit_minutes=quiz.time_limit or 0,
             lesson_quiz=lesson_quiz,
         )
 
@@ -3909,7 +3867,7 @@ class LessonQuizTake(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailView
         answers = QuizAnswer.objects.filter(attempt=attempt).prefetch_related("files")
         context["answers"] = {a.question_id: a for a in answers}
         context["time_remaining"] = attempt.time_remaining()
-        context["has_time_limit"] = quiz.time_limit is not None and quiz.time_limit > 0
+        context["has_time_limit"] = attempt.get_deadline() is not None
 
         uploaded_files = {}
         for answer in answers:
@@ -3998,24 +3956,7 @@ class LessonQuizSubmit(LessonQuizMixin, LoginRequiredMixin, View):
                     **self.get_lesson_url_kwargs(attempt_id=attempt.id),
                 )
 
-            # Reuse the core submission logic from QuizSubmit
-            time_expired = attempt.is_expired()
-
-            quiz_questions = list(
-                attempt.quiz.quiz_questions.select_related("question")
-            )
-            answers = _save_submitted_quiz_answers(
-                attempt, request.POST, quiz_questions
-            )
-
-            attempt.end_time = timezone.now()
-            attempt.is_submitted = True
-            attempt.save(update_fields=["end_time", "is_submitted"])
-
-            auto_grade_quiz_attempt(
-                attempt, assignments=quiz_questions, answers=answers
-            )
-            notify_graders_for_essay(attempt)
+            time_expired = finalize_locked_attempt(attempt, request.POST)
 
         session_key = f"quiz_attempt_{attempt.quiz.code}"
         if session_key in request.session:
@@ -4024,9 +3965,7 @@ class LessonQuizSubmit(LessonQuizMixin, LoginRequiredMixin, View):
         if time_expired:
             messages.info(
                 request,
-                _(
-                    "Time had expired. Your answers were saved and the quiz has been submitted."
-                ),
+                _("Time expired. Only previously saved answers were submitted."),
             )
         else:
             messages.success(request, _("Quiz submitted successfully!"))

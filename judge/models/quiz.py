@@ -1,6 +1,8 @@
 import os
 import uuid
 import json
+import math
+from datetime import timedelta
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models.functions import Cast
@@ -11,9 +13,9 @@ from judge.models.profile import Profile
 from judge.models.contest import ContestParticipation
 from judge.models.course import CourseLesson, Course
 from judge.utils.identity import ImmutableIdentityMixin
+from judge.utils.quiz_attempts import finalize_locked_attempt
 from judge.utils.quiz_grading import (
     auto_grade_answer,
-    auto_grade_quiz_attempt,
     sync_contest_quiz_result,
     sync_quiz_attempt_result,
 )
@@ -723,6 +725,10 @@ class QuizAttempt(models.Model):
     )
 
     # Store the actual time limit for this attempt (in case quiz settings change)
+    deadline_at = models.DateTimeField(null=True, blank=True, editable=False)
+    deadline_initialized = models.BooleanField(default=False, editable=False)
+    effective_end_time = models.DateTimeField(null=True, blank=True, editable=False)
+
     time_limit_minutes = models.IntegerField(
         default=0,
         validators=[
@@ -754,6 +760,9 @@ class QuizAttempt(models.Model):
         indexes = [
             models.Index(fields=["user", "quiz"]),
             models.Index(fields=["quiz", "is_submitted"]),
+            models.Index(
+                fields=["is_submitted", "deadline_at"], name="quiz_attempt_expiry_idx"
+            ),
         ]
 
     def __str__(self):
@@ -781,14 +790,46 @@ class QuizAttempt(models.Model):
 
         return False
 
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            return super().save(*args, **kwargs)
+        # auto_now_add sets start_time during INSERT. Snapshot the exact absolute
+        # deadline in the same transaction, including sub-minute contest limits.
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            self.deadline_at = self._legacy_deadline()
+            self.deadline_initialized = True
+            type(self).objects.filter(pk=self.pk).update(
+                deadline_at=self.deadline_at, deadline_initialized=True
+            )
+
+    def _legacy_deadline(self):
+        deadlines = []
+        if self.time_limit_minutes and self.start_time:
+            deadlines.append(
+                self.start_time + timedelta(minutes=self.time_limit_minutes)
+            )
+        if self.contest_participation_id:
+            end = self.contest_participation.end_time
+            if end is not None:
+                deadlines.append(end)
+        return min(deadlines) if deadlines else None
+
+    def get_deadline(self):
+        # Existing attempts retain their snapshot, even if quiz/contest settings change.
+        return (
+            self.deadline_at if self.deadline_initialized else self._legacy_deadline()
+        )
+
     @property
     def duration(self):
         """
         Get the duration of this attempt.
         Returns timedelta if submitted, None otherwise.
         """
-        if self.end_time and self.start_time:
-            return self.end_time - self.start_time
+        end = self.effective_end_time or self.end_time
+        if end and self.start_time:
+            return end - self.start_time
         return None
 
     def time_remaining(self):
@@ -796,23 +837,21 @@ class QuizAttempt(models.Model):
         Calculate remaining time for this attempt in seconds.
         Returns None if no time limit, 0 if expired or submitted.
         """
-        if not self.time_limit_minutes:
+        deadline = self.get_deadline()
+        if deadline is None:
             return None
 
         if self.is_submitted:
             return 0
 
-        elapsed = (timezone.now() - self.start_time).total_seconds()
-        remaining = (self.time_limit_minutes * 60) - elapsed
-        return int(max(0, remaining))
+        return math.ceil(max(0, (deadline - timezone.now()).total_seconds()))
 
     def is_expired(self):
         """Check if attempt has exceeded time limit"""
-        if not self.time_limit_minutes or self.is_submitted:
+        if self.is_submitted:
             return False
-
-        time_elapsed = timezone.now() - self.start_time
-        return time_elapsed.total_seconds() > (self.time_limit_minutes * 60)
+        deadline = self.get_deadline()
+        return deadline is not None and timezone.now() >= deadline
 
     def calculate_score(self, sync_contest=True):
         """Calculate and update the score for this attempt"""
@@ -879,17 +918,16 @@ class QuizAttempt(models.Model):
             if attempt.is_submitted:
                 self.is_submitted = True
                 self.end_time = attempt.end_time
+                self.effective_end_time = attempt.effective_end_time
                 self.score = attempt.score
                 self.max_score = attempt.max_score
                 return
 
-            attempt.is_submitted = True
-            attempt.end_time = timezone.now()
-            attempt.save(update_fields=["is_submitted", "end_time"])
-            auto_grade_quiz_attempt(attempt)
+            finalize_locked_attempt(attempt)
 
             self.is_submitted = attempt.is_submitted
             self.end_time = attempt.end_time
+            self.effective_end_time = attempt.effective_end_time
             self.score = attempt.score
             self.max_score = attempt.max_score
 

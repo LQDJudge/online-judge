@@ -15,7 +15,7 @@ class QuizTimer {
 
     start() {
         this.tick(); // Initial display
-        this.interval = setInterval(() => this.tick(), 1000);
+        if (!this.expired) this.interval = setInterval(() => this.tick(), 1000);
     }
 
     tick() {
@@ -25,7 +25,7 @@ class QuizTimer {
         if (remaining <= 0) {
             this.expire();
         } else {
-            this.updateDisplay(remaining);
+            this.updateDisplay(Math.ceil(remaining));
         }
     }
 
@@ -52,6 +52,8 @@ class QuizTimer {
     }
 
     expire() {
+        if (this.expired) return;
+        this.expired = true;
         clearInterval(this.interval);
         this.onExpire();
     }
@@ -705,57 +707,63 @@ function allowNavigation() {
 
 // Auto-save functionality
 function initAutoSave(config) {
-    var saveTimeout = null;
-    var saveQueue = {};
+    var states = {};
+    var stopped = false;
 
-    function saveAnswer(questionId, answer) {
-        saveQueue[questionId] = answer;
-
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(function() {
-            var toSave = Object.assign({}, saveQueue);
-            saveQueue = {};
-
-            Object.keys(toSave).forEach(function(qId) {
-                $('#save-status-' + qId)
-                    .text(config.savingText || 'Saving...')
-                    .removeClass('saved error')
-                    .addClass('saving');
-
-                $.ajax({
-                    url: config.saveUrl,
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        question_id: qId,
-                        answer: toSave[qId]
-                    }),
-                    headers: {
-                        'X-CSRFToken': config.csrfToken
-                    },
-                    success: function(data) {
-                        if (data.expired) {
-                            alert(config.expiredText || 'Time expired. Your quiz will be submitted.');
-                            window.location.href = config.resultUrl;
-                            return;
-                        }
-                        $('#save-status-' + qId)
-                            .text(config.savedText || 'Saved')
-                            .removeClass('saving error')
-                            .addClass('saved');
-                    },
-                    error: function() {
-                        $('#save-status-' + qId)
-                            .text(config.errorText || 'Error saving')
-                            .removeClass('saving saved')
-                            .addClass('error');
-                    }
-                });
-            });
-        }, 500);
+    function show(qId, text, state) {
+        $('#save-status-' + qId).text(text)
+            .removeClass('saving saved error').addClass(state);
     }
 
-    return { saveAnswer: saveAnswer };
+    function send(qId) {
+        var state = states[qId];
+        if (stopped || state.sending || !state.pending) return;
+        var answer = state.answer;
+        state.pending = false;
+        state.sending = true;
+        $.ajax({
+            url: config.saveUrl,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({question_id: qId, answer: answer}),
+            headers: {'X-CSRFToken': config.csrfToken},
+            success: function() {
+                if (!stopped && !state.pending) show(qId, config.savedText || 'Saved', 'saved');
+            },
+            error: function(xhr) {
+                if (stopped) return;
+                if (xhr.responseJSON && xhr.responseJSON.expired) {
+                    stop();
+                    alert(config.expiredText);
+                    allowNavigation();
+                    window.location.href = config.resultUrl;
+                } else {
+                    show(qId, config.errorText || 'Error saving', 'error');
+                }
+            },
+            complete: function() {
+                state.sending = false;
+                if (state.pending && !stopped) send(qId);
+            }
+        });
+    }
+
+    function saveAnswer(questionId, answer) {
+        if (stopped) return;
+        var state = states[questionId] || (states[questionId] = {});
+        state.answer = answer;
+        state.pending = true;
+        show(questionId, config.savingText || 'Saving...', 'saving');
+        clearTimeout(state.timer);
+        state.timer = setTimeout(function() { send(questionId); }, 500);
+    }
+
+    function stop() {
+        stopped = true;
+        Object.keys(states).forEach(function(qId) { clearTimeout(states[qId].timer); });
+    }
+
+    return { saveAnswer: saveAnswer, stop: stop };
 }
 
 // Initialize quiz taking page
@@ -765,7 +773,7 @@ function initQuiz(config) {
     var autoSaver = null;
 
     // Initialize timer if time limit exists
-    if (config.timeLimit && config.timeLimit > 0) {
+    if (config.timeLimit !== null && config.timeLimit !== undefined) {
         timer = new QuizTimer(
             config.timeLimit,
             function() {
@@ -775,7 +783,6 @@ function initQuiz(config) {
             },
             '#timer-display'
         );
-        timer.start();
     }
 
     // Initialize auto-save
@@ -788,6 +795,31 @@ function initQuiz(config) {
         errorText: config.errorText,
         expiredText: config.expiredText
     });
+
+    var submitting = false;
+    var checking = false;
+    function checkStatus() {
+        if (!config.statusUrl || checking || submitting) return;
+        checking = true;
+        $.getJSON(config.statusUrl).done(function(data) {
+            if (submitting) return;
+            if (data.is_submitted) {
+                autoSaver.stop();
+                allowNavigation();
+                window.location.href = config.resultUrl;
+            } else if (timer && data.deadline) {
+                timer.timeLimit = Math.max(0, (Date.parse(data.deadline) - Date.parse(data.server_now)) / 1000);
+                timer.startTime = Date.now();
+                timer.tick();
+            }
+        }).always(function() { checking = false; });
+    }
+    var statusInterval = setInterval(checkStatus, 30000);
+    $(window).on('focus', checkStatus);
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) checkStatus();
+    });
+    checkStatus();
 
     // Initialize navigator if using prev/next mode
     if (config.useNavigation && config.questions) {
@@ -829,8 +861,15 @@ function initQuiz(config) {
 
     // Allow navigation on submit
     $('#submit-form').on('submit', function() {
+        submitting = true;
+        clearInterval(statusInterval);
+        // The full form carries the latest inputs, including debounced changes.
+        // Do not let queued autosaves race it or redirect while it is submitting.
+        autoSaver.stop();
         allowNavigation();
     });
+
+    if (timer) timer.start();
 
     return {
         timer: timer,

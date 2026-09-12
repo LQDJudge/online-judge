@@ -16,3 +16,4 @@ from judge.tasks.post_moderation import *
 from judge.tasks.maintenance import *
 from judge.tasks.magazine import *
 from judge.tasks.email import *
+from judge.tasks.quiz import *

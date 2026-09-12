@@ -35,7 +35,9 @@ from judge.utils.quiz_grading import (
     auto_grade_quiz_attempt,
     calculate_attempt_score,
 )
-from judge.views.quiz import _save_submitted_quiz_answers
+from judge.utils.quiz_attempts import (
+    save_submitted_answers as _save_submitted_quiz_answers,
+)
 
 
 class QuizQuestionTestCase(TestCase):
@@ -1179,7 +1181,9 @@ class QuizAttemptTestCase(TestCase):
         with CaptureQueriesContext(connection) as queries:
             answers = _save_submitted_quiz_answers(attempt, post_data, assignments)
 
-        self.assertLessEqual(len(queries), 3)
+        # One extra batch UPDATE preserves the captured acceptance timestamp
+        # after auto_now runs during INSERT; still constant in question count.
+        self.assertLessEqual(len(queries), 4)
         self.assertEqual(
             {answer.question_id: answer.answer for answer in answers},
             {

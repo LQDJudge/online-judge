@@ -18,7 +18,7 @@
       var attemptId = {{ attempt.id }};
       var quizCode = '{{ attempt.quiz.code }}';
       var hasTimeLimit = {{ 'true' if has_time_limit else 'false' }};
-      var timeRemaining = {{ time_remaining if time_remaining else 'null' }};
+      var timeRemaining = {{ time_remaining if time_remaining is not none else 'null' }};
       var questions = [
         {% for assignment in questions %}
           {id: {{ assignment.question.id }}, index: {{ loop.index0 }}}{% if not loop.last %},{% endif %}
@@ -29,6 +29,7 @@
       // Initialize quiz with timer and auto-save
       var quizInstance = initQuiz({
         timeLimit: timeRemaining,
+        statusUrl: '{{ url("quiz_attempt_status", attempt.quiz.code, attempt.id) }}',
         saveUrl: '{{ save_url }}',
         csrfToken: '{{ csrf_token }}',
         resultUrl: '{{ result_url }}',
@@ -36,7 +37,7 @@
         savingText: '{{ _("Saving...") }}',
         savedText: '{{ _("Saved") }}',
         errorText: '{{ _("Error saving") }}',
-        expiredText: '{{ _("Time expired. Your quiz will be submitted.") }}',
+        expiredText: '{{ _("Time expired. Only previously saved answers were submitted.") }}',
         timeUpText: '{{ _("Time is up!") }}',
         useNavigation: false
       });
@@ -478,6 +479,7 @@
     {# Submit Section - centered at bottom #}
     <div class="submit-section">
       <p>{{ _('Make sure you have answered all questions before submitting.') }}</p>
+      <p>{{ _('Answers must be saved before the deadline. Check the save status before leaving this page.') }}</p>
       <button type="submit" class="action-btn large">
         <i class="fa fa-check"></i> {{ _('Submit Quiz') }}
       </button>

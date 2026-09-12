@@ -17885,3 +17885,15 @@ msgstr "Câu hỏi này không thuộc bài trắc nghiệm."
 
 #~ msgid "To date"
 #~ msgstr "Đến ngày"
+
+msgid "Time expired. Only previously saved answers were submitted."
+msgstr "Đã hết thời gian. Chỉ những câu trả lời đã được lưu trước đó được nộp."
+
+msgid "Time expired"
+msgstr "Đã hết thời gian"
+
+msgid "Cannot delete files from submitted attempts"
+msgstr "Không thể xóa tệp của bài đã nộp"
+
+msgid "Answers must be saved before the deadline. Check the save status before leaving this page."
+msgstr "Câu trả lời phải được lưu trước khi hết thời gian. Hãy kiểm tra trạng thái lưu trước khi rời trang."

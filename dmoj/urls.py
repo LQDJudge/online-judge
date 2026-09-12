@@ -1012,6 +1012,11 @@ urlpatterns = [
                     name="quiz_save_answer",
                 ),
                 re_path(
+                    r"^/take/(?P<attempt_id>\d+)/status/$",
+                    quiz.QuizAttemptStatus.as_view(),
+                    name="quiz_attempt_status",
+                ),
+                re_path(
                     r"^/take/(?P<attempt_id>\d+)/upload/$",
                     quiz.QuizUploadFile.as_view(),
                     name="quiz_upload_file",
