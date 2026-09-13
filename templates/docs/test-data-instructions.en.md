@@ -206,8 +206,6 @@ Built-in checkers do not need a checker file. Select the checker in the **Checke
 | `linecount` | Tokens must match on the same line | Ignores extra whitespace within a line, but line boundaries must match. |
 | `csv_accuracy`, `csv_rmse`, `csv_mae`, `csv_f1`, `csv_auc`, `csv_logloss` | Kaggle-style CSV submissions | See [Kaggle-style CSV problems](#kaggle-style-csv-problems) below for `checker_args` and scoring details. |
 
-Use **Testlib** or **Testlib (CMS / IOI)** when you already have a `checker.cpp` from Polygon, IOI, CMS, or a similar package. Upload that file in the C++ checker field. For IOI packages, see [Importing IOI tasks](#importing-ioi-tasks).
-
 ### 3.2. Custom Checker (C++) {#custom-checker}
 
 Define custom judging logic for problems with multiple valid answers or special output formats.
@@ -250,6 +248,12 @@ int main(int argc, char** argv) {
     }
 }
 ```
+
+### 3.3. Testlib {#testlib}
+
+Use **Testlib** or **Testlib (CMS / IOI)** when you already have a `checker.cpp` from Polygon, IOI, CMS, or a similar package. Upload that file in the C++ checker field. For IOI packages, see [Importing IOI tasks](#importing-ioi-tasks).
+
+Return a float in `[0, 1]` using `quitp(score, ...)`. For example, `quitp(0.5, "Partially correct")` awards 50% of the case's points. Use `quitf(_ok, ...)` for full points and `quitf(_wa, ...)` for zero.
 
 ## 4. Interactive (C++) {#interactive}
 
