@@ -552,7 +552,7 @@ class OrganizationList(
                 if blocked_type == organization_type.id
             }
 
-        my_organizations = []
+        my_organizations = organization_list.none()
         if profile:
             my_organizations = organization_list.filter(
                 id__in=profile.organizations.values("id")
@@ -576,11 +576,8 @@ class OrganizationList(
             # "mine" tab - all joined groups including communities
             queryset = my_organizations
 
-        if queryset:
-            # Sort communities first, then apply the user's sort order
-            queryset = queryset.order_by("-is_community", self.order)
-
-        return queryset
+        # Keep ties stable across pages without evaluating the queryset here.
+        return queryset.order_by("-is_community", self.order, "pk")
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationList, self).get_context_data(**kwargs)

@@ -691,7 +691,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                 if settings.ENABLE_FTS:
                     queryset = (
                         queryset.search(query, queryset.BOOLEAN).extra(
-                            order_by=["-relevance"]
+                            order_by=["-relevance", "pk"]
                         )
                         | substr_queryset
                     )
@@ -935,6 +935,10 @@ class ProblemFeed(ProblemList, FeedView):
             return queryset.order_by("-date").values_list("id", flat=True)
 
         if "search" in self.request.GET:
+            # Empty searches and searches without FTS have no default ordering.
+            # Every page needs a stable order to avoid repeated or skipped cards.
+            if not queryset.ordered:
+                queryset = queryset.order_by("pk")
             return queryset.values_list("id", flat=True)
 
         if not getattr(settings, "USE_ML", False) or not self.request.profile:

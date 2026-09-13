@@ -339,7 +339,9 @@ class ContestList(
             contest_ids = get_recommended_contests_for_anonymous(limit=100)
             if not contest_ids:
                 return Contest.objects.none()
-            return Contest.objects.filter(id__in=contest_ids).order_by("-user_count")
+            return Contest.objects.filter(id__in=contest_ids).order_by(
+                "-user_count", "key"
+            )
 
         queryset = Contest.objects.filter(
             is_visible=True,
