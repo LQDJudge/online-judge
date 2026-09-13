@@ -39,7 +39,7 @@
       <button type="button" class="btn btn-sm btn-default copy-question-id" data-question-id="{{ question.pk }}" title="{{ _('Copy') }} {{ _('ID') }}" aria-label="{{ _('Copy') }} {{ _('ID') }}">
         <i class="fa fa-copy"></i>
       </button>
-      <span class="type-tag">
+      <span class="question-type-badge badge-{{ question.question_type }}">
         <i class="fa fa-tag"></i>&nbsp;{{ question.get_question_type_display() }}
       </span>
       {% if question.is_public %}
@@ -73,7 +73,7 @@
     {% if show_correct_answers %}
       <div class="question-section">
         <h3><i class="fa fa-check"></i> {{ _('Correct Answer(s)') }}</h3>
-        {% if question.question_type in ['MC', 'TF'] %}
+        {% if question.question_type == 'MC' %}
         {# Multiple Choice / True-False: single answer #}
           {% set correct_id = question.correct_answers.answers %}
           {% if question.choices %}
@@ -103,6 +103,22 @@
           {% else %}
             <p>{{ correct_ids }}</p>
           {% endif %}
+        {% elif question.question_type == 'TF' %}
+          {% set statement_answers = question.correct_answers.answers %}
+          <div class="mtf-result-table">
+            {% for statement in question.choices %}
+              <div class="mtf-result-row">
+                <div class="content-description"><strong>{{ statement.id }}.</strong> {{ statement.text|markdown|reference|str|safe }}</div>
+                <span>{{ _('True') if statement_answers.get(statement.id) else _('False') }}</span>
+              </div>
+            {% endfor %}
+          </div>
+          <h4>{{ _('Score Table') }}</h4>
+          <ul>
+            {% for percentage in question.multiple_true_false_score_table %}
+              <li>{{ _('%(count)s correct', count=loop.index0) }}: {{ percentage }}%</li>
+            {% endfor %}
+          </ul>
         {% elif question.question_type == 'SA' %}
         {# Short Answer: show type, case sensitivity, and accepted answers #}
           {% set sa_config = question.correct_answers %}

@@ -165,3 +165,55 @@ msgstr "Cập nhật xem trước"
 #: resources/reader.js:129
 msgid "Copy link to this section"
 msgstr "Sao chép liên kết đến mục này"
+
+#: resources/quiz.js:361
+msgid "Select every correct answer."
+msgstr "Chọn tất cả đáp án đúng."
+
+#: resources/quiz.js:361
+msgid "Select one correct answer."
+msgstr "Chọn một đáp án đúng."
+
+#: resources/quiz.js:734
+msgid "Select the correct True or False answer for every statement."
+msgstr "Hãy chọn đáp án Đúng hoặc Sai cho từng nhận định."
+
+#: resources/quiz.js:735
+msgid "Statement"
+msgstr "Nhận định"
+
+#: resources/quiz.js:736 resources/quiz.js:767
+msgid "True"
+msgstr "Đúng"
+
+#: resources/quiz.js:736 resources/quiz.js:768
+msgid "False"
+msgstr "Sai"
+
+#: resources/quiz.js:743
+msgid "Add Statement"
+msgstr "Thêm nhận định"
+
+#: resources/quiz.js:745
+msgid "Score Table"
+msgstr "Bảng điểm"
+
+#: resources/quiz.js:746
+msgid "Set the percentage awarded for each number of correct statements."
+msgstr "Đặt phần trăm điểm theo số nhận định được trả lời đúng."
+
+#: resources/quiz.js:764
+msgid "Statement ID"
+msgstr "ID nhận định"
+
+#: resources/quiz.js:765
+msgid "Statement text"
+msgstr "Nội dung nhận định"
+
+#: resources/quiz.js:769
+msgid "Remove Statement"
+msgstr "Xóa nhận định"
+
+#: resources/quiz.js:749
+msgid "%(count)s correct"
+msgstr "Đúng %(count)s nhận định"

@@ -197,7 +197,7 @@
     .import-field-row {
         margin-bottom: 10px;
 
-        label {
+        > label {
             display: block;
             font-weight: bold;
             font-size: 0.85em;
@@ -226,6 +226,26 @@
         opacity: 0.7;
         font-style: italic;
         font-size: 0.9em;
+    }
+
+    .import-answer-suggestion {
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        padding: 12px;
+        margin-top: 12px;
+        overflow-wrap: anywhere;
+
+        ul {
+            padding-left: 24px;
+        }
+
+        .import-suggestion-explanation {
+            white-space: pre-wrap;
+        }
+
+        .import-suggestion-status:empty {
+            display: none;
+        }
     }
 
     .import-no-answers-hint {
@@ -318,23 +338,6 @@
         font-weight: bold;
         font-size: 0.9em;
         white-space: nowrap;
-    }
-
-    // Question type badges
-    .question-type-badge {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 3px;
-        font-size: 0.75em;
-        font-weight: bold;
-        white-space: nowrap;
-        color: #fff;
-
-        &.badge-MC { background: $theme_color; }
-        &.badge-MA { background: $color-midnight; }
-        &.badge-TF { background: $color-success; }
-        &.badge-SA { background: $color-bookmark; }
-        &.badge-ES { background: $widget_black; }
     }
 
     // Quiz creation section

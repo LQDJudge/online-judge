@@ -114,7 +114,7 @@
         <div class="answer-card">
           <div class="question-header">
             <strong>{{ answer.question.title }}</strong>
-            <span class="badge">{{ answer.question.get_question_type_display() }}</span>
+            <span class="question-type-badge badge-{{ answer.question.question_type }}">{{ answer.question.get_question_type_display() }}</span>
             {% if answer.question.question_type in ['MC', 'MA', 'TF'] %}
               <span class="auto-graded-badge">{{ _('Auto-graded') }}</span>
             {% elif answer.question.question_type == 'ES' and not answer.graded_at %}
@@ -126,7 +126,7 @@
             {{ answer.question.content|markdown|reference|str|safe }}
           </div>
 
-          {% if answer.question.question_type in ['MC', 'TF'] and answer.question.choices %}
+          {% if answer.question.question_type == 'MC' and answer.question.choices %}
             <div class="choices-display">
               <strong>{{ _('Choices') }}:</strong>
               {% set correct_id = answer.question.correct_answers.answers if answer.question.correct_answers else '' %}
@@ -161,6 +161,20 @@
                 </div>
               {% endfor %}
             </div>
+          {% elif answer.question.question_type == 'TF' and answer.question.choices %}
+            {% set selected_statements = answer.get_multiple_true_false_answer_map() %}
+            {% set correct_statements = answer.question.correct_answers.answers %}
+            <div class="mtf-result-table">
+              {% for statement in answer.question.choices %}
+                <div class="mtf-result-row">
+                  <div class="content-description"><strong>{{ statement.id }}.</strong> {{ statement.text|markdown|reference|str|safe }}</div>
+                  <span>
+                    {% if selected_statements.get(statement.id) is sameas true %}{{ _('True') }}{% elif selected_statements.get(statement.id) is sameas false %}{{ _('False') }}{% else %}{{ _('Unanswered') }}{% endif %}
+                    / {{ _('Correct') }}: {{ _('True') if correct_statements.get(statement.id) else _('False') }}
+                  </span>
+                </div>
+              {% endfor %}
+            </div>
           {% endif %}
 
           <div class="answer-content">
@@ -179,7 +193,10 @@
                 {% else %}
                   {{ _('No answer provided') }}
                 {% endif %}
-              {% elif answer.question.question_type in ['MC', 'TF'] %}
+              {% elif answer.question.question_type == 'TF' %}
+                {{ _('%(correct)s of %(total)s statements correct', correct=answer.get_multiple_true_false_correct_count(), total=answer.question.choices|length) }}
+                — {{ (answer.partial_credit * 100)|round(0)|int if answer.partial_credit else 0 }}%
+              {% elif answer.question.question_type == 'MC' %}
                 {{ answer.answer or _('No answer provided') }}
               {% else %}
                 {{ answer.answer or _('No answer provided') }}
@@ -251,7 +268,7 @@
                    id="points_{{ answer.id }}"
                    class="points-input"
                    data-max="{{ answer.get_max_points() }}"
-                   value="{{ answer.points|round(1) if answer.points else 0 }}"
+                   value="{{ answer.points if answer.points is not none else 0 }}"
                    min="0"
                    max="{{ answer.get_max_points() }}"
                    step="any">
@@ -274,10 +291,10 @@
                        class="partial-credit-slider"
                        min="0"
                        max="100"
-                       value="{{ (answer.partial_credit * 100)|int if answer.partial_credit else 0 }}"
+                       value="{{ (answer.partial_credit * 100)|round(0)|int if answer.partial_credit else 0 }}"
                        oninput="updatePartialCredit({{ answer.id }}, this.value)">
                 <span class="partial-credit-value" id="partial_value_{{ answer.id }}">
-                  {{ (answer.partial_credit * 100)|int if answer.partial_credit else 0 }}%
+                  {{ (answer.partial_credit * 100)|round(0)|int if answer.partial_credit else 0 }}%
                 </span>
                 <div class="quick-grade-btns">
                   <button type="button" onclick="setPartialCredit({{ answer.id }}, 0)">0%</button>

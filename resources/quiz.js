@@ -358,6 +358,7 @@ class ChoiceEditor {
 
     render() {
         var html = '<div class="choice-editor">';
+        html += '<p class="quiz-help-text">' + (this.questionType === 'MA' ? gettext('Select every correct answer.') : gettext('Select one correct answer.')) + '</p>';
         html += '<div class="choice-list" id="choice-list">';
 
         for (var i = 0; i < this.choices.length; i++) {
@@ -381,11 +382,11 @@ class ChoiceEditor {
         var isCorrect = this.isCorrect(choice.id);
         var inputType = (this.questionType === 'MA') ? 'checkbox' : 'radio';
 
-        var html = '<div class="choice-item" data-id="' + choice.id + '" data-index="' + index + '">';
+        var html = '<div class="choice-item" data-id="' + this.escapeHtml(choice.id) + '" data-index="' + index + '">';
         // Row 1: Controls and minimal textarea
         html += '<div class="choice-row-controls">';
         html += '<span class="drag-handle"><i class="fa fa-bars"></i></span>';
-        html += '<input type="' + inputType + '" name="' + this.radioName + '" value="' + choice.id + '"';
+        html += '<input type="' + inputType + '" name="' + this.radioName + '" value="' + this.escapeHtml(choice.id) + '"';
         if (isCorrect) html += ' checked';
         html += ' class="correct-checkbox">';
         html += '<input type="text" class="choice-id" value="' + this.escapeHtml(choice.id) + '" title="' + gettext('Choice ID (e.g., A, B, C)') + '">';
@@ -473,7 +474,7 @@ class ChoiceEditor {
         if ($expandedContainer.is(':visible')) return;
 
         // Create the expanded editor with PageDown toolbar + preview
-        var editorId = 'choice-editor-' + index + '-' + Date.now();
+        var editorId = 'choice-editor-' + this.radioName + '-' + index + '-' + Date.now();
         var previewId = editorId + '-preview';
         var currentValue = $textarea.val();
 
@@ -556,6 +557,7 @@ class ChoiceEditor {
     }
 
     addChoice() {
+        this.updateFromUI();
         var newId = this.generateId();
         this.choices.push({ id: newId, text: '' });
         this.render();
@@ -564,6 +566,7 @@ class ChoiceEditor {
     }
 
     removeChoice(choiceId) {
+        this.updateFromUI();
         this.choices = this.choices.filter(function(c) { return c.id !== choiceId; });
         this.correctAnswers = this.correctAnswers.filter(function(id) { return id !== choiceId; });
         this.render();
@@ -681,13 +684,202 @@ class ChoiceEditor {
     escapeHtml(text) {
         var div = document.createElement('div');
         div.textContent = text || '';
-        return div.innerHTML;
+        return div.innerHTML.replace(/"/g, '&quot;');
     }
 
     destroy() {
         // Clean up expanded editors
         this.expandedEditors = {};
         $(this.container).find('.choice-expanded-editor').html('');
+    }
+}
+
+// Editor for grouped statements that each require an explicit True/False key.
+class MultipleTrueFalseEditor {
+    constructor(config) {
+        this.container = config.container;
+        this.radioName = 'mtf-correct-' + (MultipleTrueFalseEditor._nextId = (MultipleTrueFalseEditor._nextId || 0) + 1);
+        this.expandedEditors = {};
+        this.previewUrl = config.previewUrl || '/widgets/preview/blog';
+        this.choicesField = config.choicesField || null;
+        this.correctField = config.correctField || null;
+        this.scoreTableField = config.scoreTableField || null;
+        this.choices = config.choices || [];
+        this.correctAnswers = config.correctAnswers || {};
+        this.scoreTable = config.scoreTable || [];
+
+        if (!this.choices.length) {
+            this.choices = [{ id: 'A', text: '' }];
+        }
+        if (this.scoreTable.length !== this.choices.length + 1) {
+            this.scoreTable = this.defaultScoreTable(this.choices.length);
+        }
+        this.render();
+        this.bindEvents();
+        this.updateHiddenFields();
+    }
+
+    defaultScoreTable(count) {
+        if (count === 4) return [0, 10, 25, 50, 100];
+        var table = [];
+        for (var i = 0; i <= count; i++) {
+            table.push(count ? Math.round(i * 100 / count) : 0);
+        }
+        return table;
+    }
+
+    render() {
+        this.expandedEditors = {};
+        var html = '<div class="multiple-true-false-editor">';
+        html += '<p class="quiz-help-text">' + gettext('Select the correct True or False answer for every statement.') + '</p>';
+        html += '<div class="mtf-header-row"><span></span><strong>' + gettext('Statement') + '</strong>';
+        html += '<strong>' + gettext('True') + '</strong><strong>' + gettext('False') + '</strong><span></span></div>';
+        html += '<div class="mtf-statement-list">';
+        for (var i = 0; i < this.choices.length; i++) {
+            html += this.renderStatement(this.choices[i], i);
+        }
+        html += '</div>';
+        html += '<button type="button" class="btn btn-sm btn-success mtf-add-statement">';
+        html += '<i class="fa fa-plus"></i> ' + gettext('Add Statement') + '</button>';
+        html += '<details class="mtf-score-table"' + (this.choices.length > 1 ? ' open' : '') + '>';
+        html += '<summary>' + gettext('Score Table') + '</summary>';
+        html += '<p class="quiz-help-text">' + gettext('Set the percentage awarded for each number of correct statements.') + '</p>';
+        for (var scoreIndex = 0; scoreIndex < this.scoreTable.length; scoreIndex++) {
+            var disabled = scoreIndex === 0 || scoreIndex === this.scoreTable.length - 1;
+            html += '<label><span>' + this.escapeHtml(interpolate(gettext('%(count)s correct'), {count: scoreIndex}, true)) + '</span>';
+            html += '<span class="mtf-score-input-group"><input type="number" class="mtf-score-value" data-correct-count="' + scoreIndex + '" min="0" max="100" step="1" value="' + this.escapeHtml(String(this.scoreTable[scoreIndex])) + '"' + (disabled ? ' disabled' : '') + '><span>%</span></span></label>';
+        }
+        html += '</details></div>';
+        $(this.container).html(html);
+        $(this.container).find('.mtf-statement-text').each(function() {
+            initAutoResizeTextarea($(this));
+        });
+    }
+
+    renderStatement(choice, index) {
+        var answer = this.correctAnswers[choice.id];
+        var name = this.radioName + '-' + index;
+        var html = '<div class="mtf-statement-row choice-item" data-index="' + index + '">';
+        html += '<div class="choice-row-controls mtf-row-controls">';
+        html += '<input type="text" class="mtf-statement-id" value="' + this.escapeHtml(choice.id) + '" title="' + gettext('Statement ID') + '">';
+        html += '<div class="mtf-text-controls"><textarea class="mtf-statement-text choice-text-input auto-resize-textarea" rows="1" placeholder="' + gettext('Statement text') + '">' + this.escapeHtml(choice.text) + '</textarea>';
+        html += '<button type="button" class="btn btn-sm expand-choice-btn" title="' + gettext('Expand with toolbar') + '"><i class="fa fa-expand"></i></button></div>';
+        html += '<label class="mtf-answer-option"><input type="radio" class="mtf-correct-answer" name="' + name + '" value="true"' + (answer === true ? ' checked' : '') + '><span class="mtf-answer-label">' + gettext('True') + '</span></label>';
+        html += '<label class="mtf-answer-option"><input type="radio" class="mtf-correct-answer" name="' + name + '" value="false"' + (answer === false ? ' checked' : '') + '><span class="mtf-answer-label">' + gettext('False') + '</span></label>';
+        html += '<button type="button" class="btn btn-sm btn-danger mtf-remove-statement" title="' + gettext('Remove Statement') + '"' + (this.choices.length === 1 ? ' disabled' : '') + '><i class="fa fa-times"></i></button>';
+        html += '</div><div class="choice-expanded-editor" style="display: none;"></div></div>';
+        return html;
+    }
+
+    // Keep toolbar, preview, and image-paste behavior identical to other choices.
+    expandEditor($item) {
+        ChoiceEditor.prototype.expandEditor.call(this, $item);
+    }
+
+    collapseEditor($item) {
+        ChoiceEditor.prototype.collapseEditor.call(this, $item);
+    }
+
+    registerImagePaste(element) {
+        ChoiceEditor.prototype.registerImagePaste.call(this, element);
+    }
+
+    bindEvents() {
+        var self = this;
+        var $container = $(this.container);
+        $container.off('.mtf-editor');
+        $container.on('click.mtf-editor', '.expand-choice-btn', function() {
+            self.expandEditor($(this).closest('.mtf-statement-row'));
+        });
+        $container.on('click.mtf-editor', '.collapse-choice-btn', function() {
+            self.collapseEditor($(this).closest('.mtf-statement-row'));
+        });
+        $container.on('input.mtf-editor change.mtf-editor', '.mtf-statement-id, .mtf-statement-text, .mtf-correct-answer, .mtf-score-value', function() {
+            self.updateFromUI();
+        });
+        $container.on('click.mtf-editor', '.mtf-add-statement', function() {
+            self.updateFromUI();
+            self.choices.push({ id: self.generateId(), text: '' });
+            self.resizeScoreTable();
+            self.render();
+            self.bindEvents();
+            self.updateHiddenFields();
+        });
+        $container.on('click.mtf-editor', '.mtf-remove-statement', function() {
+            if (self.choices.length <= 1) return;
+            self.updateFromUI();
+            var index = $(this).closest('.mtf-statement-row').data('index');
+            var removedId = self.choices[index].id;
+            self.choices.splice(index, 1);
+            delete self.correctAnswers[removedId];
+            self.resizeScoreTable();
+            self.render();
+            self.bindEvents();
+            self.updateHiddenFields();
+        });
+    }
+
+    resizeScoreTable() {
+        var oldTable = this.scoreTable.slice();
+        var newTable = this.defaultScoreTable(this.choices.length);
+        var oldDefault = this.defaultScoreTable(oldTable.length - 1);
+        if (JSON.stringify(oldTable) !== JSON.stringify(oldDefault)) {
+            for (var i = 1; i < Math.min(oldTable.length, newTable.length) - 1; i++) {
+                newTable[i] = oldTable[i];
+            }
+            for (var j = 1; j < newTable.length - 1; j++) {
+                newTable[j] = Math.max(newTable[j - 1], newTable[j]);
+            }
+        }
+        newTable[0] = 0;
+        newTable[newTable.length - 1] = 100;
+        this.scoreTable = newTable;
+    }
+
+    updateFromUI() {
+        var choices = [];
+        var correctAnswers = Object.create(null);
+        $(this.container).find('.mtf-statement-row').each(function() {
+            var $row = $(this);
+            var id = String($row.find('.mtf-statement-id').val() || '').trim();
+            var $expanded = $row.find('.choice-expanded-textarea');
+            var text = $expanded.length ? $expanded.val() : $row.find('.mtf-statement-text').val();
+            var selected = $row.find('.mtf-correct-answer:checked').val();
+            choices.push({ id: id, text: text });
+            if (id && selected !== undefined) correctAnswers[id] = selected === 'true';
+        });
+        var scoreTable = [];
+        $(this.container).find('.mtf-score-value').each(function() {
+            var value = $(this).val();
+            scoreTable.push(value === '' ? null : Number(value));
+        });
+        this.choices = choices;
+        this.correctAnswers = correctAnswers;
+        this.scoreTable = scoreTable;
+        this.updateHiddenFields();
+    }
+
+    updateHiddenFields() {
+        if (this.choicesField) $(this.choicesField).val(JSON.stringify(this.choices));
+        if (this.correctField) $(this.correctField).val(JSON.stringify({ answers: this.correctAnswers }));
+        if (this.scoreTableField) $(this.scoreTableField).val(JSON.stringify(this.scoreTable));
+    }
+
+    generateId() {
+        var existing = this.choices.map(function(choice) { return String(choice.id).toUpperCase(); });
+        var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        for (var i = 0; i < letters.length; i++) {
+            if (existing.indexOf(letters[i]) === -1) return letters[i];
+        }
+        var suffix = this.choices.length + 1;
+        while (existing.indexOf('S' + suffix) !== -1) suffix++;
+        return 'S' + suffix;
+    }
+
+    escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML.replace(/"/g, '&quot;');
     }
 }
 
@@ -854,6 +1046,17 @@ function initQuiz(config) {
         var questionId = $(this).data('question');
         var answer = $(this).val();
         autoSaver.saveAnswer(questionId, answer);
+    });
+
+    $('.question-mtf').on('change', function() {
+        var questionId = $(this).data('question');
+        var answer = Object.create(null);
+        $('input.question-mtf[data-question="' + questionId + '"]:checked').each(function() {
+            answer[$(this).attr('data-statement')] = $(this).val() === 'true';
+        });
+        var serialized = JSON.stringify(answer);
+        $('#question-' + questionId).find('.question-mtf-value').val(serialized);
+        autoSaver.saveAnswer(questionId, serialized);
     });
 
     // Prevent navigation

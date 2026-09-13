@@ -142,7 +142,7 @@
       });
 
   // Add question to DOM helper
-      function addQuestionToDOM(id, title, type, points) {
+      function addQuestionToDOM(id, title, type, points, typeCode) {
         pendingQuestionChanges.added.push({
           questionId: id, title: title, type: type || '', points: points
         });
@@ -154,7 +154,10 @@
         html += '<div class="question-info">';
         html += '<span class="question-order">' + newIndex + '.</span>';
         html += '<a href="/quiz/questions/' + id + '/">' + $('<div>').text(title).html() + '</a>';
-        if (type) html += '<span class="badge">' + type + '</span>';
+        if (type) {
+          var typeClass = ['MC', 'MA', 'TF', 'SA', 'ES'].indexOf(typeCode) !== -1 ? ' badge-' + typeCode : '';
+          html += '<span class="question-type-badge' + typeClass + '">' + $('<div>').text(type).html() + '</span>';
+        }
         html += '<span class="badge badge-success">{{ _("New") }}</span>';
         html += '</div>';
         html += '<input type="number" class="points-input pending-points" data-question-id="' + id + '" value="' + points + '" min="0" max="1000" step="1" title="{{ _("Points") }}">';
@@ -201,7 +204,7 @@
           var addedIds = pendingQuestionChanges.added.map(function (q) { return q.questionId; });
           selectedData.forEach(function (item) {
             if (assignedQuestionIds.indexOf(item.id) === -1 && addedIds.indexOf(item.id) === -1) {
-              addQuestionToDOM(item.id, item.text, item.type || '', points);
+              addQuestionToDOM(item.id, item.text, item.type || '', points, item.type_code);
               addedCount++;
             }
           });
@@ -238,14 +241,14 @@
             var addedIds = pendingQuestionChanges.added.map(function (q) { return q.questionId; });
             selectedData.forEach(function (item) {
               if (assignedQuestionIds.indexOf(item.id) === -1 && addedIds.indexOf(item.id) === -1) {
-                addQuestionToDOM(item.id, item.text, item.type || '', points);
+                addQuestionToDOM(item.id, item.text, item.type || '', points, item.type_code);
                 addedIds.push(item.id);
                 addedCount++;
               }
             });
             data.valid.forEach(function (q) {
               if (assignedQuestionIds.indexOf(q.id) === -1 && addedIds.indexOf(q.id) === -1) {
-                addQuestionToDOM(q.id, q.title, q.type || '', points);
+                addQuestionToDOM(q.id, q.title, q.type || '', points, q.type_code);
                 addedIds.push(q.id);
                 addedCount++;
               }
@@ -539,7 +542,7 @@
                 <a href="{{ url('question_bank_detail', assignment.question.pk) }}">
                   {{ assignment.question.title }}
                 </a>
-                <span class="badge">{{ assignment.question.get_question_type_display() }}</span>
+                <span class="question-type-badge badge-{{ assignment.question.question_type }}">{{ assignment.question.get_question_type_display() }}</span>
               </div>
               <input type="number" class="points-input" data-assignment-id="{{ assignment.id }}"
                      value="{{ assignment.points }}" min="0" max="1000" step="1" title="{{ _('Points') }}">

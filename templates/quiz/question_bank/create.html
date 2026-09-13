@@ -15,29 +15,49 @@
   <script src="{{ static('pagedown-extra/Markdown.Extra.js') }}"></script>
   <script>
     $(function () {
-      var questionType = $('#id_question_type').val();
       var choiceEditor = null;
+      var multipleTrueFalseEditor = null;
+      var currentQuestionType = $('#id_question_type').val();
+      var answerDrafts = {};
+
+      function hasStatementText() {
+        if ($('#id_question_type').val() !== 'TF') return false;
+        try {
+          var statements = JSON.parse($('#id_choices').val() || '[]');
+          return Array.isArray(statements) && statements.some(function(statement) {
+            return statement && typeof statement.text === 'string' && statement.text.trim();
+          });
+        } catch (e) { return false; }
+      }
 
       function updateGradingStrategyVisibility() {
         var type = $('#id_question_type').val();
         var $gradingField = $('#id_grading_strategy').closest('.quiz-field-row');
+        var $scoreTableField = $('#id_multiple_true_false_score_table').closest('.quiz-field-row');
         if (type === 'MA') {
           $gradingField.show();
         } else {
           $gradingField.hide();
         }
+        $scoreTableField.hide();
       }
 
       function initChoiceEditor() {
         var type = $('#id_question_type').val();
         var $choicesField = $('#id_choices').closest('.quiz-field-row');
         var $correctField = $('#id_correct_answers').closest('.quiz-field-row');
+        var $scoreTableField = $('#id_multiple_true_false_score_table').closest('.quiz-field-row');
 
       // Show/hide grading strategy field (only for MA questions)
         updateGradingStrategyVisibility();
 
+        $('#wmd-input-id_content').prop('required', type !== 'TF');
+        var $contentRow = $('#quiz-field-wrapper-content').closest('.quiz-field-row');
+        $contentRow.find('label b').first().text(type === 'TF' ? '{{ _("Context (optional)") }}:' : '{{ _("Content") }}:');
+        if (type !== 'TF') $contentRow.find('label b').first().append('<span class="red"> * </span>');
+
       // Show/hide based on question type
-        if (type === 'MC' || type === 'MA' || type === 'TF') {
+        if (type === 'MC' || type === 'MA') {
         // Parse existing values
           var choices = [];
           var correctAnswers = [];
@@ -54,20 +74,21 @@
               if (parsed.answers) {
                 if (Array.isArray(parsed.answers)) {
                   correctAnswers = parsed.answers;
-                } else {
+                } else if (typeof parsed.answers === 'string') {
                   correctAnswers = [parsed.answers];
                 }
               }
             }
           } catch (e) { }
 
-        // TF, MC, MA all work the same - user adds choices manually
+        // MC and MA use selectable answer choices.
         // No auto-creation of choices for any type
 
         // Hide raw JSON fields and SA editor
           $choicesField.hide();
           $correctField.hide();
           $('#sa-editor-container').remove();
+          $('#mtf-editor-section').remove();
 
         // Show choice editor with title
           if (!$('#choice-editor-section').length) {
@@ -92,9 +113,45 @@
             syncChoiceEditor();
           });
 
+        } else if (type === 'TF') {
+          var statements = [];
+          var statementAnswers = {};
+          var scoreTable = [];
+          try {
+            statements = JSON.parse($('#id_choices').val() || '[]');
+          } catch (e) { statements = []; }
+          try {
+            statementAnswers = JSON.parse($('#id_correct_answers').val() || '{}').answers || {};
+          } catch (e) { statementAnswers = {}; }
+          if (!statementAnswers || typeof statementAnswers !== 'object' || Array.isArray(statementAnswers)) {
+            statementAnswers = {};
+          }
+          try {
+            scoreTable = JSON.parse($('#id_multiple_true_false_score_table').val() || '[]');
+          } catch (e) { scoreTable = []; }
+
+          $('#choice-editor-section').remove();
+          $('#sa-editor-container').remove();
+          $choicesField.hide();
+          $correctField.hide();
+          $scoreTableField.hide();
+          if (!$('#mtf-editor-section').length) {
+            $scoreTableField.after('<div id="mtf-editor-section" class="choice-editor-section"><h4><i class="fa fa-check-square-o"></i> {{ _("True/False Statements") }}</h4><div id="mtf-editor-container"></div></div>');
+          }
+          multipleTrueFalseEditor = new MultipleTrueFalseEditor({
+            container: '#mtf-editor-container',
+            choicesField: '#id_choices',
+            correctField: '#id_correct_answers',
+            scoreTableField: '#id_multiple_true_false_score_table',
+            choices: statements,
+            correctAnswers: statementAnswers,
+            scoreTable: scoreTable
+          });
+
         } else if (type === 'SA') {
         // Short Answer - show user-friendly editor
           $('#choice-editor-section').remove();
+          $('#mtf-editor-section').remove();
           $choicesField.hide();
           $correctField.hide();
 
@@ -103,6 +160,7 @@
         } else {
         // ES - hide all answer fields
           $('#choice-editor-section').remove();
+          $('#mtf-editor-section').remove();
           $('#sa-editor-container').remove();
           $choicesField.hide();
           $correctField.hide();
@@ -356,12 +414,13 @@
         $('#id_correct_answers').val(JSON.stringify(correctAnswers));
       }
 
-      function syncChoiceEditor() {
+      function syncChoiceEditor(type) {
         if (!choiceEditor) return;
 
+        choiceEditor.updateFromUI();
         var choices = choiceEditor.choices;
         var correct = choiceEditor.correctAnswers;
-        var type = $('#id_question_type').val();
+        type = type || $('#id_question_type').val();
 
         $('#id_choices').val(JSON.stringify(choices));
 
@@ -375,19 +434,34 @@
     // Initialize on page load
       initChoiceEditor();
 
-    // Re-initialize when question type changes
+      function syncQuestionAnswers(type) {
+        if (type === 'MC' || type === 'MA') {
+          syncChoiceEditor(type);
+        } else if (type === 'TF' && multipleTrueFalseEditor) {
+          multipleTrueFalseEditor.updateFromUI();
+        } else if (type === 'SA') {
+          syncSaEditor();
+        }
+      }
+
+    // Keep a separate draft for each answer format instead of reinterpreting its data.
       $('#id_question_type').on('change', function () {
+        syncQuestionAnswers(currentQuestionType);
+        var fields = ['choices', 'correct_answers', 'multiple_true_false_score_table'];
+        answerDrafts[currentQuestionType] = fields.map(function(field) {
+          return $('#id_' + field).val();
+        });
+        currentQuestionType = $(this).val();
+        var draft = answerDrafts[currentQuestionType] || ['[]', '{}', '[]'];
+        fields.forEach(function(field, index) {
+          $('#id_' + field).val(draft[index]);
+        });
         initChoiceEditor();
       });
 
     // Sync before form submit
       $('form.question-form').on('submit', function () {
-        var type = $('#id_question_type').val();
-        if (type === 'MC' || type === 'MA' || type === 'TF') {
-          syncChoiceEditor();
-        } else if (type === 'SA') {
-          syncSaEditor();
-        }
+        syncQuestionAnswers($('#id_question_type').val());
       });
 
       {% if request.user|can_use_ai_features %}
@@ -395,12 +469,7 @@
 
       // Sync all editors before AI requests to ensure hidden fields are up-to-date
         function syncAllEditors() {
-          var type = $('#id_question_type').val();
-          if (type === 'MC' || type === 'MA' || type === 'TF') {
-            syncChoiceEditor();
-          } else if (type === 'SA') {
-            syncSaEditor();
-          }
+          syncQuestionAnswers($('#id_question_type').val());
         }
 
       // Generic task polling function
@@ -523,7 +592,8 @@
           var $status = $('#improve-markdown-status');
           var content = $('#wmd-input-id_content').val() || '';
 
-          if (!content.trim()) {
+          syncAllEditors();
+          if (!content.trim() && !hasStatementText()) {
             alert('{{ _("Please enter question content first.") }}');
             return;
           }
@@ -547,9 +617,10 @@
               if (data.success && data.task_id) {
                 $status.text('{{ _("Processing... please wait") }}').css('color', '#666');
                 pollQuizAITask(data.task_id, $btn, $status, function(result) {
-                  if (result.success && result.improved_markdown) {
+                  if (result.success && (result.improved_markdown || result.improved_choices)) {
                     $('#improved-question-markdown-result').show();
-                    var previewText = result.improved_markdown;
+                    var previewText = result.improved_markdown || '';
+                    $('#improved-question-markdown-content').data('improved-content', previewText);
                   // Store improved choices for later insertion
                     if (result.improved_choices) {
                       $('#improved-question-markdown-content').data('improved-choices', JSON.stringify(result.improved_choices));
@@ -587,7 +658,7 @@
 
       // Insert improved markdown into content editor
         $(document).on('click', '#improved-question-markdown-insert', function() {
-          var content = $('#improved-question-markdown-content').val();
+          var content = $('#improved-question-markdown-content').data('improved-content');
           var $editor = $('#wmd-input-id_content');
           if ($editor.length) {
             $editor.val(content);
@@ -609,6 +680,23 @@
                 choiceEditor.render();
                 choiceEditor.bindEvents();
                 syncChoiceEditor();
+              }
+            } catch(e) {}
+          }
+          if (improvedChoicesStr && multipleTrueFalseEditor) {
+            try {
+              var improvedStatements = JSON.parse(improvedChoicesStr);
+              if (Array.isArray(improvedStatements)) {
+                multipleTrueFalseEditor.choices = improvedStatements.map(function(statement, i) {
+                  var original = multipleTrueFalseEditor.choices[i] || {};
+                  return {
+                    id: original.id || statement.id || String.fromCharCode(65 + i),
+                    text: statement.text !== undefined ? statement.text : String(statement)
+                  };
+                });
+                multipleTrueFalseEditor.render();
+                multipleTrueFalseEditor.bindEvents();
+                multipleTrueFalseEditor.updateHiddenFields();
               }
             } catch(e) {}
           }
@@ -657,7 +745,8 @@
           var $status = $('#explanation-status');
           var content = $('#wmd-input-id_content').val() || '';
 
-          if (!content.trim()) {
+          syncAllEditors();
+          if (!content.trim() && !hasStatementText()) {
             alert('{{ _("Please enter question content first.") }}');
             return;
           }
@@ -755,10 +844,11 @@
           <ul>
             <li><strong>{{ _('Multiple Choice') }}</strong>: {{ _('Single correct answer') }}</li>
             <li><strong>{{ _('Multiple Answer') }}</strong>: {{ _('Multiple correct answers') }}</li>
-            <li><strong>{{ _('True/False') }}</strong>: {{ _('Binary choice') }}</li>
+            <li><strong>{{ _('True/False') }}</strong>: {{ _('Mark every statement as true or false') }}</li>
             <li><strong>{{ _('Short Answer') }}</strong>: {{ _('Text-based answer') }}</li>
             <li><strong>{{ _('Essay') }}</strong>: {{ _('Long-form, manually graded') }}</li>
           </ul>
+          <p class="help-description">{{ _('True/False questions use an editable score table based on the number of correctly evaluated statements.') }}</p>
         </div>
 
         <div class="help-section">

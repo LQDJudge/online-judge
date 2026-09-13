@@ -1,3 +1,103 @@
+function defaultQuizImportChoices(questionType) {
+    if (questionType === 'TF') {
+        return [{ id: 'A', text: '' }];
+    }
+    if (['MC', 'MA'].indexOf(questionType) !== -1) {
+        return ['A', 'B', 'C', 'D'].map(function (id) {
+            return { id: id, text: '' };
+        });
+    }
+    return [];
+}
+
+function convertQuizImportQuestionType(question, questionType) {
+    var converted = Object.assign({}, question, { question_type: questionType });
+    // A suggestion for a different answer format is no longer trustworthy.
+    converted.suggested_answers = null;
+    converted.suggestion_explanation = '';
+    converted.answer_source = null;
+    var choices = Array.isArray(question.choices) ? question.choices.map(function (choice) {
+        return { id: String(choice.id || ''), text: choice.text || '' };
+    }) : [];
+    var answerConfig = question.correct_answers || {};
+    var answers = answerConfig.answers;
+    var selectedIds = [];
+
+    if (Array.isArray(answers)) {
+        selectedIds = answers.map(String);
+    } else if (typeof answers === 'string' && answers) {
+        selectedIds = [answers];
+    } else if (answers && typeof answers === 'object') {
+        selectedIds = Object.keys(answers).filter(function (id) {
+            return answers[id] === true;
+        });
+    }
+
+    if (questionType === 'TF') {
+        if (!choices.length) choices = defaultQuizImportChoices(questionType);
+        var statementAnswers = Object.create(null);
+        choices.forEach(function (choice) {
+            var id = String(choice.id);
+            if (answers && typeof answers === 'object' && !Array.isArray(answers) &&
+                    typeof answers[id] === 'boolean') {
+                statementAnswers[id] = answers[id];
+            } else if (selectedIds.length) {
+                statementAnswers[id] = selectedIds.indexOf(id) !== -1;
+            }
+        });
+        converted.choices = choices;
+        converted.correct_answers = { answers: statementAnswers };
+        if (!Array.isArray(converted.multiple_true_false_score_table) ||
+                converted.multiple_true_false_score_table.length !== choices.length + 1) {
+            converted.multiple_true_false_score_table = [];
+        }
+        return converted;
+    }
+
+    converted.multiple_true_false_score_table = [];
+    if (questionType === 'ES') {
+        converted.choices = [];
+        converted.correct_answers = null;
+    } else if (questionType === 'SA') {
+        converted.choices = [];
+        converted.correct_answers = {
+            answers: selectedIds,
+            type: 'exact',
+            case_sensitive: false
+        };
+    } else {
+        if (!choices.length) choices = defaultQuizImportChoices(questionType);
+        var choiceIds = choices.map(function (choice) { return String(choice.id); });
+        selectedIds = selectedIds.filter(function (id) {
+            return choiceIds.indexOf(String(id)) !== -1;
+        });
+        converted.choices = choices;
+        converted.correct_answers = {
+            answers: questionType === 'MA' ? selectedIds : (selectedIds[0] || '')
+        };
+    }
+    return converted;
+}
+
+function applyQuizImportSuggestion(original, edited) {
+    if (!original.suggested_answers || edited.question_type === 'ES' ||
+            original.question_type !== edited.question_type ||
+            original.content !== edited.content ||
+            JSON.stringify(original.choices) !== JSON.stringify(edited.choices)) {
+        return null;
+    }
+    return Object.assign({}, edited, {
+        correct_answers: JSON.parse(JSON.stringify(original.suggested_answers)),
+        suggested_answers: null,
+        suggestion_explanation: '',
+        answer_source: 'ai'
+    });
+}
+
+if (typeof window !== 'undefined') {
+    window.convertQuizImportQuestionType = convertQuizImportQuestionType;
+}
+
 $(function () {
     var CONFIG = window.QUIZ_IMPORT_CONFIG;
     if (!CONFIG) return;
@@ -26,6 +126,7 @@ $(function () {
     var questionsData = [];
     var createdQuestions = {}; // index -> {question_id, question_url}
     var choiceEditors = {}; // index -> ChoiceEditor instance
+    var multipleTrueFalseEditors = {}; // index -> MultipleTrueFalseEditor instance
 
     // DOM elements
     var $fileInput = $('#import-file-input');
@@ -172,8 +273,7 @@ $(function () {
             $questions.append(renderQuestionCard(i, q));
         });
 
-        initContentEditors();
-        initChoiceEditors();
+        initQuestionCards();
         $results.addClass('show');
     }
 
@@ -210,7 +310,7 @@ $(function () {
         // Content with PageDown editor
         var editorId = 'import-content-' + index;
         html += '<div class="import-field-row import-content-editor">';
-        html += '<label>' + escapeHtml(CONFIG.i18n.questionContent) + ':</label>';
+        html += '<label>' + escapeHtml(q.question_type === 'TF' ? CONFIG.i18n.optionalContext : CONFIG.i18n.questionContent) + ':</label>';
         html += '<div class="wmd-wrapper">';
         html += '<div id="wmd-button-bar-' + editorId + '" class="wmd-button-bar"></div>';
         html += '<textarea id="wmd-input-' + editorId + '" class="wmd-input import-question-content" data-field="content" rows="6">' + escapeHtml(q.content) + '</textarea>';
@@ -222,10 +322,18 @@ $(function () {
         html += '</div>';
 
         // Choices (MC/MA/TF) — ChoiceEditor container
-        if (q.choices && q.choices.length) {
+        var groupedTrueFalse = q.question_type === 'TF';
+        if (q.choices && q.choices.length && !groupedTrueFalse) {
             html += '<div class="import-field-row">';
             html += '<label>' + escapeHtml(CONFIG.i18n.answerChoices) + ':</label>';
             html += '<div class="import-choice-editor-container" id="choice-editor-' + index + '"></div>';
+            html += '</div>';
+        }
+
+        if (groupedTrueFalse) {
+            html += '<div class="import-field-row">';
+            html += '<label>' + escapeHtml(CONFIG.i18n.trueFalseStatements) + ':</label>';
+            html += '<div class="import-mtf-editor-container" id="mtf-editor-' + index + '"></div>';
             html += '</div>';
         }
 
@@ -248,8 +356,41 @@ $(function () {
         }
 
         // No answers indicator for non-SA types
-        if (!q.correct_answers && q.question_type !== 'SA') {
+        if (!q.correct_answers && ['SA', 'ES'].indexOf(q.question_type) === -1) {
             html += '<div class="import-field-row import-no-answers"><i class="fa fa-exclamation-triangle"></i> ' + escapeHtml(CONFIG.i18n.noAnswersHint) + '</div>';
+        }
+
+        if (q.answer_source) {
+            html += '<p class="import-answer-source import-field-meta">' + escapeHtml(
+                q.answer_source === 'document' ? CONFIG.i18n.fromDocument : CONFIG.i18n.suggestionApplied
+            ) + '</p>';
+        }
+        if (q.question_type !== 'ES' && (q.suggested_answers || q.suggestion_explanation)) {
+            html += '<section class="import-answer-suggestion">';
+            html += '<strong>' + escapeHtml(CONFIG.i18n.aiSuggestedAnswer) + '</strong>';
+            html += '<p class="import-field-meta">' + escapeHtml(CONFIG.i18n.reviewSuggestion) + '</p>';
+            if (q.suggested_answers) {
+                html += '<p class="import-field-meta">' + escapeHtml(CONFIG.answerInstructions[q.question_type]) + '</p>';
+                var suggested = q.suggested_answers.answers;
+                var lines;
+                if (q.question_type === 'TF') {
+                    lines = (q.choices || []).map(function (choice) {
+                        return choice.id + ': ' + (suggested[choice.id] ? CONFIG.i18n.trueAnswer : CONFIG.i18n.falseAnswer);
+                    });
+                } else {
+                    lines = Array.isArray(suggested) ? suggested : [suggested];
+                }
+                html += '<ul>' + lines.map(function (answer) {
+                    return '<li>' + escapeHtml(String(answer)) + '</li>';
+                }).join('') + '</ul>';
+            }
+            if (q.suggestion_explanation) {
+                html += '<p class="import-suggestion-explanation">' + escapeHtml(q.suggestion_explanation) + '</p>';
+            }
+            if (q.suggested_answers) {
+                html += '<button type="button" class="action-btn import-apply-suggestion">' + escapeHtml(CONFIG.i18n.applySuggestion) + '</button>';
+            }
+            html += '<p class="import-suggestion-status" role="status"></p></section>';
         }
 
         html += '</div>'; // end body
@@ -275,9 +416,20 @@ $(function () {
     });
 
     // Initialize PageDown editors for content fields
-    function initContentEditors() {
+    function getScopedQuestionCards($scope) {
+        if (!$scope) return $('.import-question-card');
+        return $scope.filter('.import-question-card').add($scope.find('.import-question-card'));
+    }
+
+    function initQuestionCards($scope) {
+        initContentEditors($scope);
+        initChoiceEditors($scope);
+        initMultipleTrueFalseEditors($scope);
+    }
+
+    function initContentEditors($scope) {
         if (typeof Markdown === 'undefined') return;
-        $('.import-question-card').each(function () {
+        getScopedQuestionCards($scope).each(function () {
             var index = $(this).data('index');
             var editorId = 'import-content-' + index;
             var converter = Markdown.getSanitizingConverter();
@@ -340,9 +492,9 @@ $(function () {
     }
 
     // Initialize ChoiceEditor instances for MC/MA/TF questions
-    function initChoiceEditors() {
-        choiceEditors = {};
-        $('.import-choice-editor-container').each(function () {
+    function initChoiceEditors($scope) {
+        if (!$scope) choiceEditors = {};
+        getScopedQuestionCards($scope).find('.import-choice-editor-container').each(function () {
             var index = $(this).closest('.import-question-card').data('index');
             var q = questionsData[index];
             var correctAnswers = [];
@@ -360,6 +512,110 @@ $(function () {
             choiceEditors[index] = editor;
         });
     }
+
+    function initMultipleTrueFalseEditors($scope) {
+        if (!$scope) multipleTrueFalseEditors = {};
+        getScopedQuestionCards($scope).find('.import-mtf-editor-container').each(function () {
+            var index = $(this).closest('.import-question-card').data('index');
+            var q = questionsData[index];
+            var correctAnswers = q.correct_answers && q.correct_answers.answers;
+            multipleTrueFalseEditors[index] = new MultipleTrueFalseEditor({
+                container: '#mtf-editor-' + index,
+                choices: (q.choices || []).map(function (choice) {
+                    return { id: String(choice.id), text: choice.text };
+                }),
+                correctAnswers: correctAnswers || {},
+                scoreTable: q.multiple_true_false_score_table || []
+            });
+        });
+    }
+
+    function snapshotQuestionCard(index) {
+        var $card = $('.import-question-card[data-index="' + index + '"]');
+        var question = Object.assign({}, questionsData[index]);
+        question.title = $card.find('.import-question-title').val() || question.title;
+        question.content = $card.find('.import-question-content').val() ?? question.content;
+
+        var choiceEditor = choiceEditors[index];
+        if (choiceEditor) {
+            choiceEditor.updateFromUI();
+            question.choices = choiceEditor.choices;
+            question.correct_answers = {
+                answers: question.question_type === 'MA' ?
+                    choiceEditor.correctAnswers : (choiceEditor.correctAnswers[0] || '')
+            };
+        }
+
+        var multipleTrueFalseEditor = multipleTrueFalseEditors[index];
+        if (multipleTrueFalseEditor) {
+            multipleTrueFalseEditor.updateFromUI();
+            question.choices = multipleTrueFalseEditor.choices;
+            question.correct_answers = { answers: multipleTrueFalseEditor.correctAnswers };
+            question.multiple_true_false_score_table = multipleTrueFalseEditor.scoreTable;
+        }
+
+        if (question.question_type === 'SA') {
+            var acceptedAnswers = [];
+            $card.find('.import-sa-answer-input').each(function () {
+                var value = $(this).val().trim();
+                if (value) acceptedAnswers.push(value);
+            });
+            question.correct_answers = {
+                answers: acceptedAnswers,
+                type: 'exact',
+                case_sensitive: false
+            };
+        }
+        return question;
+    }
+
+    function replaceQuestionCard(index, question) {
+        var $card = $('.import-question-card[data-index="' + index + '"]');
+        var wasExpanded = $card.find('.import-question-body').hasClass('show');
+        questionsData[index] = question;
+        delete choiceEditors[index];
+        delete multipleTrueFalseEditors[index];
+        var $replacement = $(renderQuestionCard(index, question));
+        if (wasExpanded) {
+            $replacement.find('.import-question-body').addClass('show');
+            $replacement.find('.import-chevron').removeClass('fa-chevron-right').addClass('fa-chevron-down');
+        }
+        $card.replaceWith($replacement);
+        initQuestionCards($replacement);
+    }
+
+    $questions.on('click', '.import-apply-suggestion', function () {
+        var $card = $(this).closest('.import-question-card');
+        var index = $card.data('index');
+        if (createdQuestions[index]) return;
+        var edited = snapshotQuestionCard(index);
+        var applied = applyQuizImportSuggestion(questionsData[index], edited);
+        if (!applied) {
+            $card.find('.import-suggestion-status').text(CONFIG.i18n.staleSuggestion);
+            $(this).prop('disabled', true);
+            return;
+        }
+        var answers = edited.correct_answers && edited.correct_answers.answers;
+        var hasAnswers = answers && (typeof answers === 'string' ? answers.length : Object.keys(answers).length);
+        if (hasAnswers && !window.confirm(CONFIG.i18n.replaceAnswers)) return;
+        replaceQuestionCard(index, applied);
+    });
+
+    $questions.on('input change', '.correct-checkbox, .mtf-correct-answer, .import-sa-answer-input', function () {
+        var $card = $(this).closest('.import-question-card');
+        questionsData[$card.data('index')].answer_source = null;
+        $card.find('.import-answer-source').remove();
+    });
+
+    $questions.on('change', '.import-question-type-select', function () {
+        var $card = $(this).closest('.import-question-card');
+        var index = $card.data('index');
+        if (createdQuestions[index]) return;
+
+        var question = snapshotQuestionCard(index);
+        question = convertQuizImportQuestionType(question, $(this).val());
+        replaceQuestionCard(index, question);
+    });
 
     // Add new SA answer input
     $questions.on('click', '.import-sa-add-btn', function () {
@@ -387,11 +643,12 @@ $(function () {
         var baseTitle = $card.find('.import-question-title').val() || q.title;
         var title = composeQuizTitle($('#import-title-prefix').val(), index, questionsData.length, baseTitle);
         var qtype = $card.find('.import-question-type-select').val() || q.question_type;
-        var content = $card.find('.import-question-content').val() || q.content;
+        var content = $card.find('.import-question-content').val() ?? q.content;
 
         // Read choices and correct answers from ChoiceEditor
         var choices = q.choices;
         var correctAnswers = q.correct_answers;
+        var multipleTrueFalseScoreTable = q.multiple_true_false_score_table;
 
         var editor = choiceEditors[index];
         if (editor) {
@@ -404,17 +661,24 @@ $(function () {
             }
         }
 
+
+        var multipleTrueFalseEditor = multipleTrueFalseEditors[index];
+        if (multipleTrueFalseEditor) {
+            multipleTrueFalseEditor.updateFromUI();
+            choices = multipleTrueFalseEditor.choices;
+            correctAnswers = { answers: multipleTrueFalseEditor.correctAnswers };
+            multipleTrueFalseScoreTable = multipleTrueFalseEditor.scoreTable;
+        }
+
         // Read edited SA answers
         var $saInputs = $card.find('.import-sa-answer-input');
-        if ($saInputs.length) {
+        if (qtype === 'SA') {
             var saAnswers = [];
             $saInputs.each(function () {
                 var val = $(this).val().trim();
                 if (val) saAnswers.push(val);
             });
-            if (saAnswers.length) {
-                correctAnswers = { answers: saAnswers };
-            }
+            correctAnswers = saAnswers.length ? { answers: saAnswers } : null;
         }
 
         return {
@@ -423,6 +687,7 @@ $(function () {
             content: content,
             choices: choices,
             correct_answers: correctAnswers,
+            multiple_true_false_score_table: multipleTrueFalseScoreTable,
             shuffle_choices: $('#import-shuffle-choices').is(':checked'),
             is_public: $('#import-is-public').is(':checked')
         };
@@ -454,9 +719,9 @@ $(function () {
             error: function (xhr) {
                 var msg = CONFIG.i18n.createFailed;
                 try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) {}
-                $btn.prop('disabled', false).html('<i class="fa fa-exclamation-triangle"></i> ' + msg);
+                $btn.prop('disabled', false).html('<i class="fa fa-exclamation-triangle"></i> ' + escapeHtml(msg));
                 setTimeout(function () {
-                    $btn.html('<i class="fa fa-plus"></i> Create');
+                    $btn.html('<i class="fa fa-plus"></i> ' + escapeHtml(CONFIG.i18n.create));
                 }, 3000);
             }
         });

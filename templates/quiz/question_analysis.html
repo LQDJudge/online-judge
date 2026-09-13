@@ -25,7 +25,7 @@
         <div class="question-header">
           <div>
             <span class="question-title">Q{{ loop.index }}: {{ stat.question.title }}</span>
-            <span class="badge">{{ stat.question.get_question_type_display() }}</span>
+            <span class="question-type-badge badge-{{ stat.question.question_type }}">{{ stat.question.get_question_type_display() }}</span>
           </div>
         </div>
 
@@ -65,6 +65,25 @@
                 </span>
               </div>
             {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if stat.multiple_true_false_distribution %}
+          <div class="choice-distribution">
+            <strong>{{ _('Statement Distribution') }}:</strong>
+            <div class="mtf-result-table">
+              {% for statement in stat.multiple_true_false_distribution %}
+                <div class="mtf-result-row">
+                  <div class="content-description"><strong>{{ statement.id }}.</strong> {{ statement.text|markdown|reference|str|safe }}</div>
+                  <span>
+                    {{ _('True') }}: {{ statement.true_count }}<br>
+                    {{ _('False') }}: {{ statement.false_count }}<br>
+                    {{ _('Unanswered') }}: {{ statement.unanswered_count }}<br>
+                    {{ _('Correct') }}: {{ _('True') if statement.correct_answer else _('False') }}
+                  </span>
+                </div>
+              {% endfor %}
+            </div>
           </div>
         {% endif %}
       </div>

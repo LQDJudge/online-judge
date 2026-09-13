@@ -27,7 +27,22 @@
         SA: '{{ _("Short Answer") }}',
         ES: '{{ _("Essay") }}'
       },
+      answerInstructions: {
+        MC: {{ _("Select one correct choice.")|tojson }},
+        MA: {{ _("Select all correct choices together; these are not alternative answers.")|tojson }},
+        TF: {{ _("Set True or False for every statement.")|tojson }},
+        SA: {{ _("Each entry is a complete accepted answer. Multiple entries are equivalent alternatives.")|tojson }}
+      },
       i18n: {
+        fromDocument: {{ _("Answer imported from document")|tojson }},
+        aiSuggestedAnswer: {{ _("AI-suggested answer")|tojson }},
+        reviewSuggestion: {{ _("Review required. This suggestion is not used for grading until you apply it.")|tojson }},
+        applySuggestion: {{ _("Apply suggestion")|tojson }},
+        suggestionApplied: {{ _("AI suggestion applied — review the selected answers before creating the question.")|tojson }},
+        staleSuggestion: {{ _("The question or choices have changed. This suggestion can no longer be applied; set the answers manually.")|tojson }},
+        replaceAnswers: {{ _("Replace your current answers with the AI suggestion?")|tojson }},
+        trueAnswer: {{ _("True")|tojson }},
+        falseAnswer: {{ _("False")|tojson }},
         uploading: '{{ _("Uploading...") }}',
         analyzing: '{{ _("AI is analyzing the document... This may take a few minutes.") }}',
         loading: '{{ _("Loading previous import results...") }}',
@@ -50,7 +65,9 @@
         codeExists: '{{ _("This code already exists") }}',
         questionType: '{{ _("Question Type") }}',
         questionContent: '{{ _("Question Content") }}',
+        optionalContext: '{{ _("Context (optional)") }}',
         answerChoices: '{{ _("Answer Choices") }}',
+        trueFalseStatements: '{{ _("True/False Statements") }}',
         acceptedAnswers: '{{ _("Accepted Answers") }}',
         create: '{{ _("Create") }}',
         noAnswersHint: '{{ _("No correct answers detected") }}',

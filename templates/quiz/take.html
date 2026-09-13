@@ -92,8 +92,16 @@
           var $indicator = $('.question-indicator[data-index="' + i + '"]');
           var isAnswered = false;
 
-          if ($card.find('input[type="radio"]:checked').length) isAnswered = true;
-          if ($card.find('input[type="checkbox"]:checked').length) isAnswered = true;
+          var $mtfRows = $card.find('.mtf-response-row');
+          if ($mtfRows.length) {
+            var answeredStatements = $mtfRows.find('.question-mtf:checked').length;
+            isAnswered = answeredStatements === $mtfRows.length;
+            $indicator.toggleClass('partially-answered', answeredStatements > 0 && !isAnswered);
+          } else {
+            if ($card.find('input[type="radio"]:checked').length) isAnswered = true;
+            if ($card.find('input[type="checkbox"]:checked').length) isAnswered = true;
+            $indicator.removeClass('partially-answered');
+          }
           var textVal = $card.find('input[type="text"].question-text').val();
           if (textVal && textVal.trim()) isAnswered = true;
           var taVal = $card.find('textarea.question-text').val();
@@ -110,7 +118,7 @@
         });
       }
 
-      $('.question-radio, .question-checkbox').on('change', updateAnsweredIndicators);
+      $('.question-radio, .question-checkbox, .question-mtf').on('change', updateAnsweredIndicators);
       $('.question-text').on('input', updateAnsweredIndicators);
 
       updateAnsweredIndicators();
@@ -365,7 +373,7 @@
         <div class="question-header">
           <div class="question-number">
             <strong>{{ _('Question') }} {{ loop.index }}</strong>
-            <span class="question-type badge">{{ question.get_question_type_display() }}</span>
+            <span class="question-type question-type-badge badge-{{ question.question_type }}">{{ question.get_question_type_display() }}</span>
           </div>
           <div class="question-points">
             {{ assignment.points }} {{ _('points') }}
@@ -378,7 +386,7 @@
         </div>
 
         <div class="question-answer">
-          {% if question.question_type == 'MC' or question.question_type == 'TF' %}
+          {% if question.question_type == 'MC' %}
             <div class="question-choices">
               {% for choice in question.choices %}
                 <label class="choice-label">
@@ -406,6 +414,39 @@
                          {% if choice.id in checked_answers %}checked{% endif %}>
                   <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
                 </label>
+              {% endfor %}
+            </div>
+
+          {% elif question.question_type == 'TF' %}
+            {% set statement_answers = saved_answer|json_loads if saved_answer else {} %}
+            <input type="hidden" class="question-mtf-value" name="q_{{ question.id }}" value="{{ saved_answer or '{}' }}">
+            <div class="mtf-response-table">
+              <div class="mtf-response-header">
+                <strong>{{ _('Statement') }}</strong>
+                <strong>{{ _('True') }}</strong>
+                <strong>{{ _('False') }}</strong>
+              </div>
+              {% for statement in question.choices %}
+                <div class="mtf-response-row">
+                  <div class="mtf-response-statement content-description">
+                    <span class="mtf-response-id">{{ statement.id }}.</span>
+                    {{ statement.text|markdown|reference|str|safe }}
+                  </div>
+                  <label>
+                    <input type="radio" class="question-mtf"
+                           name="mt_{{ question.id }}_{{ statement.id }}"
+                           value="true" data-question="{{ question.id }}" data-statement="{{ statement.id }}"
+                           {% if statement_answers.get(statement.id) is sameas true %}checked{% endif %}>
+                    <span class="sr-only">{{ _('True') }}</span>
+                  </label>
+                  <label>
+                    <input type="radio" class="question-mtf"
+                           name="mt_{{ question.id }}_{{ statement.id }}"
+                           value="false" data-question="{{ question.id }}" data-statement="{{ statement.id }}"
+                           {% if statement_answers.get(statement.id) is sameas false %}checked{% endif %}>
+                    <span class="sr-only">{{ _('False') }}</span>
+                  </label>
+                </div>
               {% endfor %}
             </div>
 

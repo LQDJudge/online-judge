@@ -86,6 +86,16 @@ $color-midnight: #191970;
 $color-midnight-hover: #00008b;
 $color-warning-border: #e6c300;
 
+// Question types: warm/distinct fills with neutral dark text, separate from actions.
+$quiz-type-ink: #202124;
+$quiz-type-palette: (
+    "MC": (#f6c453, $quiz-type-ink), // Gold
+          "MA": (#f4a09c, $quiz-type-ink), // Coral
+          "TF": (#b9e4a7, $quiz-type-ink), // Green
+          "SA": (#f7ba84, $quiz-type-ink), // Peach
+          "ES": (#cfb2ed, $quiz-type-ink)  // Lavender
+);
+
 // UI state tokens
 $color-tab-hover: #008000;
 

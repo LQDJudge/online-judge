@@ -17897,3 +17897,212 @@ msgstr "Không thể xóa tệp của bài đã nộp"
 
 msgid "Answers must be saved before the deadline. Check the save status before leaving this page."
 msgstr "Câu trả lời phải được lưu trước khi hết thời gian. Hãy kiểm tra trạng thái lưu trước khi rời trang."
+
+#: judge/models/quiz.py:123
+msgid "True/False Score Table"
+msgstr "Bảng điểm Đúng/Sai"
+
+#: judge/models/quiz.py:125
+msgid "Percentage awarded for each number of correctly evaluated statements"
+msgstr "Phần trăm điểm theo số nhận định được trả lời đúng"
+
+#: judge/models/quiz.py:1083 templates/quiz/grading/grade.html:172
+#: templates/quiz/grading/grade.html:173 templates/quiz/import.html:44
+#: templates/quiz/question_analysis.html:79
+#: templates/quiz/question_analysis.html:82
+#: templates/quiz/question_bank/detail.html:112 templates/quiz/result.html:145
+#: templates/quiz/result.html:223 templates/quiz/take.html:426
+#: templates/quiz/take.html:440
+msgid "True"
+msgstr "Đúng"
+
+#: judge/models/quiz.py:1085 templates/quiz/grading/grade.html:172
+#: templates/quiz/import.html:45 templates/quiz/question_analysis.html:80
+#: templates/quiz/result.html:147 templates/quiz/take.html:427
+#: templates/quiz/take.html:447
+msgid "False"
+msgstr "Sai"
+
+#: judge/utils/quiz_grading.py:202
+#, python-format
+msgid ""
+"The score table must contain %(count)s percentages, including zero correct."
+msgstr ""
+"Bảng điểm phải có %(count)s mức phần trăm, bao gồm mức trả lời đúng 0 nhận "
+"định."
+
+#: judge/utils/quiz_grading.py:208
+msgid "Score table percentages must be whole numbers from 0 to 100."
+msgstr "Phần trăm trong bảng điểm phải là số nguyên từ 0 đến 100."
+
+#: judge/utils/quiz_grading.py:212
+msgid "Zero correct must award 0% and all correct must award 100%."
+msgstr ""
+"Trả lời đúng 0 nhận định phải được 0% điểm và trả lời đúng tất cả phải được "
+"100% điểm."
+
+#: judge/utils/quiz_grading.py:215
+msgid "Score table percentages must not decrease."
+msgstr "Phần trăm điểm không được giảm khi số nhận định trả lời đúng tăng."
+
+#: judge/utils/quiz_question_validation.py:26
+msgid "Cannot change the answer format of a question with existing attempts."
+msgstr ""
+"Không thể thay đổi định dạng câu trả lời của câu hỏi đã có lượt làm bài."
+
+#: judge/utils/quiz_question_validation.py:35
+msgid "True/False questions require at least one statement."
+msgstr "Câu hỏi Đúng/Sai phải có ít nhất một nhận định."
+
+#: judge/utils/quiz_question_validation.py:41
+msgid "Each statement must be valid."
+msgstr "Mỗi nhận định phải hợp lệ."
+
+#: judge/utils/quiz_question_validation.py:51
+msgid "Every statement requires an ID and statement text."
+msgstr "Mỗi nhận định phải có ID và nội dung."
+
+#: judge/utils/quiz_question_validation.py:56
+msgid "Statement IDs must be unique."
+msgstr "ID của các nhận định không được trùng nhau."
+
+#: judge/utils/quiz_question_validation.py:69
+msgid ""
+"Cannot rename statement IDs or remove statements after answers have been "
+"saved. Create a new question instead."
+msgstr ""
+"Không thể đổi mã nhận định hoặc xóa nhận định sau khi đã có câu trả lời được"
+" lưu. Hãy tạo một câu hỏi mới."
+
+#: judge/utils/quiz_question_validation.py:83
+msgid "Select the correct True or False answer for every statement."
+msgstr "Hãy chọn đáp án Đúng hoặc Sai cho từng nhận định."
+
+#: judge/utils/quiz_question_validation.py:86
+msgid "The answer key contains an unknown statement ID."
+msgstr "Đáp án chứa ID nhận định không xác định."
+
+#: judge/views/quiz.py:637
+msgid ""
+"The answer key or score table changed. Existing attempt scores were not "
+"regraded."
+msgstr ""
+"Đáp án hoặc bảng điểm đã thay đổi. Điểm của các lượt làm bài trước đó chưa "
+"được chấm lại."
+
+#: judge/views/quiz_import.py:179
+msgid "Every statement requires a True or False answer."
+msgstr "Mỗi nhận định phải có đáp án Đúng hoặc Sai."
+
+#: templates/quiz/grading/grade.html:172
+#: templates/quiz/question_analysis.html:81 templates/quiz/result.html:149
+msgid "Unanswered"
+msgstr "Chưa trả lời"
+
+#: templates/quiz/grading/grade.html:197 templates/quiz/result.html:157
+#, python-format
+msgid "%(correct)s of %(total)s statements correct"
+msgstr "Đúng %(correct)s trên %(total)s nhận định"
+
+#: templates/quiz/import.html:31
+msgid "Select one correct choice."
+msgstr "Chọn một phương án đúng."
+
+#: templates/quiz/import.html:32
+msgid ""
+"Select all correct choices together; these are not alternative answers."
+msgstr ""
+"Chọn đồng thời tất cả phương án đúng; đây không phải các đáp án thay thế cho"
+" nhau."
+
+#: templates/quiz/import.html:33
+msgid "Set True or False for every statement."
+msgstr "Hãy chọn đáp án Đúng hoặc Sai cho từng nhận định."
+
+#: templates/quiz/import.html:34
+msgid ""
+"Each entry is a complete accepted answer. Multiple entries are equivalent "
+"alternatives."
+msgstr ""
+"Mỗi mục là một đáp án hoàn chỉnh được chấp nhận. Nếu có nhiều mục, chúng là "
+"các cách trả lời tương đương."
+
+#: templates/quiz/import.html:37
+msgid "Answer imported from document"
+msgstr "Đáp án được trích xuất từ tài liệu"
+
+#: templates/quiz/import.html:38
+msgid "AI-suggested answer"
+msgstr "Đáp án do AI đề xuất"
+
+#: templates/quiz/import.html:39
+msgid ""
+"Review required. This suggestion is not used for grading until you apply it."
+msgstr ""
+"Cần kiểm tra lại. Đề xuất này chỉ được dùng để chấm điểm sau khi bạn áp "
+"dụng."
+
+#: templates/quiz/import.html:40
+msgid "Apply suggestion"
+msgstr "Áp dụng đề xuất"
+
+#: templates/quiz/import.html:41
+msgid ""
+"AI suggestion applied — review the selected answers before creating the "
+"question."
+msgstr ""
+"Đã áp dụng đề xuất của AI — hãy kiểm tra các đáp án đã chọn trước khi tạo "
+"câu hỏi."
+
+#: templates/quiz/import.html:42
+msgid ""
+"The question or choices have changed. This suggestion can no longer be "
+"applied; set the answers manually."
+msgstr ""
+"Câu hỏi hoặc các phương án đã thay đổi. Không thể áp dụng đề xuất này nữa; "
+"hãy tự chọn đáp án."
+
+#: templates/quiz/import.html:43
+msgid "Replace your current answers with the AI suggestion?"
+msgstr "Thay các đáp án hiện tại bằng đề xuất của AI?"
+
+#: templates/quiz/import.html:68 templates/quiz/question_bank/create.html:56
+#: templates/quiz/question_bank/edit.html:56
+msgid "Context (optional)"
+msgstr "Ngữ cảnh (tùy chọn)"
+
+#: templates/quiz/import.html:70 templates/quiz/question_bank/create.html:139
+#: templates/quiz/question_bank/edit.html:139
+msgid "True/False Statements"
+msgstr "Các nhận định Đúng/Sai"
+
+#: templates/quiz/question_analysis.html:73
+msgid "Statement Distribution"
+msgstr "Phân bố câu trả lời theo nhận định"
+
+#: templates/quiz/question_bank/create.html:847
+#: templates/quiz/question_bank/edit.html:847
+msgid "Mark every statement as true or false"
+msgstr "Đánh dấu Đúng hoặc Sai cho từng nhận định"
+
+#: templates/quiz/question_bank/create.html:851
+#: templates/quiz/question_bank/edit.html:851
+msgid ""
+"True/False questions use an editable score table based on the number of "
+"correctly evaluated statements."
+msgstr ""
+"Câu hỏi Đúng/Sai sử dụng bảng điểm có thể chỉnh sửa dựa trên số nhận định "
+"được trả lời đúng."
+
+#: templates/quiz/question_bank/detail.html:116
+msgid "Score Table"
+msgstr "Bảng điểm"
+
+#: templates/quiz/take.html:425
+msgid "Statement"
+msgstr "Nhận định"
+
+#: templates/quiz/question_bank/detail.html:119
+#, python-format
+msgid "%(count)s correct"
+msgstr "Đúng %(count)s nhận định"

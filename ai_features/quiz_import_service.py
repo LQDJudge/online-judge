@@ -9,6 +9,8 @@ import logging
 import re
 from typing import Any, Dict
 
+from django.utils.translation import gettext as _
+
 logger = logging.getLogger(__name__)
 
 VALID_QUESTION_TYPES = {"MC", "MA", "TF", "SA", "ES"}
@@ -19,7 +21,7 @@ Your task is to analyze the attached document and extract ALL questions as struc
 QUESTION TYPE DETECTION:
 - MC (Multiple Choice): Single correct answer from choices
 - MA (Multiple Answer): Multiple correct answers from choices
-- TF (True/False): Statement that is either true or false
+- TF (True/False): One or more statements, each answered True or False
 - SA (Short Answer): Requires a brief text/number answer
 - ES (Essay): Requires a long-form written response
 
@@ -36,7 +38,9 @@ OUTPUT FORMAT — Return ONLY a JSON object (no markdown fences around the JSON 
         {"id": "C", "text": "Third option"},
         {"id": "D", "text": "Fourth option"}
       ],
-      "correct_answers": {"answers": "B"}
+      "correct_answers": {"answers": "B"},
+      "suggested_answers": null,
+      "suggestion_explanation": ""
     }
   ]
 }
@@ -62,8 +66,14 @@ wrong shape or wrong meaning causes silent grading bugs, so follow each rule exa
   - The student must select exactly this set. List every correct id and no wrong ones.
     Every id must appear in "choices".
 
-- TF (true/false): choices = [{"id": "A", "text": "True"}, {"id": "B", "text": "False"}];
-  {"answers": "A"} for true, {"answers": "B"} for false.
+- TF (one or more true/false statements):
+  choices = [{"id": "A", "text": "First statement"}, ...];
+  {"answers": {"A": true, "B": false, "C": true, "D": false}}.
+  - "answers" maps EVERY statement id to a JSON boolean.
+  - Use TF for both a single statement and a group of statements. For one statement,
+    use choices = [{"id": "A", "text": "The statement"}] and {"answers": {"A": true}}.
+  - Do not create True and False as separate choices. Do not encode this format as MA.
+  - Put shared instructions/context in content (or "" if none) and each statement in choices.
 
 - SA (short answer): {"type": "exact", "case_sensitive": false, "answers": ["<answer>", ...]}
   - CRITICAL: the "answers" list is a set of ALTERNATIVE, EQUIVALENT answers. The student
@@ -90,7 +100,8 @@ wrong shape or wrong meaning causes silent grading bugs, so follow each rule exa
 
 - ES (essay): correct_answers = null (manually graded).
 
-- If the correct answer is NOT determinable from the document, set correct_answers to null
+- correct_answers is ONLY for an answer key explicitly provided by the document.
+  If the document does not supply a complete key, set correct_answers to null.
 
 CONTENT RULES (CRITICAL — follow exactly):
 - Preserve the original language (Vietnamese, English, etc.)
@@ -117,8 +128,25 @@ IMAGE HANDLING:
 ANSWER HANDLING:
 - Extract correct answers exactly as shown in the document
 - If the document marks answers (e.g., circled, highlighted, in answer key), use those
-- If no answer is marked, you MAY suggest a correct answer if you are confident, but set it
-- If you cannot determine the answer at all, set correct_answers to null
+- Never put your own inferred answer in correct_answers or alter a supplied answer key.
+- If a complete document answer key exists, set suggested_answers to null.
+- Otherwise, for MC, MA, TF, and SA, try solving the question and return a separate
+  suggested_answers object using EXACTLY the same per-type format described above.
+  Keep correct_answers null. The author must explicitly apply the suggestion.
+- MC: suggest one existing choice ID: {"answers": "B"}.
+- MA: suggest the complete set of correct choice IDs: {"answers": ["A", "C"]}.
+- TF: suggest a JSON boolean for EVERY statement ID, including false values:
+  {"answers": {"A": true, "B": false}}. Do not omit false statements.
+- SA: suggest one complete canonical text answer matching the requested input format:
+  {"type": "exact", "case_sensitive": false, "answers": ["5"]}.
+  Equivalent alternatives are allowed, but never split a multipart answer into entries.
+- Include suggestion_explanation: a short plain-text justification in the document's
+  language (for TF, briefly explain each statement). Do not put this in question content.
+- If you cannot confidently suggest a COMPLETE answer, set suggested_answers to null
+  and briefly explain the uncertainty in suggestion_explanation. Do not guess or invent
+  missing facts. Preserve any partial document key in that explanation for author review.
+- ES: ALWAYS set correct_answers and suggested_answers to null and
+  suggestion_explanation to "". Never suggest essay answers.
 
 TITLE RULES:
 - Create a SHORT, NEUTRAL, THEMATIC title from the question's story or setting.
@@ -165,7 +193,7 @@ def normalize_quiz_question_payload(qtype: str, choices, correct_answers):
     if answers is None:
         return choices, None
 
-    if qtype in {"MC", "TF"}:
+    if qtype == "MC":
         if not isinstance(answers, str):
             return choices, None
         answer = answers.strip().upper()
@@ -183,6 +211,22 @@ def normalize_quiz_question_payload(qtype: str, choices, correct_answers):
             if isinstance(answer, str) and answer.strip()
         ]
         if not normalized_answers:
+            return choices, None
+        correct_answers["answers"] = normalized_answers
+    elif qtype == "TF":
+        if not isinstance(answers, dict) or not isinstance(choices, list):
+            return choices, None
+        choice_ids = {
+            choice.get("id")
+            for choice in choices
+            if isinstance(choice, dict) and choice.get("id")
+        }
+        normalized_answers = {
+            str(answer_id).strip().upper(): value
+            for answer_id, value in answers.items()
+            if isinstance(value, bool)
+        }
+        if not choice_ids or set(normalized_answers) != choice_ids:
             return choices, None
         correct_answers["answers"] = normalized_answers
     elif qtype == "SA":
@@ -267,18 +311,45 @@ def parse_quiz_import_response(text: str) -> Dict[str, Any]:
 
         title = str(q.get("title", "")).strip()
         content = str(q.get("content", "")).strip()
-        if not content:
+        if not content and qtype != "TF":
             continue
 
         # Truncate title
         if len(title) > 255:
             title = title[:252] + "..."
         if not title:
-            title = content[:80] + ("..." if len(content) > 80 else "")
+            title = (
+                content[:80] + ("..." if len(content) > 80 else "")
+                if content
+                else _("True/False")
+            )
 
         choices, correct_answers = normalize_quiz_question_payload(
             qtype, q.get("choices"), q.get("correct_answers")
         )
+        suggested_answers = None
+        suggestion_explanation = ""
+        if correct_answers is None and qtype != "ES":
+            suggested_answers = normalize_quiz_question_payload(
+                qtype, choices, q.get("suggested_answers")
+            )[1]
+            # Suggestions must refer to real choices, never invented IDs.
+            if suggested_answers and qtype in {"MC", "MA"}:
+                choice_ids = {
+                    choice.get("id")
+                    for choice in (choices or [])
+                    if isinstance(choice, dict)
+                }
+                answers = suggested_answers["answers"]
+                answer_ids = [answers] if qtype == "MC" else answers
+                if not set(answer_ids).issubset(choice_ids):
+                    suggested_answers = None
+            if suggested_answers and qtype == "SA":
+                suggested_answers["type"] = "exact"
+                suggested_answers["case_sensitive"] = False
+            explanation = q.get("suggestion_explanation")
+            if isinstance(explanation, str):
+                suggestion_explanation = explanation.strip()
 
         valid_questions.append(
             {
@@ -287,6 +358,9 @@ def parse_quiz_import_response(text: str) -> Dict[str, Any]:
                 "content": content,
                 "choices": choices,
                 "correct_answers": correct_answers,
+                "answer_source": "document" if correct_answers else None,
+                "suggested_answers": suggested_answers,
+                "suggestion_explanation": suggestion_explanation,
             }
         )
 

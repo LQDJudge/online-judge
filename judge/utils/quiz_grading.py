@@ -11,9 +11,11 @@ import re
 from typing import Tuple
 
 from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from judge import event_poster as event
 
@@ -48,7 +50,7 @@ def sa_exact_match(text, answers, case_sensitive=False):
 
 def grade_multiple_choice(answer, max_points=None) -> Tuple[float, bool]:
     """
-    Grade MC/TF question - single correct choice.
+    Grade an MC question with a single correct choice.
 
     Args:
         answer: QuizAnswer instance
@@ -181,6 +183,116 @@ def grade_multiple_answer(answer, max_points=None) -> Tuple[float, bool]:
     return (points, is_correct)
 
 
+def default_multiple_true_false_score_table(statement_count):
+    if statement_count == 4:
+        return [0, 10, 25, 50, 100]
+    if statement_count <= 0:
+        return [0]
+    return [
+        math.floor(index * 100 / statement_count + 0.5)
+        for index in range(statement_count + 1)
+    ]
+
+
+def validate_multiple_true_false_score_table(table, statement_count):
+    """Keep authoring, imports, and grading on the same integer table contract."""
+    if not isinstance(table, list) or len(table) != statement_count + 1:
+        raise ValidationError(
+            _(
+                "The score table must contain %(count)s percentages, including zero correct."
+            )
+            % {"count": statement_count + 1}
+        )
+    if any(type(value) is not int or not 0 <= value <= 100 for value in table):
+        raise ValidationError(
+            _("Score table percentages must be whole numbers from 0 to 100.")
+        )
+    if table[0] != 0 or table[-1] != 100:
+        raise ValidationError(
+            _("Zero correct must award 0% and all correct must award 100%.")
+        )
+    if any(left > right for left, right in zip(table, table[1:])):
+        raise ValidationError(_("Score table percentages must not decrease."))
+
+
+def get_multiple_true_false_score_table(question, statement_count):
+    table = getattr(question, "multiple_true_false_score_table", None)
+    try:
+        validate_multiple_true_false_score_table(table, statement_count)
+    except ValidationError:
+        return default_multiple_true_false_score_table(statement_count)
+    return table
+
+
+def grade_multiple_true_false(answer, max_points=None):
+    """Grade a group of statements with an explicit True/False response per row."""
+    question = answer.question
+    choices = question.choices if isinstance(question.choices, list) else []
+    correct_config = question.correct_answers or {}
+    correct_answers = correct_config.get("answers", {})
+    if (
+        not choices
+        or not isinstance(correct_answers, dict)
+        or any(
+            not isinstance(choice, dict) or not isinstance(choice.get("id"), str)
+            for choice in choices
+        )
+    ):
+        return (0, False, 0.0, 0)
+
+    statement_ids = [choice.get("id") for choice in choices if choice.get("id")]
+    if (
+        len(statement_ids) != len(choices)
+        or len(set(statement_ids)) != len(statement_ids)
+        or any(
+            statement_id not in correct_answers
+            or not isinstance(correct_answers[statement_id], bool)
+            for statement_id in statement_ids
+        )
+    ):
+        return (0, False, 0.0, 0)
+
+    selected = {}
+    if answer.answer:
+        try:
+            selected = (
+                json.loads(answer.answer)
+                if isinstance(answer.answer, str)
+                else answer.answer
+            )
+        except (json.JSONDecodeError, TypeError):
+            selected = {}
+    if not isinstance(selected, dict):
+        selected = {}
+
+    correct_count = sum(
+        statement_id in selected
+        and isinstance(selected[statement_id], bool)
+        and selected[statement_id] == correct_answers[statement_id]
+        for statement_id in statement_ids
+    )
+    statement_count = len(statement_ids)
+    score_table = get_multiple_true_false_score_table(question, statement_count)
+    score_ratio = score_table[correct_count] / 100
+
+    if max_points is None:
+        try:
+            assignment_model = answer.attempt.quiz.quiz_questions.model
+            assignment = assignment_model.objects.get(
+                quiz=answer.attempt.quiz, question=question
+            )
+            max_points = assignment.points
+        except assignment_model.DoesNotExist:
+            max_points = 1.0
+
+    return (
+        max_points * score_ratio,
+        correct_count == statement_count,
+        score_ratio,
+        correct_count,
+    )
+
+
 def grade_short_answer(answer, max_points=None) -> Tuple[float, bool, bool]:
     """
     Grade SA question - match against patterns.
@@ -269,12 +381,18 @@ def grade_answer(answer, max_points=None) -> Tuple[float, bool, bool]:
     """
     qtype = answer.question.question_type
 
-    if qtype in ("MC", "TF"):
+    if qtype == "MC":
         points, is_correct = grade_multiple_choice(answer, max_points)
         return (points, is_correct, False)
 
     elif qtype == "MA":
         points, is_correct = grade_multiple_answer(answer, max_points)
+        return (points, is_correct, False)
+
+    elif qtype == "TF":
+        points, is_correct, _score_ratio, _correct_count = grade_multiple_true_false(
+            answer, max_points
+        )
         return (points, is_correct, False)
 
     elif qtype == "SA":
@@ -297,7 +415,14 @@ def auto_grade_answer(answer) -> bool:
         True if grading was performed (even if incorrect),
         False if manual grading is needed
     """
-    points, is_correct, needs_manual = grade_answer(answer)
+    if answer.question.question_type == "TF":
+        points, is_correct, score_ratio, _correct_count = grade_multiple_true_false(
+            answer
+        )
+        needs_manual = False
+    else:
+        points, is_correct, needs_manual = grade_answer(answer)
+        score_ratio = 1.0 if is_correct else 0.0
 
     if needs_manual and answer.question.question_type == "ES":
         # Essay questions - don't mark as graded
@@ -305,7 +430,7 @@ def auto_grade_answer(answer) -> bool:
 
     answer.points = points
     answer.is_correct = is_correct
-    answer.partial_credit = 1.0 if is_correct else 0.0
+    answer.partial_credit = score_ratio
     answer.graded_at = timezone.now()
     answer.save(update_fields=["points", "is_correct", "partial_credit", "graded_at"])
 
@@ -347,7 +472,7 @@ def auto_grade_quiz_attempt(
         qtype = answer.question.question_type
         max_points = assignment_points.get(answer.question_id, 1.0)
 
-        if qtype in ("MC", "TF"):
+        if qtype == "MC":
             points, is_correct = grade_multiple_choice(answer, max_points)
             answer.points = points
             answer.is_correct = is_correct
@@ -359,6 +484,15 @@ def auto_grade_quiz_attempt(
             answer.points = points
             answer.is_correct = is_correct
             answer.partial_credit = 1.0 if is_correct else 0.0
+            answer.graded_at = graded_at
+
+        elif qtype == "TF":
+            points, is_correct, score_ratio, _correct_count = grade_multiple_true_false(
+                answer, max_points
+            )
+            answer.points = points
+            answer.is_correct = is_correct
+            answer.partial_credit = score_ratio
             answer.graded_at = graded_at
 
         elif qtype == "SA":
@@ -428,6 +562,19 @@ def sync_quiz_attempt_result(attempt, sync_contest=True):
     # Update best quiz attempt cache for course lesson grade tracking
     best_attempt_model = apps.get_model("judge", "BestQuizAttempt")
     best_attempt_model.update_from_attempt(attempt)
+
+
+def apply_manual_answer_points(answer, points, max_points):
+    """Update a validated manual score; preserve unchanged TF grading metadata."""
+    if answer.question.question_type == "TF":
+        if answer.points == points and answer.graded_at is not None:
+            return False
+        answer.partial_credit = points / max_points if max_points > 0 else 0.0
+        answer.is_correct = max_points > 0 and points == max_points
+    else:
+        answer.is_correct = points > 0
+    answer.points = points
+    return True
 
 
 def validate_manual_answer_points(raw_points, max_points):

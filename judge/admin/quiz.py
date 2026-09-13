@@ -18,6 +18,10 @@ from judge.models import (
 )
 from judge.utils.formsets import validate_max_active_forms
 from judge.utils.identity import SemanticIdentityInlineFormSet
+from judge.utils.quiz_question_validation import (
+    configure_question_content_field,
+    validate_question_data,
+)
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminHeavySelect2Widget,
@@ -36,6 +40,12 @@ class QuizQuestionForm(ModelForm):
         super(QuizQuestionForm, self).__init__(*args, **kwargs)
         self.fields["authors"].widget.can_add_related = False
         self.fields["curators"].widget.can_add_related = False
+        configure_question_content_field(self)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        validate_question_data(self.instance, cleaned_data)
+        return cleaned_data
 
     class Meta:
         widgets = {
@@ -89,6 +99,7 @@ class QuizQuestionAdmin(CompareVersionAdmin):
                 "fields": (
                     "choices",
                     "correct_answers",
+                    "multiple_true_false_score_table",
                     "shuffle_choices",
                 ),
             },

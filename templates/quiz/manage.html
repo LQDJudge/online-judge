@@ -51,7 +51,7 @@
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ assignment.question.title }}</td>
-            <td>{{ assignment.question.get_question_type_display() }}</td>
+            <td><span class="question-type-badge badge-{{ assignment.question.question_type }}">{{ assignment.question.get_question_type_display() }}</span></td>
             <td>{{ assignment.points }}</td>
           </tr>
         {% endfor %}

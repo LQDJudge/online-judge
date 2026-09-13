@@ -34,6 +34,7 @@ from django.views.generic.detail import SingleObjectMixin
 from reversion import revisions
 from reversion.models import Version
 
+from ai_features.quiz_ai_service import has_question_text
 from judge.tasks.llm import (
     improve_question_markdown_task,
     generate_question_explanation_task,
@@ -66,11 +67,20 @@ from judge.utils.views import (
     paginate_query_context,
 )
 from judge.utils.history import RevisionDiffMixin
-from judge.utils.quiz_attempts import finalize_locked_attempt
+from judge.utils.quiz_attempts import (
+    finalize_locked_attempt,
+    serialize_multiple_true_false_answer as _serialize_multiple_true_false_answer,
+)
 from judge.utils.quiz_grading import (
+    apply_manual_answer_points,
     sync_contest_quiz_result,
     validate_manual_answer_points,
 )
+from judge.utils.quiz_question_validation import (
+    configure_question_content_field,
+    validate_question_data,
+)
+from judge.utils.quiz_question_search import choice_text_search
 
 # =============================================================================
 # Permission Mixins
@@ -321,6 +331,7 @@ class QuestionBankList(
                 Q(title__icontains=search)
                 | Q(tags__icontains=search)
                 | Q(content__icontains=search)
+                | choice_text_search(search)
             )
             if question_id is not None:
                 search_filter |= Q(id=question_id)
@@ -384,10 +395,13 @@ class QuizQuestionForm(AuthorManagedRoleFieldsMixin, forms.ModelForm):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         self._setup_role_fields()
+        configure_question_content_field(self)
 
     def clean(self):
         cleaned_data = super().clean()
         self._validate_role_field_changes()
+
+        validate_question_data(self.instance, cleaned_data)
         return cleaned_data
 
     class Meta:
@@ -399,6 +413,7 @@ class QuizQuestionForm(AuthorManagedRoleFieldsMixin, forms.ModelForm):
             "choices",
             "correct_answers",
             "grading_strategy",
+            "multiple_true_false_score_table",
             "shuffle_choices",
             "tags",
             "is_public",
@@ -430,10 +445,9 @@ class QuizAIMixin:
                 return JsonResponse({"success": False, "error": "Permission denied"})
 
             content = request.POST.get("content", "").strip()
-            if not content:
-                return JsonResponse({"success": False, "error": "No content provided"})
-
             choices_json = request.POST.get("choices", "").strip()
+            if not has_question_text(content, choices_json):
+                return JsonResponse({"success": False, "error": "No content provided"})
 
             task = improve_question_markdown_task.delay(
                 content, choices_json, user_id=request.user.id
@@ -460,13 +474,13 @@ class QuizAIMixin:
                 return JsonResponse({"success": False, "error": "Permission denied"})
 
             question_content = request.POST.get("content", "").strip()
-            if not question_content:
+            choices_json = request.POST.get("choices", "")
+            if not has_question_text(question_content, choices_json):
                 return JsonResponse(
                     {"success": False, "error": "No question content provided"}
                 )
 
             question_type = request.POST.get("question_type", "MC")
-            choices_json = request.POST.get("choices", "")
             correct_answers_json = request.POST.get("correct_answers", "")
             existing_explanation = request.POST.get("explanation", "").strip()
             rough_ideas = request.POST.get("rough_ideas", "").strip()
@@ -607,8 +621,24 @@ class QuestionBankEdit(
             # Non-superusers cannot set private -> public
             if not self._original_is_public:
                 form.instance.is_public = False
+        grading_changed = bool(
+            {"correct_answers", "multiple_true_false_score_table"}
+            & set(form.changed_data)
+        )
+        has_submitted_answers = (
+            grading_changed
+            and self.object.answers.filter(attempt__is_submitted=True).exists()
+        )
         messages.success(self.request, _("Question updated successfully."))
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        if has_submitted_answers:
+            messages.warning(
+                self.request,
+                _(
+                    "The answer key or score table changed. Existing attempt scores were not regraded."
+                ),
+            )
+        return response
 
 
 class QuestionBankDetail(
@@ -1604,6 +1634,7 @@ class QuizSearchQuestions(LoginRequiredMixin, QuizObjectEditorMixin, View):
                         "id": q.id,
                         "title": q.title,
                         "type": q.get_question_type_display(),
+                        "type_code": q.question_type,
                     }
                     for q in questions
                 ]
@@ -1654,6 +1685,7 @@ class QuizValidateQuestions(LoginRequiredMixin, QuizEditorMixin, View):
                 "id": q.id,
                 "title": q.title,
                 "type": q.get_question_type_display(),
+                "type_code": q.question_type,
             }
             for q in queryset
         ]
@@ -2220,6 +2252,9 @@ class QuizSaveAnswer(LoginRequiredMixin, View):
                     return JsonResponse({"error": "Invalid question"}, status=400)
             except QuizQuestion.DoesNotExist:
                 return JsonResponse({"error": "Question not found"}, status=404)
+
+            if question.question_type == "TF":
+                answer = _serialize_multiple_true_false_answer(question, answer)
 
             quiz_answer, created = QuizAnswer.objects.update_or_create(
                 attempt=attempt,
@@ -2933,7 +2968,7 @@ class AttemptGrade(LoginRequiredMixin, QuizEditorMixin, TitleMixin, DetailView):
             str(answer.id): answer
             for answer in QuizAnswer.objects.filter(
                 id__in=answers_to_update, attempt=attempt
-            )
+            ).select_related("question")
         }
         assignment_points = dict(
             QuizQuestionAssignment.objects.filter(quiz=attempt.quiz).values_list(
@@ -2947,21 +2982,24 @@ class AttemptGrade(LoginRequiredMixin, QuizEditorMixin, TitleMixin, DetailView):
                 answer = answers.get(answer_id)
                 if answer is None or answer.question_id not in assignment_points:
                     raise ValueError
+                grading_changed = answer.question.question_type != "TF"
                 if "points" in data:
                     points = validate_manual_answer_points(
                         data["points"], assignment_points[answer.question_id]
                     )
-                    answer.points = points
-                    answer.is_correct = points > 0
+                    grading_changed = apply_manual_answer_points(
+                        answer, points, assignment_points[answer.question_id]
+                    )
                 if "feedback" in data:
                     answer.feedback = data["feedback"]
-                if "partial_credit" in data:
+                if "partial_credit" in data and answer.question.question_type != "TF":
                     answer.partial_credit = (
                         validate_manual_answer_points(data["partial_credit"], 100)
                         / 100.0
                     )
-                answer.graded_at = now
-                answer.graded_by = request.profile
+                if grading_changed:
+                    answer.graded_at = now
+                    answer.graded_by = request.profile
         except ValueError:
             messages.error(
                 request,
@@ -3000,7 +3038,7 @@ class AnswerGrade(LoginRequiredMixin, QuizEditorMixin, View):
             return JsonResponse({"error": "Invalid JSON"}, status=400)
 
         try:
-            answer = QuizAnswer.objects.select_related("attempt__quiz").get(
+            answer = QuizAnswer.objects.select_related("attempt__quiz", "question").get(
                 pk=answer_id
             )
         except QuizAnswer.DoesNotExist:
@@ -3024,12 +3062,17 @@ class AnswerGrade(LoginRequiredMixin, QuizEditorMixin, View):
             points = validate_manual_answer_points(data.get("points", 0), max_points)
 
             with transaction.atomic():
-                answer.points = points
-                answer.is_correct = points > 0
-                answer.graded_at = timezone.now()
-                answer.graded_by = request.profile
+                if apply_manual_answer_points(answer, points, max_points):
+                    answer.graded_at = timezone.now()
+                    answer.graded_by = request.profile
                 answer.save(
-                    update_fields=["points", "is_correct", "graded_at", "graded_by"]
+                    update_fields=[
+                        "points",
+                        "is_correct",
+                        "partial_credit",
+                        "graded_at",
+                        "graded_by",
+                    ]
                 )
 
                 answer.attempt.calculate_score(sync_contest=False)
@@ -3299,9 +3342,10 @@ class QuizQuestionAnalysis(
                 difficulty = "Hard"
                 difficulty_class = "danger"
 
-            # For MC/MA/TF, get choice distribution
+            # For MC/MA, get choice distribution.
             choice_distribution = None
-            if question.question_type in ["MC", "MA", "TF"] and question.choices:
+            multiple_true_false_distribution = None
+            if question.question_type in ["MC", "MA"] and question.choices:
                 choice_counts = {}
                 for choice in question.choices:
                     choice_counts[choice["id"]] = {
@@ -3348,6 +3392,41 @@ class QuizQuestionAnalysis(
                         }
                     )
 
+            if question.question_type == "TF" and question.choices:
+                correct_config = question.correct_answers or {}
+                correct_statements = correct_config.get("answers", {})
+                multiple_true_false_distribution = []
+                parsed_answers = []
+                for answer in answers:
+                    try:
+                        parsed = json.loads(answer.answer) if answer.answer else {}
+                    except (json.JSONDecodeError, TypeError):
+                        parsed = {}
+                    parsed_answers.append(parsed if isinstance(parsed, dict) else {})
+
+                for statement in question.choices:
+                    statement_id = statement["id"]
+                    true_count = sum(
+                        selected.get(statement_id) is True
+                        for selected in parsed_answers
+                    )
+                    false_count = sum(
+                        selected.get(statement_id) is False
+                        for selected in parsed_answers
+                    )
+                    multiple_true_false_distribution.append(
+                        {
+                            "id": statement_id,
+                            "text": statement["text"],
+                            "true_count": true_count,
+                            "false_count": false_count,
+                            "unanswered_count": total_answers
+                            - true_count
+                            - false_count,
+                            "correct_answer": correct_statements.get(statement_id),
+                        }
+                    )
+
             question_stats.append(
                 {
                     "question": question,
@@ -3361,6 +3440,7 @@ class QuizQuestionAnalysis(
                     "difficulty": difficulty,
                     "difficulty_class": difficulty_class,
                     "choice_distribution": choice_distribution,
+                    "multiple_true_false_distribution": multiple_true_false_distribution,
                 }
             )
 

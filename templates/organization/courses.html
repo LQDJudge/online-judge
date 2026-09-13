@@ -79,7 +79,7 @@
 {% block middle_title %}
   <div class="page-header">
     <div class="page-title">
-      {{ _('Courses in %(org)s') % {'org': organization.name} }}
+      {{ _('Courses in %(org)s', org=organization.name) }}
     </div>
     {% if can_create_course %}
       <div>

@@ -62,7 +62,7 @@
       {% if can_manage_test_data and test_data_feedback %}
         <div class="alert alert-warning">
           <i class="fa fa-exclamation-triangle"></i>
-          {{ _("This problem's test data has an error: %(error)s") % {'error': test_data_feedback} }}
+          {{ _("This problem's test data has an error: %(error)s", error=test_data_feedback) }}
           <a href="{{ url('problem_data', submission.problem.code) }}">{{ _("Fix test data") }}</a>
         </div>
       {% endif %}

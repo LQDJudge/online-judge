@@ -59,7 +59,7 @@ class QuizQuestion(models.Model):
 
     # Choices for MC/MA/TF questions
     # Format: [{"id": "a", "text": "Option A"}, {"id": "b", "text": "Option B"}, ...]
-    # For TF: [{"id": "true", "text": "True"}, {"id": "false", "text": "False"}]
+    # TF uses one entry per statement, including for single-statement questions.
     choices = models.JSONField(
         null=True,
         blank=True,
@@ -70,7 +70,7 @@ class QuizQuestion(models.Model):
     # Correct answers
     # For MC: {"answers": "b"} - single correct choice ID
     # For MA: {"answers": ["a", "c"]} - list of correct choice IDs
-    # For TF: {"answers": "true"} or {"answers": "false"}
+    # TF: {"answers": {"A": true, "B": false}} (statement IDs).
     # For SA: {"type": "exact"|"regex", "answers": ["5", "five"], "case_sensitive": false}
     # For ES: null (essay questions don't have predefined answers)
     correct_answers = models.JSONField(
@@ -115,6 +115,15 @@ class QuizQuestion(models.Model):
         default="all_or_nothing",
         verbose_name=_("Grading Strategy"),
         help_text=_("How to calculate score for multiple answer questions"),
+    )
+
+    multiple_true_false_score_table = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("True/False Score Table"),
+        help_text=_(
+            "Percentage awarded for each number of correctly evaluated statements"
+        ),
     )
 
     # Tags for categorization - stored as comma-separated string for simplicity and searchability
@@ -949,7 +958,7 @@ class QuizAnswer(models.Model):
     # Unified answer field - stores different types:
     # - MC: single choice ID (string)
     # - MA: list of choice IDs (JSON array)
-    # - TF: 'true' or 'false' (string)
+    # - TF: statement ID -> boolean (JSON object); missing IDs are unanswered
     # - SA: text answer (string)
     # - ES: essay text (long string)
     answer = models.TextField(
@@ -1024,7 +1033,7 @@ class QuizAnswer(models.Model):
 
     def get_formatted_answer(self):
         """Get human-readable version of the answer"""
-        if self.question.question_type in ["MC", "TF"]:
+        if self.question.question_type == "MC":
             # For single choice, look up the text from choices
             if (
                 self.question.choices
@@ -1056,7 +1065,56 @@ class QuizAnswer(models.Model):
                 except:
                     pass
 
+        elif self.question.question_type == "TF":
+            if self.question.choices and isinstance(self.question.choices, list):
+                try:
+                    selected = (
+                        json.loads(self.answer)
+                        if isinstance(self.answer, str)
+                        else self.answer
+                    )
+                    if not isinstance(selected, dict):
+                        return self.answer
+                    return ", ".join(
+                        "%s: %s"
+                        % (
+                            choice["id"],
+                            (
+                                _("True")
+                                if selected.get(choice["id"]) is True
+                                else _("False")
+                            ),
+                        )
+                        for choice in self.question.choices
+                        if choice["id"] in selected
+                    )
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
         return self.answer
+
+    def get_multiple_true_false_answer_map(self):
+        if self.question.question_type != "TF":
+            return {}
+        try:
+            parsed = json.loads(self.answer) if self.answer else {}
+        except (json.JSONDecodeError, TypeError):
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+
+    def get_multiple_true_false_correct_count(self):
+        selected = self.get_multiple_true_false_answer_map()
+        correct_config = self.question.correct_answers or {}
+        correct_answers = correct_config.get("answers", {})
+        if not isinstance(correct_answers, dict):
+            return 0
+        return sum(
+            choice.get("id") in selected
+            and isinstance(selected[choice.get("id")], bool)
+            and selected[choice.get("id")] == correct_answers.get(choice.get("id"))
+            for choice in (self.question.choices or [])
+            if isinstance(choice, dict) and choice.get("id")
+        )
 
     def get_max_points(self):
         """Get the maximum points for this answer based on quiz assignment"""

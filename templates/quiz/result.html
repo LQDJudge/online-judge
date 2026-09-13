@@ -88,16 +88,19 @@
       {% for answer in answers %}
         {% set question = answer.question %}
         <div
-          class="answer-card {% if _show_correctness %}{% if answer.is_correct %}correct{% elif answer.graded_at %}incorrect{% else %}pending{% endif %}{% endif %}">
+          class="answer-card {% if _show_correctness %}{% if answer.is_correct %}correct{% elif answer.graded_at and answer.points > 0 %}partial{% elif answer.graded_at %}incorrect{% else %}pending{% endif %}{% endif %}">
           <div class="answer-header">
             <div class="question-info">
               <strong>{{ _('Question') }} {{ loop.index }}</strong>
-              <span class="badge">{{ question.get_question_type_display() }}</span>
+              <span class="question-type-badge badge-{{ question.question_type }}">{{ question.get_question_type_display() }}</span>
             </div>
             {% if _show_correctness %}
               <div class="answer-status">
                 {% if answer.is_correct %}
                   <i class="fa fa-check-circle correct"></i>
+                  <span>{{ answer.points|round(1) }} / {{ answer._max_points|round(1) }} {{ _('points') }}</span>
+                {% elif answer.graded_at and answer.points > 0 %}
+                  <i class="fa fa-adjust partial"></i>
                   <span>{{ answer.points|round(1) }} / {{ answer._max_points|round(1) }} {{ _('points') }}</span>
                 {% elif answer.graded_at %}
                   <i class="fa fa-times-circle incorrect"></i>
@@ -116,7 +119,7 @@
 
           <div class="user-answer">
             <strong>{{ _('Your answer') }}:</strong>
-            {% if question.question_type in ['MC', 'TF'] %}
+            {% if question.question_type == 'MC' %}
               {% for choice in question.choices %}
                 {% if choice.id == answer.answer %}
                   <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
@@ -131,6 +134,30 @@
                   {% endif %}
                 {% endfor %}
               </ul>
+            {% elif question.question_type == 'TF' %}
+              {% set selected = answer.get_multiple_true_false_answer_map() %}
+              <div class="mtf-result-table">
+                {% for statement in question.choices %}
+                  <div class="mtf-result-row">
+                    <div class="content-description"><strong>{{ statement.id }}.</strong> {{ statement.text|markdown|reference|str|safe }}</div>
+                    <span>
+                      {% if selected.get(statement.id) is sameas true %}
+                        {{ _('True') }}
+                      {% elif selected.get(statement.id) is sameas false %}
+                        {{ _('False') }}
+                      {% else %}
+                        {{ _('Unanswered') }}
+                      {% endif %}
+                    </span>
+                  </div>
+                {% endfor %}
+              </div>
+              {% if _show_correctness %}
+                <p class="mtf-score-summary">
+                  {{ _('%(correct)s of %(total)s statements correct', correct=answer.get_multiple_true_false_correct_count(), total=question.choices|length) }}
+                  — {{ (answer.partial_credit * 100)|round(0)|int if answer.partial_credit else 0 }}%
+                </p>
+              {% endif %}
             {% elif question.question_type in ['SA', 'ES'] %}
               <div class="answer-text-content content-description">{{ answer.answer|markdown|reference|str|safe if answer.answer else _('No answer provided') }}</div>
             {% else %}
@@ -173,7 +200,7 @@
             <div class="correct-answer">
               <strong>{{ _('Correct answer') }}:</strong>
               {% set correct = question.correct_answers.get('answers', []) %}
-              {% if question.question_type in ['MC', 'TF'] %}
+              {% if question.question_type == 'MC' %}
                 {% for choice in question.choices %}
                   {% if choice.id == correct %}
                     <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
@@ -187,6 +214,16 @@
                     {% endif %}
                   {% endfor %}
                 </ul>
+              {% elif question.question_type == 'TF' %}
+                {% set correct_statements = question.correct_answers.answers %}
+                <div class="mtf-result-table">
+                  {% for statement in question.choices %}
+                    <div class="mtf-result-row">
+                      <div class="content-description"><strong>{{ statement.id }}.</strong> {{ statement.text|markdown|reference|str|safe }}</div>
+                      <span>{{ _('True') if correct_statements.get(statement.id) else _('False') }}</span>
+                    </div>
+                  {% endfor %}
+                </div>
               {% elif question.question_type == 'SA' %}
                 {% if correct is string %}
                   <span class="sa-correct-answer">{{ correct }}</span>

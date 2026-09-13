@@ -104,7 +104,7 @@
                 <a href="{{ url('question_bank_detail', question.pk) }}">{{ question.title }}</a>
               </td>
               <td class="question-type">
-                <span class="badge">{{ question.get_question_type_display() }}</span>
+                <span class="question-type-badge badge-{{ question.question_type }}">{{ question.get_question_type_display() }}</span>
               </td>
               <td class="question-tags">
                 {% for tag in question.get_tags_list()[:3] %}

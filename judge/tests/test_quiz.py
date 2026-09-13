@@ -4,21 +4,47 @@ Quiz System Unit Tests
 Tests for quiz grading, attempts, and workflows.
 """
 
+import json
+import re
+from datetime import timedelta
+from decimal import Decimal
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib import admin
+from django.core.exceptions import ValidationError
 from django.db import connection
 from django.http import QueryDict
-from django.test import TestCase, TransactionTestCase
+from django.template import engines
+from django.test import RequestFactory, SimpleTestCase, TestCase, TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
-from datetime import timedelta
-from decimal import Decimal
+from django.utils.translation import gettext, override
+
+from jinja2 import nodes, TemplateSyntaxError
+from markupsafe import Markup
 
 from ai_features.quiz_import_service import (
     normalize_quiz_question_payload,
     parse_quiz_import_response,
 )
-from judge.models import Language, Profile
+from ai_features.quiz_ai_service import QuizAIService, has_question_text
+from judge.models import (
+    BestQuizAttempt,
+    Course,
+    CourseLesson,
+    CourseLessonPrerequisite,
+    CourseLessonProgress,
+    CourseLessonQuiz,
+    CourseRole,
+    Language,
+    Profile,
+)
+from judge.admin.quiz import QuizQuestionAdmin
+from judge.models.course import RoleInCourse
 from judge.models.quiz import (
     QuizQuestion,
     Quiz,
@@ -27,8 +53,11 @@ from judge.models.quiz import (
     QuizAnswer,
 )
 from judge.utils.quiz_grading import (
+    validate_multiple_true_false_score_table,
+    default_multiple_true_false_score_table,
     grade_multiple_choice,
     grade_multiple_answer,
+    grade_multiple_true_false,
     grade_short_answer,
     grade_essay,
     grade_answer,
@@ -38,6 +67,102 @@ from judge.utils.quiz_grading import (
 from judge.utils.quiz_attempts import (
     save_submitted_answers as _save_submitted_quiz_answers,
 )
+from judge.utils.course_prerequisites import get_lesson_lock_status
+from judge.views.quiz import QuizQuestionForm
+
+
+class TemplateTranslationRegressionTestCase(SimpleTestCase):
+    def test_affected_translation_expressions_render_and_escape_values(self):
+        engine = next(engine for engine in engines.all() if hasattr(engine, "env"))
+        cases = [
+            (
+                "quiz/question_bank/detail.html",
+                "%(count)s correct",
+                {"loop": {"index0": 2}},
+                {"count": 2},
+            ),
+            (
+                "problem/contest_list_sidebar.html",
+                "Show %(count)d more...",
+                {"contest_list": list(range(7))},
+                {"count": 2},
+            ),
+            (
+                "organization/courses.html",
+                "Courses in %(org)s",
+                {"organization": {"name": "<script>School</script>"}},
+                {"org": "<script>School</script>"},
+            ),
+            (
+                "submission/status-testcases.html",
+                "This problem's test data has an error: %(error)s",
+                {"test_data_feedback": "<script>Feedback</script>"},
+                {"error": "<script>Feedback</script>"},
+            ),
+        ]
+        for path, message, context, values in cases:
+            source = (Path(settings.BASE_DIR) / "templates" / path).read_text()
+            expressions = [
+                match.group()
+                for match in re.finditer(r"{{[\s\S]*?}}", source)
+                if message in match.group()
+            ]
+            self.assertEqual(len(expressions), 1)
+            for language in ["en", "vi"]:
+                with self.subTest(template=path, language=language), override(language):
+                    rendered = engine.env.from_string(expressions[0]).render(**context)
+                    self.assertEqual(rendered, str(Markup(gettext(message)) % values))
+                    self.assertNotIn("<script>", rendered)
+
+    def test_named_translation_placeholders_are_passed_to_jinja(self):
+        """Jinja's new-style gettext formats inside the call, not afterward."""
+        engine = next(engine for engine in engines.all() if hasattr(engine, "env"))
+        self.assertTrue(engine.env.newstyle_gettext)
+        missing = []
+        for path in sorted((Path(settings.BASE_DIR) / "templates").rglob("*")):
+            if path.suffix not in {".html", ".txt"}:
+                continue
+            source = path.read_text()
+            try:
+                trees = [engine.env.parse(source)]
+            except TemplateSyntaxError:
+                # Some legacy/Django templates cannot be parsed as a whole by
+                # Jinja. Still check any Jinja-compatible output expressions.
+                trees = []
+                for match in re.finditer(r"{{[\s\S]*?}}", source):
+                    try:
+                        tree = engine.env.parse(match.group())
+                    except TemplateSyntaxError:
+                        continue
+                    tree.set_lineno(source.count("\n", 0, match.start()) + 1)
+                    trees.append(tree)
+            for tree in trees:
+                for call in tree.find_all(nodes.Call):
+                    if not isinstance(call.node, nodes.Name) or call.node.name not in {
+                        "_",
+                        "gettext",
+                        "ngettext",
+                        "pgettext",
+                        "npgettext",
+                    }:
+                        continue
+                    required = set()
+                    for arg in call.args:
+                        if isinstance(arg, nodes.Const) and isinstance(arg.value, str):
+                            required.update(
+                                re.findall(r"(?<!%)%\(([^)]+)\)", arg.value)
+                            )
+                    supplied = {keyword.key for keyword in call.kwargs}
+                    if call.node.name in {"ngettext", "npgettext"}:
+                        supplied.add("num")
+                    if required - supplied and call.dyn_kwargs is None:
+                        missing.append(
+                            f"{path.relative_to(settings.BASE_DIR)}:{call.lineno}: "
+                            f"{sorted(required - supplied)}"
+                        )
+        self.assertEqual(
+            missing, [], "Missing gettext keyword arguments:\n" + "\n".join(missing)
+        )
 
 
 class QuizQuestionTestCase(TestCase):
@@ -127,16 +252,13 @@ class QuizQuestionTestCase(TestCase):
         question = QuizQuestion.objects.create(
             question_type="TF",
             title="Test TF Question",
-            content="The sky is blue.",
-            choices=[
-                {"id": "true", "text": "True"},
-                {"id": "false", "text": "False"},
-            ],
-            correct_answers={"answers": "true"},
+            content="",
+            choices=[{"id": "A", "text": "The sky is blue."}],
+            correct_answers={"answers": {"A": True}},
         )
 
         self.assertEqual(question.question_type, "TF")
-        self.assertEqual(question.correct_answers["answers"], "true")
+        self.assertEqual(question.correct_answers["answers"], {"A": True})
 
 
 class QuizQuestionDetailTestCase(TestCase):
@@ -170,6 +292,26 @@ class QuizQuestionDetailTestCase(TestCase):
         self.assertContains(response, f"ID: {question.pk}")
         self.assertContains(response, f'data-question-id="{question.pk}"')
         self.assertNotContains(response, "Accepted Answers")
+
+    def test_authoring_offers_one_true_false_type(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("question_bank_create"))
+        self.assertContains(response, 'value="TF"')
+        self.assertNotContains(response, 'value="MT"')
+        self.assertNotContains(response, "legacyTrueFalse")
+
+    def test_edit_uses_statement_editor_for_single_statement(self):
+        self.client.force_login(self.user)
+        question = QuizQuestion.objects.create(
+            question_type="TF",
+            title="True/False example",
+            content="",
+            choices=[{"id": "A", "text": "Statement text"}],
+            correct_answers={"answers": {"A": False}},
+        )
+        response = self.client.get(reverse("question_bank_edit", args=[question.pk]))
+        self.assertNotContains(response, "legacyTrueFalse")
+        self.assertContains(response, "MultipleTrueFalseEditor")
 
 
 class QuizQuestionBankDiscoverabilityTestCase(TestCase):
@@ -208,6 +350,28 @@ class QuizQuestionBankDiscoverabilityTestCase(TestCase):
         results = response.json()["results"]
         self.assertEqual([item["id"] for item in results], [question.pk])
         self.assertEqual(results[0]["text"], f"Q{question.pk}: {question.title}")
+        self.assertEqual(results[0]["type_code"], question.question_type)
+
+    def test_search_finds_statement_text_without_shared_content(self):
+        question = QuizQuestion.objects.create(
+            question_type="TF",
+            title="A neutral title",
+            content="",
+            choices=[{"id": "A", "text": "UniqueStatementKeyword"}],
+            correct_answers={"answers": {"A": False}},
+        )
+        response = self.client.get(
+            reverse("question_bank_list"), {"search": "UniqueStatementKeyword"}
+        )
+        self.assertEqual(
+            [item.pk for item in response.context["questions"]], [question.pk]
+        )
+        response = self.client.get(
+            reverse("quiz_question_select2"), {"term": "UniqueStatementKeyword"}
+        )
+        self.assertEqual(
+            [item["id"] for item in response.json()["results"]], [question.pk]
+        )
 
     def test_question_bank_search_matches_exact_id(self):
         target = self._create_question("Target question")
@@ -222,6 +386,62 @@ class QuizQuestionBankDiscoverabilityTestCase(TestCase):
         self.assertContains(response, f">{target.pk}</a>")
         self.assertNotContains(response, "Other question")
         self.assertNotContains(response, f">{other.pk}</a>")
+
+    def test_statement_search_decodes_unicode_and_escapes_wildcards(self):
+        question = QuizQuestion.objects.create(
+            question_type="TF",
+            title="Neutral",
+            content="",
+            choices=[
+                {
+                    "id": "OnlyAnIdentifier",
+                    "text": 'Độ PHỨC tạp, 100% đúng, a_b, hi! and "quoted".',
+                }
+            ],
+            correct_answers={"answers": {"OnlyAnIdentifier": True}},
+        )
+        for term in ("phức", "PHỨC", "ĐỘ", "100%", "a_b", "hi!", '"quoted"'):
+            with self.subTest(term=term):
+                response = self.client.get(
+                    reverse("question_bank_list"), {"search": term}
+                )
+                self.assertEqual(
+                    [item.pk for item in response.context["questions"]], [question.pk]
+                )
+                response = self.client.get(
+                    reverse("quiz_question_select2"), {"term": term}
+                )
+                self.assertEqual(
+                    [item["id"] for item in response.json()["results"]], [question.pk]
+                )
+        question.choices = [{"id": "OnlyAnIdentifier", "text": "100X đúng, axb, hiX"}]
+        question.save(update_fields=["choices"])
+        for term in ("100%", "a_b", "hi!", "OnlyAnIdentifier"):
+            with self.subTest(no_match=term):
+                response = self.client.get(
+                    reverse("question_bank_list"), {"search": term}
+                )
+                self.assertEqual(list(response.context["questions"]), [])
+                response = self.client.get(
+                    reverse("quiz_question_select2"), {"term": term}
+                )
+                self.assertEqual(response.json()["results"], [])
+
+    def test_statement_search_does_not_expose_private_questions(self):
+        self.user.is_superuser = False
+        self.user.save(update_fields=["is_superuser"])
+        QuizQuestion.objects.create(
+            question_type="TF",
+            title="Private",
+            content="",
+            is_public=False,
+            choices=[{"id": "A", "text": "Độ phức tạp"}],
+            correct_answers={"answers": {"A": True}},
+        )
+        response = self.client.get(reverse("question_bank_list"), {"search": "phức"})
+        self.assertEqual(list(response.context["questions"]), [])
+        response = self.client.get(reverse("quiz_question_select2"), {"term": "phức"})
+        self.assertEqual(response.json()["results"], [])
 
     def test_question_bank_id_column_sorts(self):
         first = self._create_question("First by ID")
@@ -499,12 +719,9 @@ class QuizGradingTestCase(TestCase):
         self.tf_question = QuizQuestion.objects.create(
             question_type="TF",
             title="TF Question",
-            content="The sky is blue",
-            choices=[
-                {"id": "true", "text": "True"},
-                {"id": "false", "text": "False"},
-            ],
-            correct_answers={"answers": "true"},
+            content="",
+            choices=[{"id": "A", "text": "The sky is blue"}],
+            correct_answers={"answers": {"A": True}},
         )
 
         # Create quiz with assignments
@@ -674,10 +891,12 @@ class QuizGradingTestCase(TestCase):
     def test_true_false_correct(self):
         """Test grading correct TF answer"""
         answer = QuizAnswer.objects.create(
-            attempt=self.attempt, question=self.tf_question, answer="true"
+            attempt=self.attempt,
+            question=self.tf_question,
+            answer=json.dumps({"A": True}),
         )
 
-        points, is_correct = grade_multiple_choice(answer)  # TF uses same grading as MC
+        points, is_correct, needs_manual = grade_answer(answer)
 
         self.assertEqual(points, 2)
         self.assertTrue(is_correct)
@@ -685,10 +904,12 @@ class QuizGradingTestCase(TestCase):
     def test_true_false_incorrect(self):
         """Test grading incorrect TF answer"""
         answer = QuizAnswer.objects.create(
-            attempt=self.attempt, question=self.tf_question, answer="false"
+            attempt=self.attempt,
+            question=self.tf_question,
+            answer=json.dumps({"A": False}),
         )
 
-        points, is_correct = grade_multiple_choice(answer)
+        points, is_correct, needs_manual = grade_answer(answer)
 
         self.assertEqual(points, 0)
         self.assertFalse(is_correct)
@@ -1005,6 +1226,714 @@ class MultipleAnswerGradingStrategyTestCase(TestCase):
             self.assertEqual(
                 points, expected_points, f"Failed for strategy: {strategy}"
             )
+
+
+class MultipleTrueFalseGradingTestCase(TestCase):
+    fixtures = ["language_small"]
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="mtf_user", email="mtf@example.com", password="testpass"
+        )
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user,
+            defaults={"language": Language.objects.first()},
+        )
+        self.question = QuizQuestion.objects.create(
+            question_type="TF",
+            title="Grouped statements",
+            content="Mark every statement.",
+            choices=[
+                {"id": "A", "text": "Statement A"},
+                {"id": "B", "text": "Statement B"},
+                {"id": "C", "text": "Statement C"},
+                {"id": "D", "text": "Statement D"},
+            ],
+            correct_answers={"answers": {"A": True, "B": False, "C": True, "D": False}},
+            multiple_true_false_score_table=[0, 10, 25, 50, 100],
+        )
+        self.quiz = Quiz.objects.create(
+            code="mtfgrading", title="MTF grading", is_public=True
+        )
+        QuizQuestionAssignment.objects.create(
+            quiz=self.quiz, question=self.question, points=20, order=1
+        )
+        self.attempt = QuizAttempt.objects.create(
+            user=self.profile, quiz=self.quiz, attempt_number=1
+        )
+
+    def _grade(self, selected):
+        answer, _ = QuizAnswer.objects.update_or_create(
+            attempt=self.attempt,
+            question=self.question,
+            defaults={"answer": json.dumps(selected)},
+        )
+        return grade_multiple_true_false(answer)
+
+    def test_detail_score_table_renders_in_english_and_vietnamese(self):
+        self.question.authors.add(self.profile)
+        self.client.force_login(self.user)
+        for count in [1, 4, 5]:
+            self.question.content = ""
+            self.question.choices = [
+                {"id": chr(65 + index), "text": f"Statement {index + 1}"}
+                for index in range(count)
+            ]
+            self.question.correct_answers = {
+                "answers": {choice["id"]: False for choice in self.question.choices}
+            }
+            self.question.multiple_true_false_score_table = (
+                default_multiple_true_false_score_table(count)
+            )
+            self.question.save()
+            for language in ["en", "vi"]:
+                with self.subTest(count=count, language=language), override(language):
+                    response = self.client.get(
+                        reverse("question_bank_detail", args=[self.question.pk]),
+                        HTTP_ACCEPT_LANGUAGE=language,
+                    )
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(response.headers["Content-Language"], language)
+                    for correct_count, percentage in enumerate(
+                        self.question.multiple_true_false_score_table
+                    ):
+                        label = gettext("%(count)s correct") % {"count": correct_count}
+                        self.assertContains(
+                            response, f"<li>{label}: {percentage}%</li>", html=True
+                        )
+
+    def test_default_score_table_tiers(self):
+        expected_answers = {"A": True, "B": False, "C": True, "D": False}
+        for correct_count, expected_points in enumerate([0, 2, 5, 10, 20]):
+            selected = {
+                statement_id: value if index < correct_count else not value
+                for index, (statement_id, value) in enumerate(expected_answers.items())
+            }
+            points, is_correct, score_ratio, actual_correct_count = self._grade(
+                selected
+            )
+            self.assertEqual(points, expected_points)
+            self.assertEqual(actual_correct_count, correct_count)
+            self.assertEqual(score_ratio, [0, 0.1, 0.25, 0.5, 1][correct_count])
+            self.assertEqual(is_correct, correct_count == 4)
+
+    def test_non_four_statement_default_is_proportional(self):
+        self.assertEqual(default_multiple_true_false_score_table(3), [0, 33, 67, 100])
+        self.assertEqual(
+            default_multiple_true_false_score_table(4), [0, 10, 25, 50, 100]
+        )
+        self.assertEqual(
+            default_multiple_true_false_score_table(8),
+            [0, 13, 25, 38, 50, 63, 75, 88, 100],
+        )
+
+    def test_score_table_rejects_fractional_missing_and_nonmonotone_values(self):
+        for table in (
+            [0, 12.5, 100],
+            [0, True, 100],
+            [0, None, 100],
+            [0, 101, 100],
+            [1, 50, 100],
+            [0, 50, 99],
+            [0, 100],
+        ):
+            with self.subTest(table=table), self.assertRaises(ValidationError):
+                validate_multiple_true_false_score_table(table, 2)
+        with self.assertRaises(ValidationError):
+            validate_multiple_true_false_score_table([0, 60, 50, 100], 3)
+
+    def test_malformed_statement_ids_cannot_crash_or_inflate_grading(self):
+        for choices in ([None], [{"id": ["A"]}], [{"id": "A"}, {"id": "A"}]):
+            self.question.choices = choices
+            self.question.save(update_fields=["choices"])
+            self.assertEqual(self._grade({"A": True})[0], 0)
+
+    def test_single_statement_tf_grades_false_and_unanswered_separately(self):
+        self.question.choices = [{"id": "A", "text": "One statement"}]
+        self.question.correct_answers = {"answers": {"A": False}}
+        self.question.multiple_true_false_score_table = []
+        self.question.save()
+        for selected, expected in [({}, 0), ({"A": True}, 0), ({"A": False}, 20)]:
+            self._grade(selected)
+            answer = self.attempt.answers.get()
+            self.assertEqual(grade_answer(answer)[0], expected)
+            answer.auto_grade()
+            answer.refresh_from_db()
+            self.assertEqual(answer.points, expected)
+            auto_grade_quiz_attempt(self.attempt)
+            self.attempt.refresh_from_db()
+            self.assertEqual(self.attempt.score, expected)
+
+    def test_single_tf_stores_statement_submission_and_grading(self):
+        self.question.choices = [{"id": "A", "text": "One statement"}]
+        self.question.correct_answers = {"answers": {"A": False}}
+        self.question.multiple_true_false_score_table = []
+        self.question.save()
+        post_data = QueryDict("", mutable=True)
+        post_data[f"q_{self.question.id}"] = json.dumps({"A": False})
+        answers = _save_submitted_quiz_answers(
+            self.attempt, post_data, self.quiz.quiz_questions.select_related("question")
+        )
+        answer = answers[0]
+        self.assertEqual(json.loads(answer.answer), {"A": False})
+        self.assertEqual(answer.get_formatted_answer(), "A: " + gettext("False"))
+        self.assertEqual(grade_answer(answer), (20, True, False))
+        auto_grade_quiz_attempt(self.attempt)
+        self.attempt.refresh_from_db()
+        self.assertEqual(self.attempt.score, 20)
+        self.question.refresh_from_db()
+        self.assertEqual(self.question.correct_answers, {"answers": {"A": False}})
+
+    def test_cannot_reinterpret_existing_tf_answers_as_other_types(self):
+        self.question.authors.add(self.profile)
+        self._grade({"A": True})
+        form = QuizQuestionForm(
+            instance=self.question,
+            user=self.user,
+            data={
+                "title": self.question.title,
+                "question_type": "TF",
+                "content": self.question.content,
+                "choices": json.dumps(self.question.choices),
+                "correct_answers": json.dumps({"answers": "A"}),
+                "grading_strategy": "all_or_nothing",
+                "multiple_true_false_score_table": "[]",
+                "authors": [self.profile.id],
+            },
+        )
+        self.assertFalse(form.is_valid())
+        for question_type in ("MC", "MA", "SA", "ES"):
+            self.question.refresh_from_db()
+            data = dict(form.data, question_type=question_type)
+            changed_form = QuizQuestionForm(
+                instance=self.question, user=self.user, data=data
+            )
+            self.assertFalse(changed_form.is_valid())
+            self.assertEqual(
+                changed_form.non_field_errors().as_data()[0].code,
+                "tf_answer_format_change",
+            )
+
+    def test_unanswered_is_not_treated_as_false(self):
+        points, is_correct, score_ratio, correct_count = self._grade({"A": True})
+        self.assertEqual(correct_count, 1)
+        self.assertEqual(points, 2)
+        self.assertEqual(score_ratio, 0.1)
+        self.assertFalse(is_correct)
+
+    def _statement_edit_form(self, ids, admin_form=False):
+        self.question.refresh_from_db()
+        choices = [
+            {"id": statement_id, "text": "Edited statement"} for statement_id in ids
+        ]
+        key = {
+            statement_id: self.question.correct_answers["answers"].get(
+                statement_id, True
+            )
+            for statement_id in ids
+        }
+        data = {
+            "title": self.question.title,
+            "question_type": "TF",
+            "content": "",
+            "choices": json.dumps(choices),
+            "correct_answers": json.dumps({"answers": key}),
+            "multiple_true_false_score_table": json.dumps(
+                default_multiple_true_false_score_table(len(ids))
+            ),
+            "grading_strategy": "all_or_nothing",
+            "authors": [self.profile.pk],
+        }
+        if admin_form:
+            self.user.is_superuser = True
+            request = RequestFactory().get("/")
+            request.user = self.user
+            form_class = QuizQuestionAdmin(QuizQuestion, admin.site).get_form(
+                request, self.question
+            )
+            return form_class(data=data, instance=self.question)
+        return QuizQuestionForm(data=data, instance=self.question, user=self.user)
+
+    def test_used_statement_ids_cannot_be_renamed_or_removed(self):
+        self.question.authors.add(self.profile)
+        self._grade({"A": True, "B": False})
+        before_answer = self.attempt.answers.values().get()
+        before_question = (
+            QuizQuestion.objects.filter(pk=self.question.pk).values().get()
+        )
+        for submitted in (False, True):
+            self.attempt.is_submitted = submitted
+            self.attempt.save(update_fields=["is_submitted"])
+            for admin_form in (False, True):
+                for ids in (["RENAMED", "B", "C", "D"], ["A", "B", "C"]):
+                    with self.subTest(
+                        submitted=submitted, admin_form=admin_form, ids=ids
+                    ):
+                        form = self._statement_edit_form(ids, admin_form=admin_form)
+                        self.assertFalse(form.is_valid())
+                        self.assertIn(
+                            "tf_statement_ids_change",
+                            [error.code for error in form.non_field_errors().as_data()],
+                        )
+        self.assertEqual(before_answer, self.attempt.answers.values().get())
+        self.assertEqual(
+            before_question,
+            QuizQuestion.objects.filter(pk=self.question.pk).values().get(),
+        )
+
+    def test_unused_statement_ids_can_be_renamed_or_removed(self):
+        self.question.authors.add(self.profile)
+        for admin_form in (False, True):
+            for ids in (["RENAMED", "B", "C", "D"], ["A", "B", "C"]):
+                with self.subTest(admin_form=admin_form, ids=ids):
+                    form = self._statement_edit_form(ids, admin_form=admin_form)
+                    self.assertTrue(form.is_valid(), form.errors)
+
+    def test_used_statements_can_be_reordered_and_text_edited(self):
+        self.question.authors.add(self.profile)
+        self._grade({"A": True, "B": False})
+        for admin_form in (False, True):
+            form = self._statement_edit_form(
+                ["D", "C", "B", "A"], admin_form=admin_form
+            )
+            self.assertTrue(form.is_valid(), form.errors)
+            form.save()
+        self.question.refresh_from_db()
+        self.assertEqual(
+            grade_multiple_true_false(
+                self.attempt.answers.select_related("question").get()
+            )[0],
+            5,
+        )
+
+    def test_unknown_and_non_boolean_answers_do_not_count(self):
+        points, is_correct, score_ratio, correct_count = self._grade(
+            {"A": "true", "B": 0, "unknown": True}
+        )
+        self.assertEqual(correct_count, 0)
+        self.assertEqual(points, 0)
+        self.assertEqual(score_ratio, 0)
+        self.assertFalse(is_correct)
+
+    def test_custom_score_table(self):
+        self.question.multiple_true_false_score_table = [0, 20, 40, 70, 100]
+        self.question.save()
+        points, is_correct, score_ratio, correct_count = self._grade(
+            {"A": True, "B": False, "C": True}
+        )
+        self.assertEqual(correct_count, 3)
+        self.assertEqual(points, 14)
+        self.assertEqual(score_ratio, 0.7)
+        self.assertFalse(is_correct)
+
+    def test_auto_grade_stores_actual_partial_credit(self):
+        answer = QuizAnswer.objects.create(
+            attempt=self.attempt,
+            question=self.question,
+            answer=json.dumps({"A": True, "B": False}),
+        )
+        auto_grade_quiz_attempt(self.attempt)
+        answer.refresh_from_db()
+        self.assertEqual(answer.points, 5)
+        self.assertEqual(answer.partial_credit, Decimal("0.25"))
+        self.assertFalse(answer.is_correct)
+
+    def test_partial_credit_updates_lesson_grade_and_unlocks_prerequisite(self):
+        course = Course.objects.create(
+            name="MTF course",
+            slug="mtf-course",
+            about="Test",
+            is_public=True,
+            is_open=True,
+        )
+        CourseRole.objects.create(
+            course=course, user=self.profile, role=RoleInCourse.STUDENT
+        )
+        lesson = CourseLesson.objects.create(
+            course=course,
+            title="MTF lesson",
+            content="Test",
+            order=1,
+            points=100,
+        )
+        lesson_quiz = CourseLessonQuiz.objects.create(
+            lesson=lesson, quiz=self.quiz, points=100
+        )
+        self.attempt.lesson_quiz = lesson_quiz
+        self.attempt.is_submitted = True
+        self.attempt.save(update_fields=["lesson_quiz", "is_submitted"])
+        answer = QuizAnswer.objects.create(
+            attempt=self.attempt,
+            question=self.question,
+            answer=json.dumps({"A": True, "B": False, "C": False, "D": True}),
+        )
+
+        next_lesson = CourseLesson.objects.create(
+            course=course,
+            title="Next lesson",
+            content="Test",
+            order=2,
+            points=100,
+        )
+        CourseLessonPrerequisite.objects.create(
+            course=course,
+            source_order=lesson.order,
+            target_order=next_lesson.order,
+            required_percentage=25,
+        )
+
+        auto_grade_quiz_attempt(self.attempt)
+
+        answer.refresh_from_db()
+        self.attempt.refresh_from_db()
+        best = BestQuizAttempt.objects.get(user=self.profile, lesson_quiz=lesson_quiz)
+        progress = CourseLessonProgress.objects.get(user=self.profile, lesson=lesson)
+        self.assertEqual(answer.points, Decimal("5.00"))
+        self.assertEqual(answer.partial_credit, Decimal("0.25"))
+        self.assertEqual(self.attempt.score, Decimal("5.00"))
+        self.assertEqual(best.score, Decimal("5.00"))
+        self.assertAlmostEqual(progress.percentage, 25)
+
+        lock_status = get_lesson_lock_status(self.profile, course)
+        self.assertFalse(lock_status[next_lesson.id])
+
+    def test_question_form_validates_complete_key_and_table(self):
+        base_data = {
+            "title": "Valid grouped question",
+            "question_type": "TF",
+            "content": "",
+            "choices": json.dumps(
+                [
+                    {"id": "A", "text": "One"},
+                    {"id": "B", "text": "Two"},
+                ]
+            ),
+            "correct_answers": json.dumps({"answers": {"A": True, "B": False}}),
+            "grading_strategy": "all_or_nothing",
+            "multiple_true_false_score_table": json.dumps([0, 25, 100]),
+            "shuffle_choices": False,
+            "tags": "",
+            "is_public": False,
+            "explanation": "",
+        }
+        form = QuizQuestionForm(data=base_data, user=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        saved = form.save()
+        self.assertEqual(saved.content, "")
+        for question_type in ("MC", "MA", "SA", "ES"):
+            with self.subTest(question_type=question_type):
+                other = QuizQuestionForm(
+                    data=dict(base_data, question_type=question_type), user=self.user
+                )
+                self.assertFalse(other.is_valid())
+                self.assertIn("content", other.errors)
+
+        invalid_data = base_data.copy()
+        invalid_data["correct_answers"] = json.dumps({"answers": {"A": True}})
+        invalid_data["multiple_true_false_score_table"] = json.dumps([0, 50, 40])
+        form = QuizQuestionForm(data=invalid_data, user=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertTrue(form.non_field_errors())
+
+    def test_admin_can_edit_migrated_tf_and_rejects_old_scalar_key(self):
+        self.user.is_superuser = True
+        request = RequestFactory().get("/")
+        request.user = self.user
+        form_class = QuizQuestionAdmin(QuizQuestion, admin.site).get_form(
+            request, self.question
+        )
+        data = {
+            "title": self.question.title,
+            "question_type": "TF",
+            "content": "",
+            "choices": json.dumps(self.question.choices),
+            "correct_answers": json.dumps(self.question.correct_answers),
+            "multiple_true_false_score_table": json.dumps([0, 10, 25, 50, 100]),
+            "authors": [self.profile.pk],
+        }
+        form = form_class(data=data, instance=self.question)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertFalse(form.fields["content"].required)
+        form.save()
+        self.question.refresh_from_db()
+        self.assertEqual(self.question.content, "")
+        form = form_class(
+            data=dict(data, correct_answers=json.dumps({"answers": "A"})),
+            instance=self.question,
+        )
+        self.assertFalse(form.is_valid())
+
+    def test_submission_normalizes_mtf_answer(self):
+        post_data = QueryDict("", mutable=True)
+        post_data[f"q_{self.question.id}"] = json.dumps(
+            {"A": True, "B": False, "unknown": True, "C": "true"}
+        )
+        answers = _save_submitted_quiz_answers(
+            self.attempt,
+            post_data,
+            self.quiz.quiz_questions.select_related("question"),
+        )
+        self.assertEqual(
+            json.loads(answers[0].answer),
+            {"A": True, "B": False},
+        )
+
+    def test_take_page_restores_explicit_false_answer(self):
+        QuizAnswer.objects.create(
+            attempt=self.attempt,
+            question=self.question,
+            answer=json.dumps({"A": True, "B": False}),
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse(
+                "quiz_take",
+                kwargs={"code": self.quiz.code, "attempt_id": self.attempt.id},
+            )
+        )
+        self.assertContains(response, 'data-statement="A"')
+        self.assertContains(response, 'data-statement="B"')
+        self.assertContains(response, 'value="false"')
+
+    def test_import_normalizes_multiple_true_false_answer_map(self):
+        choices, correct_answers = normalize_quiz_question_payload(
+            "TF",
+            [
+                {"id": "a", "text": "One"},
+                {"id": "b", "text": "Two"},
+            ],
+            {"answers": {"a": True, "b": False}},
+        )
+        self.assertEqual([choice["id"] for choice in choices], ["A", "B"])
+        self.assertEqual(correct_answers, {"answers": {"A": True, "B": False}})
+
+    def test_import_accepts_statements_without_shared_content_or_title(self):
+        result = parse_quiz_import_response(
+            json.dumps(
+                {
+                    "questions": [
+                        {
+                            "question_type": "TF",
+                            "content": "",
+                            "choices": [{"id": "A", "text": "A statement"}],
+                            "correct_answers": {"answers": {"A": False}},
+                        }
+                    ]
+                }
+            )
+        )
+        self.assertTrue(result["success"])
+        self.assertEqual(len(result["questions"]), 1)
+        self.assertTrue(result["questions"][0]["title"])
+        self.assertEqual(result["questions"][0]["content"], "")
+
+    def test_ai_markdown_supports_statements_without_shared_content(self):
+        choices = json.dumps([{"id": "A", "text": "A statement"}])
+        self.assertTrue(has_question_text("", choices))
+        self.assertFalse(has_question_text("", "[]"))
+        self.assertFalse(has_question_text("", "invalid"))
+        service = QuizAIService.__new__(QuizAIService)
+        service.llm_service = Mock()
+        service.llm_service.call_llm.return_value = (
+            'IMPROVED_CHOICES_JSON: ["**A statement**"]'
+        )
+        result = service.improve_question_markdown("", choices)
+        self.assertTrue(result["success"])
+        self.assertEqual(result["improved_markdown"], "")
+        self.assertEqual(
+            result["improved_choices"], [{"id": "A", "text": "**A statement**"}]
+        )
+
+    @patch("judge.views.quiz.can_use_ai_features", return_value=True)
+    @patch("judge.views.quiz.improve_question_markdown_task.delay")
+    @patch("judge.views.quiz.generate_question_explanation_task.delay")
+    def test_ai_endpoints_dispatch_without_shared_content(
+        self, explanation, markdown, _can_use_ai
+    ):
+        explanation.return_value.id = "explanation-task"
+        markdown.return_value.id = "markdown-task"
+        self.question.authors.add(self.profile)
+        self.client.force_login(self.user)
+        for action, task in [
+            ("improve_question_markdown", markdown),
+            ("generate_explanation", explanation),
+        ]:
+            with self.subTest(action=action):
+                response = self.client.post(
+                    reverse("question_bank_edit", args=[self.question.pk]),
+                    {
+                        action: "1",
+                        "content": "",
+                        "question_type": "TF",
+                        "choices": json.dumps(self.question.choices),
+                        "correct_answers": json.dumps(self.question.correct_answers),
+                    },
+                )
+                self.assertTrue(response.json()["success"], response.content)
+                task.assert_called_once()
+
+    @patch("judge.views.quiz_import.can_use_ai_features", return_value=True)
+    def test_import_endpoint_creates_mtf_with_default_score_table(self, _can_use_ai):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("quiz_import_create_question"),
+            data=json.dumps(
+                {
+                    "title": "Imported statements",
+                    "question_type": "TF",
+                    "content": "",
+                    "choices": [
+                        {"id": "A", "text": "First"},
+                        {"id": "B", "text": "Second"},
+                        {"id": "C", "text": "Third"},
+                        {"id": "D", "text": "Fourth"},
+                    ],
+                    "correct_answers": {
+                        "answers": {"A": True, "B": False, "C": True, "D": False}
+                    },
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        imported = QuizQuestion.objects.get(pk=response.json()["question_id"])
+        self.assertEqual(imported.question_type, "TF")
+        self.assertEqual(
+            imported.multiple_true_false_score_table,
+            [0, 10, 25, 50, 100],
+        )
+        self.assertEqual(imported.correct_answers["answers"]["B"], False)
+
+    def test_result_page_shows_applied_score_tier(self):
+        answer = QuizAnswer.objects.create(
+            attempt=self.attempt,
+            question=self.question,
+            answer=json.dumps({"A": True, "B": False, "C": False, "D": True}),
+        )
+        self.attempt.is_submitted = True
+        self.attempt.end_time = timezone.now()
+        self.attempt.save(update_fields=["is_submitted", "end_time"])
+        auto_grade_quiz_attempt(self.attempt)
+        answer.refresh_from_db()
+
+        self.quiz.is_shown_answer = True
+        self.quiz.is_shown_correctness = True
+        self.quiz.save(update_fields=["is_shown_answer", "is_shown_correctness"])
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse(
+                "quiz_result",
+                kwargs={"code": self.quiz.code, "attempt_id": self.attempt.id},
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="mtf-score-summary"')
+        self.assertContains(response, "25%")
+
+    def _prepare_manual_tf_grade(self, table=None):
+        self.quiz.authors.add(self.profile)
+        self.quiz.is_shown_correctness = True
+        self.quiz.save(update_fields=["is_shown_correctness"])
+        QuizQuestionAssignment.objects.filter(quiz=self.quiz).update(points=1)
+        if table:
+            self.question.multiple_true_false_score_table = table
+            self.question.save(update_fields=["multiple_true_false_score_table"])
+        answer = QuizAnswer.objects.create(
+            attempt=self.attempt,
+            question=self.question,
+            answer=json.dumps({"A": True, "B": False, "C": False, "D": True}),
+        )
+        self.attempt.is_submitted = True
+        self.attempt.end_time = timezone.now()
+        self.attempt.save(update_fields=["is_submitted", "end_time"])
+        auto_grade_quiz_attempt(self.attempt)
+        answer.refresh_from_db()
+        self.client.force_login(self.user)
+        return answer
+
+    def test_manual_tf_feedback_preserves_exact_score_and_auto_grade(self):
+        answer = self._prepare_manual_tf_grade()
+        graded_at = answer.graded_at
+        url = reverse("attempt_grade", args=[self.attempt.pk])
+        response = self.client.get(url)
+        rendered = re.search(
+            rf'id="points_{answer.pk}"[\s\S]*?value="([^"]+)"',
+            response.content.decode(),
+        ).group(1)
+        self.assertEqual(rendered, "0.25")
+        response = self.client.post(
+            url,
+            {
+                f"points_{answer.pk}": rendered,
+                f"feedback_{answer.pk}": "Feedback only",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        answer.refresh_from_db()
+        self.assertEqual(answer.points, 0.25)
+        self.assertEqual(answer.partial_credit, 0.25)
+        self.assertFalse(answer.is_correct)
+        self.assertEqual(answer.graded_at, graded_at)
+        self.assertIsNone(answer.graded_by_id)
+        self.assertEqual(answer.feedback, "Feedback only")
+
+    def test_manual_tf_overrides_keep_score_ratio_and_correctness_consistent(self):
+        answer = self._prepare_manual_tf_grade()
+        for endpoint in ["attempt_grade", "answer_grade"]:
+            for points in [0.57, 1.0, 0.0]:
+                with self.subTest(endpoint=endpoint, points=points):
+                    if endpoint == "attempt_grade":
+                        response = self.client.post(
+                            reverse(endpoint, args=[self.attempt.pk]),
+                            {
+                                f"points_{answer.pk}": str(points),
+                                f"partial_{answer.pk}": "100",  # Cannot contradict TF points.
+                            },
+                        )
+                        self.assertEqual(response.status_code, 302)
+                    else:
+                        response = self.client.post(
+                            reverse(endpoint, args=[answer.pk]),
+                            json.dumps({"points": points}),
+                            content_type="application/json",
+                        )
+                        self.assertEqual(response.status_code, 200)
+                    answer.refresh_from_db()
+                    self.assertEqual(answer.points, points)
+                    self.assertAlmostEqual(float(answer.partial_credit), points)
+                    self.assertEqual(answer.is_correct, points == 1)
+                    self.assertEqual(answer.graded_by_id, self.profile.pk)
+                    self.attempt.refresh_from_db()
+                    self.assertAlmostEqual(float(self.attempt.score), points)
+
+    def test_unchanged_tf_full_credit_tier_keeps_statement_correctness(self):
+        answer = self._prepare_manual_tf_grade([0, 100, 100, 100, 100])
+        self.assertFalse(answer.is_correct)
+        response = self.client.post(
+            reverse("answer_grade", args=[answer.pk]),
+            json.dumps({"points": 1}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        answer.refresh_from_db()
+        self.assertFalse(answer.is_correct)
+        self.assertIsNone(answer.graded_by_id)
+
+    def test_custom_tf_percentage_summaries_round_instead_of_truncating(self):
+        self._prepare_manual_tf_grade([0, 10, 29, 50, 100])
+        for url in [
+            reverse("attempt_grade", args=[self.attempt.pk]),
+            reverse(
+                "quiz_result",
+                kwargs={"code": self.quiz.code, "attempt_id": self.attempt.pk},
+            ),
+        ]:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "29%")
+                self.assertNotContains(response, "28%")
 
 
 class QuizAttemptTestCase(TestCase):

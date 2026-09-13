@@ -14,7 +14,7 @@
       {% if contest_list|length > 5 %}
         <li>
           <a href="#" onclick="document.getElementById('more-contests').style.display='block'; this.style.display='none'; return false;">
-            {{ _('Show %(count)d more...') % {'count': contest_list|length - 5} }}
+            {{ _('Show %(count)d more...', count=contest_list|length - 5) }}
           </a>
           <ul id="more-contests" style="display: none; list-style-type: none; margin: 0;">
             {% for contest in contest_list[5:] %}

@@ -11,6 +11,7 @@ import tempfile
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.http import Http404, JsonResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
@@ -21,6 +22,10 @@ from ai_features.quiz_import_service import normalize_quiz_question_payload
 from judge.models import Quiz, QuizQuestion, QuizQuestionAssignment
 from judge.models.quiz import MAX_QUIZ_TIME_LIMIT_MINUTES, QuizQuestionType
 from judge.utils.permissions import can_use_ai_features
+from judge.utils.quiz_grading import (
+    default_multiple_true_false_score_table,
+    validate_multiple_true_false_score_table,
+)
 from judge.views.quiz import PendingGradingCountMixin
 from judge.utils.views import TitleMixin
 
@@ -144,13 +149,46 @@ class QuizImportCreateQuestionView(View):
         )
         shuffle_choices = bool(data.get("shuffle_choices", False))
         is_public = bool(data.get("is_public", False))
+        multiple_true_false_score_table = data.get("multiple_true_false_score_table")
 
         if not title:
             return JsonResponse({"error": _("Title is required")}, status=400)
-        if not content:
+        if not content and question_type != QuizQuestionType.TRUE_FALSE:
             return JsonResponse({"error": _("Content is required")}, status=400)
         if question_type not in {c[0] for c in QuizQuestionType.choices}:
             return JsonResponse({"error": _("Invalid question type")}, status=400)
+
+        if question_type == QuizQuestionType.TRUE_FALSE:
+            statement_count = len(choices) if isinstance(choices, list) else 0
+            statement_ids = [
+                str(statement.get("id", "")).strip()
+                for statement in (choices or [])
+                if isinstance(statement, dict)
+            ]
+            statements_are_valid = (
+                len(statement_ids) == statement_count
+                and all(statement_ids)
+                and len(set(statement_ids)) == statement_count
+                and all(
+                    isinstance(statement.get("text"), str) and statement["text"].strip()
+                    for statement in choices or []
+                )
+            )
+            if not correct_answers or not statement_count or not statements_are_valid:
+                return JsonResponse(
+                    {"error": _("Every statement requires a True or False answer.")},
+                    status=400,
+                )
+            if multiple_true_false_score_table is None:
+                multiple_true_false_score_table = (
+                    default_multiple_true_false_score_table(statement_count)
+                )
+            try:
+                validate_multiple_true_false_score_table(
+                    multiple_true_false_score_table, statement_count
+                )
+            except ValidationError as error:
+                return JsonResponse({"error": " ".join(error.messages)}, status=400)
 
         # Truncate title if needed
         if len(title) > 255:
@@ -162,6 +200,11 @@ class QuizImportCreateQuestionView(View):
             content=content,
             choices=choices,
             correct_answers=correct_answers,
+            multiple_true_false_score_table=(
+                multiple_true_false_score_table
+                if question_type == QuizQuestionType.TRUE_FALSE
+                else []
+            ),
             shuffle_choices=shuffle_choices,
             is_public=is_public,
         )

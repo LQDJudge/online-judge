@@ -18,6 +18,7 @@ from judge.models import (
     QuizQuestion,
     CourseLesson,
 )
+from judge.utils.quiz_question_search import choice_text_search
 
 
 def _parse_question_id_search(term):
@@ -360,8 +361,10 @@ class QuizSelect2View(Select2View):
 class QuizQuestionSelect2View(Select2View):
     def get_queryset(self):
         question_id = _parse_question_id_search(self.term)
-        question_filter = Q(title__icontains=self.term) | Q(
-            content__icontains=self.term
+        question_filter = (
+            Q(title__icontains=self.term)
+            | Q(content__icontains=self.term)
+            | choice_text_search(self.term)
         )
         if question_id is not None:
             question_filter |= Q(id=question_id)
@@ -397,6 +400,7 @@ class QuizQuestionSelect2View(Select2View):
                         "text": smart_str(self.get_name(obj)),
                         "id": obj.pk,
                         "type": obj.get_question_type_display(),
+                        "type_code": obj.question_type,
                     }
                     for obj in context["object_list"]
                 ],

@@ -9,6 +9,27 @@ from judge import event_poster as event
 from judge.utils.quiz_grading import auto_grade_quiz_attempt, notify_graders_for_essay
 
 
+def serialize_multiple_true_false_answer(question, value):
+    try:
+        parsed = json.loads(value) if isinstance(value, str) else value
+    except (json.JSONDecodeError, TypeError):
+        parsed = {}
+    if not isinstance(parsed, dict):
+        parsed = {}
+
+    valid_ids = {
+        str(choice.get("id"))
+        for choice in (question.choices or [])
+        if isinstance(choice, dict) and choice.get("id") is not None
+    }
+    normalized = {
+        str(statement_id): selected
+        for statement_id, selected in parsed.items()
+        if str(statement_id) in valid_ids and isinstance(selected, bool)
+    }
+    return json.dumps(normalized, sort_keys=True)
+
+
 def save_submitted_answers(attempt, post_data, assignments, now=None):
     """Persist a submitted answer set with a constant number of queries."""
     now = now or timezone.now()
@@ -25,6 +46,8 @@ def save_submitted_answers(attempt, post_data, assignments, now=None):
                 if question.question_type == "MA"
                 else post_data.get(key, "")
             )
+            if question.question_type == "TF":
+                text = serialize_multiple_true_false_answer(question, text)
         elif question.question_type == "MA":
             text = "[]"
         elif answer is not None:

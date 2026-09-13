@@ -50,7 +50,7 @@ FORMATTING RULES:
 EXPLANATION GUIDELINES BY QUESTION TYPE:
 - Multiple Choice (MC): Explain why the correct answer is right AND briefly why each wrong option is incorrect
 - Multiple Answer (MA): Explain why each correct answer is included and why wrong options are excluded
-- True/False (TF): Explain the reasoning behind why the statement is true or false
+- True/False (TF): Explain why each statement is true or false, whether there is one statement or several
 - Short Answer (SA): Explain why the accepted answers are correct, mention any edge cases
 - Essay (ES): Provide key points that a good answer should cover, with a model answer outline
 
@@ -58,6 +58,22 @@ CRITICAL INSTRUCTIONS:
 - If generating a new explanation: create a comprehensive explanation from the question context
 - If improving an existing explanation: enhance formatting, clarity, add missing reasoning
 - Output ONLY the explanation content in markdown, no meta-commentary"""
+
+
+def has_question_text(content, choices_json=""):
+    """TF questions can consist entirely of statements, without a shared stem."""
+    if isinstance(content, str) and content.strip():
+        return True
+    try:
+        choices = json.loads(choices_json) if choices_json else []
+    except (TypeError, ValueError):
+        return False
+    return isinstance(choices, list) and any(
+        isinstance(choice, dict)
+        and isinstance(choice.get("text"), str)
+        and choice["text"].strip()
+        for choice in choices
+    )
 
 
 class QuizAIService:
@@ -86,7 +102,7 @@ class QuizAIService:
         Returns:
             Dict with 'success', 'improved_markdown', optional 'improved_choices', and optional 'error'
         """
-        if not content or not content.strip():
+        if not has_question_text(content, choices_json):
             return {
                 "success": False,
                 "error": "No content provided",
@@ -128,6 +144,8 @@ Keep the same meaning and language, just improve the formatting.
 
 ORIGINAL CONTENT:
 {content}{choices_section}
+
+If the original content is empty, leave it empty and only return the improved choices.
 
 OUTPUT: Provide the reformatted question content markdown first.{' Then on a new line write IMPROVED_CHOICES_JSON: followed by the improved choices as a JSON array of strings.' if choices_list else ''} No other commentary."""
 
@@ -183,7 +201,7 @@ OUTPUT: Provide the reformatted question content markdown first.{' Then on a new
                     except (json.JSONDecodeError, TypeError):
                         pass
 
-                if improved:
+                if improved or improved_choices:
                     result = {
                         "success": True,
                         "improved_markdown": improved,
@@ -226,7 +244,7 @@ OUTPUT: Provide the reformatted question content markdown first.{' Then on a new
         Returns:
             Dict with 'success', 'explanation_content', 'mode', and optional 'error'
         """
-        if not question_content or not question_content.strip():
+        if not has_question_text(question_content, choices_json):
             return {
                 "success": False,
                 "error": "No question content provided",

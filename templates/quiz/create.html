@@ -65,7 +65,7 @@
       });
 
     // Add question to DOM helper
-      function addQuestionToDOM(id, title, type, points) {
+      function addQuestionToDOM(id, title, type, points, typeCode) {
         pendingQuestions.push({
           questionId: id, title: title, type: type || '', points: points
         });
@@ -77,7 +77,10 @@
         html += '<div class="question-info">';
         html += '<span class="question-order">' + newIndex + '.</span>';
         html += '<a href="/quiz/questions/' + id + '/">' + $('<div>').text(title).html() + '</a>';
-        if (type) html += '<span class="badge">' + type + '</span>';
+        if (type) {
+          var typeClass = ['MC', 'MA', 'TF', 'SA', 'ES'].indexOf(typeCode) !== -1 ? ' badge-' + typeCode : '';
+          html += '<span class="question-type-badge' + typeClass + '">' + $('<div>').text(type).html() + '</span>';
+        }
         html += '</div>';
         html += '<input type="number" class="points-input" data-question-id="' + id + '" value="' + points + '" min="0" step="1" title="{{ _("Points") }}">';
         html += '<span class="text-muted">{{ _("pts") }}</span>';
@@ -123,7 +126,7 @@
           var addedCount = 0;
           selectedData.forEach(function (item) {
             if (assignedQuestionIds.indexOf(item.id) === -1) {
-              addQuestionToDOM(item.id, item.text, item.type || '', points);
+              addQuestionToDOM(item.id, item.text, item.type || '', points, item.type_code);
               addedCount++;
             }
           });
@@ -157,14 +160,14 @@
             var currentIds = assignedQuestionIds.slice();
             selectedData.forEach(function (item) {
               if (currentIds.indexOf(item.id) === -1) {
-                addQuestionToDOM(item.id, item.text, item.type || '', points);
+                addQuestionToDOM(item.id, item.text, item.type || '', points, item.type_code);
                 currentIds.push(item.id);
                 addedCount++;
               }
             });
             data.valid.forEach(function (q) {
               if (currentIds.indexOf(q.id) === -1) {
-                addQuestionToDOM(q.id, q.title, q.type || '', points);
+                addQuestionToDOM(q.id, q.title, q.type || '', points, q.type_code);
                 currentIds.push(q.id);
                 addedCount++;
               }
