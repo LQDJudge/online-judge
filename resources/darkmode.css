@@ -5951,21 +5951,32 @@ a.contest-clarification-problem:hover {
 .chat-page .user-setting-button:hover {
     background-color: var(--darkreader-background-e4e6eb, #25282a);
 }
+.chat-page .setting-button {
+    background-color: initial;
+    background-image: none;
+}
 .chat-page .setting-content {
     background-color: var(--darkreader-background-ffffff, #181a1b);
     box-shadow: var(--darkreader-background-00000026, rgba(0, 0, 0, 0.15)) 0px 2px 12px;
 }
-.chat-page .setting-content a {
+.chat-page .setting-content a,
+.chat-page .setting-content button {
+    background-color: transparent;
+    background-image: initial;
+    border-color: currentcolor;
     color: var(--darkreader-text-050505, #e5e3df);
     text-decoration-color: initial;
 }
-.chat-page .setting-content a:hover {
+.chat-page .setting-content a:hover,
+.chat-page .setting-content button:hover {
     background-color: var(--darkreader-background-f2f2f2, #1f2223);
 }
-.chat-page .setting-content a.red {
+.chat-page .setting-content a.red,
+.chat-page .setting-content button.red {
     color: var(--darkreader-text-e41e3f, #e73452);
 }
-.chat-page .setting-content a.green {
+.chat-page .setting-content a.green,
+.chat-page .setting-content button.green {
     color: var(--darkreader-text-31a24c, #66d180);
 }
 .chat-page .chat-area {
