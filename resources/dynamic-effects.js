@@ -1,17 +1,32 @@
 (function() {
   'use strict';
 
-  // Only run on desktop
-  if (window.innerWidth < 800) {
-    return;
+  var motionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  var overrideKey = 'dynamic-effects-motion-override';
+  var motionOverride = false;
+  try {
+    motionOverride = localStorage.getItem(overrideKey) === 'true';
+  } catch (error) {
+    // Storage may be unavailable; the override still works for this page.
   }
+  var particleInstances = [];
+  var pendingLoads = [];
+  var libraryPromise;
+  var refreshQueue = Promise.resolve();
+  var refreshVersion = 0;
 
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    return;
-  }
-
-  if (!window.DYNAMIC_EFFECT || window.DYNAMIC_EFFECT === 'none') {
-    return;
+  function setStatus(state) {
+    var status = document.getElementById('dynamic-effect-status');
+    if (status) {
+      status.textContent = status.getAttribute('data-' + state) || '';
+    }
+    var override = document.getElementById('dynamic-effect-motion-override');
+    if (override) {
+      override.hidden = !(motionQuery && motionQuery.matches);
+      override.querySelector('input').checked = motionOverride;
+    }
+    var retry = document.getElementById('dynamic-effect-retry-wrapper');
+    if (retry) retry.hidden = state !== 'failed';
   }
 
   function clamp(value, min, max) {
@@ -19,7 +34,7 @@
   }
 
   function getPerformanceProfile() {
-    var ratio = 1;
+    var ratio = window.innerWidth < 800 ? 0.6 : 1;
     var cores = navigator.hardwareConcurrency;
     var memory = navigator.deviceMemory;
     var dpr = window.devicePixelRatio || 1;
@@ -50,7 +65,7 @@
     }
 
     return {
-      particleRatio: clamp(ratio, 0.45, 1),
+      particleRatio: clamp(ratio, 0.3, 1),
       fpsLimit: ratio < 0.65 ? 24 : 30
     };
   }
@@ -58,10 +73,13 @@
   var performanceProfile = getPerformanceProfile();
 
   function scaleParticleCount(value, minimum) {
-    return Math.max(minimum, Math.round(value * performanceProfile.particleRatio));
+    return Math.max(Math.ceil(minimum * (window.innerWidth < 800 ? 0.6 : 1)), Math.round(value * performanceProfile.particleRatio));
   }
 
   function mergeParticleOptions(options) {
+    // Keep the explicit device budget: density scaling can round small layers to
+    // zero on phones or inflate the budget on large screens.
+    options.particles.number.density = { enable: false };
     options.fpsLimit = performanceProfile.fpsLimit;
     options.detectRetina = false;
     options.pauseOnBlur = true;
@@ -83,19 +101,48 @@
 
   // Load tsParticles for effects
   function loadTsParticles(callback) {
-    if (typeof tsParticles !== 'undefined') {
-      callback();
-      return;
-    }
+    var version = refreshVersion;
+    pendingLoads.push(ensureLibrary().then(function() {
+      if (version === refreshVersion) callback();
+    }));
+  }
 
-    var script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js';
-    script.onload = callback;
-    document.head.appendChild(script);
+  function ensureLibrary() {
+    if (typeof tsParticles !== 'undefined') return Promise.resolve();
+    if (!libraryPromise) {
+      libraryPromise = new Promise(function(resolve, reject) {
+        var script = document.createElement('script');
+        var timeout = setTimeout(function() { fail(); }, 15000);
+        function fail() {
+          clearTimeout(timeout);
+          script.remove();
+          reject(new Error('Unable to load particle effects'));
+        }
+        script.src = window.DYNAMIC_EFFECT_LIBRARY;
+        script.onerror = fail;
+        script.onload = function() {
+          clearTimeout(timeout);
+          if (typeof tsParticles === 'undefined') fail();
+          else resolve();
+        };
+        document.head.appendChild(script);
+      }).catch(function(error) {
+        libraryPromise = null;
+        throw error;
+      });
+    }
+    return libraryPromise;
   }
 
   function loadParticleEffect(containerId, options) {
-    return tsParticles.load(containerId, mergeParticleOptions(options));
+    var version = refreshVersion;
+    var promise = tsParticles.load(containerId, mergeParticleOptions(options)).then(function(instance) {
+      if (!instance) throw new Error('Unable to initialize particle effects');
+      if (version !== refreshVersion) instance.destroy();
+      else particleInstances.push(instance);
+    });
+    pendingLoads.push(promise);
+    return promise;
   }
 
   // Snowflakes effect using tsParticles (blue snowflakes, gentle floating like blossoms)
@@ -105,7 +152,7 @@
         createContainer();
         loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: scaleParticleCount(25, 12), density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(25, 12) },
             color: { value: ['#87CEEB', '#B0E0E6', '#ADD8E6', '#E0FFFF'] },
             shape: {
               type: 'char',
@@ -146,7 +193,7 @@
         createContainer();
         loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: scaleParticleCount(60, 28), density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(60, 28) },
             color: { value: '#ffffff' },
             shape: { type: 'circle' },
             opacity: { value: { min: 0.3, max: 0.8 } },
@@ -179,7 +226,7 @@
         createContainer();
         loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: scaleParticleCount(20, 10), density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(20, 10) },
             color: { value: ['#ffb7c5', '#ffc0cb', '#ff69b4', '#ffaec9'] },
             shape: {
               type: 'char',
@@ -303,7 +350,7 @@
         createContainer();
         loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: scaleParticleCount(150, 65), density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(150, 65) },
             color: { value: ['#87CEEB', '#B0E0E6', '#ADD8E6', '#6eb5ff'] },
             shape: {
               type: 'char',
@@ -339,7 +386,7 @@
         createContainer();
         loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: scaleParticleCount(40, 18), density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(40, 18) },
             color: { value: ['#ffff66', '#ffd700', '#ffa500', '#ffb347', '#ffe135'] },
             shape: { type: 'circle' },
             opacity: {
@@ -377,7 +424,7 @@
         // Main falling particles (envelopes, blossoms, coins)
         loadParticleEffect('dynamic-effects-container', {
           particles: {
-            number: { value: scaleParticleCount(30, 14), density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(30, 14) },
             color: { value: ['#ff0000', '#ffd700', '#ffcc00', '#ff4500'] },
             shape: {
               type: 'char',
@@ -424,7 +471,7 @@
         }
         loadParticleEffect('lantern-effects-container', {
           particles: {
-            number: { value: scaleParticleCount(5, 3), density: { enable: true, area: 1000 } },
+            number: { value: scaleParticleCount(5, 3) },
             color: { value: ['#ff4500', '#ff6600', '#ff0000'] },
             shape: {
               type: 'char',
@@ -465,7 +512,7 @@
         }
         loadParticleEffect('sparkle-effects-container', {
           particles: {
-            number: { value: scaleParticleCount(20, 8), density: { enable: true, area: 800 } },
+            number: { value: scaleParticleCount(20, 8) },
             color: { value: ['#ffd700', '#ffff00', '#fff68f', '#fffacd'] },
             shape: {
               type: 'char',
@@ -527,9 +574,84 @@
     }
   }
 
+  function cleanup() {
+    particleInstances.forEach(function(instance) { instance.destroy(); });
+    particleInstances = [];
+    ['dynamic-effects-container', 'lantern-effects-container', 'sparkle-effects-container'].forEach(function(id) {
+      var container = document.getElementById(id);
+      if (container) container.remove();
+    });
+  }
+
+  function refresh() {
+    var version = ++refreshVersion;
+    // Respect a changed motion preference immediately, even during a slow load.
+    if (motionQuery && motionQuery.matches && !motionOverride) {
+      cleanup();
+      setStatus(window.DYNAMIC_EFFECT && window.DYNAMIC_EFFECT !== 'none' ? 'paused' : 'none');
+    }
+    refreshQueue = refreshQueue.then(async function() {
+      if (version !== refreshVersion) return;
+      cleanup();
+      if (!window.DYNAMIC_EFFECT || window.DYNAMIC_EFFECT === 'none') {
+        setStatus('none');
+        return;
+      }
+      if (motionQuery && motionQuery.matches && !motionOverride) {
+        setStatus('paused');
+        return;
+      }
+      performanceProfile = getPerformanceProfile();
+      setStatus('loading');
+      pendingLoads = [];
+      try {
+        init();
+        // Library callbacks enqueue the individual particle systems.
+        while (pendingLoads.length) {
+          var results = await Promise.allSettled(pendingLoads.splice(0));
+          var failure = results.find(function(result) { return result.status === 'rejected'; });
+          if (failure) throw failure.reason;
+        }
+        if (version === refreshVersion) setStatus('running');
+      } catch (error) {
+        if (version !== refreshVersion) return;
+        cleanup();
+        setStatus('failed');
+        console.warn('Dynamic effects failed:', error);
+      }
+    });
+  }
+
+  function start() {
+    var override = document.querySelector('#dynamic-effect-motion-override input');
+    if (override) override.addEventListener('change', function() {
+      motionOverride = override.checked;
+      try { localStorage.setItem(overrideKey, String(motionOverride)); } catch (error) {}
+      refresh();
+    });
+    var retry = document.getElementById('dynamic-effect-retry');
+    if (retry) retry.addEventListener('click', refresh);
+    var resizeTimer;
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(refresh, 300);
+    });
+    if (motionQuery) {
+      if (motionQuery.addEventListener) motionQuery.addEventListener('change', refresh);
+      else if (motionQuery.addListener) motionQuery.addListener(refresh);
+    }
+    window.addEventListener('storage', function(event) {
+      if (event.key === overrideKey || event.key === null) {
+        motionOverride = event.key === overrideKey && event.newValue === 'true';
+        refresh();
+      }
+    });
+    refresh();
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', start);
   } else {
-    init();
+    start();
   }
 })();

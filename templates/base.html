@@ -452,9 +452,9 @@
         </footer>
       {% endblock %}
     </div>
-    {% if request.profile and request.profile.dynamic_effect != 'none' %}
+    {% if request.profile and (request.profile.dynamic_effect != 'none' or request.resolver_match.url_name == 'theme_settings') %}
       <div id="dynamic-effects-container"></div>
-      <script>window.DYNAMIC_EFFECT = '{{ request.profile.dynamic_effect }}';</script>
+      <script>window.DYNAMIC_EFFECT = {{ request.profile.dynamic_effect|tojson }}; window.DYNAMIC_EFFECT_LIBRARY = {{ static('tsparticles-2.12.0.bundle.min.js')|tojson }};</script>
       <script src="{{ static('dynamic-effects.js') }}"></script>
     {% endif %}
   </body>

@@ -18106,3 +18106,45 @@ msgstr "Nhận định"
 #, python-format
 msgid "%(count)s correct"
 msgstr "Đúng %(count)s nhận định"
+
+#: templates/user/theme-settings.html:105
+#| msgid ""
+#| "Add animated effects to your page. Effects are visible on desktop only."
+msgid ""
+"Add animated effects to your page. Effects automatically adapt to your "
+"screen and device."
+msgstr ""
+"Thêm hiệu ứng động cho trang. Hiệu ứng tự động điều chỉnh theo màn hình và "
+"thiết bị của bạn."
+
+#: templates/user/theme-settings.html:108
+#| msgid "No tickets selected."
+msgid "No effect selected."
+msgstr "Chưa chọn hiệu ứng."
+
+#: templates/user/theme-settings.html:109
+#| msgid "Loading preview..."
+msgid "Loading effect..."
+msgstr "Đang tải hiệu ứng..."
+
+#: templates/user/theme-settings.html:110
+msgid "Effect is running. Quality adapts to your device."
+msgstr "Hiệu ứng đang chạy. Chất lượng được điều chỉnh theo thiết bị của bạn."
+
+#: templates/user/theme-settings.html:111
+msgid "Effects are paused because your device prefers reduced motion."
+msgstr ""
+"Hiệu ứng đang tạm dừng vì thiết bị của bạn đang bật chế độ giảm chuyển động."
+
+#: templates/user/theme-settings.html:112
+#| msgid "Task timed out. Please try again."
+msgid "Could not load this effect. Please try again."
+msgstr "Không thể tải hiệu ứng này. Vui lòng thử lại."
+
+#: templates/user/theme-settings.html:115
+msgid "Enable effects anyway in this browser"
+msgstr "Vẫn bật hiệu ứng trong trình duyệt này"
+
+#: templates/user/theme-settings.html:118
+msgid "JavaScript is required to display effects."
+msgstr "Cần bật JavaScript để hiển thị hiệu ứng."

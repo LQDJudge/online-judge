@@ -102,7 +102,22 @@
   <!-- Dynamic Effects Section -->
     <section class="theme-section">
       <h3><i class="fa fa-sparkles"></i> {{ _('Dynamic Effects') }}</h3>
-      <p class="section-description">{{ _('Add animated effects to your page. Effects are visible on desktop only.') }}</p>
+      <p class="section-description">{{ _('Add animated effects to your page. Effects automatically adapt to your screen and device.') }}</p>
+
+      <p id="dynamic-effect-status" role="status" aria-live="polite"
+         data-none="{{ _('No effect selected.') }}"
+         data-loading="{{ _('Loading effect...') }}"
+         data-running="{{ _('Effect is running. Quality adapts to your device.') }}"
+         data-paused="{{ _('Effects are paused because your device prefers reduced motion.') }}"
+         data-failed="{{ _("Could not load this effect. Please try again.") }}"></p>
+      <label id="dynamic-effect-motion-override" hidden>
+        <input type="checkbox">
+        {{ _('Enable effects anyway in this browser') }}
+      </label>
+      <span id="dynamic-effect-retry-wrapper" hidden>
+        <button id="dynamic-effect-retry" type="button" class="action-btn">{{ _('Retry') }}</button>
+      </span>
+      <noscript><p>{{ _('JavaScript is required to display effects.') }}</p></noscript>
 
       <div class="effects-grid">
         {% for effect_key, effect_name in dynamic_effects %}
