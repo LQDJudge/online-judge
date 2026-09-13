@@ -206,8 +206,6 @@ Checker có sẵn không cần upload file checker. Chọn checker trong menu **
 | `linecount` | Token phải khớp trên đúng từng dòng | Bỏ qua khoảng trắng thừa trong cùng một dòng, nhưng ranh giới dòng phải khớp. |
 | `csv_accuracy`, `csv_rmse`, `csv_mae`, `csv_f1`, `csv_auc`, `csv_logloss` | Bài nộp CSV kiểu Kaggle | Xem [Bài kiểu Kaggle (CSV)](#kaggle-style-csv-problems) bên dưới để biết `checker_args` và cách tính điểm. |
 
-Dùng **Testlib** hoặc **Testlib (CMS / IOI)** khi bạn đã có `checker.cpp` từ Polygon, IOI, CMS, hoặc package tương tự. Upload file đó ở trường checker C++. Với package IOI, xem [Import bài IOI](#importing-ioi-tasks).
-
 ### 3.2. Custom Checker (C++) {#custom-checker}
 
 Định nghĩa cách chấm cho các bài có nhiều đáp án đúng hoặc format đặc biệt.
@@ -250,6 +248,12 @@ int main(int argc, char** argv) {
     }
 }
 ```
+
+### 3.3. Testlib {#testlib}
+
+Dùng **Testlib** hoặc **Testlib (CMS / IOI)** khi bạn đã có `checker.cpp` từ Polygon, IOI, CMS, hoặc package tương tự. Upload file đó ở trường checker C++. Với package IOI, xem [Import bài IOI](#importing-ioi-tasks).
+
+Trả về một số thực trong `[0, 1]` bằng `quitp(score, ...)`. Ví dụ, `quitp(0.5, "Partially correct")` cho 50% điểm của test. Dùng `quitf(_ok, ...)` để nhận toàn bộ điểm và `quitf(_wa, ...)` để nhận 0 điểm.
 
 ## 4. Interactive (C++) {#interactive}
 
