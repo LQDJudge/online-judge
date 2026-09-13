@@ -297,8 +297,9 @@ class BaseContestFormat(metaclass=ABCMeta):
                 # Store in format_data with 'quiz_' prefix to distinguish from problems
                 quiz_key = f"quiz_{cp.id}"
                 dt = 0
-                if best_attempt.end_time:
-                    dt = (best_attempt.end_time - participation.start).total_seconds()
+                end_time = best_attempt.effective_end_time or best_attempt.end_time
+                if end_time:
+                    dt = (end_time - participation.start).total_seconds()
 
                 format_data[quiz_key] = {
                     "time": dt,

@@ -312,7 +312,9 @@ def auto_grade_answer(answer) -> bool:
     return True
 
 
-def auto_grade_quiz_attempt(attempt, assignments=None, answers=None) -> float:
+def auto_grade_quiz_attempt(
+    attempt, assignments=None, answers=None, sync_contest=True, preserve_manual=False
+) -> float:
     """
     Auto-grade all answers in an attempt.
 
@@ -339,6 +341,9 @@ def auto_grade_quiz_attempt(attempt, assignments=None, answers=None) -> float:
     total_score = 0
 
     for answer in answers:
+        if preserve_manual and answer.graded_by_id is not None:
+            total_score += answer.points
+            continue
         qtype = answer.question.question_type
         max_points = assignment_points.get(answer.question_id, 1.0)
 
@@ -388,7 +393,7 @@ def auto_grade_quiz_attempt(attempt, assignments=None, answers=None) -> float:
         attempt.save(update_fields=["score", "max_score"])
         sync_quiz_attempt_result(attempt, sync_contest=False)
 
-    if attempt.is_submitted and attempt.contest_participation_id:
+    if sync_contest and attempt.is_submitted and attempt.contest_participation_id:
         sync_contest_quiz_result(attempt.contest_participation, attempt.id)
 
     return total_score

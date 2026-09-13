@@ -677,7 +677,14 @@ MAGAZINE_EXCLUDED_COMMUNITY_ORG_SLUGS = (
 # Celery Beat schedule. Application-level periodic jobs belong here so the
 # cadence is versioned with the codebase. This schedule is only active when
 # celery-beat is running (`celery -A dmoj_celery beat`), separate from workers.
+QUIZ_EXPIRY_ENABLED = False
+QUIZ_EXPIRY_BATCH_SIZE = 100
+
 CELERY_BEAT_SCHEDULE = {
+    "expire-quiz-attempts": {
+        "task": "judge.tasks.quiz.expire_quiz_attempts",
+        "schedule": 30.0,
+    },
     "reap-stale-review-runs": {
         "task": "judge.tasks.review.reap_stale_review_runs",
         "schedule": 300.0,  # every 5 minutes
