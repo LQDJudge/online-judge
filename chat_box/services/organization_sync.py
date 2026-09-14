@@ -35,10 +35,12 @@ def _relation_ids(manager):
 
 
 def organization_user_ids(organization):
-    return _relation_ids(organization.admins).union(
-        _relation_ids(organization.moderators),
-        _relation_ids(organization.members),
+    profile_ids = _relation_ids(organization.admins).union(
+        _relation_ids(organization.members)
     )
+    if not organization.has_school():
+        profile_ids.update(_relation_ids(organization.moderators))
+    return profile_ids
 
 
 def _organization_roles_for_ids(organization, profile_ids):
@@ -49,14 +51,15 @@ def _organization_roles_for_ids(organization, profile_ids):
             "id", flat=True
         )
     }
-    roles.update(
-        {
-            profile_id: UserRoom.Role.MODERATOR
-            for profile_id in organization.moderators.filter(
-                id__in=profile_ids
-            ).values_list("id", flat=True)
-        }
-    )
+    if not organization.has_school():
+        roles.update(
+            {
+                profile_id: UserRoom.Role.MODERATOR
+                for profile_id in organization.moderators.filter(
+                    id__in=profile_ids
+                ).values_list("id", flat=True)
+            }
+        )
     roles.update(
         {
             profile_id: UserRoom.Role.ADMIN

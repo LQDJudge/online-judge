@@ -61,6 +61,12 @@
           <div class="org-details">
             <span class="organization-card-name">
               {{ org.name }}
+              {% if tab == 'mine' and org.is_official_school %}
+                <span class="official-school-badge">
+                  <i class="fa fa-university" aria-hidden="true"></i>
+                  {{ _('Official school') }}
+                </span>
+              {% endif %}
               {% if org.is_community %}
                 <span class="community-badge" title="{{ _('Community') }}">
                   <i class="fa fa-comments"></i>

@@ -7,3 +7,4 @@ from . import interface
 from . import course
 from . import bookmark
 from . import quiz
+from . import official_school

@@ -132,7 +132,9 @@ class PostView(
         context["og_image"] = self.object.og_image
         context["editable_orgs"] = []
 
-        context["organizations"] = self.object.get_organizations()
+        context["organizations"] = self.object.get_visible_organizations(
+            self.request.user
+        )
 
         if self.request.profile:
             is_author = self.request.profile.id in self.object.get_author_ids()

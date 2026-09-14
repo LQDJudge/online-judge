@@ -171,13 +171,30 @@ class NotificationManager(models.Manager):
         if notifications:
             self.bulk_create(notifications)
 
-        # Update unread counts for users who got new notifications or reactivated ones
-        for user in profile_updates:
-            NotificationProfile.objects.get_or_create(user=user)
-            NotificationProfile.objects.filter(user=user).update(
+        # Create missing counters and increment every recipient in constant-query
+        # batches. ``ignore_conflicts`` also makes concurrent notification fan-out
+        # safe when two requests create a recipient's counter at the same time.
+        if profile_updates:
+            profile_ids = [user.pk for user in profile_updates]
+            existing_ids = set(
+                NotificationProfile.objects.filter(user_id__in=profile_ids).values_list(
+                    "user_id", flat=True
+                )
+            )
+            NotificationProfile.objects.bulk_create(
+                [
+                    NotificationProfile(user_id=profile_id)
+                    for profile_id in profile_ids
+                    if profile_id not in existing_ids
+                ],
+                ignore_conflicts=True,
+            )
+            NotificationProfile.objects.filter(user_id__in=profile_ids).update(
                 unread_count=F("unread_count") + 1
             )
-            unseen_notifications_count.dirty(user)
+            unseen_notifications_count.dirty_multi(
+                [(user,) for user in profile_updates]
+            )
 
     def mark_as_read(self, user, notification_ids=None):
         """Mark notifications as read for a user"""

@@ -1,80 +1,137 @@
 {% extends "base.html" %}
-
 {% block title_row %}{% endblock %}
 {% block title_ruler %}{% endblock %}
-
-{% block media %}
-  <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      border: 1px solid #ddd;
-      font-size: 1em;
-    }
-
-    th,
-    td {
-      padding: 12px 15px;
-      border: 1px solid #595656;
-      padding: 15px;
-      text-align: center;
-    }
-
-    th {
-      font-size: 15px;
-    }
-
-    tr:hover {
-      cursor: pointer;
-    }
-  </style>
+{% block js_media %}
+  <script src="{{ static('contest-summary.js') }}" defer></script>
 {% endblock %}
-
 {% block body %}
-  <table class="table" id="users-table">
-    <thead>
-      <tr>
-        <th>{{_('Rank')}}</th>
-        <th>{{_('Name')}}</th>
-        {% for contest in contests %}
-          <th><a href="{{url('contest_view', contest.key)}}" title="{{contest.name}}">{{ loop.index }}</a></th>
-        {% endfor %}
-        <th>{{_('Points')}}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for rank, item in page_obj %}
-        {% set profile = profiles[item.user_id] %}
-        <tr>
-          <td>
-            {{ rank }}
-          </td>
-          <td>
-            <div>
-              <a href="{{url('user_page', profile.username)}}"> <span
-                class="username {{ profile.css_class }} wrapline">{{profile.username}}</span></a>
-            </div>
-            <div>{{profile.first_name if profile.first_name else ''}}</div>
-            <div>{{profile.last_name if profile.last_name else ''}}</div>
-          </td>
-          {% for point_contest, rank_contest in item.point_contests %}
-            <td>
-              <div>{{ point_contest|floatformat(0) }}</div>
-              {% if rank_contest %}
-                <div><small>(#{{ rank_contest }})</small></div>
-              {% endif %}
-            </td>
-          {% endfor %}
-          <td>
-            <b>{{ item.points|floatformat(2) }}</b>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% if page_obj and page_obj.num_pages > 1 %}
-    <div style="margin-top: 10px;">
-      {% include "list-pages.html" %}
+  {% macro sort_link(field) %}
+    {% set sorting = summary_sort_headers[field] %}
+    <a class="summary-sort" href="{{ sorting.href }}" aria-label="{{ sorting.label }}" title="{{ sorting.label }}"><i class="fa fa-{{ sorting.icon }}" aria-hidden="true"></i></a>
+  {% endmacro %}
+  {% macro school_label(school_id, hidden) %}
+    {% if school_id %}
+      {% set school = school_by_id[school_id] %}
+      {% set logo = school.get_organization_image_url() %}
+      <a class="summary-school-label" href="?school={{ school_id }}" title="{{ school.name }}" aria-label="{{ school.name }}">
+        {% if logo %}<img class="summary-school-logo" src="{{ logo }}" alt="" loading="lazy" width="44" height="44">{% endif %}
+        <i class="fa fa-school summary-school-fallback" aria-hidden="true"></i>
+      </a>
+    {% elif not hidden %}<span class="summary-school-missing" title="{{ _('No verified school') }}" aria-label="{{ _('No verified school') }}">&mdash;</span>{% endif %}
+  {% endmacro %}
+  <div class="contest-summary-page contest-ranking-page" data-summary-key="{{ summary_key }}">
+    <div class="summary-heading">
+      <h1>{{ _("Overall standings") }} <small>{{ summary_key }}</small></h1>
+      <div class="summary-stats">
+        <span><strong>{{ summary_total }}</strong> {{ _("Contestants") }}</span>
+        <span><strong>{{ school_options|length }}</strong> {{ _("Schools") }}</span>
+        {% if not summary_needs_refresh %}<span><strong>{{ contests|length }}</strong> {{ _("Contests") }}</span>{% endif %}
+      </div>
     </div>
-  {% endif %}
+    <form method="get" class="summary-filters ranking-filters-container">
+      <input type="hidden" name="sort" value="{{ summary_sort }}">
+      <div class="summary-toolbar">
+        <input id="summary-search" class="ranking-search-input" type="search" name="search" value="{{ summary_search }}"
+               placeholder="{{ _('Username or full name') }}" aria-label="{{ _('Search contestants') }}" maxlength="100">
+        <button type="submit" class="action-btn small">{{ _("Apply") }}</button>
+        <a class="summary-reset" href="?">{{ _("Reset") }}</a>
+        {% if my_school %}<a class="summary-shortcut" href="?school={{ my_school.pk }}"><i class="fa fa-school" aria-hidden="true"></i> {{ _("My school") }}</a>{% endif %}
+        <span id="summary-pending" class="summary-pending" role="status" hidden>{{ _("Changes not applied") }}</span>
+      </div>
+      <details class="summary-filter-details">
+        <summary><i class="fa fa-filter" aria-hidden="true"></i> {{ _("Filters") }}{% if selected_schools or highlight_schools %} <span class="summary-filter-count">{{ selected_schools|length + highlight_schools|length }}</span>{% endif %}</summary>
+        <div class="summary-filter-grid">
+          <div class="summary-filter-field">
+            <label for="summary-school">{{ _("Show only schools") }}</label>
+            <select id="summary-school" name="school" multiple
+                    data-placeholder="{{ _('All schools') }}" data-label="{{ _('Show only schools') }}"
+                    data-no-results="{{ _('No matching schools') }}">
+              <option value="none" {{ 'selected' if 'none' in selected_schools }}>{{ _("No verified school") }}</option>
+              {% for school in school_options %}
+                <option value="{{ school.id }}" {{ 'selected' if school.id|string in selected_schools }}>{{ school.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="summary-filter-field">
+            <label for="summary-highlight"><i class="fa fa-star" aria-hidden="true"></i> {{ _("Highlight schools") }}</label>
+            <select id="summary-highlight" name="highlight" multiple
+                    data-placeholder="{{ _('Choose schools to follow') }}" data-label="{{ _('Highlight schools') }}"
+                    data-no-results="{{ _('No matching schools') }}">
+              {% for school in school_options %}
+                <option value="{{ school.id }}" {{ 'selected' if school.id|string in highlight_schools }}>{{ school.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <noscript><p>{{ _("Hold Ctrl or Command to select multiple schools.") }}</p></noscript>
+      </details>
+      <div class="ranking-filters-display summary-display-controls" hidden>
+        {% if contests %}<label class="filter-option"><input id="summary-total-only" type="checkbox">{{ _('Score only') }}</label>{% endif %}
+      </div>
+    </form>
+    <section class="summary-results" aria-label="{{ _('Overall standings') }}">
+      <div class="summary-results-toolbar">
+        <span>{{ summary_range_message }}</span>
+        <div class="summary-view-actions">
+          {% if highlight_schools %}
+            <span class="summary-highlight-count"><i class="fa fa-star" aria-hidden="true"></i> {{ summary_highlight_message }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="summary-table-scroll ranking-table-wrapper" tabindex="0" role="region" aria-label="{{ _('Standings table') }}">
+        <table id="users-table" class="summary-table table">
+          <thead><tr>
+            <th scope="col" class="header rank summary-rank" aria-sort="{{ summary_sort_headers['rank'].direction }}">{{ _("Rank") }} {{ sort_link('rank') }}</th>
+            <th scope="col" class="header username summary-contestant">{{ _("Name") }}<span class="summary-mobile-school-sort">{{ _('School') }} {{ sort_link('school') }}</span></th>
+            <th scope="col" class="header summary-school-column" aria-sort="{{ summary_sort_headers['school'].direction }}">{{ _("School") }} {{ sort_link('school') }}</th>
+            {% for contest in contests %}
+              <th scope="col" class="header points problem-score-col summary-contest-score" aria-sort="{{ summary_sort_headers['contest' ~ loop.index].direction }}">
+                {% if contest %}<a class="summary-contest-link" href="{{ url('contest_view', contest.key) }}" title="{{ contest.name }}" aria-label="{{ summary_sort_headers['contest' ~ loop.index].title }}: {{ contest.name }}">{{ loop.index }}</a>{% else %}<span title="{{ _('Unavailable contest') }}">{{ loop.index }}</span>{% endif %}
+                {{ sort_link('contest' ~ loop.index) }}
+              </th>
+            {% endfor %}
+            <th scope="col" class="header summary-total" aria-sort="{{ summary_sort_headers['points'].direction }}">{{ _("Points") }} {{ sort_link('points') }}</th>
+          </tr></thead>
+          <tbody>
+            {% for rank, item in page_obj %}
+              {% set profile = profiles.get(item.user_id) %}
+              {% set school_id = profile_schools.get(item.user_id) %}
+              {% set hidden = item.user_id in hidden_profiles %}
+              {% set highlighted = school_id|string in highlight_schools %}
+              <tr class="{{ 'summary-highlight' if highlighted }}">
+                <td class="rank-td summary-rank">{{ rank }}</td>
+                <td class="user-name summary-contestant">
+                  <div class="summary-user-details">
+                    {% if profile and not hidden %}
+                      <span class="contest-ranking-user">{{ link_user(profile, show_image=False) }}</span>
+                      {% if highlighted %}<i class="fa fa-star summary-school-star" role="img" aria-label="{{ _('Highlighted school') }}"></i>{% endif %}
+                      {% if profile.first_name %}<span class="summary-fullname fullname">{{ profile.first_name }}</span>{% endif %}
+                    {% elif hidden %}{{ _("Disabled user") }}{% else %}{{ _("Unavailable user") }}{% endif %}
+                    <span class="summary-school-info summary-mobile-school">{{ school_label(school_id, hidden) }}</span>
+                  </div>
+                </td>
+                <td class="summary-school-column"><div class="summary-school-info">{{ school_label(school_id, hidden) }}</div></td>
+                {% for contest in contests %}
+                  {% set points, position = item.point_contests[loop.index0] %}
+                  <td class="summary-contest-score">
+                    {% if contest and profile and not hidden and (item.user_id, contest.id) in participating %}
+                      <a href="{{ url('contest_ranking', contest.key) }}?user={{ profile.username|urlencode }}">{{ points|floatformat(-2) }}</a>
+                    {% else %}{{ points|floatformat(-2) }}{% endif %}
+                    {% if position %}<div class="summary-position">(#{{ position }})</div>{% endif %}
+                  </td>
+                {% endfor %}
+                <td class="summary-total"><strong>{{ item.points|floatformat(2) }}</strong></td>
+              </tr>
+            {% else %}
+              <tr><td class="summary-empty" colspan="{{ contests|length + 4 }}">
+                <h3>{{ _("No matching results.") }}</h3>
+                {% if selected_schools or summary_search %}<a class="summary-shortcut" href="?">{{ _('Show full standings') }}</a>{% endif %}
+              </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if page_obj and page_obj.paginator.num_pages > 1 %}<div class="summary-pagination">{% include "list-pages.html" %}</div>{% endif %}
+    </section>
+  </div>
 {% endblock %}

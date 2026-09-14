@@ -85,7 +85,20 @@
 {% block middle_title %}{% endblock %}
 
 {% block middle_content %}
-  {% with organization_form_title = content_title if content_title else title %}
+  {% if school_add_feedback %}
+    <section class="school-add-feedback" role="status" aria-live="polite" aria-labelledby="school-add-feedback-title">
+      <h3 id="school-add-feedback-title">{{ _('Results') }}</h3>
+      <ul>
+        {% for kind, text in school_add_feedback %}
+          <li class="school-add-feedback-{{ kind }}">{{ text }}</li>
+        {% endfor %}
+      </ul>
+      {% if school_add_conflicts %}
+        <p>{{ _("Send these students this school's invitation link so they can confirm their transfer. They remain in their current school until then.") }}</p>
+      {% endif %}
+    </section>
+  {% endif %}
+  {% with organization_form_title = content_title if content_title else title, organization_submit_label = _('Add members') %}
     {% include "organization/form.html" %}
   {% endwith %}
 {% endblock %}

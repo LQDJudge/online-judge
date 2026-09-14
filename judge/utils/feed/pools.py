@@ -4,6 +4,7 @@ Each pool provides items of a specific type, lazily fetched on first access.
 """
 
 from datetime import timedelta
+from hashlib import sha256
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -28,6 +29,16 @@ def _feed_cache_key(request, pool_name, organization=None):
     """Cache key scoped to user + feed token (from ?ft= param) + org context."""
     if request.user.is_authenticated:
         user_key = f"u{request.profile.id}"
+        if not hasattr(request, "_feed_organization_scope"):
+            org_ids = (
+                request.profile.get_content_organizations()
+                .order_by("pk")
+                .values_list("pk", flat=True)
+            )
+            request._feed_organization_scope = sha256(
+                str(list(org_ids)).encode()
+            ).hexdigest()[:16]
+        user_key += ":" + request._feed_organization_scope
     else:
         user_key = "anon"
     feed_token = request.GET.get("ft", "")
@@ -105,7 +116,7 @@ class PostPool(CachedPool):
                 .values_list("id", flat=True)[: self.BATCH_SIZE]
             )
 
-            user_org_ids = self.request.profile.get_organization_ids()
+            user_org_ids = self.request.profile.get_content_organizations().values("pk")
             group = set(
                 base.filter(
                     is_organization_private=True,

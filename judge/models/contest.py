@@ -595,6 +595,9 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         organization_ids = self.get_organization_ids()
         return Organization.get_cached_instances(*organization_ids)
 
+    def get_visible_organizations(self, user):
+        return Organization.visible_instances(self.get_organization_ids(), user)
+
     def __str__(self):
         return f"{self.name} ({self.key})"
 
@@ -657,7 +660,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             return
 
         in_org = self.organizations.filter(
-            id__in=user.profile.organizations.all()
+            id__in=user.profile.get_content_organizations()
         ).exists()
         in_users = self.private_contestants.filter(id=user.profile.id).exists()
 
@@ -744,7 +747,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         organization_access = Exists(
             cls.organizations.through.objects.filter(
                 contest_id=OuterRef("pk"),
-                organization_id__in=profile.organizations.values("id"),
+                organization_id__in=profile.get_content_organizations().values("id"),
             )
         )
         course_access = Exists(

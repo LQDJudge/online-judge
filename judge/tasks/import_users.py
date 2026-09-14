@@ -4,11 +4,14 @@ import re
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.utils.translation import gettext as _
 
 from celery import shared_task
 
 from judge.models import Profile, Language, Organization
 from judge.utils.celery import Progress
+from judge.services.official_school import enroll_school
 
 fields = ["username", "password", "name", "school", "email", "organizations"]
 descriptions = [
@@ -53,6 +56,7 @@ def is_valid_username(username):
 def import_users(self, users, profile_id=None, muted=True):
     log = ""
     processed_count = 0
+    actor = None
 
     with Progress(self, len(users), stage="Importing users") as progress:
         for i, row in enumerate(users):
@@ -71,7 +75,7 @@ def import_users(self, users, profile_id=None, muted=True):
                     "is_active": True,
                 },
             )
-            profile, _ = Profile.objects.get_or_create(
+            profile, _profile_created = Profile.objects.get_or_create(
                 user=user,
                 defaults={
                     "language": Language.get_python3(),
@@ -104,8 +108,26 @@ def import_users(self, users, profile_id=None, muted=True):
                 for o in orgs:
                     try:
                         org = Organization.objects.get(slug=o)
-                        profile.organizations.add(org)
+                        if org.has_school():
+                            if profile_id is None:
+                                raise PermissionDenied
+                            if actor is None:
+                                actor = (
+                                    Profile.objects.select_related("user")
+                                    .get(pk=profile_id)
+                                    .user
+                                )
+                            enroll_school(actor, org.pk, profile.pk)
+                        else:
+                            profile.organizations.add(org)
                         added_orgs.append(org.name)
+                    except (PermissionDenied, ValidationError):
+                        cur_log += (
+                            _(
+                                "School enrollment skipped; use the school invitation or member-management workflow."
+                            )
+                            + " "
+                        )
                     except Organization.DoesNotExist:
                         continue
                 if added_orgs:

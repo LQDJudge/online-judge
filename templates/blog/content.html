@@ -11,7 +11,7 @@
         {% if post.is_organization_private and show_organization_private_icon %}
           &#8226;
           <div style="display: flex; margin-left: 0.2em;">
-            {% for org in post.get_organizations() %}
+            {% for org in post.get_visible_organizations(request.user) %}
               {% include "organization/tag.html" %}
             {% endfor %}
           </div>

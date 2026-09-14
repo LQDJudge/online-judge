@@ -237,6 +237,7 @@ else:
                     "icon": "fa-user-plus",
                     "children": [
                         "judge.Organization",
+                        "judge.OfficialSchool",
                         "judge.OrganizationRequest",
                     ],
                 },

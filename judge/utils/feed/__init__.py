@@ -5,6 +5,8 @@ Public API:
     build_home_feed(request, cursor_str, feed_type, sort_by) -> dict
 """
 
+from django.http import Http404
+
 from .cursor import FeedCursor
 from .generator import FeedGenerator
 from .items import FeedItem
@@ -31,6 +33,12 @@ def build_home_feed(request, cursor_str=None, organization=None):
     """
     if not request.user.is_authenticated:
         return None
+    if (
+        organization
+        and organization.has_school()
+        and not organization.school_accessible_by(request.user)
+    ):
+        raise Http404
 
     cursor = FeedCursor.decode(cursor_str)
     generator = FeedGenerator(request, organization=organization)

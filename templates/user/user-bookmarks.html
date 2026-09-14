@@ -7,7 +7,7 @@
   {% include "user/user-tabs.html" %}
 {% endblock %}
 
-{% from "contest/macros.html" import contest_head, time_left, user_count, contest_format_user %}
+{% from "contest/macros.html" import contest_head, time_left, user_count, contest_format_user with context %}
 
 {% block user_content %}
   <div class="tabs tabs-no-flex" style="width: 100%;margin-left: auto;margin-right: auto;">

@@ -161,7 +161,10 @@ class SubdomainMiddleware(object):
 
         try:
             organization = Organization.objects.get(slug=subdomain)
-            if request.profile and organization in request.profile.organizations.all():
+            if (
+                request.profile
+                and organization in request.profile.get_content_organizations()
+            ):
                 request.organization = organization
             else:
                 if request.profile:

@@ -1,8 +1,8 @@
 import threading
 
 from django.urls import re_path
-from django.contrib import admin
-from django.core.exceptions import PermissionDenied
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import connection, transaction
 from django.db.models import Q, TextField
 from django.forms import ModelForm, ModelMultipleChoiceField, TextInput
@@ -39,6 +39,7 @@ from judge.widgets import (
 from judge.review.decisions import post_contest_decision_side_effects
 from judge.views.contests import recalculate_contest_summary_result
 from judge.utils.contest import maybe_trigger_contest_rescore
+from judge.services.contest_summary import validate_scores
 
 MAX_CONTEST_PROBLEMS = 100
 MAX_CONTEST_QUIZZES = 100
@@ -591,6 +592,11 @@ class ContestParticipationAdmin(admin.ModelAdmin):
 
 
 class ContestsSummaryForm(ModelForm):
+    def clean_scores(self):
+        scores = self.cleaned_data["scores"]
+        validate_scores(scores)
+        return scores
+
     class Meta:
         widgets = {
             "contests": AdminHeavySelect2MultipleWidget(
@@ -604,12 +610,31 @@ class ContestsSummaryAdmin(admin.ModelAdmin):
     list_display = ("key",)
     search_fields = ("key", "contests__key")
     form = ContestsSummaryForm
+    actions = ("refresh_results",)
 
-    def save_model(self, request, obj, form, change):
-        super(ContestsSummaryAdmin, self).save_model(request, obj, form, change)
-        obj.refresh_from_db()
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        obj = form.instance
         obj.results = recalculate_contest_summary_result(request, obj)
-        obj.save()
+        obj.save(update_fields=["results"])
+
+    @admin.action(description=_("Refresh summary results"))
+    def refresh_results(self, request, queryset):
+        for summary in queryset:
+            try:
+                with transaction.atomic():
+                    locked = (
+                        type(summary).objects.select_for_update().get(pk=summary.pk)
+                    )
+                    result = recalculate_contest_summary_result(request, locked)
+                    locked.results = result
+                    locked.save(update_fields=["results"])
+            except ValidationError as error:
+                self.message_user(
+                    request,
+                    "%s: %s" % (summary.key, "; ".join(error.messages)),
+                    level=messages.ERROR,
+                )
 
 
 # Per-request scratch space for the verdict pre-fetch cache. ModelAdmin

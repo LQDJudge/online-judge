@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title_row %}{% endblock %}
+{% block title_ruler %}{% endblock %}
+{% block body %}
+  <div class="school-invitation-page">
+    <section id="school-confirm-panel" class="school-confirm-panel" aria-labelledby="school-confirm-title">
+      <span class="school-invitation-icon" aria-hidden="true"><i class="fa fa-university"></i></span>
+      {% if not already_member %}<p class="school-invitation-eyebrow">{{ _("You've been invited to join") }}</p>{% endif %}
+      <h1 id="school-confirm-title">{{ school.name }}</h1>
+      <span class="school-invitation-badge">{{ _('Official school') }}</span>
+      <div id="school-confirm-description">
+        {% if already_member %}
+          <p>{{ _("You already belong to this school.") }}</p>
+        {% elif old_school and old_school.id != school.id %}
+          <p class="school-invitation-warning"><i class="fa fa-exchange-alt" aria-hidden="true"></i> {{ transfer_message }}</p>
+        {% else %}
+          <p>{{ _("Confirm joining this official school.") }}</p>
+        {% endif %}
+        {% if not already_member %}
+          <p class="school-invitation-note">{{ _("School-derived access will change. Separate course enrollment and administrator roles remain unchanged.") }}</p>
+          <p class="school-invitation-note">{{ _("Older ranking boards will show your current school; scores will not change.") }}</p>
+        {% endif %}
+      </div>
+      {% if already_member %}
+        <div class="school-confirm-actions">
+          <a class="action-btn" href="{{ school.get_absolute_url() }}">{{ _('Open school') }}</a>
+          <a class="school-confirm-cancel" href="{{ url('organization_list') }}">{{ _('Cancel') }}</a>
+        </div>
+      {% else %}
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="confirm" value="yes">
+          <input type="hidden" name="code" value="{{ code }}">
+          <input type="hidden" name="expected_school" value="{{ expected_school }}">
+          <div class="school-confirm-actions">
+            <button class="action-btn" type="submit">
+              {% if old_school %}
+                {{ _('Confirm transfer') }}
+              {% else %}
+                {{ _('Join school') }}
+              {% endif %}
+            </button>
+            <a class="school-confirm-cancel" href="{{ url('organization_list') }}">{{ _("Cancel") }}</a>
+          </div>
+        </form>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

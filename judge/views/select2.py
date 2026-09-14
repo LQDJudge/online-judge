@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 from django.db.models import F, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -32,12 +33,15 @@ def _parse_question_id_search(term):
     return None
 
 
-def _get_user_queryset(term, org_id=None):
+def _get_user_queryset(term, org_id=None, user=None):
     if org_id:
         try:
-            qs = Organization.objects.get(id=org_id).members.all()
+            org = Organization.objects.get(id=org_id)
         except Exception:
             raise Http404()
+        if org.has_school() and (user is None or not org.school_accessible_by(user)):
+            raise PermissionDenied
+        qs = org.members.all()
     else:
         qs = Profile.objects
     if term.endswith(" "):
@@ -80,9 +84,10 @@ class UserSelect2View(Select2View):
 
     def get_queryset(self):
         return (
-            _get_user_queryset(self.term, self.org_id)
+            _get_user_queryset(self.term, self.org_id, self.request.user)
             .annotate(username=F("user__username"))
             .only("id")
+            .order_by("id")
         )
 
     def get_name(self, obj):

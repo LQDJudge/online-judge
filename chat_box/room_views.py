@@ -218,7 +218,7 @@ def available_organization_channels_view(request):
     start = (page - 1) * page_size
     eligible_organizations = Organization.objects.filter(
         Q(member=request.profile)
-        | Q(moderators=request.profile)
+        | Q(moderators=request.profile, official_school__isnull=True)
         | Q(admins=request.profile)
     ).values("id")
     active_room_ids = UserRoom.objects.filter(

@@ -1,0 +1,25 @@
+body.model-officialschool .form-row input[type="text"] {
+    width: 48em;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+body.model-officialschool .form-row .select2-container {
+    max-width: 100%;
+}
+
+@media (max-width: 767px) {
+    body.model-officialschool #content .form-row .flex-container:not(.checkbox-row) {
+        display: block;
+    }
+
+    body.model-officialschool #content .form-row label {
+        float: none;
+        width: auto;
+        padding-bottom: 0.5em;
+    }
+
+    body.model-officialschool #content .form-row input[type="text"] {
+        width: 100%;
+    }
+}

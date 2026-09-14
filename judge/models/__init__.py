@@ -1,5 +1,6 @@
 from reversion import revisions
 
+from judge.models.official_school import OfficialSchool
 from judge.models.choices import (
     ACE_THEMES,
     TIMEZONE,

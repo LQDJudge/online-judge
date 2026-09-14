@@ -1,0 +1,11 @@
+<form method="post" action="{{ departure_action }}" class="school-departure-form"
+      data-confirm-title="{{ departure_title }}" data-confirm-message="{{ departure_message }}">
+  {% csrf_token %}
+  <noscript>
+    <p>{{ departure_message }}</p>
+    <label><input type="checkbox" name="confirm" value="yes" required> {{ _('I confirm that I want to continue.') }}</label>
+  </noscript>
+  <button type="submit" class="school-departure-trigger">
+    <i class="fa {{ departure_icon }}" aria-hidden="true"></i>{{ departure_title }}
+  </button>
+</form>

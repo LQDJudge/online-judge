@@ -1,0 +1,322 @@
+@use "vars" as *;
+
+.contest-summary-page {
+    color: $text-primary;
+    min-width: 0;
+
+    .summary-heading, .summary-toolbar, .summary-results-toolbar, .summary-view-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: $space-sm $space-md;
+    }
+    .summary-heading {
+        justify-content: space-between;
+        margin: $space-sm 0 $space-md;
+
+        h1 { margin: 0; font-size: 1.4em; letter-spacing: normal; }
+        h1 small { font-size: 0.65em; font-weight: 400; color: $text-muted; margin-left: $space-sm; }
+    }
+    .summary-stats {
+        display: flex;
+        gap: $space-md;
+        flex-wrap: wrap;
+        color: $text-muted;
+        font-size: 0.8em;
+
+        strong { color: $text-primary; font-variant-numeric: tabular-nums; }
+    }
+    .summary-toolbar {
+        .ranking-search-input {
+            width: min(22em, 100%);
+            min-width: 0;
+            margin: 0;
+            box-sizing: border-box;
+            color: $text-primary;
+            background: $surface-primary;
+            text-align: left;
+            min-height: 42px;
+        }
+        .action-btn.small {
+            justify-content: center;
+            min-height: 36px;
+            padding: 0.45rem 0.85rem;
+            border-radius: $radius-md;
+            box-shadow: none;
+            font-size: 0.82rem;
+        }
+    }
+    input::placeholder { color: $text-muted; text-align: left; opacity: 1; }
+    .summary-reset {
+        padding: $space-xs $space-compact;
+        font-size: 0.85rem;
+    }
+    .summary-pending { font-size: 0.8em; }
+    .summary-pending { color: $theme_color; }
+    .summary-filter-details {
+        summary {
+            cursor: pointer;
+            width: fit-content;
+            font-size: 0.85em;
+            padding: $space-xs 0;
+            color: $text-secondary;
+        }
+        summary i { margin-right: $space-xs; }
+    }
+    .summary-filter-count {
+        display: inline-block;
+        border-radius: $radius-pill;
+        padding: 0 $space-compact;
+        background: $color-soft-accent-bg;
+        color: $theme_color;
+        font-weight: 600;
+    }
+    .summary-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: $space-lg;
+        padding: $space-md 0 $space-sm;
+        max-width: 65em;
+    }
+    .summary-filter-field {
+        min-width: 0;
+        position: relative;
+        font-size: 0.85em;
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: $space-xs;
+            min-height: 1.5rem;
+            margin-bottom: $space-sm;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        select { width: 100%; max-width: 100%; box-sizing: border-box; }
+    }
+    .summary-filter-field .select2-container {
+        max-width: 100%;
+    }
+    .summary-filter-field .select2-selection--multiple {
+        display: flex;
+        align-items: center;
+        min-height: $control-min-height;
+        border: 1px solid $border_gray;
+        border-radius: $radius-md;
+        background: $surface-primary;
+        color: $text-primary;
+        .select2-selection__rendered {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: $space-xs $space-sm;
+            gap: $space-xs;
+            box-sizing: border-box;
+            width: 100%;
+            min-height: $control-min-height;
+        }
+        .select2-selection__choice {
+            display: flex;
+            align-items: baseline;
+            gap: $space-xs;
+            max-width: 100%;
+            margin: 0;
+            padding: $space-xs $space-sm;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            box-sizing: border-box;
+            border: 1px solid $border-light;
+            border-radius: $radius-sm;
+            background: $color-soft-accent-bg;
+            color: $text-primary;
+            font-size: 0.85em;
+        }
+        .select2-selection__choice__remove {
+            color: $text-secondary;
+            font-size: 1.2em;
+        }
+        .select2-search--inline {
+            display: flex;
+            align-items: center;
+            float: none;
+            flex: 1 1 8em;
+            margin: 0;
+            max-width: 100%;
+        }
+        .select2-search__field {
+            width: 100% !important;
+            min-height: 30px;
+            margin: 0;
+            font: inherit;
+            color: $text-primary;
+            line-height: 30px;
+        }
+    }
+    .select2-container--focus .select2-selection--multiple,
+    .select2-container--open .select2-selection--multiple {
+        border-color: $theme_color;
+    }
+    .summary-filter-field .select2-dropdown {
+        background: $surface-primary;
+        color: $text-primary;
+        border-color: $border_gray;
+        border-radius: $radius-md;
+        box-shadow: $shadow-md;
+        overflow: hidden;
+        .select2-results__option {
+            padding: $space-cozy $space-md;
+            overflow-wrap: anywhere;
+        }
+        .select2-results__option[aria-selected="true"] {
+            background: $background_gray;
+            color: $text-primary;
+        }
+        .select2-results__option--highlighted[aria-selected] {
+            background: $theme_color;
+            color: $text-on-primary;
+        }
+    }
+
+    .summary-filters .summary-display-controls[hidden] { display: none; }
+    &.summary-total-only .summary-contest-score { display: none; }
+
+    .summary-results-toolbar {
+        justify-content: space-between;
+        font-size: 0.8em;
+        color: $text-muted;
+        margin: $space-sm 0;
+    }
+    .summary-shortcut {
+        display: inline-flex;
+        align-items: center;
+        gap: $space-xs;
+        padding: $space-xs $space-sm;
+        border: 1px solid $border-light;
+        border-radius: $radius-md;
+        background: $surface-primary;
+        color: $text-secondary;
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+    .summary-shortcut:hover { border-color: $theme_color; color: $theme_color; }
+    .summary-highlight-count { color: $theme_color; font-weight: 600; }
+    .summary-school-star { color: $theme_color; margin-left: $space-xs; align-self: center; }
+
+    #users-table {
+        width: 100%;
+        font-variant-numeric: tabular-nums;
+
+        .summary-rank { width: 3.5rem; min-width: 3.5rem; max-width: 3.5rem; box-sizing: border-box; }
+        .summary-contestant { width: 12rem; box-sizing: border-box; }
+        thead th.summary-rank, tbody td.summary-rank { min-width: 3.5rem; max-width: 3.5rem; }
+        thead th.summary-contestant, tbody td.summary-contestant {
+            left: 3.5rem;
+            text-align: center !important;
+            padding-left: $space-sm;
+        }
+        .summary-total { width: 5rem; min-width: 5rem; box-sizing: border-box; text-align: center; }
+        .summary-school-column {
+            width: 6rem;
+            min-width: 6rem;
+            max-width: 6rem;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .summary-user-details {
+            display: flex !important;
+            flex-direction: column;
+            align-items: center;
+            max-width: 20em;
+            min-width: 0;
+            justify-content: center;
+            justify-items: center;
+        }
+        .contest-ranking-user { max-width: 100%; text-align: center; }
+        .summary-contestant .rating { max-width: 100%; white-space: normal; overflow: visible; }
+        .summary-contestant .rating a {
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            text-overflow: clip;
+        }
+        .summary-rank .summary-sort { display: block; padding: 0; }
+        .summary-mobile-school, .summary-mobile-school-sort { display: none; }
+        .summary-school-label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: inherit;
+        }
+        .summary-school-logo {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            flex-shrink: 0;
+            border-radius: $radius-md;
+        }
+        .summary-school-logo:not([hidden]) + .summary-school-fallback { display: none; }
+        .summary-school-fallback {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border: 1px solid $border-light;
+            border-radius: $radius-md;
+            color: $text-muted;
+            background: $surface-primary;
+            font-size: 1.25rem;
+        }
+        .summary-school-missing { color: $text-muted; font-size: 1rem; }
+        .summary-sort { display: inline-block; padding: $space-xs; }
+        .summary-contest-link { display: inline-block; }
+        .summary-fullname, .summary-school-info, .summary-position {
+            color: $text-muted;
+            font-size: 0.8rem;
+            font-weight: 400;
+            margin-top: 2px;
+        }
+        .summary-fullname, .summary-school-info {
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+        .summary-contest-score {
+            min-width: 5rem;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+        tbody td { padding-top: 0.55rem; padding-bottom: 0.55rem; }
+        tbody .summary-contestant .rating a { font-size: 0.95rem; }
+        tbody .summary-total { font-size: 0.95rem; }
+        tbody tr.summary-highlight { background: $color-alert-warning-bg; }
+        tbody tr.summary-highlight:hover { background: $color-message-warning-bg; }
+        tbody tr.summary-highlight .summary-rank { box-shadow: inset 3px 0 $theme_color; }
+        .summary-empty { text-align: center; padding: $space-xl; }
+        .summary-empty h3 { font-size: 1em; }
+    }
+    .summary-pagination { display: flex; justify-content: center; padding: $space-md; }
+    :is(input, a, button, summary, [tabindex]):focus-visible { outline: 2px solid $theme_color; outline-offset: 2px; }
+
+    @media (max-width: 600px) {
+        .summary-heading h1 { font-size: 1.2em; }
+        .summary-toolbar .ranking-search-input { flex: 1 1 100%; width: 100%; }
+        .summary-filter-grid { grid-template-columns: minmax(0, 1fr); }
+        #users-table thead th.summary-rank, #users-table tbody td.summary-rank {
+            width: 2.8rem;
+            min-width: 2.8rem;
+            max-width: 2.8rem;
+        }
+        #users-table thead th.summary-contestant, #users-table tbody td.summary-contestant {
+            left: 2.8rem;
+            width: 9rem;
+            min-width: 9rem;
+            max-width: 9rem;
+        }
+        #users-table .summary-school-column { display: none; }
+        #users-table .summary-mobile-school { display: block; grid-column: 1 / -1; }
+        #users-table .summary-mobile-school-sort { display: block; font-weight: 400; font-size: 0.75rem; }
+        #users-table .summary-user-details { width: 100%; }
+        #users-table .summary-school-logo,
+        #users-table .summary-school-fallback { width: 34px; height: 34px; }
+    }
+}

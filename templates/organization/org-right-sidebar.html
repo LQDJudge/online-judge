@@ -14,7 +14,7 @@
             <i class="fa fa-edit"></i>{{ _('Edit group') }}</a>
         </div>
       {% endif %}
-      {% if can_edit and not organization.is_open %}
+      {% if can_edit and not organization.is_open and not is_school %}
         <div class="link-row">
           <a href="{{ url('organization_requests_pending', organization.id, organization.slug) }}">
             <i class="fa fa-inbox"></i>{{ _('View requests') }}</a>
@@ -25,7 +25,7 @@
           {% endif %}
         </div>
       {% endif %}
-      {% if request.user.is_superuser %}
+      {% if request.user.is_superuser or (is_school and can_edit) %}
         <div class="link-row">
           <a href="{{ url('add_organization_member', organization.id, organization.slug) }}">
             <i class="fa fa-user-plus"></i>{{ _('Add members') }}</a>
@@ -110,41 +110,62 @@
           </a>
         </div>
       {% endif %}
-      {% if is_member and not is_admin %}
-        <div class="link-row" style="color: red;">
-          <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">
-            {% csrf_token %}
-            <a href="#" class="leave-organization" onclick="confirmLeaveOrganization()">
-              <i class="fa fa-sign-out-alt"></i>{{ _('Leave group') }}</a>
-          </form>
-        </div>
+      {% if is_member and (not is_admin or is_school) %}
+        <div class="link-row red">
+          {% if is_school %}
+            {% set departure_message = _('You will leave this official school. Rejoining requires an invitation or a teacher adding you.') %}
+            {% with departure_action=url('leave_organization', organization.id, organization.slug),
+            departure_title=_('Leave official school'),
+            departure_icon='fa-sign-out-alt' %}
+            {% include 'organization/school-departure-form.html' %}
+          {% endwith %}
+      {% else %}
+        <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">
+          {% csrf_token %}
+          <a href="#" class="leave-organization" onclick="confirmLeaveOrganization()">
+            <i class="fa fa-sign-out-alt"></i>{{ _('Leave group') }}</a>
+        </form>
       {% endif %}
-      {% if not is_admin %}
-        <div class="link-row" style="color: red;">
-          <form method="post" action="{{ url('block_organization', organization.id, organization.slug) }}">
-            {% csrf_token %}
-            <a href="#" class="block-organization">
-              <i class="fa fa-ban"></i>{{ _('Block group') }}
-            </a>
-          </form>
-        </div>
-      {% endif %}
-    </ul>
+    </div>
+    {% endif %}
+    {% if not is_admin %}
+      <div class="link-row red">
+        {% if is_school and is_member %}
+          {% set departure_message = _('You will leave and block this school. Unblock it before accepting another invitation or being added again.') %}
+          {% with departure_action=url('block_organization', organization.id, organization.slug),
+          departure_title=_('Block group'),
+          departure_icon='fa-ban' %}
+          {% include 'organization/school-departure-form.html' %}
+        {% endwith %}
+    {% else %}
+      <form method="post" action="{{ url('block_organization', organization.id, organization.slug) }}">
+        {% csrf_token %}
+        <a href="#" class="block-organization">
+          <i class="fa fa-ban"></i>{{ _('Block group') }}
+        </a>
+      </form>
+    {% endif %}
   </div>
-  {% if (is_member or can_edit) %}
-    {% include 'contests-countdown.html' %}
   {% endif %}
-  {% if can_edit or is_member or organization.is_open %}
-    <div class="blog-sidebox sidebox">
-      <h3><i class="fa fa-info-circle"></i>{{ _('About') }}</h3>
-      <div class="sidebox-content">
-        <div style="margin: 0.3em;" class="org-about">
-          {{ organization.about|markdown|reference|str|safe }}
-        </div>
+</ul>
+</div>
+{% if is_school and is_member %}
+  {% include 'organization/school-departure-dialog.html' %}
+{% endif %}
+{% if (is_member or can_edit) %}
+  {% include 'contests-countdown.html' %}
+{% endif %}
+{% if can_edit or is_member or organization.is_open %}
+  <div class="blog-sidebox sidebox">
+    <h3><i class="fa fa-info-circle"></i>{{ _('About') }}</h3>
+    <div class="sidebox-content">
+      <div style="margin: 0.3em;" class="org-about">
+        {{ organization.about|markdown|reference|str|safe }}
       </div>
     </div>
-  {% endif %}
-  {% if is_member or can_edit or organization.is_open %}
-    {% include 'top-users.html' %}
-  {% endif %}
+  </div>
+{% endif %}
+{% if is_member or can_edit or organization.is_open %}
+  {% include 'top-users.html' %}
+{% endif %}
 </div>

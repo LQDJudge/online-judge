@@ -33,7 +33,7 @@ def _batch_accessible_problem_ids(problem_ids, profile):
                 "id", flat=True
             )
         )
-    user_org_ids = profile.get_organization_ids()
+    user_org_ids = profile.get_content_organizations().values("pk")
     return set(
         qs.filter(
             Q(is_public=True, is_organization_private=False)
@@ -58,7 +58,7 @@ def _batch_accessible_contest_ids(contest_ids, profile):
                 is_visible=True, is_private=False, is_organization_private=False
             ).values_list("id", flat=True)
         )
-    user_org_ids = profile.get_organization_ids()
+    user_org_ids = profile.get_content_organizations().values("pk")
     return set(
         qs.filter(
             Q(is_visible=True, is_private=False, is_organization_private=False)
@@ -88,7 +88,7 @@ def _batch_accessible_blog_ids(blog_ids, profile):
             .distinct()
             .values_list("id", flat=True)
         )
-    user_org_ids = profile.get_organization_ids()
+    user_org_ids = profile.get_content_organizations().values("pk")
     return set(
         qs.filter(
             Q(is_organization_private=False)

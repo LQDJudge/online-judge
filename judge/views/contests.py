@@ -69,6 +69,9 @@ from judge.forms import (
     CONTEST_EDIT_FIELD_SECTIONS,
 )
 from judge.utils.contest import maybe_trigger_contest_rescore
+from judge.services.contest_summary import calculate_summary, read_summary
+from judge.services.official_school import school_map, school_for_profile
+from judge.models.profile import get_profile_public_identity
 from judge.models import (
     BestSubmission,
     Contest,
@@ -108,7 +111,6 @@ from judge.utils.history import RevisionDiffMixin
 from judge.utils.opengraph import generate_opengraph
 from judge.utils.problems import _get_result_data
 from judge.views.problem import SolvedProblemMixin
-from judge.utils.ranker import ranker
 from judge.utils.stats import get_bar_chart, get_pie_chart, get_histogram
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.views import (
@@ -708,7 +710,9 @@ class ContestMixin(object):
             self.object.format.has_hidden_subtasks or has_hidden_results
         ) and self.object.is_editable_by(self.request.user)
         context["logo_override_image"] = self.object.logo_override_image
-        context["organizations"] = self.object.get_organizations()
+        context["organizations"] = self.object.get_visible_organizations(
+            self.request.user
+        )
         context["is_clonable"] = is_contest_clonable(self.request, self.object)
 
         if not context["logo_override_image"] and len(context["organizations"]) > 0:
@@ -2369,12 +2373,6 @@ class ContestClarificationAjax(ContestMixin, DetailView):
         return JsonResponse(res, safe=False, json_dumps_params={"ensure_ascii": False})
 
 
-ContestsSummaryData = namedtuple(
-    "ContestsSummaryData",
-    "user_id points point_contests",
-)
-
-
 class ContestsSummaryView(DiggPaginatorMixin, ListView):
     paginate_by = 50
     template_name = "contest/contests_summary.html"
@@ -2382,84 +2380,198 @@ class ContestsSummaryView(DiggPaginatorMixin, ListView):
     def get(self, *args, **kwargs):
         try:
             self.contests_summary = ContestsSummary.objects.get(key=kwargs["key"])
-        except:
+        except ContestsSummary.DoesNotExist:
             raise Http404()
         return super().get(*args, **kwargs)
 
     def get_queryset(self):
-        total_rank = self.contests_summary.results
-        return total_rank
+        rows, self.summary_contest_ids, self.summary_needs_refresh = read_summary(
+            self.contests_summary.results
+        )
+        self.summary_total = len(rows)
+        ids = [item["user_id"] for rank, item in rows]
+        self.summary_profiles = {
+            profile.pk: profile for profile in Profile.get_cached_instances(*ids)
+        }
+        self.summary_identities = {
+            profile.pk: {
+                "user__username": profile.username,
+                "user__first_name": profile.first_name or "",
+            }
+            for profile in self.summary_profiles.values()
+        }
+        identities = get_profile_public_identity.batch([(pk,) for pk in ids])
+        self.summary_hidden = {
+            pk
+            for pk, identity in zip(ids, identities)
+            if identity.get("public_identity_hidden", False)
+        }
+        visible_ids = set(self.summary_profiles) - self.summary_hidden
+        self.summary_schools = school_map(visible_ids)
+        school_ids = set(self.summary_schools.values())
+        self.summary_school_options = sorted(
+            Organization.get_cached_instances(*school_ids), key=lambda org: org.name
+        )
+        self.summary_selected = set(self.request.GET.getlist("school"))
+        self.summary_highlights = set(self.request.GET.getlist("highlight")) & {
+            str(pk) for pk in school_ids
+        }
+        self.summary_search = self.request.GET.get("search", "").strip()[:100]
+        if self.summary_search:
+            term = self.summary_search.casefold()
+            matches = {
+                pk
+                for pk, identity in self.summary_identities.items()
+                if pk in visible_ids
+                and (
+                    term in identity["user__username"].casefold()
+                    or term in identity["user__first_name"].casefold()
+                )
+            }
+            rows = [row for row in rows if row[1]["user_id"] in matches]
+        if self.summary_selected:
+            rows = [
+                row
+                for row in rows
+                if row[1]["user_id"] in visible_ids
+                and str(self.summary_schools.get(row[1]["user_id"], "none"))
+                in self.summary_selected
+            ]
+        # Sort the complete filtered board before pagination. Stored ranks never change.
+        allowed = {"rank", "points", "school"} | {
+            "contest%d" % (i + 1) for i in range(len(self.summary_contest_ids))
+        }
+        self.summary_sort = self.request.GET.get("sort", "-points")
+        field = self.summary_sort.removeprefix("-")
+        if field not in allowed:
+            self.summary_sort, field = "-points", "points"
+        descending = self.summary_sort.startswith("-")
+        rows.sort(key=lambda row: (row[0], row[1]["user_id"]))
+        if field == "school":
+            names = {org.pk: org.name.casefold() for org in self.summary_school_options}
+            # Unknown affiliations stay last in either direction.
+            known = [row for row in rows if row[1]["user_id"] in self.summary_schools]
+            unknown = [
+                row for row in rows if row[1]["user_id"] not in self.summary_schools
+            ]
+            known.sort(
+                key=lambda row: names[self.summary_schools[row[1]["user_id"]]],
+                reverse=descending,
+            )
+            rows = known + unknown
+        elif field.startswith("contest"):
+            index = int(field[7:]) - 1
+            rows.sort(
+                key=lambda row: row[1]["point_contests"][index][0], reverse=descending
+            )
+        elif field == "points":
+            rows.sort(key=lambda row: row[1]["points"], reverse=descending)
+        else:
+            rows.sort(key=lambda row: row[0], reverse=descending)
+        return rows
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["contests"] = self.contests_summary.contests.all()
-        context["title"] = _("Contests")
+        contest_map = Contest.objects.in_bulk(self.summary_contest_ids)
+        context["contests"] = [contest_map.get(pk) for pk in self.summary_contest_ids]
+        context["title"] = _("Overall standings")
+        context["summary_key"] = self.contests_summary.key
+        context["summary_total"] = self.summary_total
         context["first_page_href"] = "."
 
         # Prefetch all user profiles using cached instances
         user_ids = [item[1]["user_id"] for item in context["object_list"]]
-        profiles = {}
-        if user_ids:
-            # Get cached profile instances and create a lookup dictionary
-            profiles = {p.id: p for p in Profile.get_cached_instances(*user_ids)}
+        profiles = {
+            user_id: self.summary_profiles[user_id]
+            for user_id in user_ids
+            if user_id in self.summary_profiles
+        }
 
         # Add profile lookup to context
         context["profiles"] = profiles
+        context["summary_needs_refresh"] = self.summary_needs_refresh
+        context["school_options"] = self.summary_school_options
+        context["selected_schools"] = self.summary_selected
+        context["highlight_schools"] = self.summary_highlights
+        context["summary_search"] = self.summary_search
+        context["school_by_id"] = {org.pk: org for org in self.summary_school_options}
+        context["profile_schools"] = self.summary_schools
+        context["hidden_profiles"] = self.summary_hidden
+        context["my_school"] = (
+            school_for_profile(self.request.profile.pk)
+            if self.request.user.is_authenticated
+            else None
+        )
+        context["participating"] = set(
+            ContestParticipation.objects.filter(
+                user_id__in=user_ids,
+                contest_id__in=self.summary_contest_ids,
+                virtual=0,
+            ).values_list("user_id", "contest_id")
+        )
+        query = self.request.GET.copy()
+        query.pop("page", None)
+        context["first_page_href"] = "?" + query.urlencode()
+        context["page_prefix"] = (
+            "?" + query.urlencode() + ("&" if query else "") + "page="
+        )
+        context["page_suffix"] = ""
+
+        context["summary_sort"] = self.summary_sort
+        columns = {"rank": _("Rank"), "points": _("Points"), "school": _("School")}
+        columns.update(
+            {
+                "contest%d" % (i + 1): _("Contest %(number)s") % {"number": i + 1}
+                for i in range(len(self.summary_contest_ids))
+            }
+        )
+        sort_headers = {}
+        for field, label in columns.items():
+            active = self.summary_sort.removeprefix("-") == field
+            descending = self.summary_sort.startswith("-")
+            next_descending = (
+                (not descending) if active else field not in {"rank", "school"}
+            )
+            sort_query = query.copy()
+            sort_query["sort"] = ("-" if next_descending else "") + field
+            sort_headers[field] = {
+                "title": label,
+                "href": "?" + sort_query.urlencode(),
+                "direction": (
+                    ("descending" if descending else "ascending") if active else "none"
+                ),
+                "icon": (
+                    ("sort-desc" if descending else "sort-asc") if active else "sort"
+                ),
+                "label": (
+                    _("Sort %(column)s descending")
+                    if next_descending
+                    else _("Sort %(column)s ascending")
+                )
+                % {"column": label},
+            }
+        context["summary_sort_headers"] = sort_headers
+        context["summary_highlight_count"] = sum(
+            str(self.summary_schools.get(row[1]["user_id"])) in self.summary_highlights
+            for row in self.object_list
+        )
+        page = context["page_obj"]
+        context["summary_range_message"] = _(
+            "Showing %(start)s–%(end)s of %(count)s contestants"
+        ) % {
+            "start": page.start_index(),
+            "end": page.end_index(),
+            "count": page.paginator.count,
+        }
+        context["summary_highlight_message"] = _("Highlighted: %(count)s") % {
+            "count": context["summary_highlight_count"]
+        }
 
         return context
 
 
 def recalculate_contest_summary_result(request, contest_summary):
-    scores_system = contest_summary.scores
-    contests = contest_summary.contests.all()
-    total_points = defaultdict(int)
-    result_per_contest = defaultdict(lambda: [(0, 0)] * len(contests))
-
-    for i in range(len(contests)):
-        contest = contests[i]
-        problems = get_contest_problems(contest)
-        qs = get_ranking_queryset(contest)
-        profiles = build_ranking_profiles(contest, problems, qs)
-        users = list(
-            ranker(profiles, key=attrgetter("points", "cumtime", "tiebreaker"))
-        )
-
-        # Group users by rank and calculate sum of points for tied positions
-        rank_groups = defaultdict(list)
-        for rank, user in users:
-            rank_groups[rank].append(user)
-
-        # Calculate points for each rank group
-        rank_points = {}
-        for rank, group_users in rank_groups.items():
-            num_users = len(group_users)
-            # Sum the points for all positions occupied by tied users
-            total_rank_points = 0
-            for j in range(num_users):
-                position_index = rank - 1 + j
-                if position_index < len(scores_system):
-                    total_rank_points += scores_system[position_index]
-            # Divide the sum equally among all tied users
-            rank_points[rank] = total_rank_points / num_users if num_users > 0 else 0
-
-        # Assign calculated points to each user
-        for rank, user in users:
-            curr_score = rank_points[rank]
-            total_points[user.user] += curr_score
-            result_per_contest[user.user][i] = (curr_score, rank)
-
-    sorted_total_points = [
-        ContestsSummaryData(
-            user_id=user.id,
-            points=total_points[user],
-            point_contests=result_per_contest[user],
-        )
-        for user in total_points
-    ]
-
-    sorted_total_points.sort(key=lambda x: x.points, reverse=True)
-    total_rank = ranker(sorted_total_points)
-    return [(rank, item._asdict()) for rank, item in total_rank]
+    return calculate_summary(contest_summary)
 
 
 class OfficialContestList(ContestList):

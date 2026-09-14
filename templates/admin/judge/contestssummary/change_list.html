@@ -1,0 +1,6 @@
+{% extends "admin/change_list.html" %}
+
+{% block extrahead %}
+  {# Django 5 initializes actions.js itself; WP Admin's legacy $.fn.actions call no longer exists. #}
+  {{ media.js }}
+{% endblock %}

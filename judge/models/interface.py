@@ -120,7 +120,7 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
             if (
                 user.is_authenticated
                 and self.organizations.filter(
-                    id__in=user.profile.organizations.all()
+                    id__in=user.profile.get_content_organizations()
                 ).exists()
             ):
                 return True
@@ -154,6 +154,9 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
     def get_organizations(self):
         organization_ids = self.get_organization_ids()
         return Organization.get_cached_instances(*organization_ids)
+
+    def get_visible_organizations(self, user):
+        return Organization.visible_instances(self.get_organization_ids(), user)
 
     class Meta:
         permissions = (("edit_all_post", _("Edit all posts")),)

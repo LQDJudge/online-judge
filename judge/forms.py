@@ -307,6 +307,14 @@ class ProblemSubmitForm(ModelForm):
 
 
 class EditOrganizationForm(DirectUploadFormMixin, ModelForm):
+    def _save_m2m(self):
+        if self.instance.has_school():
+            # Replacement of the final teacher must add successors before removal.
+            self.instance.admins.add(*self.cleaned_data["admins"])
+        super()._save_m2m()
+        if self.instance.has_school():
+            self.instance.moderators.clear()
+
     class Meta:
         model = Organization
         fields = [
@@ -339,6 +347,7 @@ class EditOrganizationForm(DirectUploadFormMixin, ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.org_id = kwargs.pop("org_id", 0)
+        actor_profile = kwargs.get("profile")
         super(EditOrganizationForm, self).__init__(*args, **kwargs)
         self.fields["organization_image"].required = False
         self.fields["cover_image"].required = False
@@ -346,6 +355,23 @@ class EditOrganizationForm(DirectUploadFormMixin, ModelForm):
             self.fields[field].widget.data_url = (
                 self.fields[field].widget.get_url() + f"?org_id={self.org_id}"
             )
+        if self.instance.pk and self.instance.has_school():
+            self.fields.pop("is_open", None)
+            self.fields.pop("moderators", None)
+            if not actor_profile or not actor_profile.user.is_superuser:
+                for field in ("name", "slug", "short_name"):
+                    self.fields.pop(field, None)
+            # Teachers need not be students; do not restrict admin selection to
+            # the school roster.
+            self.fields["admins"].widget.data_url = reverse("profile_select2")
+
+    def clean_admins(self):
+        admins = self.cleaned_data["admins"]
+        if self.instance.pk and self.instance.has_school() and not admins:
+            raise ValidationError(
+                _("An official school needs at least one administrator.")
+            )
+        return admins
 
     def clean_organization_image(self):
         organization_image = self.cleaned_data.get("organization_image")
@@ -660,6 +686,10 @@ class AddOrganizationMemberForm(ModelForm):
     def clean_new_users(self):
         new_users = self.cleaned_data.get("new_users") or ""
         usernames = new_users.split()
+        if self.organization.has_school():
+            if len(set(usernames)) > 500:
+                raise ValidationError(_("Add at most 500 students at a time."))
+            return usernames
         non_existent_usernames = []
         blocked_usernames = []
         valid_profiles = []

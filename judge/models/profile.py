@@ -5,6 +5,7 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -19,6 +20,7 @@ from sortedm2m.fields import SortedManyToManyField
 
 from judge.models.choices import ACE_THEMES, TIMEZONE
 from judge.models.runtime import Language
+from judge.models.official_school import OfficialSchool
 from judge.ratings import rating_class
 from judge.caching import cache_wrapper, CacheableModel
 from judge.utils.files import generate_secure_filename
@@ -86,7 +88,21 @@ def organization_cover_image_path(organization, filename):
     return os.path.join(settings.DMOJ_ORGANIZATION_IMAGE_ROOT, new_filename)
 
 
+class OrganizationQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        reopening = any(
+            key in kwargs and kwargs[key] is not False
+            for key in ("is_open", "is_community")
+        )
+        if reopening and self.filter(official_school__isnull=False).exists():
+            raise ValidationError(
+                _("Official schools must remain closed and non-community.")
+            )
+        return super().update(**kwargs)
+
+
 class Organization(CacheableModel):
+    objects = OrganizationQuerySet.as_manager()
     name = models.CharField(max_length=128, verbose_name=_("organization title"))
     slug = models.SlugField(
         max_length=128,
@@ -192,6 +208,10 @@ class Organization(CacheableModel):
             )
 
     def delete(self, *args, **kwargs):
+        if OfficialSchool.objects.filter(pk=self.pk).exists():
+            raise models.ProtectedError(
+                _("Archive official schools instead of deleting them."), [self]
+            )
         # Delete contests that only belong to this organization
         for contest in self.contest_set.all():
             if contest.organizations.count() == 1:
@@ -245,6 +265,23 @@ class Organization(CacheableModel):
     def get_name(self):
         return self.get_cached_value("name")
 
+    def has_school(self):
+        # A freshly converted school's privacy must not depend on stale cache.
+        return OfficialSchool.objects.filter(pk=self.pk).exists()
+
+    def school_accessible_by(self, user):
+        if not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        return (
+            Organization.objects.filter(pk=self.pk)
+            .filter(
+                models.Q(member__user_id=user.pk) | models.Q(admins__user_id=user.pk)
+            )
+            .exists()
+        )
+
     def get_slug(self):
         return self.get_cached_value("slug")
 
@@ -263,6 +300,35 @@ class Organization(CacheableModel):
         cached_results = _get_organization.batch([(id,) for id in ids])
         return cls.instances_from_cached_results(ids, cached_results)
 
+    @classmethod
+    def visible_instances(cls, ids, user):
+        organizations = cls.get_cached_instances(*ids)
+        if user.is_authenticated and user.is_superuser:
+            return organizations
+        if not hasattr(user, "_all_official_school_ids"):
+            user._all_official_school_ids = set(
+                OfficialSchool.objects.values_list("pk", flat=True)
+            )
+        school_ids = user._all_official_school_ids & {org.pk for org in organizations}
+        allowed = set()
+        if school_ids and user.is_authenticated:
+            # A user object is request-local; reuse the compact scope across cards.
+            if not hasattr(user, "_visible_school_ids"):
+                user._visible_school_ids = set(
+                    cls.objects.filter(official_school__isnull=False)
+                    .filter(
+                        models.Q(member__user_id=user.pk)
+                        | models.Q(admins__user_id=user.pk)
+                    )
+                    .values_list("pk", flat=True)
+                )
+            allowed = user._visible_school_ids
+        return [
+            org
+            for org in organizations
+            if org.pk not in school_ids or org.pk in allowed
+        ]
+
     def is_admin(self, profile):
         return profile.id in self.get_admin_ids()
 
@@ -275,15 +341,15 @@ class Organization(CacheableModel):
             return False
         return self.is_admin(profile) or self.is_moderator(profile)
 
-    @cache_wrapper(prefix="Orgai", expected_type=list)
+    @cache_wrapper(prefix="Orgai", expected_type=list, transaction_sensitive=True)
     def get_admin_ids(self):
         return list(self.admins.values_list("id", flat=True))
 
-    @cache_wrapper(prefix="Orgmi2", expected_type=list)
+    @cache_wrapper(prefix="Orgmi2", expected_type=list, transaction_sensitive=True)
     def get_moderator_ids(self):
         return list(self.moderators.values_list("id", flat=True))
 
-    @cache_wrapper(prefix="Orgmi", expected_type=list)
+    @cache_wrapper(prefix="Orgmi", expected_type=list, transaction_sensitive=True)
     def get_member_ids(self):
         return list(self.members.values_list("id", flat=True))
 
@@ -543,11 +609,20 @@ class Profile(CacheableModel):
 
         return get_unread_boxes(self)
 
-    @cache_wrapper(prefix="Pgoi", expected_type=list)
+    @cache_wrapper(prefix="Pgoi", expected_type=list, transaction_sensitive=True)
     def get_organization_ids(self):
         return list(self.organizations.values_list("id", flat=True))
 
-    @cache_wrapper(prefix="Pgoai", expected_type=list)
+    def get_content_organizations(self):
+        """Student membership plus school administration, without changing either."""
+        return Organization.objects.filter(
+            models.Q(pk__in=self.organizations.values("pk"))
+            | models.Q(
+                pk__in=self.admin_of.filter(official_school__isnull=False).values("pk")
+            )
+        )
+
+    @cache_wrapper(prefix="Pgoai", expected_type=list, transaction_sensitive=True)
     def get_admin_organization_ids(self):
         return list(self.admin_of.values_list("id", flat=True))
 
@@ -869,8 +944,10 @@ class OrganizationProfile(models.Model):
 
     @classmethod
     def get_most_recent_organizations(cls, profile):
+        if profile is None:
+            return []
         org_ids = _get_most_recent_organization_ids(profile)
-        return Organization.get_cached_instances(*org_ids)
+        return Organization.visible_instances(org_ids, profile.user)
 
     class Meta:
         constraints = [

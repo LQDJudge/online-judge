@@ -1,11 +1,12 @@
+from inspect import signature
+
 from django.core.cache import cache
+from django.core.handlers.wsgi import WSGIRequest
+from django.db import connection, models
 from django.db.models import ForeignKey
 from django.db.models.query import QuerySet
-from django.core.handlers.wsgi import WSGIRequest
-from django.db import models
 
 import xxhash
-from inspect import signature
 
 MAX_NUM_CHAR = 20
 NONE_RESULT = "__None__"  # Placeholder for None values in caching
@@ -36,7 +37,15 @@ def filter_args(args_list):
     return [x for x in args_list if not isinstance(x, WSGIRequest)]
 
 
-def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
+def cache_wrapper(
+    prefix, timeout=None, expected_type=None, batch_fn=None, transaction_sensitive=False
+):
+    """Cache results; opt out inside transactions for mutable authorization data.
+
+    Transaction-sensitive results neither read nor populate shared cache until
+    commit. Callers still invalidate before writes and again after commit.
+    """
+
     def decorator(func):
         # Compute the parameter name list once at decoration time. inspect.signature
         # is ~5us per call; `func` is immutable so we only need it once.
@@ -66,6 +75,8 @@ def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
             return True
 
         def wrapper(*args, **kwargs):
+            if transaction_sensitive and connection.in_atomic_block:
+                return func(*args, **kwargs)
             cache_key = get_key(*args, **kwargs)
             result = cache.get(cache_key)
 
@@ -101,6 +112,12 @@ def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
             Returns:
                 List of results corresponding to each argument list
             """
+            if transaction_sensitive and connection.in_atomic_block:
+                return (
+                    batch_fn(args_list)
+                    if batch_fn
+                    else [func(*args) for args in args_list]
+                )
             keys = [get_key(*args) for args in args_list]
             key_to_args = dict(zip(keys, args_list))
 

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title_row %}{% endblock %}
+{% block title_ruler %}{% endblock %}
+{% block body %}
+  <div class="school-invitation-page">
+    <section class="school-confirm-panel school-notice" aria-labelledby="school-notice-title">
+      <span class="school-invitation-icon" aria-hidden="true"><i class="fa fa-info-circle"></i></span>
+      <h1 id="school-notice-title">{{ title }}</h1>
+      <p>{{ message }}</p>
+      <div class="school-confirm-actions">
+        <a class="action-btn" href="{{ url('organization_list') }}?tab=mine">{{ _('My groups') }}</a>
+        <a href="{{ url('home') }}">{{ _('Home') }}</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}

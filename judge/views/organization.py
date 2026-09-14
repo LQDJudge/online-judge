@@ -9,9 +9,10 @@ from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import redirect_to_login
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.utils.text import slugify
-from django.db.models import Count, Q, Subquery, OuterRef
+from django.db.models import Count, Exists, Q, Subquery, OuterRef
 from django.forms import BaseModelFormSet, Form, modelformset_factory
 from django.http import (
     Http404,
@@ -54,6 +55,7 @@ from judge.models import (
     Comment,
     CommentVote,
     Organization,
+    OfficialSchool,
     OrganizationRequest,
     OrganizationModerationLog,
     Profile,
@@ -83,6 +85,13 @@ from judge.views.submission import SubmissionsListBase
 from judge.utils.feed import build_home_feed
 from judge.views.feed import FeedView
 from judge.models.profile import get_top_rating_profile, get_top_score_profile
+from judge.services.official_school import (
+    bulk_enroll_school,
+    can_manage_school,
+    enroll_school,
+    remove_school_member,
+    school_for_profile,
+)
 
 MAX_ORGANIZATION_REQUESTS = 100
 
@@ -279,6 +288,8 @@ class OrganizationBase(object):
     def can_edit_organization(self, org=None):
         if org is None:
             org = self.object
+        if org.has_school():
+            return can_manage_school(self.request.user, org.pk)
         if self.request.profile:
             return self.request.profile.can_edit_organization(org)
         return False
@@ -313,7 +324,33 @@ class OrganizationBase(object):
         return self.is_member(org) or self.can_edit_organization(org)
 
 
+def school_notice(request, title, message, status=404):
+    # No school object is passed: invalid links and access failures must not
+    # disclose names, descriptions, teachers, or rosters.
+    return render(
+        request,
+        "organization/school-notice.html",
+        {"title": title, "message": message},
+        status=status,
+    )
+
+
+def unavailable_school_invitation(request):
+    return school_notice(
+        request,
+        _("Invitation unavailable"),
+        _(
+            "This invitation is invalid or has been revoked. Ask a school administrator for a new link."
+        ),
+    )
+
+
 class OrganizationMixin(OrganizationBase):
+    organization_access = None
+    school_invitation = False
+    school_unblock = False
+    is_school = False
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["is_member"] = self.is_member(self.organization)
@@ -325,6 +362,7 @@ class OrganizationMixin(OrganizationBase):
         context["is_blocked"] = self.is_blocked(self.organization)
         context["can_edit"] = self.can_edit_organization(self.organization)
         context["organization"] = self.organization
+        context["is_school"] = self.is_school
         context["organization_image"] = self.organization.organization_image
         context["cover_image"] = self.organization.cover_image
         context["organization_subdomain"] = (
@@ -343,6 +381,8 @@ class OrganizationMixin(OrganizationBase):
             self.organization_id = int(kwargs["pk"])
             self.organization = get_object_or_404(Organization, id=self.organization_id)
         except Http404:
+            if self.school_invitation:
+                return unavailable_school_invitation(request)
             key = None
             if hasattr(self, "slug_url_kwarg"):
                 key = kwargs.get(self.slug_url_kwarg, None)
@@ -360,11 +400,48 @@ class OrganizationMixin(OrganizationBase):
                     _("Could not find such organization."),
                     status=403,
                 )
-        if self.organization.slug != kwargs["slug"]:
+        is_school = self.organization.has_school()
+        self.is_school = is_school
+        if is_school and not self.school_invitation:
+            if not request.user.is_authenticated:
+                return redirect_to_login(request.get_full_path())
+            unblocking_own_school = self.school_unblock and Block.is_blocked(
+                request.profile, self.organization
+            )
+            if not (
+                unblocking_own_school
+                or self.organization.school_accessible_by(request.user)
+            ):
+                return school_notice(
+                    request,
+                    _("School unavailable"),
+                    _(
+                        "You do not have access to this school. If you changed schools, your previous school's private pages are no longer available. You can find your current school in My groups."
+                    ),
+                )
+        if self.organization_access:
+            allowed = self.can_edit_organization(self.organization)
+            if self.organization_access in ("member", "community", "roster"):
+                allowed = allowed or self.is_member(self.organization)
+            if self.organization_access == "community":
+                allowed = allowed or self.organization.is_community
+            if self.organization_access == "roster":
+                allowed = allowed or self.organization.is_open
+            if self.organization_access == "moderator":
+                allowed = allowed or self.organization.can_moderate(request.profile)
+            if not allowed:
+                if not request.user.is_authenticated:
+                    return redirect_to_login(request.get_full_path())
+                raise PermissionDenied
+        if self.organization.slug != kwargs["slug"] and not (
+            is_school and self.school_invitation
+        ):
             return HttpResponsePermanentRedirect(
                 request.get_full_path().replace(kwargs["slug"], self.organization.slug)
             )
-        if self.request.user.is_authenticated:
+        if self.request.user.is_authenticated and not (
+            is_school and (self.school_invitation or self.school_unblock)
+        ):
             OrganizationProfile.add_organization(
                 self.request.profile, self.organization
             )
@@ -373,35 +450,11 @@ class OrganizationMixin(OrganizationBase):
 
 
 class AdminOrganizationMixin(OrganizationMixin):
-    def dispatch(self, request, *args, **kwargs):
-        res = super(AdminOrganizationMixin, self).dispatch(request, *args, **kwargs)
-        if not hasattr(self, "organization") or self.can_edit_organization(
-            self.organization
-        ):
-            return res
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-        return generic_message(
-            request,
-            _("Can't edit organization"),
-            _("You are not allowed to edit this organization."),
-            status=403,
-        )
+    organization_access = "admin"
 
 
 class MemberOrganizationMixin(OrganizationMixin):
-    def dispatch(self, request, *args, **kwargs):
-        res = super(MemberOrganizationMixin, self).dispatch(request, *args, **kwargs)
-        if not hasattr(self, "organization") or self.can_access(self.organization):
-            return res
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-        return generic_message(
-            request,
-            _("Can't access organization"),
-            _("You are not allowed to access this organization."),
-            status=403,
-        )
+    organization_access = "member"
 
 
 class CommunityOrMemberMixin(OrganizationMixin):
@@ -411,21 +464,7 @@ class CommunityOrMemberMixin(OrganizationMixin):
     - The user is a member/admin of the organization
     """
 
-    def dispatch(self, request, *args, **kwargs):
-        res = super(CommunityOrMemberMixin, self).dispatch(request, *args, **kwargs)
-        if not hasattr(self, "organization"):
-            return res
-        # Allow access if it's a community or if user can access
-        if self.organization.is_community or self.can_access(self.organization):
-            return res
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-        return generic_message(
-            request,
-            _("Can't access organization"),
-            _("You are not allowed to access this organization."),
-            status=403,
-        )
+    organization_access = "community"
 
 
 class OrganizationHomeView(OrganizationMixin):
@@ -555,7 +594,7 @@ class OrganizationList(
         my_organizations = organization_list.none()
         if profile:
             my_organizations = organization_list.filter(
-                id__in=profile.organizations.values("id")
+                id__in=profile.get_content_organizations().values("id")
             ).exclude(id__in=blocked_organization_ids)
 
         if self.current_tab == "community":
@@ -569,15 +608,18 @@ class OrganizationList(
         elif self.current_tab == "private":
             queryset = organization_list.exclude(
                 Q(id__in=my_organizations) | Q(id__in=blocked_organization_ids)
-            ).filter(is_open=False)
+            ).filter(is_open=False, official_school__isnull=True)
         elif self.current_tab == "blocked":
             queryset = organization_list.filter(id__in=blocked_organization_ids)
         else:
             # "mine" tab - all joined groups including communities
             queryset = my_organizations
 
-        # Keep ties stable across pages without evaluating the queryset here.
-        return queryset.order_by("-is_community", self.order, "pk")
+        # Keep ties stable across pages and annotate school badges without
+        # evaluating the queryset before pagination.
+        return queryset.annotate(
+            is_official_school=Exists(OfficialSchool.objects.filter(pk=OuterRef("pk")))
+        ).order_by("-is_community", self.order, "pk")
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationList, self).get_context_data(**kwargs)
@@ -704,7 +746,10 @@ class OrganizationHome(OrganizationHomeView, FeedView):
                     organization_chat_eligible = Organization.objects.filter(
                         Q(id=self.organization.id),
                         Q(member=self.request.profile)
-                        | Q(moderators=self.request.profile)
+                        | Q(
+                            moderators=self.request.profile,
+                            official_school__isnull=True,
+                        )
                         | Q(admins=self.request.profile),
                     ).exists()
                 context["can_join_organization_chat"] = bool(
@@ -747,6 +792,7 @@ class OrganizationUsers(
     default_sort = "-performance_points"
     paginate_by = 100
     context_object_name = "users"
+    organization_access = "roster"
 
     def get_queryset(self):
         return (
@@ -763,19 +809,6 @@ class OrganizationUsers(
                 "contribution_points",
                 "about",
             )
-        )
-
-    def dispatch(self, request, *args, **kwargs):
-        res = super(OrganizationUsers, self).dispatch(request, *args, **kwargs)
-        if res.status_code != 200:
-            return res
-        if self.can_access(self.organization) or self.organization.is_open:
-            return res
-        return generic_message(
-            request,
-            _("Can't access organization"),
-            _("You are not allowed to access this organization."),
-            status=403,
         )
 
     def get_context_data(self, **kwargs):
@@ -839,6 +872,8 @@ class OrganizationContestMixin(
     model = Contest
 
     def is_contest_editable(self, request, contest):
+        if self.is_school:
+            return contest.is_editable_by(request.user)
         return contest.is_editable_by(request.user) or self.can_edit_organization(
             self.organization
         )
@@ -853,6 +888,8 @@ class OrganizationCourseMixin(
 
     def is_course_editable(self, request, course):
         """Check if course is editable by current user or organization admin"""
+        if self.is_school:
+            return Course.is_editable_by(course, request.profile)
         return Course.is_editable_by(
             course, request.profile
         ) or self.can_edit_organization(self.organization)
@@ -946,6 +983,7 @@ class OrganizationMembershipChange(
 
 
 class JoinOrganization(LoginRequiredMixin, OrganizationMixin, SingleObjectMixin, View):
+    school_invitation = True
     model = Organization
     context_object_name = "organization"
 
@@ -967,7 +1005,11 @@ class JoinOrganization(LoginRequiredMixin, OrganizationMixin, SingleObjectMixin,
             )
 
         has_valid_code = (
-            code and org.access_code and hmac.compare_digest(code, org.access_code)
+            code
+            and org.access_code
+            and hmac.compare_digest(
+                code.encode("utf-8"), org.access_code.encode("utf-8")
+            )
         )
 
         if not org.is_open and not has_valid_code:
@@ -995,10 +1037,48 @@ class JoinOrganization(LoginRequiredMixin, OrganizationMixin, SingleObjectMixin,
     def get(self, request, *args, **kwargs):
         org = self.get_object()
         code = request.GET.get("code")
+        if org.has_school():
+            if (
+                not code
+                or not org.access_code
+                or not hmac.compare_digest(
+                    code.encode("utf-8"), org.access_code.encode("utf-8")
+                )
+            ):
+                return unavailable_school_invitation(request)
+            if not OfficialSchool.objects.filter(pk=org.pk, is_active=True).exists():
+                return school_notice(
+                    request,
+                    _("Official school"),
+                    _("This school's enrollment is disabled."),
+                    status=400,
+                )
+            current = school_for_profile(request.profile.pk)
+            return render(
+                request,
+                "organization/school-confirm.html",
+                {
+                    "title": _("Confirm school membership"),
+                    "school": org,
+                    "already_member": bool(current and current.pk == org.pk),
+                    "old_school": current.organization if current else None,
+                    "transfer_message": (
+                        _("You will leave %(old)s and join %(new)s.")
+                        % {"old": current.organization.name, "new": org.name}
+                        if current and current.pk != org.pk
+                        else ""
+                    ),
+                    "code": code,
+                    "expected_school": current.pk if current else "",
+                    "leaving": False,
+                },
+            )
         if not code:
             return HttpResponseRedirect(org.get_absolute_url())
 
-        if not org.access_code or not hmac.compare_digest(code, org.access_code):
+        if not org.access_code or not hmac.compare_digest(
+            code.encode("utf-8"), org.access_code.encode("utf-8")
+        ):
             return generic_message(
                 request,
                 _("Joining group"),
@@ -1024,6 +1104,46 @@ class JoinOrganization(LoginRequiredMixin, OrganizationMixin, SingleObjectMixin,
         profile = request.profile
         code = request.POST.get("code")
 
+        if org.has_school():
+            if "expected_school" not in request.POST or not code:
+                return school_notice(
+                    request,
+                    _("Confirmation required"),
+                    _(
+                        "Please open the invitation again to confirm your school membership."
+                    ),
+                    status=400,
+                )
+            try:
+                expected = (
+                    int(request.POST["expected_school"])
+                    if request.POST["expected_school"]
+                    else None
+                )
+                enroll_school(
+                    request.user,
+                    org.pk,
+                    profile.pk,
+                    code=code,
+                    expected_school=expected,
+                )
+            except PermissionDenied:
+                return unavailable_school_invitation(request)
+            except (ValueError, ValidationError) as error:
+                return school_notice(
+                    request,
+                    _("Unable to join school"),
+                    (
+                        "; ".join(error.messages)
+                        if isinstance(error, ValidationError)
+                        else _(
+                            "Please open the invitation again to confirm your school membership."
+                        )
+                    ),
+                    status=400,
+                )
+            return HttpResponseRedirect(org.get_absolute_url())
+
         error = self._validate_join(request, org, profile, code)
         if error is not None:
             return error
@@ -1034,7 +1154,21 @@ class JoinOrganization(LoginRequiredMixin, OrganizationMixin, SingleObjectMixin,
 
 
 class LeaveOrganization(OrganizationMembershipChange):
+    def get(self, request, *args, **kwargs):
+        org = self.get_object()
+        return HttpResponseRedirect(org.get_absolute_url())
+
     def handle(self, request, org, profile):
+        if org.has_school():
+            if request.POST.get("confirm") != "yes":
+                return school_notice(
+                    request,
+                    _("Confirmation required"),
+                    _("Please confirm this action from the school page."),
+                    status=400,
+                )
+            remove_school_member(request.user, org.pk, profile.pk)
+            return HttpResponseRedirect(reverse("organization_list"))
         if not profile.organizations.filter(id=org.id).exists():
             return generic_message(
                 request,
@@ -1045,7 +1179,19 @@ class LeaveOrganization(OrganizationMembershipChange):
 
 
 class BlockOrganization(OrganizationMembershipChange):
+    @transaction.atomic
     def handle(self, request, org, profile):
+        if (
+            org.has_school()
+            and org.members.filter(pk=profile.pk).exists()
+            and request.POST.get("confirm") != "yes"
+        ):
+            return school_notice(
+                request,
+                _("Confirmation required"),
+                _("Please confirm this action from the school page."),
+                status=400,
+            )
         if Block.is_blocked(blocker=profile, blocked=org):
             return generic_message(
                 request,
@@ -1064,12 +1210,17 @@ class BlockOrganization(OrganizationMembershipChange):
             )
 
         if profile.organizations.filter(id=org.id).exists():
-            profile.organizations.remove(org)
+            if org.has_school():
+                remove_school_member(request.user, org.pk, profile.pk)
+            else:
+                profile.organizations.remove(org)
 
         return HttpResponseRedirect(reverse("organization_list") + "?tab=blocked")
 
 
 class UnblockOrganization(OrganizationMembershipChange):
+    school_unblock = True
+
     def handle(self, request, org, profile):
         if not Block.is_blocked(blocker=profile, blocked=org):
             return generic_message(
@@ -1100,6 +1251,16 @@ class GenerateInviteLink(
         org = self.get_object()
         if not self.can_edit_organization(org):
             raise PermissionDenied()
+        if (
+            org.has_school()
+            and not OfficialSchool.objects.filter(pk=org.pk, is_active=True).exists()
+        ):
+            return generic_message(
+                request,
+                _("Official school"),
+                _("This school's enrollment is disabled."),
+                status=400,
+            )
         code = "".join(
             secrets.choice(string.ascii_letters + string.digits) for _ in range(7)
         )
@@ -1136,7 +1297,11 @@ class RequestJoinOrganization(LoginRequiredMixin, SingleObjectMixin, FormView):
     form_class = OrganizationRequestForm
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         self.object = self.get_object()
+        if self.object.has_school():
+            raise Http404
 
         profile = self.request.profile
         org = self.get_object()
@@ -1267,7 +1432,15 @@ class OrganizationRequestView(OrganizationRequestBaseView):
 
     def post(self, request, *args, **kwargs):
         self.object = organization = self.get_object()
-        self.formset = formset = OrganizationRequestFormSet(request.POST, request.FILES)
+        if organization.has_school():
+            raise Http404
+        self.formset = formset = OrganizationRequestFormSet(
+            request.POST,
+            request.FILES,
+            queryset=OrganizationRequest.objects.filter(
+                state="P", organization=organization
+            ),
+        )
         if formset.is_valid():
             if organization.slots is not None:
                 deleted_set = set(formset.deleted_forms)
@@ -1342,7 +1515,9 @@ class AddOrganizationMember(
 
     def get_object(self, queryset=None):
         object = super(AddOrganizationMember, self).get_object()
-        if not self.request.user.is_superuser:
+        if not self.request.user.is_superuser and not (
+            object.has_school() and can_manage_school(self.request.user, object.pk)
+        ):
             raise PermissionDenied()
         return object
 
@@ -1353,6 +1528,57 @@ class AddOrganizationMember(
 
     def form_valid(self, form):
         new_users = form.cleaned_data["new_users"]
+        if self.object.has_school():
+            try:
+                result = bulk_enroll_school(
+                    self.request.user, self.object.pk, new_users
+                )
+            except ValidationError as error:
+                form.add_error("new_users", error)
+                return self.form_invalid(form)
+            feedback = [
+                (key, label % {"users": ", ".join(result[key])})
+                for key, label in (
+                    ("added", _("Added students: %(users)s.")),
+                    ("existing", _("Already in this school: %(users)s.")),
+                    ("unknown", _("Usernames not found: %(users)s.")),
+                    (
+                        "blocked",
+                        _("These students have blocked the school: %(users)s."),
+                    ),
+                    (
+                        "conflict",
+                        _(
+                            "Not added because they belong to another official school: %(users)s."
+                        ),
+                    ),
+                    (
+                        "full",
+                        _(
+                            "Not added because the school has reached its member limit: %(users)s."
+                        ),
+                    ),
+                )
+                if result[key]
+            ]
+            retry_users = (
+                result["unknown"]
+                + result["blocked"]
+                + result["conflict"]
+                + result["full"]
+            )
+            retry_form = self.form_class(
+                instance=self.object,
+                organization=self.object,
+                initial={"new_users": "\n".join(retry_users)},
+            )
+            return self.render_to_response(
+                self.get_context_data(
+                    form=retry_form,
+                    school_add_feedback=feedback,
+                    school_add_conflicts=bool(result["conflict"]),
+                )
+            )
         self.object.members.add(*new_users)
         link = reverse("organization_home", args=[self.object.id, self.object.slug])
         html = f'<a href="{link}">{self.object.name}</a>'
@@ -1409,7 +1635,10 @@ class KickUserWidgetView(
         with revisions.create_revision():
             revisions.set_comment(_("Kicked member") + " " + user.username)
             revisions.set_user(self.request.user)
-            organization.members.remove(user)
+            if organization.has_school():
+                remove_school_member(request.user, organization.pk, user.pk)
+            else:
+                organization.members.remove(user)
             organization.save()
 
         return HttpResponseRedirect(organization.get_users_url())
@@ -1445,6 +1674,13 @@ class EditOrganization(
         with revisions.create_revision():
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
+            if self.object.has_school():
+                locked = Organization.objects.select_for_update().get(pk=self.object.pk)
+                if not can_manage_school(self.request.user, locked.pk):
+                    raise PermissionDenied
+                if not self.request.user.is_superuser:
+                    for field in ("name", "slug", "short_name"):
+                        setattr(self.object, field, getattr(locked, field))
             return super(EditOrganization, self).form_valid(form)
 
 
@@ -1907,22 +2143,7 @@ class OrganizationModerationLogView(
     template_name = "organization/moderation_log.html"
     context_object_name = "logs"
     paginate_by = 50
-
-    def dispatch(self, request, *args, **kwargs):
-        res = super().dispatch(request, *args, **kwargs)
-        if not hasattr(self, "organization"):
-            return res
-        # Allow admins and moderators
-        if self.can_edit_organization(
-            self.organization
-        ) or self.organization.can_moderate(request.profile):
-            return res
-        return generic_message(
-            request,
-            _("Permission denied"),
-            _("You are not allowed to view moderation logs."),
-            status=403,
-        )
+    organization_access = "moderator"
 
     def get_queryset(self):
         return (

@@ -30,5 +30,5 @@
       </div>
     {% endif %}
   {% endfor %}
-  <button type="submit" style="display: inline;" name="action" value="Save" class="action-btn" >{{ _('Save') }} </button>
+  <button type="submit" style="display: inline;" name="action" value="Save" class="action-btn" >{{ organization_submit_label if organization_submit_label else _('Save') }} </button>
 </form>

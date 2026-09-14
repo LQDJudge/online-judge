@@ -15,7 +15,11 @@ from judge.admin.interface import (
     LogEntryAdmin,
     NavigationBarAdmin,
 )
-from judge.admin.organization import OrganizationAdmin, OrganizationRequestAdmin
+from judge.admin.organization import (
+    OrganizationAdmin,
+    OrganizationRequestAdmin,
+    OfficialSchoolAdmin,
+)
 from judge.admin.problem import ProblemAdmin, ProblemPointsVoteAdmin
 from judge.admin.profile import ProfileAdmin, UserAdmin
 from judge.admin.runtime import JudgeAdmin, LanguageAdmin
@@ -53,6 +57,7 @@ from judge.models import (
     MiscConfig,
     NavigationBar,
     Organization,
+    OfficialSchool,
     OrganizationRequest,
     Problem,
     ProblemGroup,
@@ -88,6 +93,7 @@ admin.site.register(LogEntry, LogEntryAdmin)
 admin.site.register(MiscConfig)
 admin.site.register(NavigationBar, NavigationBarAdmin)
 admin.site.register(Organization, OrganizationAdmin)
+admin.site.register(OfficialSchool, OfficialSchoolAdmin)
 admin.site.register(OrganizationRequest, OrganizationRequestAdmin)
 admin.site.register(Problem, ProblemAdmin)
 admin.site.register(ProblemGroup, ProblemGroupAdmin)

@@ -1,6 +1,170 @@
 @use "vars" as *;
 @use "sass:color";
 
+.school-departure-form .school-departure-trigger {
+    border: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.school-departure-dialog {
+    width: min(30em, calc(100vw - 3em));
+    box-sizing: border-box;
+    padding: $space-lg;
+    border: 1px solid $border-light;
+    border-radius: $radius-lg;
+    background: $surface-primary;
+    color: $text-primary;
+    overflow-wrap: anywhere;
+    max-height: calc(100dvh - 3em);
+
+    &::backdrop {
+        background: rgba($text-primary, 0.6);
+    }
+
+    h2 { margin-top: 0; }
+
+    .school-departure-name { font-weight: 600; }
+
+    .school-departure-note { color: $text-secondary; }
+
+    .school-departure-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: $space-sm;
+        margin-top: $space-lg;
+    }
+}
+
+.school-add-feedback {
+    margin-bottom: $space-lg;
+    padding: $space-md;
+    border: 1px solid $border-light;
+    border-radius: $radius-lg;
+    background-color: $surface-primary;
+    color: $text-primary;
+    overflow-wrap: anywhere;
+
+    h3 {
+        margin-top: 0;
+    }
+
+    ul {
+        padding-left: 1.5em;
+    }
+
+    li + li {
+        margin-top: $space-sm;
+    }
+}
+
+.school-invitation-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: min(680px, calc(100dvh - #{$navbar_height} - 64px));
+    padding: $space-lg $space-sm;
+}
+
+.school-confirm-panel {
+    width: 100%;
+    max-width: 480px;
+    box-sizing: border-box;
+    padding: 28px;
+    border: 1px solid $border-light;
+    border-top: 3px solid $theme_color;
+    border-radius: $radius-lg;
+    background-color: $surface-primary;
+    color: $text-primary;
+    box-shadow: $shadow-lg-soft;
+    text-align: center;
+    overflow-wrap: anywhere;
+
+    h1 {
+        margin: $space-sm 0 $space-md;
+        font-size: clamp(1.35rem, 3vw, 1.65rem);
+        line-height: 1.3;
+    }
+
+    .school-invitation-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        margin-bottom: $space-md;
+        border-radius: 50%;
+        background-color: color.change($theme_color, $alpha: 0.1);
+        color: $theme_color;
+        font-size: 1.6rem;
+    }
+
+    .school-invitation-eyebrow {
+        margin: 0;
+        color: $text-muted;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .school-invitation-badge {
+        display: inline-block;
+        padding: $space-xs $space-sm;
+        margin-bottom: $space-sm;
+        border: 1px solid $border-light;
+        border-radius: $radius-lg;
+        background-color: $background_light_gray;
+        font-size: 0.8rem;
+    }
+
+    .school-invitation-warning {
+        padding: $space-md;
+        border-left: 3px solid $theme_color;
+        border-radius: $radius-sm;
+        background-color: $background_light_gray;
+        text-align: left;
+        line-height: 1.5;
+    }
+
+    .school-invitation-note {
+        color: $text-muted;
+        font-size: 0.88rem;
+        line-height: 1.5;
+    }
+
+    .school-confirm-actions {
+        display: flex;
+        flex-direction: column;
+        gap: $space-sm;
+        margin-top: $space-lg;
+
+        .action-btn {
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .school-confirm-cancel {
+            padding: $space-sm;
+        }
+    }
+}
+
+@media (max-width: 600px) {
+    .school-invitation-page {
+        min-height: auto;
+        padding: $space-md 0;
+    }
+
+    .school-confirm-panel {
+        padding: $space-lg $space-md;
+    }
+}
+
 .leave-organization, .leave-organization:hover {
     color: red;
 }
@@ -94,6 +258,22 @@
         .community-badge {
             display: inline-flex;
             margin-left: $space-xs;
+        }
+
+        .official-school-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: $space-xs;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin: $space-xs 0 0;
+            padding: $space-xs $space-sm;
+            border: 1px solid $border-light;
+            border-radius: $radius-lg;
+            background-color: $background_light_gray;
+            color: $theme_color;
+            font-size: 0.8em;
+            font-weight: 600;
         }
     }
 
