@@ -147,9 +147,10 @@ class ProblemDataCompiler(object):
                     json.loads(case.checker_args) if case.checker_args else {}
                 )
                 if case.checker == "testlib":
-                    # Fractions are the judge's default. Keep only explicit
-                    # legacy percentage/absolute overrides in generated YAML.
-                    checker_args.pop("treat_checker_points_as_fraction", None)
+                    # Plain Testlib checkers emit normalized fractions, just as
+                    # CMS checkers do. The site owns the generated score mode.
+                    checker_args.pop("treat_checker_points_as_percentage", None)
+                    checker_args["treat_checker_points_as_fraction"] = True
                 checker_args.update(
                     {
                         "files": custom_checker_path[1],
