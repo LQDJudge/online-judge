@@ -77,7 +77,7 @@ class ProblemDataCheckerChoiceTests(SimpleTestCase):
         self.assertEqual(
             checker["args"],
             {
-                "treat_checker_points_as_fraction": True,
+                "treat_checker_points_as_percentage": True,
                 "time_limit": 10,
                 "memory_limit": 262144,
                 "files": "checker.cpp",
@@ -87,7 +87,7 @@ class ProblemDataCheckerChoiceTests(SimpleTestCase):
         )
 
     @patch("judge.utils.problem_data._get_latest_cpp_key", return_value="CPP20")
-    def test_testlib_compiler_emits_fraction_mode_without_stored_args(
+    def test_testlib_compiler_uses_default_fraction_mode_without_stored_args(
         self, _latest_cpp
     ):
         for args in ("", "{}"):
@@ -97,9 +97,28 @@ class ProblemDataCheckerChoiceTests(SimpleTestCase):
 
                 checker = ProblemDataCompiler(None, data, [], []).make_init()["checker"]
 
-                self.assertIs(checker["args"]["treat_checker_points_as_fraction"], True)
+                self.assertNotIn("treat_checker_points_as_fraction", checker["args"])
                 self.assertNotIn("treat_checker_points_as_percentage", checker["args"])
+                self.assertNotIn("treat_checker_points_as_absolute", checker["args"])
                 self.assertEqual(data.checker_args, args)
+
+    @patch("judge.utils.problem_data._get_latest_cpp_key", return_value="CPP20")
+    def test_testlib_compiler_preserves_legacy_absolute_mode(self, _latest_cpp):
+        data = ProblemData(
+            checker="testlib",
+            checker_args=json.dumps(
+                {
+                    "treat_checker_points_as_absolute": True,
+                    "treat_checker_points_as_fraction": True,
+                }
+            ),
+        )
+        data.custom_checker_cpp.name = "problem/checker.cpp"
+
+        checker = ProblemDataCompiler(None, data, [], []).make_init()["checker"]
+
+        self.assertIs(checker["args"]["treat_checker_points_as_absolute"], True)
+        self.assertNotIn("treat_checker_points_as_fraction", checker["args"])
 
     @patch("judge.utils.problem_data._get_latest_cpp_key", return_value="CPP20")
     def test_fraction_policy_does_not_change_other_cpp_checkers(self, _latest_cpp):
