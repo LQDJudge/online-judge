@@ -37,7 +37,6 @@ from judge.models import (
 from judge.bridge.utils import VanishedSubmission
 
 from judge.caching import cache_wrapper
-from judge.logging import log_exception
 from judge.tasks.submission import (
     save_submission_result_details,
     update_problem_stats,
@@ -117,7 +116,15 @@ def _is_worker_no_response_error(error_message):
     message = (error_message or "").lower()
     if "worker" not in message:
         return False
-    has_response_signal = "respond" in message or "response" in message
+    has_response_signal = any(
+        signal in message
+        for signal in (
+            "respond",
+            "response",
+            "did not send a message",
+            "didn't send a message",
+        )
+    )
     has_timeout_signal = (
         "300" in message or "timeout" in message or "timed out" in message
     )
@@ -1091,8 +1098,13 @@ class JudgeHandler(ZlibPacketHandler):
                         submission_id,
                     )
 
-                log_exception(
-                    f"Problem {problem.code} Judge Worker Timeout: {detailed_message}"
+                # This is a judge-infrastructure failure, not an actionable
+                # problem-data error. Keep it in the bridge log and notify
+                # admins in-app without triggering either admin or author email.
+                logger.warning(
+                    "Problem %s Judge Worker Timeout: %s",
+                    problem.code,
+                    detailed_message,
                 )
                 logger.info(
                     "Notified admins for submission %s worker timeout",

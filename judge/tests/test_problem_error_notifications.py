@@ -137,17 +137,19 @@ class ProblemErrorNotificationTest(TestCase):
         problem.curators.add(self.curator)
         submission = self._make_submission(problem)
 
-        with patch("judge.bridge.judge_handler.log_exception") as log_exception, patch(
+        with patch(
             "judge.bridge.judge_handler.notify_problem_authors"
-        ) as notify_problem_authors:
+        ) as notify_problem_authors, patch(
+            "judge.bridge.judge_handler.logger.warning"
+        ) as warning:
             JudgeHandler._notify_problem_authors_on_error(
                 SimpleNamespace(name="judge2"),
                 submission.id,
-                "Worker failed to respond in 300s while opening tests.zip",
+                "Worker did not send a message in 300 seconds",
             )
 
         notify_problem_authors.assert_not_called()
-        log_exception.assert_called_once()
+        warning.assert_called_once()
         self.assertFalse(
             Notification.objects.filter(
                 owner=self.author,
