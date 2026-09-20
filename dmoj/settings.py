@@ -734,10 +734,6 @@ CELERY_BEAT_SCHEDULE = {
         "task": "judge.tasks.maintenance.recompute_contributions",
         "schedule": crontab(minute=18, hour=4),
     },
-    "generate-daily-magazine-posts": {
-        "task": "judge.tasks.magazine.generate_daily_magazine_posts",
-        "schedule": crontab(minute=30, hour=4),
-    },
 }
 
 
