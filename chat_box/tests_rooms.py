@@ -79,7 +79,7 @@ from chat_box.services.rooms import (
     restore_room,
 )
 from chat_box.utils import get_unread_boxes
-from chat_box.views import get_status_context, get_unread_count
+from chat_box.views import ChatView, get_status_context, get_unread_count
 
 
 def room_avatar_file(name="avatar.png"):
@@ -1747,6 +1747,8 @@ class RoomRouteAndListTests(GeneralizedRoomTestCase):
         self.assertContains(response, 'class="chat-room-details-button"')
         self.assertContains(response, 'class="fa fa-ellipsis-v"')
         self.assertNotContains(response, 'id="chat-details-modal"')
+
+        response = self.client.get(reverse("online_status_ajax"))
         self.assertContains(response, 'data-room-section="all"')
         self.assertContains(response, 'data-room-filter="all"')
         self.assertContains(response, 'data-room-filter="conversations"')
@@ -2183,7 +2185,7 @@ class RoomRouteAndListTests(GeneralizedRoomTestCase):
         )
 
         self.client.force_login(self.member.user)
-        response = self.client.get(reverse("chat", args=[""]))
+        response = self.client.get(reverse("online_status_ajax"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="unread-count-room-%s"' % room.id)
@@ -2198,7 +2200,8 @@ class RoomRouteAndListTests(GeneralizedRoomTestCase):
         room = self.create_group("Action menu room")
         self.client.force_login(self.creator.user)
 
-        response = self.client.get(reverse("chat", args=[room.id]))
+        page_response = self.client.get(reverse("chat", args=[room.id]))
+        response = self.client.get(reverse("online_status_ajax"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-room="%s"' % room.id)
@@ -2213,9 +2216,9 @@ class RoomRouteAndListTests(GeneralizedRoomTestCase):
             response, 'class="red" role="menuitem" data-chat-room-action="archive"'
         )
         self.assertContains(response, 'class="fa fa-archive"')
-        self.assertContains(response, 'id="chat-archive-room-modal"')
-        self.assertContains(response, 'id="chat-archive-room-reason"')
-        self.assertContains(response, 'id="chat-archive-room-confirm"')
+        self.assertContains(page_response, 'id="chat-archive-room-modal"')
+        self.assertContains(page_response, 'id="chat-archive-room-reason"')
+        self.assertContains(page_response, 'id="chat-archive-room-confirm"')
 
         details = self.client.get(reverse("chat_room_details", args=[room.id])).json()
         self.assertNotIn("hide", details["permissions"])
@@ -2254,6 +2257,37 @@ class RoomRouteAndListTests(GeneralizedRoomTestCase):
         self.assertIn('class="chat-room-details-button"', payload["header_html"])
         self.assertIn("Smooth switch marker", payload["messages_html"])
         self.assertIn("$body", payload["message_template"])
+
+    def test_room_switch_does_not_build_full_page_context(self):
+        room = self.create_group("Focused switch room")
+        self.client.force_login(self.creator.user)
+
+        with patch.object(
+            ChatView,
+            "get_context_data",
+            side_effect=AssertionError("full page context built during room switch"),
+        ):
+            response = self.client.get(
+                reverse("chat", args=[room.id]),
+                {"switch_room": "1"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_initial_chat_defers_recent_room_sidebar(self):
+        room = self.create_group("Deferred sidebar room")
+        self.client.force_login(self.creator.user)
+
+        with patch(
+            "chat_box.views.get_status_context",
+            side_effect=AssertionError("sidebar built during initial response"),
+        ):
+            response = self.client.get(reverse("chat", args=[room.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="chat-online-list"')
+        self.assertContains(response, 'class="chat-loader"')
+        self.assertNotContains(response, 'id="room_row_%s"' % room.id)
 
     def test_direct_room_switch_returns_other_user(self):
         room = Room.get_or_create_room(self.creator, self.member)

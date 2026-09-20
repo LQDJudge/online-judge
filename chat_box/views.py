@@ -27,6 +27,7 @@ from reversion import revisions
 
 from judge import event_poster as event
 from judge.caching import cache_wrapper
+from judge.markdown import prefetch_markdown
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.profile import Organization, get_profile_public_identity
 from judge.utils.community import can_use_community_features
@@ -61,7 +62,6 @@ from chat_box.selectors import (
     unread_counts_for_memberships,
 )
 from chat_box.services.events import (
-    authorized_event_room_ids,
     broadcast_room_event,
     chat_event_channels,
 )
@@ -219,7 +219,12 @@ class ChatView(ListView):
         self.room_id = request_room
         self.messages = self.get_message_page(last_id, page_size)
         if request.GET.get("switch_room"):
-            context = self.get_context_data(object_list=self.messages)
+            context = self.get_room_context(
+                {
+                    "object_list": self.messages,
+                    self.context_object_name: self.messages,
+                }
+            )
             message_template_context = dict(context)
             message_template_context.update(
                 {
@@ -293,69 +298,23 @@ class ChatView(ListView):
                 ),
                 **reaction_render_context(self.messages, request.profile),
                 **reply_render_context(self.messages, request.user),
+                **message_render_context(self.messages),
             },
         )
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context["title"] = self.title
-        context["last_msg"] = event.last()
-        context["status_sections"] = get_status_context(self.request.profile)
+    def get_room_context(self, context):
         context["room"] = self.room_id
         context["room_object"] = self.room
         context["room_avatar_url"] = self.room.get_avatar_url()
         context["is_lobby"] = self.room.channel_kind == Room.ChannelKind.LOBBY
         context["has_next"] = self.has_next()
-        lobby = get_lobby()
-        context["unread_count_lobby"] = get_unread_count(lobby, self.request.profile)
-        context["lobby_room"] = lobby
-        lobby_membership = get_membership(lobby, self.request.profile)
-        context["lobby_hidden"] = (
-            lobby_membership.is_hidden if lobby_membership else False
-        )
-        context["lobby_actions"] = (
-            RoomPolicy(
-                self.request.user,
-                self.request.profile,
-                lobby,
-                lobby_membership,
-            ).room_actions()
-            if lobby_membership
-            else {}
-        )
         context["is_chat_muted"] = is_chat_muted(self.request.profile)
         context["can_chat"] = can_use_community_features(
             self.request.user, self.request.profile
         )
-        context["can_create_channel"] = (
-            self.request.user.is_superuser
-            or Organization.objects.filter(admins=self.request.profile)
-            .exclude(chat_room__isnull=False)
-            .exists()
-        )
-        requested_event_room_ids = {
-            item["room"]
-            for section in context["status_sections"]
-            for item in section["room_list"]
-        }
-        requested_event_room_ids.update((self.room.id, lobby.id))
-        event_room_ids = authorized_event_room_ids(
-            self.request.profile,
-            self.room.id,
-            requested_event_room_ids,
-        )
-        context["chat_event_channels"] = chat_event_channels(
-            self.request.profile.id,
-            sorted(event_room_ids),
-        )
-        context["chat_event_grant"] = create_chat_event_grant(
-            self.request.profile.id,
-            event_room_ids,
-            context["chat_event_channels"],
-        )
         context.update(reaction_render_context(self.messages, self.request.profile))
         context.update(reply_render_context(self.messages, self.request.user))
+        context.update(message_render_context(self.messages))
         membership = self.membership
         context["room_membership"] = membership
         context["room_policy"] = RoomPolicy(
@@ -412,6 +371,57 @@ class ChatView(ListView):
             "body": "$body",
         }
         return context
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["title"] = self.title
+        context["last_msg"] = event.last()
+        is_current_lobby = self.room.channel_kind == Room.ChannelKind.LOBBY
+        lobby = self.room if is_current_lobby else get_lobby()
+        lobby_membership = (
+            self.membership
+            if is_current_lobby
+            else get_membership(lobby, self.request.profile)
+        )
+        context["can_create_channel"] = (
+            self.request.user.is_superuser
+            or Organization.objects.filter(admins=self.request.profile)
+            .exclude(chat_room__isnull=False)
+            .exists()
+        )
+        ignored_room_ids = Ignore.get_ignored_room_ids(self.request.profile)
+        recent_memberships, _ = get_room_page(
+            self.request.profile,
+            exclude_room_ids=ignored_room_ids,
+        )
+        requested_event_room_ids = {
+            membership.room_id for membership in recent_memberships
+        }
+        if (
+            self.membership
+            and self.membership.state == UserRoom.State.ACTIVE
+            and not self.membership.is_hidden
+            and self.room.archived_at is None
+            and self.room.id not in ignored_room_ids
+        ):
+            requested_event_room_ids.add(self.room.id)
+        if (
+            lobby_membership
+            and lobby_membership.state == UserRoom.State.ACTIVE
+            and not lobby_membership.is_hidden
+        ):
+            requested_event_room_ids.add(lobby.id)
+        event_room_ids = sorted(requested_event_room_ids)[:63]
+        context["chat_event_channels"] = chat_event_channels(
+            self.request.profile.id, event_room_ids
+        )
+        context["chat_event_grant"] = create_chat_event_grant(
+            self.request.profile.id,
+            event_room_ids,
+            context["chat_event_channels"],
+        )
+        return self.get_room_context(context)
 
 
 def hide_lobby_message(
@@ -1022,6 +1032,15 @@ def reaction_render_context(messages, profile):
     }
 
 
+def message_render_context(messages):
+    """Batch-warm reusable data needed by the message template."""
+    author_ids = {message.author_id for message in messages if message.author_id}
+    authors = Profile.get_cached_instances(*author_ids)
+    Profile.prefetch_cache_public_identity(*author_ids)
+    prefetch_markdown((message.body for message in messages), lazy_load=False)
+    return {"message_authors": {author.id: author for author in authors}}
+
+
 def message_permission_context(messages, user, profile, room, membership=None):
     if membership is None:
         membership = get_membership(room, profile)
@@ -1399,7 +1418,9 @@ def get_status_context(profile, include_ignored=False, section=None):
         if membership.room.room_type == Room.Type.DIRECT
     }
     other_ids.discard(None)
-    Profile.get_cached_instances(*other_ids)
+    profiles_by_id = {
+        other.id: other for other in Profile.get_cached_instances(*other_ids)
+    }
     Profile.prefetch_cache_last_access(*other_ids)
 
     for section in sections:
@@ -1422,7 +1443,7 @@ def get_status_context(profile, include_ignored=False, section=None):
                 if other_id in ignored_users:
                     continue
                 if other_id:
-                    other = Profile(id=other_id)
+                    other = profiles_by_id[other_id]
                     row.update(
                         {
                             "user": other,

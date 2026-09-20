@@ -1701,6 +1701,7 @@
       ChatUI.highlightSelectedRoom();
       if (roomState) {
         ChatElements.chatInfo.html(roomState.header_html);
+        register_time(ChatElements.chatInfo.find('.time-with-rel'));
         ChatElements.chatLog.html(roomState.messages_html);
         ChatConfig.messageTemplate = roomState.message_template;
         ChatState.messageLoadToken++;
@@ -1765,7 +1766,10 @@
             String(data.room.other_user_id || '')
           );
           self.openCurrentRoom($row, data);
-          ChatWebSocket.refreshAuthorization();
+          // Visible sidebar rooms are already part of the active event grant.
+          // Rooms opened from search, hidden-room lists, or creation flows are
+          // not guaranteed to be present and still need an authorization refresh.
+          if (!$row || !$row.length) ChatWebSocket.refreshAuthorization();
         })
         .fail(function() {
           window.location.href = fallbackUrl || ($row && $row.data('room-url')) ||
@@ -3486,6 +3490,10 @@
 
     ChatEvents.init();
     ChatWebSocket.init();
+
+    // The recent-room sidebar is intentionally deferred so its unread query
+    // and HTML rendering do not delay the initial room response.
+    ChatEvents.refreshStatus();
 
     ChatAPI.updateLastSeen(ChatState.roomId);
 

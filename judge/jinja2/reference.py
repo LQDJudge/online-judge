@@ -144,6 +144,12 @@ def update_tree(list, results, is_tail=False):
 
 @registry.filter
 def reference(text):
+    # Most rendered markdown does not contain a user reference. Avoid building
+    # and walking an lxml tree for the common case; callers already mark the
+    # markdown output safe after this filter.
+    if not rereference.search(force_str(text)):
+        return text
+
     tree = lxml_tree.fromstring(text)
     texts = []
     tails = []

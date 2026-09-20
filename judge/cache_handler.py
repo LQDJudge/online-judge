@@ -1,4 +1,3 @@
-from functools import wraps
 import sys
 import threading
 import time
@@ -66,6 +65,7 @@ class RequestCacheProfiler:
             return {}
 
         data = {
+            "scope": "primary",
             "calls": self.call_count,
             "time_ms": self.total_time_ms,
             "errors": self.errors,
@@ -91,33 +91,30 @@ def stop_request_cache_profile():
     return profiler
 
 
-def _record_request_cache_operation(operation, duration_ms, error=False):
+def profile_primary_cache_call(operation, method, *args, **kwargs):
+    """Call the shared cache and profile only its actual I/O.
+
+    Request-scoped L0 hits are ordinary in-process dictionary lookups. Counting
+    them as cache calls makes request metrics look like network-cache fan-out,
+    so only calls that reach the primary backend belong in this profiler.
+    """
     profiler = getattr(_thread_local, "request_cache_profile", None)
-    if profiler is not None:
-        profiler.record(operation, duration_ms, error=error)
+    if profiler is None:
+        return method(*args, **kwargs)
 
-
-def profile_cache_operation(operation):
-    def decorator(method):
-        @wraps(method)
-        def wrapper(self, *args, **kwargs):
-            start_time = time.perf_counter()
-            error = False
-            try:
-                return method(self, *args, **kwargs)
-            except Exception:
-                error = True
-                raise
-            finally:
-                _record_request_cache_operation(
-                    operation,
-                    (time.perf_counter() - start_time) * 1000,
-                    error=error,
-                )
-
-        return wrapper
-
-    return decorator
+    started = time.perf_counter()
+    error = False
+    try:
+        return method(*args, **kwargs)
+    except Exception:
+        error = True
+        raise
+    finally:
+        profiler.record(
+            operation,
+            (time.perf_counter() - started) * 1000,
+            error=error,
+        )
 
 
 class L0CacheStats:
@@ -525,7 +522,6 @@ class CacheHandler(BaseCache):
     def __init__(self, location, params):
         super().__init__(params)
 
-    @profile_cache_operation("get")
     def get(self, key, default=None, **kwargs):
         """
         Retrieve a value from the cache with request-scoped L0 caching.
@@ -540,7 +536,9 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                result = _primary_cache().get(key, **kwargs)
+                result = profile_primary_cache_call(
+                    "get", _primary_cache().get, key, **kwargs
+                )
                 duration = time.perf_counter() - start_time
 
                 if result is not None:
@@ -555,13 +553,14 @@ class CacheHandler(BaseCache):
                 return default
         else:
             # Original behavior when stats are disabled
-            result = _primary_cache().get(key, **kwargs)
+            result = profile_primary_cache_call(
+                "get", _primary_cache().get, key, **kwargs
+            )
             if result is not None:
                 l0_cache.set(key, result)
                 return result
             return default
 
-    @profile_cache_operation("set")
     def set(self, key, value, timeout=None, **kwargs):
         """
         Set a value in the cache and in the request-scoped L0 cache.
@@ -574,7 +573,9 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                _primary_cache().set(key, value, timeout, **kwargs)
+                profile_primary_cache_call(
+                    "set", _primary_cache().set, key, value, timeout, **kwargs
+                )
                 duration = time.perf_counter() - start_time
                 l0_cache.stats.record_primary_set(duration)
             except Exception:
@@ -582,9 +583,10 @@ class CacheHandler(BaseCache):
                 raise  # Re-raise since set operations should fail if primary cache fails
         else:
             # Original behavior when stats are disabled
-            _primary_cache().set(key, value, timeout, **kwargs)
+            profile_primary_cache_call(
+                "set", _primary_cache().set, key, value, timeout, **kwargs
+            )
 
-    @profile_cache_operation("delete")
     def delete(self, key, **kwargs):
         """
         Delete a value from both request-scoped L0 and primary cache.
@@ -596,16 +598,19 @@ class CacheHandler(BaseCache):
         stats_config = _get_cache_stats_config()
         if stats_config["track_primary"] and l0_cache.stats:
             try:
-                _primary_cache().delete(key, **kwargs)
+                profile_primary_cache_call(
+                    "delete", _primary_cache().delete, key, **kwargs
+                )
                 l0_cache.stats.record_primary_delete()
             except Exception:
                 l0_cache.stats.record_primary_error()
                 raise  # Re-raise since delete operations should fail if primary cache fails
         else:
             # Original behavior when stats are disabled
-            _primary_cache().delete(key, **kwargs)
+            profile_primary_cache_call(
+                "delete", _primary_cache().delete, key, **kwargs
+            )
 
-    @profile_cache_operation("add")
     def add(self, key, value, timeout=None, **kwargs):
         """
         Add a value to the cache only if the key does not already exist.
@@ -619,7 +624,9 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                result = _primary_cache().add(key, value, timeout, **kwargs)
+                result = profile_primary_cache_call(
+                    "add", _primary_cache().add, key, value, timeout, **kwargs
+                )
                 duration = time.perf_counter() - start_time
                 l0_cache.stats.record_primary_set(duration)
                 return result
@@ -628,9 +635,10 @@ class CacheHandler(BaseCache):
                 raise  # Re-raise since add operations should fail if primary cache fails
         else:
             # Original behavior when stats are disabled
-            return _primary_cache().add(key, value, timeout, **kwargs)
+            return profile_primary_cache_call(
+                "add", _primary_cache().add, key, value, timeout, **kwargs
+            )
 
-    @profile_cache_operation("get_many")
     def get_many(self, keys, **kwargs):
         """
         Retrieve multiple values from the cache with request-scoped L0 caching.
@@ -656,7 +664,9 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                cache_results = _primary_cache().get_many(remaining_keys, **kwargs)
+                cache_results = profile_primary_cache_call(
+                    "get_many", _primary_cache().get_many, remaining_keys, **kwargs
+                )
                 duration = time.perf_counter() - start_time
 
                 # Record hits and misses for each key
@@ -681,7 +691,9 @@ class CacheHandler(BaseCache):
                 return results
         else:
             # Original behavior when stats are disabled
-            cache_results = _primary_cache().get_many(remaining_keys, **kwargs)
+            cache_results = profile_primary_cache_call(
+                "get_many", _primary_cache().get_many, remaining_keys, **kwargs
+            )
             if cache_results:
                 # Update L0 cache with results from primary cache
                 for key, value in cache_results.items():
@@ -689,7 +701,6 @@ class CacheHandler(BaseCache):
             results.update(cache_results)
             return results
 
-    @profile_cache_operation("set_many")
     def set_many(self, data, timeout=None, **kwargs):
         """
         Set multiple values in the cache and request-scoped L0 cache.
@@ -703,7 +714,13 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                _primary_cache().set_many(data, timeout, **kwargs)
+                profile_primary_cache_call(
+                    "set_many",
+                    _primary_cache().set_many,
+                    data,
+                    timeout,
+                    **kwargs,
+                )
                 duration = time.perf_counter() - start_time
                 for _ in data:
                     l0_cache.stats.record_primary_set(duration / len(data))
@@ -711,9 +728,10 @@ class CacheHandler(BaseCache):
                 l0_cache.stats.record_primary_error()
                 raise
         else:
-            _primary_cache().set_many(data, timeout, **kwargs)
+            profile_primary_cache_call(
+                "set_many", _primary_cache().set_many, data, timeout, **kwargs
+            )
 
-    @profile_cache_operation("delete_many")
     def delete_many(self, keys, **kwargs):
         """
         Delete multiple values from both request-scoped L0 and primary cache.
@@ -725,16 +743,19 @@ class CacheHandler(BaseCache):
         stats_config = _get_cache_stats_config()
         if stats_config["track_primary"] and l0_cache.stats:
             try:
-                _primary_cache().delete_many(keys, **kwargs)
+                profile_primary_cache_call(
+                    "delete_many", _primary_cache().delete_many, keys, **kwargs
+                )
                 for _ in keys:
                     l0_cache.stats.record_primary_delete()
             except Exception:
                 l0_cache.stats.record_primary_error()
                 raise
         else:
-            _primary_cache().delete_many(keys, **kwargs)
+            profile_primary_cache_call(
+                "delete_many", _primary_cache().delete_many, keys, **kwargs
+            )
 
-    @profile_cache_operation("clear")
     def clear(self, **kwargs):
         """
         Clear both request-scoped L0 and primary caches.
@@ -745,15 +766,16 @@ class CacheHandler(BaseCache):
         stats_config = _get_cache_stats_config()
         if stats_config["track_primary"] and l0_cache.stats:
             try:
-                _primary_cache().clear(**kwargs)
+                profile_primary_cache_call(
+                    "clear", _primary_cache().clear, **kwargs
+                )
                 l0_cache.stats.record_primary_delete()
             except Exception:
                 l0_cache.stats.record_primary_error()
                 raise
         else:
-            _primary_cache().clear(**kwargs)
+            profile_primary_cache_call("clear", _primary_cache().clear, **kwargs)
 
-    @profile_cache_operation("incr")
     def incr(self, key, delta=1, **kwargs):
         """
         Increment a value in the cache and update request-scoped L0 cache.
@@ -764,7 +786,9 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                result = _primary_cache().incr(key, delta, **kwargs)
+                result = profile_primary_cache_call(
+                    "incr", _primary_cache().incr, key, delta, **kwargs
+                )
                 duration = time.perf_counter() - start_time
                 l0_cache.stats.record_primary_set(
                     duration
@@ -775,11 +799,12 @@ class CacheHandler(BaseCache):
                 l0_cache.stats.record_primary_error()
                 raise
         else:
-            result = _primary_cache().incr(key, delta, **kwargs)
+            result = profile_primary_cache_call(
+                "incr", _primary_cache().incr, key, delta, **kwargs
+            )
             l0_cache.set(key, result)
             return result
 
-    @profile_cache_operation("decr")
     def decr(self, key, delta=1, **kwargs):
         """
         Decrement a value in the cache and update request-scoped L0 cache.
@@ -790,7 +815,9 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                result = _primary_cache().decr(key, delta, **kwargs)
+                result = profile_primary_cache_call(
+                    "decr", _primary_cache().decr, key, delta, **kwargs
+                )
                 duration = time.perf_counter() - start_time
                 l0_cache.stats.record_primary_set(
                     duration
@@ -801,6 +828,8 @@ class CacheHandler(BaseCache):
                 l0_cache.stats.record_primary_error()
                 raise
         else:
-            result = _primary_cache().decr(key, delta, **kwargs)
+            result = profile_primary_cache_call(
+                "decr", _primary_cache().decr, key, delta, **kwargs
+            )
             l0_cache.set(key, result)
             return result

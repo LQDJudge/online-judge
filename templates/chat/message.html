@@ -8,6 +8,7 @@
 {% set message_reaction = reactions.get(message.id) if reactions is defined and reactions else None %}
 {% set reply_quote = reply_quotes.get(message.id) if reply_quotes is defined and reply_quotes else None %}
 {% set can_interact_message = can_interact_room if can_interact_room is defined else false %}
+{% set message_author = message_authors.get(message.author_id, message.author_id) if message_authors is defined else message.author_id %}
 {% if message.kind == 'system' %}
   <li class="message chat-system-message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="" data-time="{{ message.time.timestamp()|int }}">
     {% if message.system_event == 'join' %}
@@ -26,14 +27,14 @@
   <li class="message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}" data-time="{{ message.time.timestamp()|int }}">
     <div class="message-avatar">
       {% if message.author_id %}
-        <img loading="lazy" src="{{ public_gravatar(message.author_id, request.user, 135) }}" class="profile-pic user-img">
+        <img loading="lazy" src="{{ public_gravatar(message_author, request.user, 135) }}" class="profile-pic user-img">
       {% else %}
         <span class="profile-pic deleted-user-avatar" aria-hidden="true"><i class="fa fa-user"></i></span>
       {% endif %}
     </div>
     <div class="message-content-wrapper">
       <div class="message-header user-time">
-        {% if message.author_id %}{{link_user(message.author_id)}}{% else %}<span class="gray">{{ _('Deleted user') }}</span>{% endif %}
+        {% if message.author_id %}{{link_user(message_author)}}{% else %}<span class="gray">{{ _('Deleted user') }}</span>{% endif %}
         <span class="message-time time">
           {{ relative_time(message.time, abs=_('{time}'), rel=_('{time}'), format=_('g:i a d/m/Y')) }}
         </span>

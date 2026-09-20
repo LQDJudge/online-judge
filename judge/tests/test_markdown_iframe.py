@@ -1,7 +1,9 @@
+from unittest.mock import patch
+
 from django.http import HttpResponse
 from django.test import SimpleTestCase, override_settings
 
-from judge.markdown import markdown, _iframe_host_allowed
+from judge.markdown import markdown, prefetch_markdown, _iframe_host_allowed
 from judge.middleware import ContentSecurityPolicyMiddleware
 
 ALLOWED = [
@@ -42,6 +44,12 @@ class IframeHostAllowedTest(SimpleTestCase):
 
 @override_settings(IFRAME_ALLOWED_HOSTS=ALLOWED)
 class MarkdownIframeSanitizeTest(SimpleTestCase):
+    @patch("judge.markdown._cached_markdown.batch")
+    def test_prefetch_markdown_batches_unique_values(self, batch):
+        prefetch_markdown(["first", "second", "first"], lazy_load=False)
+
+        batch.assert_called_once_with([("first", False), ("second", False)])
+
     def test_allowed_iframe_kept(self):
         html = markdown('<iframe src="https://www.youtube.com/embed/abc"></iframe>')
         self.assertIn("<iframe", html)

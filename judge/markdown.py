@@ -303,3 +303,10 @@ def _cached_markdown(value, lazy_load=False):
 
 def markdown(value, lazy_load=False):
     return _cached_markdown(value or "", lazy_load)
+
+
+def prefetch_markdown(values, lazy_load=False):
+    """Warm rendered markdown in one cache operation for list rendering."""
+    values = list(dict.fromkeys(value or "" for value in values))
+    if values:
+        _cached_markdown.batch([(value, lazy_load) for value in values])
