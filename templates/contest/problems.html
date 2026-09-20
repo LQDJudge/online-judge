@@ -38,7 +38,7 @@
               <th>{{ _('Points') }}</th>
               {% if contest.ended %}
                 <th>{{ _('AC Rate') }}</th>
-                <th>{{ _('Users') }}</th>
+                <th class="users">{{ _('Users') }}</th>
                 <th></th>
               {% endif %}
             </tr>
@@ -58,7 +58,7 @@
                 </td>
                 <td>{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
                 {% if contest.ended %}
-                  <td>
+                  <td class="users">
                     {% if problem.id in result_hidden_problem_ids %}
                       ?
                     {% else %}

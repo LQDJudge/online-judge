@@ -1745,6 +1745,15 @@
             text-align: center;
         }
 
+        th.users,
+        td.users {
+            width: 1%;
+            padding-right: $space-sm;
+            padding-left: $space-sm;
+            text-align: center;
+            white-space: nowrap;
+        }
+
         .contest-problem-name {
             font-weight: normal;
             line-height: 1.35;
