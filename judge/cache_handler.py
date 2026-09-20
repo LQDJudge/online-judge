@@ -607,9 +607,7 @@ class CacheHandler(BaseCache):
                 raise  # Re-raise since delete operations should fail if primary cache fails
         else:
             # Original behavior when stats are disabled
-            profile_primary_cache_call(
-                "delete", _primary_cache().delete, key, **kwargs
-            )
+            profile_primary_cache_call("delete", _primary_cache().delete, key, **kwargs)
 
     def add(self, key, value, timeout=None, **kwargs):
         """
@@ -766,9 +764,7 @@ class CacheHandler(BaseCache):
         stats_config = _get_cache_stats_config()
         if stats_config["track_primary"] and l0_cache.stats:
             try:
-                profile_primary_cache_call(
-                    "clear", _primary_cache().clear, **kwargs
-                )
+                profile_primary_cache_call("clear", _primary_cache().clear, **kwargs)
                 l0_cache.stats.record_primary_delete()
             except Exception:
                 l0_cache.stats.record_primary_error()
