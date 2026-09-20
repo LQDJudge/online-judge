@@ -1566,8 +1566,8 @@ class UnreadCursorTests(GeneralizedRoomTestCase):
             if "CHAT_BOX_MESSAGE" in query["sql"].upper()
         ]
         self.assertEqual(len(message_queries), 1)
-        if connection.features.supports_slicing_ordering_in_compound:
-            self.assertIn("LIMIT 100", message_queries[0].upper())
+        self.assertIn("COUNT(", message_queries[0].upper())
+        self.assertNotIn(" UNION ", message_queries[0].upper())
 
     def test_channel_burst_limit_returns_retry_metadata(self):
         super_profile = self.make_profile("rate_limit_super", superuser=True)

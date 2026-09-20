@@ -1,8 +1,5 @@
-from collections import Counter
-
 from django.conf import settings
 from django.core import signing
-from django.db import connection
 from django.db.models import Count, Q
 
 from chat_box.models import Message, Room, RoomMute, UserRoom
@@ -119,26 +116,6 @@ def unread_counts_for_memberships(memberships):
         return {}
     profile_ids = {membership.user_id for membership in memberships}
     profile_id = next(iter(profile_ids)) if len(profile_ids) == 1 else None
-    if connection.features.supports_slicing_ordering_in_compound:
-        capped_queries = []
-        for room_id, last_read_id in cursors.items():
-            query = Message.objects.filter(
-                room_id=room_id,
-                id__gt=last_read_id,
-                kind=Message.Kind.USER,
-                hidden=False,
-            )
-            if profile_id is not None:
-                query = query.exclude(author_id=profile_id)
-            capped_queries.append(
-                query.order_by().values_list("room_id", "id")[:UNREAD_COUNT_CAP]
-            )
-        rows = capped_queries[0].union(*capped_queries[1:], all=True)
-        return dict(Counter(room_id for room_id, _ in rows))
-
-    # SQLite cannot put sliced SELECTs inside a compound query. It is only used
-    # by lightweight development/test configurations; retain one query there
-    # and cap the displayed result.
     predicate = Q()
     for room_id, last_read_id in cursors.items():
         predicate |= Q(room_id=room_id, id__gt=last_read_id)
