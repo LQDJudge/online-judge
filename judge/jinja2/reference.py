@@ -144,11 +144,11 @@ def update_tree(list, results, is_tail=False):
 
 @registry.filter
 def reference(text):
-    # Most rendered markdown does not contain a user reference. Avoid building
-    # and walking an lxml tree for the common case; callers already mark the
-    # markdown output safe after this filter.
+    # Preserve the HTMLTreeString return contract for callers that inspect the
+    # parsed tree, while avoiding the reference-processing walk in the common
+    # case where rendered markdown contains no user references.
     if not rereference.search(force_str(text)):
-        return text
+        return lxml_tree.fromstring(text)
 
     tree = lxml_tree.fromstring(text)
     texts = []
