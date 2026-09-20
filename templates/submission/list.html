@@ -198,10 +198,87 @@
 
           var table = $('#submissions-table');
           var statistics = $("#statistics-table");
-          var doing_ajax = false;
           var first = parseInt(table.find('>div:first-child').attr('id'));
+          var submission_updates = {};
+          var row_limit = {{ paginator.per_page }};
 
-          var update_submission = function (message, force) {
+          function insert_submission_row(id, data) {
+            var old_positions = new Map();
+            table.children('.submission-row').each(function () {
+              old_positions.set(this, this.getBoundingClientRect().top);
+            });
+
+            var row = $('<div>', {id: id, 'class': 'submission-row'}).html(data);
+            var inserted = false;
+            table.children('.submission-row').each(function () {
+              if (parseInt(this.id) < id) {
+                row.insertBefore(this);
+                inserted = true;
+                return false;
+              }
+            });
+            if (!inserted)
+              row.appendTo(table);
+
+            register_time(row.find('.time-with-rel'));
+            if (table.children('.submission-row').length > row_limit)
+              table.children('.submission-row').last().remove();
+            first = parseInt(table.children('.submission-row').first().attr('id'));
+
+            var reduce_motion = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduce_motion || !row[0].animate)
+              return;
+
+            table.children('.submission-row').each(function () {
+              if (!old_positions.has(this))
+                return;
+              var offset = old_positions.get(this) - this.getBoundingClientRect().top;
+              if (offset) {
+                this.animate([
+                  {transform: 'translateY(' + offset + 'px)'},
+                  {transform: 'translateY(0)'}
+                ], {duration: 180, easing: 'ease-out'});
+              }
+            });
+            row[0].animate([
+              {opacity: 0, transform: 'translateY(-10px)'},
+              {opacity: 1, transform: 'translateY(0)'}
+            ], {duration: 180, easing: 'ease-out'});
+          }
+
+          function request_submission(id, update_state) {
+            update_state.in_flight = true;
+            update_state.pending = false;
+            $.ajax({
+              url: '{{ url('submission_single_query') }}',
+              data: {id: id, show_problem: show_problem}
+            }).done(function (data) {
+              var row = table.children('.submission-row').filter(function () {
+                return parseInt(this.id) === id;
+              });
+              if (row.length) {
+                row.html(data);
+                register_time(row.find('.time-with-rel'));
+              } else {
+                insert_submission_row(id, data);
+              }
+            }).fail(function () {
+              console.log('Failed to update submission: ' + id);
+            }).always(function () {
+              update_state.in_flight = false;
+              if (update_state.pending) {
+                update_state.timer = setTimeout(function () {
+                  update_state.timer = null;
+                  request_submission(id, update_state);
+                }, 100);
+              } else {
+                delete submission_updates[id];
+              }
+            });
+          }
+
+          var update_submission = function (message) {
             if (language_filter.length && 'language' in message &&
               language_filter.indexOf(message.language) == -1)
               return;
@@ -209,38 +286,25 @@
               status_filter.indexOf(message.status) == -1)
               return;
             var id = message.id;
-            var row = table.find('div#' + id);
-            if (row.length < 1) {
-              if (id < first)
-                return;
-              first = id;
-              row = $('<div>', {id: id, 'class': 'submission-row'}).hide().prependTo(table);
-              if (table.find('>div').length >= {{ paginator.per_page }})
-                table.find('>div:last-child').hide('slow', function () {
-                  $(this).remove();
-                });
+            var row_exists = table.children('.submission-row').filter(function () {
+              return parseInt(this.id) === id;
+            }).length > 0;
+            if (!row_exists && !submission_updates[id] && !isNaN(first) && id < first)
+              return;
+
+            var update_state = submission_updates[id];
+            if (!update_state) {
+              update_state = submission_updates[id] = {
+                in_flight: false,
+                pending: false,
+                timer: null,
+              };
             }
-            if (force || !doing_ajax) {
-              if (!force) doing_ajax = true;
-              $.ajax({
-                url: '{{ url('submission_single_query') }}',
-                data: {id: id, show_problem: show_problem}
-              }).done(function (data) {
-                var was_shown = row.is(':visible');
-                row.html(data);
-                register_time(row.find('.time-with-rel'));
-                if (!was_shown) {
-                  row.slideDown('slow');
-                }
-                if (!force)
-                  setTimeout(function () {
-                    doing_ajax = false;
-                  }, 1000);
-              }).fail(function () {
-                console.log('Failed to update submission: ' + id);
-                if (!force) doing_ajax = false;
-              });
+            if (update_state.in_flight || update_state.timer) {
+              update_state.pending = true;
+              return;
             }
+            request_submission(id, update_state);
           };
 
           var stats_outdated = false;
@@ -284,7 +348,7 @@
                   return;
                 update_submission(message);
               } else if (message.type == 'done-submission') {
-                update_submission(message, true);
+                update_submission(message);
 
                 if (!statistics.length) return;
                 if ($('body').hasClass('window-hidden'))
