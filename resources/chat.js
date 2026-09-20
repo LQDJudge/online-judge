@@ -3491,10 +3491,6 @@
     ChatEvents.init();
     ChatWebSocket.init();
 
-    // The recent-room sidebar is intentionally deferred so its unread query
-    // and HTML rendering do not delay the initial room response.
-    ChatEvents.refreshStatus();
-
     ChatAPI.updateLastSeen(ChatState.roomId);
 
     // Handle initial mobile state

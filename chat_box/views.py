@@ -377,6 +377,7 @@ class ChatView(ListView):
 
         context["title"] = self.title
         context["last_msg"] = event.last()
+        context["status_sections"] = get_status_context(self.request.profile)
         is_current_lobby = self.room.channel_kind == Room.ChannelKind.LOBBY
         lobby = self.room if is_current_lobby else get_lobby()
         lobby_membership = (
@@ -384,20 +385,37 @@ class ChatView(ListView):
             if is_current_lobby
             else get_membership(lobby, self.request.profile)
         )
+        context["unread_count_lobby"] = (
+            unread_counts_for_memberships([lobby_membership]).get(lobby.id, 0)
+            if lobby_membership and not lobby_membership.is_hidden
+            else 0
+        )
+        context["lobby_room"] = lobby
+        context["lobby_hidden"] = (
+            lobby_membership.is_hidden if lobby_membership else False
+        )
+        context["lobby_actions"] = (
+            RoomPolicy(
+                self.request.user,
+                self.request.profile,
+                lobby,
+                lobby_membership,
+            ).room_actions()
+            if lobby_membership
+            else {}
+        )
         context["can_create_channel"] = (
             self.request.user.is_superuser
             or Organization.objects.filter(admins=self.request.profile)
             .exclude(chat_room__isnull=False)
             .exists()
         )
-        ignored_room_ids = Ignore.get_ignored_room_ids(self.request.profile)
-        recent_memberships, _ = get_room_page(
-            self.request.profile,
-            exclude_room_ids=ignored_room_ids,
-        )
         requested_event_room_ids = {
-            membership.room_id for membership in recent_memberships
+            item["room"]
+            for section in context["status_sections"]
+            for item in section["room_list"]
         }
+        ignored_room_ids = Ignore.get_ignored_room_ids(self.request.profile)
         if (
             self.membership
             and self.membership.state == UserRoom.State.ACTIVE
