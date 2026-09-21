@@ -26,6 +26,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import escape
 
+from judge.cache_handler import clear_request_l0_cache
 from judge.models import Language, Organization, Profile
 from judge.jinja2.gravatar import public_gravatar
 from judge.models.notification import (
@@ -51,6 +52,7 @@ from chat_box.models import (
 )
 from chat_box.policies import RoomPolicy
 from chat_box.room_views import room_list_view
+from chat_box.selectors import unread_counts_for_memberships
 from chat_box.services.invitations import (
     get_invitation_token,
     join_from_invitation,
@@ -1568,6 +1570,42 @@ class UnreadCursorTests(GeneralizedRoomTestCase):
         self.assertEqual(len(message_queries), 1)
         self.assertIn("COUNT(", message_queries[0].upper())
         self.assertNotIn(" UNION ", message_queries[0].upper())
+
+    def test_unread_counts_batch_and_reuse_shared_cache(self):
+        rooms = [self.create_group("Cached unread %s" % index) for index in range(3)]
+        for room in rooms:
+            activate_membership(room, self.member, self.creator)
+            Message.objects.create(
+                room=room,
+                author=self.creator,
+                body="Unread cache message",
+            )
+        memberships = list(
+            UserRoom.objects.filter(user=self.member, room__in=rooms).select_related(
+                "room"
+            )
+        )
+        cache.clear()
+        clear_request_l0_cache()
+
+        with CaptureQueriesContext(connection) as cold_queries:
+            cold_counts = unread_counts_for_memberships(memberships)
+
+        self.assertEqual(set(cold_counts.values()), {1})
+        self.assertEqual(
+            sum("CHAT_BOX_MESSAGE" in query["sql"].upper() for query in cold_queries),
+            1,
+        )
+
+        clear_request_l0_cache()
+        with CaptureQueriesContext(connection) as warm_queries:
+            warm_counts = unread_counts_for_memberships(memberships)
+
+        self.assertEqual(warm_counts, cold_counts)
+        self.assertEqual(
+            sum("CHAT_BOX_MESSAGE" in query["sql"].upper() for query in warm_queries),
+            0,
+        )
 
     def test_channel_burst_limit_returns_retry_metadata(self):
         super_profile = self.make_profile("rate_limit_super", superuser=True)

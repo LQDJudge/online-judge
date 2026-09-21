@@ -1,13 +1,20 @@
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Q
-from django.db.models.signals import m2m_changed, post_save, pre_delete
+from django.db.models.signals import (
+    m2m_changed,
+    post_delete,
+    post_save,
+    pre_delete,
+    pre_save,
+)
 from django.dispatch import receiver
 from django.utils import timezone
 
 from judge.models import Organization, Profile
 
 from chat_box.models import Message, Room, UserRoom
+from chat_box.selectors import dirty_unread_cache_generation
 from chat_box.services.events import broadcast_room_event
 from chat_box.services.lobby_sync import ensure_lobby_membership
 from chat_box.services.organization_sync import (
@@ -16,6 +23,55 @@ from chat_box.services.organization_sync import (
 )
 
 SIGNAL_BATCH_SIZE = 500
+
+
+def _record_unread_message_event(room_id, message=None):
+    if message is not None:
+        Room.objects.filter(pk=room_id).filter(
+            Q(last_msg_id__isnull=True) | Q(last_msg_id__lt=message.id)
+        ).update(
+            last_msg_id=message.id,
+            last_activity_at=message.time,
+        )
+    dirty_unread_cache_generation(room_id)
+    Room.dirty_cache(room_id)
+    transaction.on_commit(lambda: Room.dirty_cache(room_id))
+
+
+@receiver(pre_save, sender=Message)
+def remember_message_visibility(sender, instance, update_fields=None, **kwargs):
+    instance._chat_visibility_changed = False
+    if not instance.pk or (update_fields is not None and "hidden" not in update_fields):
+        return
+    prior_hidden = (
+        Message.objects.filter(pk=instance.pk).values_list("hidden", flat=True).first()
+    )
+    instance._chat_visibility_changed = (
+        prior_hidden is not None and prior_hidden != instance.hidden
+    )
+
+
+@receiver(post_save, sender=Message)
+def invalidate_unread_cache_for_message(sender, instance, created, **kwargs):
+    became_visible_user_message = (
+        created and instance.kind == Message.Kind.USER and not instance.hidden
+    )
+    visibility_changed = instance.kind == Message.Kind.USER and getattr(
+        instance,
+        "_chat_visibility_changed",
+        False,
+    )
+    if became_visible_user_message or visibility_changed:
+        _record_unread_message_event(
+            instance.room_id,
+            message=instance if became_visible_user_message else None,
+        )
+
+
+@receiver(post_delete, sender=Message)
+def invalidate_unread_cache_for_deleted_message(sender, instance, **kwargs):
+    if instance.kind == Message.Kind.USER and not instance.hidden:
+        _record_unread_message_event(instance.room_id)
 
 
 def _organizations_by_id(organization_ids):

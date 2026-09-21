@@ -1,6 +1,11 @@
+import secrets
+
 from django.conf import settings
 from django.core import signing
+from django.db import transaction
 from django.db.models import Count, Q
+
+from judge.caching import cache_wrapper
 
 from chat_box.models import Message, Room, RoomMute, UserRoom
 
@@ -8,6 +13,20 @@ ROOM_LIST_PAGE_SIZE = getattr(settings, "CHAT_ROOM_LIST_PAGE_SIZE", 20)
 ROOM_LIST_CURSOR_SALT = "chat-room-list-v1"
 ROOM_LIST_SECTIONS = ("channels", "conversations")
 UNREAD_COUNT_CAP = 100
+UNREAD_CACHE_TIMEOUT = 300
+
+
+@cache_wrapper(
+    prefix="chat_unread_generation_v1",
+    expected_type=str,
+)
+def unread_cache_generation(room_id):
+    return secrets.token_urlsafe(12)
+
+
+def dirty_unread_cache_generation(room_id):
+    unread_cache_generation.dirty(room_id)
+    transaction.on_commit(lambda: unread_cache_generation.dirty(room_id))
 
 
 def get_lobby():
@@ -105,28 +124,84 @@ def encode_room_list_cursor(memberships, has_more):
     )
 
 
+def _batch_unread_counts(args_list):
+    counts = {}
+    args_by_profile = {}
+    for room_id, profile_id, last_read_message_id, _generation in args_list:
+        args_by_profile.setdefault(profile_id, []).append(
+            (room_id, last_read_message_id)
+        )
+
+    for profile_id, room_cursors in args_by_profile.items():
+        predicate = Q()
+        for room_id, last_read_message_id in room_cursors:
+            predicate |= Q(room_id=room_id, id__gt=last_read_message_id)
+        rows = (
+            Message.objects.filter(
+                predicate,
+                kind=Message.Kind.USER,
+                hidden=False,
+            )
+            .exclude(author_id=profile_id)
+            .values("room_id")
+            .annotate(count=Count("id"))
+        )
+        counts.update(
+            {
+                (profile_id, row["room_id"]): min(
+                    row["count"],
+                    UNREAD_COUNT_CAP,
+                )
+                for row in rows
+            }
+        )
+
+    return [
+        counts.get((profile_id, room_id), 0)
+        for room_id, profile_id, _last_read_message_id, _generation in args_list
+    ]
+
+
+@cache_wrapper(
+    prefix="chat_unread_count_v1",
+    timeout=UNREAD_CACHE_TIMEOUT,
+    expected_type=int,
+    batch_fn=_batch_unread_counts,
+)
+def _cached_unread_count(
+    room_id,
+    profile_id,
+    last_read_message_id,
+    generation,
+):
+    return _batch_unread_counts(
+        [(room_id, profile_id, last_read_message_id, generation)]
+    )[0]
+
+
 def unread_counts_for_memberships(memberships):
-    memberships = list(memberships)
-    cursors = {
-        membership.room_id: membership.last_read_message_id or 0
-        for membership in memberships
-        if not membership.is_hidden
-    }
-    if not cursors:
+    memberships = [membership for membership in memberships if not membership.is_hidden]
+    if not memberships:
         return {}
-    profile_ids = {membership.user_id for membership in memberships}
-    profile_id = next(iter(profile_ids)) if len(profile_ids) == 1 else None
-    predicate = Q()
-    for room_id, last_read_id in cursors.items():
-        predicate |= Q(room_id=room_id, id__gt=last_read_id)
-    rows = (
-        Message.objects.filter(predicate, kind=Message.Kind.USER, hidden=False)
-        .values("room_id")
-        .annotate(count=Count("id"))
+
+    generations = unread_cache_generation.batch(
+        [(membership.room_id,) for membership in memberships]
     )
-    if profile_id is not None:
-        rows = rows.exclude(author_id=profile_id)
-    return {row["room_id"]: min(row["count"], UNREAD_COUNT_CAP) for row in rows}
+    args_list = [
+        (
+            membership.room_id,
+            membership.user_id,
+            membership.last_read_message_id or 0,
+            generation,
+        )
+        for membership, generation in zip(memberships, generations)
+    ]
+    unread_counts = _cached_unread_count.batch(args_list)
+    return {
+        membership.room_id: unread_count
+        for membership, unread_count in zip(memberships, unread_counts)
+        if unread_count
+    }
 
 
 def active_room_mute(room, profile, now):

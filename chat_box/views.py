@@ -4,7 +4,7 @@ import re
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -55,6 +55,7 @@ from chat_box.policies import RoomPolicy
 from chat_box.selectors import (
     ROOM_LIST_SECTIONS,
     active_room_mute,
+    dirty_unread_cache_generation,
     encode_room_list_cursor,
     get_lobby,
     get_membership,
@@ -566,6 +567,7 @@ def mute_chat_user(
             last_msg_id=replacement["id"] if replacement else None,
             last_activity_at=replacement["time"] if replacement else None,
         )
+        dirty_unread_cache_generation(message.room_id)
         get_first_msg_id.dirty(message.room_id)
         transaction.on_commit(lambda: Room.dirty_cache(message.room_id))
         transaction.on_commit(
@@ -902,12 +904,6 @@ def post_message(request):
                 body=request.POST["body"],
                 room=room,
                 reply_to=reply_to,
-            )
-            Room.objects.filter(pk=room.id).filter(
-                Q(last_msg_id__isnull=True) | Q(last_msg_id__lt=new_message.id)
-            ).update(
-                last_msg_id=new_message.id,
-                last_activity_at=new_message.time,
             )
             UserRoom.objects.filter(pk=membership.pk).update(
                 last_read_message_id=new_message.id,
