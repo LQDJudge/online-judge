@@ -1305,20 +1305,24 @@ class ProblemClone(
         languages = self.object.allowed_languages.all()
         language_limits = self.object.language_limits.all()
         types = self.object.types.all()
+        organization_ids = list(self.object.organizations.values_list("id", flat=True))
 
-        problem = deepcopy(self.object)
+        with transaction.atomic():
+            problem = deepcopy(self.object)
 
-        problem.pk = None
-        problem.is_public = False
-        problem.ac_rate = 0
-        problem.user_count = 0
-        problem.code = form.cleaned_data["code"]
-        problem._bypass_points_cap = self.request.user.is_superuser
-        problem.save(should_move_data=False)
-        problem.authors.add(self.request.profile)
-        problem.allowed_languages.set(languages)
-        problem.language_limits.set(language_limits)
-        problem.types.set(types)
+            problem.pk = None
+            problem.is_public = False
+            problem.is_organization_private = bool(organization_ids)
+            problem.ac_rate = 0
+            problem.user_count = 0
+            problem.code = form.cleaned_data["code"]
+            problem._bypass_points_cap = self.request.user.is_superuser
+            problem.save(should_move_data=False)
+            problem.authors.add(self.request.profile)
+            problem.organizations.set(organization_ids)
+            problem.allowed_languages.set(languages)
+            problem.language_limits.set(language_limits)
+            problem.types.set(types)
 
         return HttpResponseRedirect(
             reverse("admin:judge_problem_change", args=(problem.id,))
