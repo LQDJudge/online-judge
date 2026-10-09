@@ -94,9 +94,11 @@ def update_problem_curators(sender, instance, action, pk_set, **kwargs):
     if action == "pre_clear":
         instance._pre_clear_curator_ids = set(instance.get_curator_ids())
     elif action in ("post_add", "post_remove"):
+        Problem.get_curator_ids.dirty(instance)
         for profile_id in pk_set:
             user_editable_ids.dirty(profile_id)
     elif action == "post_clear":
+        Problem.get_curator_ids.dirty(instance)
         for profile_id in getattr(instance, "_pre_clear_curator_ids", ()):
             user_editable_ids.dirty(profile_id)
 
@@ -106,9 +108,11 @@ def update_problem_testers(sender, instance, action, pk_set, **kwargs):
     if action == "pre_clear":
         instance._pre_clear_tester_ids = set(instance.get_tester_ids())
     elif action in ("post_add", "post_remove"):
+        Problem.get_tester_ids.dirty(instance)
         for profile_id in pk_set:
             user_tester_ids.dirty(profile_id)
     elif action == "post_clear":
+        Problem.get_tester_ids.dirty(instance)
         for profile_id in getattr(instance, "_pre_clear_tester_ids", ()):
             user_tester_ids.dirty(profile_id)
 

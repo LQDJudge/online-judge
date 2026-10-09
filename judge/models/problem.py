@@ -317,8 +317,8 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
 
     def is_editor(self, profile):
         return (
-            self.authors.filter(id=profile.id) | self.curators.filter(id=profile.id)
-        ).exists()
+            profile.pk in self.get_author_ids() or profile.pk in self.get_curator_ids()
+        )
 
     def is_editable_by(self, user):
         if not user.is_authenticated:
