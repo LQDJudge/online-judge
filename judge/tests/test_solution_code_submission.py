@@ -80,6 +80,24 @@ class SolutionCodeSubmissionTest(TestCase):
             {self.language.id},
         )
 
+    def test_solution_code_page_warns_before_judge_has_problem(self):
+        self.judge.problems.remove(self.problem)
+        self.assert_problem_not_ready()
+
+    def test_solution_code_page_warns_when_judge_is_offline(self):
+        self.judge.online = False
+        self.judge.save(update_fields=["online"])
+        self.assert_problem_not_ready()
+
+    def assert_problem_not_ready(self):
+        response = self.client.get(
+            reverse("problem_solution_codes", args=[self.problem.code])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["languages"], [])
+        self.assertContains(response, 'role="alert"')
+        self.assertContains(response, "This problem is not ready for submissions yet.")
+
     def test_run_one_rejects_language_when_judge_is_offline(self):
         self.judge.online = False
         self.judge.save(update_fields=["online"])

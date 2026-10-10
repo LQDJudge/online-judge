@@ -165,7 +165,10 @@ class TotalTimeLimitValidationTest(TestCase):
         with override("en"):
             self.assertFalse(formset.is_valid())
             self.assertIn(
-                "At least one test case is required.", formset.non_form_errors()
+                "At least one test case must be configured. Uploading a ZIP file "
+                'does not automatically create test cases. Click "Fill testcases" '
+                "or add test case rows manually before saving.",
+                formset.non_form_errors(),
             )
 
     def test_data_formset_rejects_deleting_only_existing_case(self):
@@ -193,7 +196,10 @@ class TotalTimeLimitValidationTest(TestCase):
         with override("en"):
             self.assertFalse(formset.is_valid())
             self.assertIn(
-                "At least one test case is required.", formset.non_form_errors()
+                "At least one test case must be configured. Uploading a ZIP file "
+                'does not automatically create test cases. Click "Fill testcases" '
+                "or add test case rows manually before saving.",
+                formset.non_form_errors(),
             )
 
     def test_data_formset_rejects_when_total_exceeds_for_non_admin(self):

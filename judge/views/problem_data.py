@@ -345,7 +345,13 @@ class ProblemCaseFormSet(
             return
 
         if self.require_test_cases and num_tests == 0:
-            raise ValidationError(_("At least one test case is required."))
+            raise ValidationError(
+                _(
+                    "At least one test case must be configured. Uploading a ZIP file "
+                    'does not automatically create test cases. Click "Fill testcases" '
+                    "or add test case rows manually before saving."
+                )
+            )
 
         if not self.enforce_total_time_limit or self.problem_time_limit is None:
             return
