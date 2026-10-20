@@ -1275,10 +1275,11 @@ def get_profile_public_identity(profile_id):
     }
 
 
-def dirty_profile_public_identity_for_user(user_id):
-    profile_id = (
-        Profile.objects.filter(user_id=user_id).values_list("id", flat=True).first()
-    )
+def dirty_profile_public_identity_for_user(user_id, profile_id=None):
+    if profile_id is None:
+        profile_id = (
+            Profile.objects.filter(user_id=user_id).values_list("id", flat=True).first()
+        )
     if profile_id is not None:
         get_profile_public_identity.dirty(profile_id)
         Profile.dirty_cache(profile_id)
@@ -1605,19 +1606,26 @@ class UsernameModerationCase(models.Model):
         if self.target == self.TARGET_USERNAME and not self.normalized_username:
             self.normalized_username = self.username.casefold()
         super().save(*args, **kwargs)
-        dirty_profile_public_identity_for_user(self.user_id)
+        self._dirty_public_identity()
+
+    def _dirty_public_identity(self):
+        user = self._state.fields_cache.get("user")
+        profile = user._state.fields_cache.get("profile") if user is not None else None
+        dirty_profile_public_identity_for_user(
+            self.user_id, profile_id=profile.pk if profile is not None else None
+        )
 
     def delete(self, *args, **kwargs):
-        user_id = self.user_id
         super().delete(*args, **kwargs)
-        dirty_profile_public_identity_for_user(user_id)
+        self._dirty_public_identity()
 
-    def allow(self, moderator=None):
+    def allow(self, moderator=None, preserve_visibility=False):
         self.status = self.STATUS_REVIEWED
         self.decision = self.DECISION_ALLOW
         self.category = self.CATEGORY_SAFE
-        self.public_identity_hidden = False
-        self.moderator = moderator
+        if not preserve_visibility:
+            self.public_identity_hidden = False
+            self.moderator = moderator
         self.decided_at = now()
         self.save(
             update_fields=[

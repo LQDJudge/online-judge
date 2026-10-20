@@ -6,7 +6,7 @@ from django.db.models import Exists, OuterRef
 from django.utils import timezone
 
 from judge.models import Profile, ProfileModerationCase
-from judge.tasks.username_moderation import moderate_profile_case_task
+from judge.tasks.profile_moderation import queue_profile_moderation_case
 
 
 class Command(BaseCommand):
@@ -111,7 +111,7 @@ class Command(BaseCommand):
                 is_automated=False,
             )
             created += 1
-            moderate_profile_case_task.delay(case.id, delete_safe_case=True)
+            queue_profile_moderation_case(case.id, delete_safe_case=True)
             queued += 1
 
         if should_apply:

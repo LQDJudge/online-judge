@@ -627,6 +627,11 @@ AUTO_REVIEW_CONTEST_LEAK_DETAILS_CAP = 50  # max leaker rows stored in details_j
 # ============================================================
 # Periodic moderation and maintenance
 # ============================================================
+PROFILE_MODERATION_BATCH_ENABLED = True
+PROFILE_MODERATION_BATCH_SIZE = 50
+PROFILE_MODERATION_BATCH_MAX_CHARS = 24000
+PROFILE_MODERATION_BATCH_TIMEOUT = 180
+
 AUTO_MODERATE_CHAT_ENABLED = True
 AUTO_MODERATE_CHAT_BATCH_SIZE = 100
 AUTO_MODERATE_CHAT_WINDOW_MINUTES = 120
@@ -693,6 +698,10 @@ CELERY_BEAT_SCHEDULE = {
     "reap-stale-contest-review-runs": {
         "task": "judge.tasks.contest_review.reap_stale_contest_review_runs",
         "schedule": 300.0,  # every 5 minutes
+    },
+    "auto-moderate-profiles": {
+        "task": "judge.tasks.profile_moderation.moderate_pending_profiles",
+        "schedule": 300.0,  # collect pending usernames and descriptions every 5 minutes
     },
     "auto-moderate-comments": {
         "task": "judge.tasks.comment_moderation.moderate_recent_comments",

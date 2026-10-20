@@ -10,6 +10,7 @@ from judge.tasks.semantic_search import *
 from judge.tasks.review import *
 from judge.tasks.contest_review import *
 from judge.tasks.username_moderation import *
+from judge.tasks.profile_moderation import *
 from judge.tasks.comment_moderation import *
 from judge.tasks.chat_moderation import *
 from judge.tasks.post_moderation import *

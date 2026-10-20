@@ -18704,3 +18704,23 @@ msgstr ""
 "dụng trên máy chấm đang trực tuyến cho bài này. Hãy hoàn tất cấu hình dữ "
 "liệu test và các ngôn ngữ được phép, sau đó đợi máy chấm trực tuyến tải bài "
 "và tải lại trang này."
+
+msgid "AI moderation failed after retry attempts: no parseable batch result."
+msgstr ""
+"Kiểm duyệt AI thất bại sau các lần thử lại: không đọc được kết quả kiểm "
+"duyệt theo nhóm."
+
+#, python-format
+msgid "AI moderation unavailable; retry %(attempt)d of %(total)d scheduled."
+msgstr ""
+"Kiểm duyệt AI tạm thời không khả dụng; đã lên lịch thử lại lần %(attempt)d "
+"trên %(total)d."
+
+msgid "Skipped because the username changed before moderation completed."
+msgstr ""
+"Bỏ qua vì tên người dùng đã thay đổi trước khi quá trình kiểm duyệt hoàn tất."
+
+msgid "Profile content exceeds the AI batch limit; human review required."
+msgstr ""
+"Nội dung hồ sơ vượt quá giới hạn xử lý theo lô của AI; cần người kiểm duyệt "
+"xem xét."

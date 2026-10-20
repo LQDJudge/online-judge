@@ -90,7 +90,9 @@ def create_lobby_membership(sender, instance, created, **kwargs):
 
 
 @receiver(post_save, sender=User)
-def sync_lobby_superuser_role(sender, instance, **kwargs):
+def sync_lobby_superuser_role(sender, instance, update_fields=None, **kwargs):
+    if update_fields is not None and "is_superuser" not in update_fields:
+        return
     if hasattr(instance, "profile"):
         ensure_lobby_membership(instance.profile, notify=True)
 

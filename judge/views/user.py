@@ -49,7 +49,7 @@ from judge.models.submission import (
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import import_users
-from judge.tasks.username_moderation import moderate_profile_case_task
+from judge.tasks.profile_moderation import queue_profile_moderation_case
 from judge.utils.hidden_results import (
     hidden_result_best_submission_problem_ids,
     mark_hidden_result_submissions,
@@ -479,7 +479,7 @@ def edit_profile(request):
                         reason=_("Queued for AI profile self-description moderation."),
                     )
                     transaction.on_commit(
-                        lambda: moderate_profile_case_task.delay(moderation_case.id)
+                        lambda: queue_profile_moderation_case(moderation_case.id)
                     )
             return HttpResponseRedirect(request.path)
     else:

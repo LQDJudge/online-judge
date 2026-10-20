@@ -18,7 +18,7 @@ from registration.models import RegistrationProfile
 
 from judge.models import Language, Profile, ProfileModerationCase, TIMEZONE
 from judge.tasks.email import send_registration_activation_email_task
-from judge.tasks.username_moderation import moderate_profile_case_task
+from judge.tasks.profile_moderation import queue_profile_moderation_case
 from judge.utils.recaptcha import ReCaptchaField, ReCaptchaWidget
 from judge.utils.turnstile import TurnstileField, is_turnstile_configured
 from judge.validators import (
@@ -150,7 +150,7 @@ class RegistrationView(OldRegistrationView):
         return user
 
     def enqueue_username_moderation(self, case_id):
-        moderate_profile_case_task.delay(case_id)
+        queue_profile_moderation_case(case_id)
 
     def send_activation_email(self, user_id):
         site = get_current_site(self.request)

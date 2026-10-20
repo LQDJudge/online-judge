@@ -148,6 +148,7 @@ class AIUsageLogTests(TestCase):
         self.assertEqual(log.bot_name, "TagBot")
         self.assertEqual(log.status, AIUsageLog.STATUS_SUCCESS)
 
+    @override_settings(PROFILE_MODERATION_BATCH_ENABLED=False)
     def test_profile_moderation_records_system_user_and_target_metadata(self):
         user = get_user_model().objects.create_user("needs_review")
         case = ProfileModerationCase.objects.create(
@@ -185,6 +186,7 @@ class AIUsageLogTests(TestCase):
         self.assertEqual(log.metadata["target_user_id"], user.id)
         self.assertEqual(log.metadata["target_username"], "needs_review")
 
+    @override_settings(PROFILE_MODERATION_BATCH_ENABLED=False)
     def test_profile_moderation_records_system_user_for_profile_edit(self):
         user = get_user_model().objects.create_user("profile_owner")
         language, _created = Language.objects.get_or_create(

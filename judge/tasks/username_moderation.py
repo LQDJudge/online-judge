@@ -3,6 +3,8 @@ import logging
 import re
 
 from celery import shared_task
+from django.conf import settings
+from django.db import transaction
 from django.utils.timezone import now
 
 from judge.models import ProfileModerationCase
@@ -12,6 +14,41 @@ from llm_service.llm_api import LLMService
 logger = logging.getLogger(__name__)
 
 PROFILE_MODERATION_RETRY_DELAYS = (60, 300, 900, 3600)
+
+
+def queue_profile_moderation_case(
+    case_id, delete_safe_case=False, trigger_user_id=None
+):
+    if not getattr(settings, "PROFILE_MODERATION_BATCH_ENABLED", True):
+        return moderate_profile_case_task.delay(
+            case_id, delete_safe_case=delete_safe_case, trigger_user_id=trigger_user_id
+        )
+    # The pending case itself is the durable queue. Beat collects it after commit.
+    # Save caller-specific options only; registration needs no extra DB work.
+    if delete_safe_case or trigger_user_id is not None:
+        with transaction.atomic():
+            case = (
+                ProfileModerationCase.objects.select_for_update()
+                .filter(
+                    id=case_id,
+                    status=ProfileModerationCase.STATUS_PENDING,
+                    decision=ProfileModerationCase.DECISION_PENDING,
+                )
+                .first()
+            )
+            if case is not None:
+                data = case.raw_response if isinstance(case.raw_response, dict) else {}
+                state = data.get("batch", {})
+                state = state if isinstance(state, dict) else {}
+                if delete_safe_case:
+                    state["delete_safe_case"] = True
+                if trigger_user_id is not None:
+                    state["trigger_user_id"] = trigger_user_id
+                data["batch"] = state
+                ProfileModerationCase.objects.filter(id=case.id).update(
+                    raw_response=data, updated_at=now()
+                )
+    return {"queued": True, "case_id": case_id}
 
 
 USERNAME_MODERATION_SYSTEM_PROMPT = """
@@ -293,6 +330,12 @@ def _moderate_profile_case(task, case_id, delete_safe_case, trigger_user_id):
             response,
         )
 
+    return apply_profile_moderation_result(case, result, delete_safe_case)
+
+
+def apply_profile_moderation_result(
+    case, result, delete_safe_case=False, preserve_visibility=False
+):
     case.decision = result["decision"]
     case.category = result["category"]
     case.confidence = result["confidence"]
@@ -303,7 +346,11 @@ def _moderate_profile_case(task, case_id, delete_safe_case, trigger_user_id):
     if result["decision"] == ProfileModerationCase.DECISION_BLOCK:
         case.disable_user(hide_identity=True)
     elif result["decision"] == ProfileModerationCase.DECISION_ALLOW:
-        if delete_safe_case and case.source == ProfileModerationCase.SOURCE_AUDIT:
+        if (
+            delete_safe_case
+            and case.source == ProfileModerationCase.SOURCE_AUDIT
+            and not (preserve_visibility and case.moderator_id is not None)
+        ):
             case.delete()
             return {
                 "decision": result["decision"],
@@ -311,7 +358,7 @@ def _moderate_profile_case(task, case_id, delete_safe_case, trigger_user_id):
                 "confidence": result["confidence"],
                 "status": "deleted",
             }
-        case.allow()
+        case.allow(preserve_visibility=preserve_visibility)
     else:
         case.status = ProfileModerationCase.STATUS_PENDING
         case.save(
@@ -338,6 +385,8 @@ def _moderate_profile_case(task, case_id, delete_safe_case, trigger_user_id):
 def moderate_profile_case_task(
     self, case_id, delete_safe_case=False, trigger_user_id=None
 ):
+    if getattr(settings, "PROFILE_MODERATION_BATCH_ENABLED", True):
+        return queue_profile_moderation_case(case_id, delete_safe_case, trigger_user_id)
     return _moderate_profile_case(
         self,
         case_id,
@@ -348,6 +397,8 @@ def moderate_profile_case_task(
 
 @shared_task(bind=True, max_retries=len(PROFILE_MODERATION_RETRY_DELAYS))
 def moderate_username_task(self, case_id, delete_safe_case=False, trigger_user_id=None):
+    if getattr(settings, "PROFILE_MODERATION_BATCH_ENABLED", True):
+        return queue_profile_moderation_case(case_id, delete_safe_case, trigger_user_id)
     return _moderate_profile_case(
         self,
         case_id,

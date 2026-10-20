@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -35,6 +35,7 @@ from judge.tasks.username_moderation import (
 from llm_service import config as llm_config
 
 
+@override_settings(PROFILE_MODERATION_BATCH_ENABLED=False)
 class UsernameModerationTaskTest(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -456,7 +457,7 @@ class UsernameModerationDisplayTest(TestCase):
         self.assertNotContains(response, "public profile text")
         self.assertEqual(profile.get_public_username(), "Disabled user")
 
-    @patch("judge.views.user.moderate_profile_case_task.delay")
+    @patch("judge.views.user.queue_profile_moderation_case")
     def test_profile_edit_creates_about_moderation_case(self, delay):
         user = User.objects.create_user(username="profile_edit_user", password="pw")
         profile = Profile.objects.create(user=user, language=self.language)
@@ -645,6 +646,35 @@ class UsernameModerationInternalViewTest(TestCase):
             category=UsernameModerationCase.CATEGORY_OTHER,
         )
 
+    def test_anonymous_cannot_read_or_change_moderation_cases(self):
+        url = reverse("internal_profile_moderation")
+        for method in (self.client.get, self.client.post):
+            response = method(url, {"case": self.case.id, "action": "disable"})
+            self.assertEqual(response.status_code, 302)
+            self.assertIn("/accounts/login/?next=", response.url)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    def test_regular_user_cannot_read_or_change_moderation_cases(self):
+        self.client.force_login(self.user)
+        url = reverse("internal_profile_moderation")
+        self.assertEqual(self.client.get(url).status_code, 403)
+        response = self.client.post(url, {"case": self.case.id, "action": "disable"})
+        self.assertEqual(response.status_code, 403)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    def test_moderation_actions_require_csrf_token(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.admin)
+        response = client.post(
+            reverse("internal_profile_moderation"),
+            {"case": self.case.id, "action": "disable"},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
     def test_internal_page_lists_cases(self):
         allowed_user = User.objects.create_user(username="allowed_user")
         Profile.objects.create(user=allowed_user, language=self.language)
@@ -814,7 +844,7 @@ class UsernameModerationInternalViewTest(TestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.is_active)
 
-    @patch("judge.views.internal.moderate_profile_case_task.delay")
+    @patch("judge.views.internal.queue_profile_moderation_case")
     def test_ai_rerun_queues_only_pending_needs_review_cases(self, delay):
         unrelated_user = User.objects.create_user(username="queued_unrelated_user")
         Profile.objects.create(user=unrelated_user, language=self.language)
@@ -1036,7 +1066,7 @@ class UsernameModerationUserAdminTest(TestCase):
 
 class UsernameModerationAuditCommandTest(TestCase):
     @patch(
-        "judge.management.commands.audit_username_moderation.moderate_username_task.delay"
+        "judge.management.commands.audit_username_moderation.queue_profile_moderation_case"
     )
     def test_apply_creates_pending_case_and_queues_ai_task(self, delay):
         user = User.objects.create_user(username="regular_user")
@@ -1055,7 +1085,7 @@ class UsernameModerationAuditCommandTest(TestCase):
         self.assertIn("Created 1 case(s); queued 1 AI task(s)", out.getvalue())
 
     @patch(
-        "judge.management.commands.audit_username_moderation.moderate_username_task.delay"
+        "judge.management.commands.audit_username_moderation.queue_profile_moderation_case"
     )
     def test_dry_run_does_not_create_cases_or_queue_tasks(self, delay):
         User.objects.create_user(username="regular_user")
@@ -1094,7 +1124,7 @@ class ProfileModerationAuditCommandTest(TestCase):
 
     @patch(
         "judge.management.commands.audit_profile_moderation."
-        "moderate_profile_case_task.delay"
+        "queue_profile_moderation_case"
     )
     def test_about_target_creates_pending_case_and_queues_ai_task(self, delay):
         user = User.objects.create_user(username="about_audit_user")

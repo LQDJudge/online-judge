@@ -79,7 +79,7 @@ from judge.review.triggers import trigger_problem_review_for
 from judge.review.verdict import batched_verdicts
 from judge.tasks import rescore_problem
 from judge.tasks.llm import improve_markdown_task, tag_problem_task
-from judge.tasks.username_moderation import moderate_profile_case_task
+from judge.tasks.profile_moderation import queue_profile_moderation_case
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.problem_equivalence import (
     ProblemEquivalenceError,
@@ -2720,7 +2720,7 @@ class InternalProfileModeration(InternalView, ListView):
 
                     def enqueue_moderation_cases():
                         for case_id in rerun_case_ids:
-                            moderate_profile_case_task.delay(case_id)
+                            queue_profile_moderation_case(case_id)
 
                     transaction.on_commit(enqueue_moderation_cases)
 
