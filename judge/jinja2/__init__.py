@@ -11,6 +11,7 @@ from django.conf import settings
 from judge.highlight_code import highlight_code
 from judge.user_translations import gettext
 from . import (
+    avatar,
     camo,
     chat,
     datetime,

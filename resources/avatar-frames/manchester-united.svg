@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1000" height="1000" viewBox="0 0 1000 1000" fill="none">
+  <title>United — Red Devils supporter avatar frame</title>
+  <desc>Original red enamel and gold supporter frame. Transparent circular opening centered at 500,500 with diameter 520. Horned side armor, tridents, football medallions and a GGMU shield.</desc>
+  <defs>
+    <linearGradient id="gold" x1="250" y1="130" x2="720" y2="890" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff0b4"/><stop offset=".16" stop-color="#dcb55e"/><stop offset=".30" stop-color="#765024"/><stop offset=".43" stop-color="#f3d78b"/><stop offset=".58" stop-color="#a57532"/><stop offset=".76" stop-color="#ffe9a4"/><stop offset="1" stop-color="#8b5527"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="180" y1="200" x2="800" y2="790" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fce7a9"/><stop offset=".4" stop-color="#794324"/><stop offset=".7" stop-color="#efc777"/><stop offset="1" stop-color="#452d21"/>
+    </linearGradient>
+    <linearGradient id="red" x1="320" y1="230" x2="680" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f94744"/><stop offset=".2" stop-color="#bd1426"/><stop offset=".5" stop-color="#700b19"/><stop offset=".72" stop-color="#d52934"/><stop offset="1" stop-color="#450b16"/>
+    </linearGradient>
+    <linearGradient id="armor" x1="140" y1="170" x2="320" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2d3036"/><stop offset=".34" stop-color="#11171f"/><stop offset=".62" stop-color="#3b2027"/><stop offset="1" stop-color="#120d15"/>
+    </linearGradient>
+    <linearGradient id="horn" x1="160" y1="105" x2="340" y2="390" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffe4a2"/><stop offset=".19" stop-color="#ad7130"/><stop offset=".52" stop-color="#512d23"/><stop offset=".78" stop-color="#ecb757"/><stop offset="1" stop-color="#9a512b"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="455" y1="740" x2="548" y2="917" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eb3341"/><stop offset=".48" stop-color="#a50a20"/><stop offset="1" stop-color="#400a15"/>
+    </linearGradient>
+    <radialGradient id="medal"><stop stop-color="#39323a"/><stop offset="1" stop-color="#11141a"/></radialGradient>
+    <mask id="avatar-opening" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="1000"><rect width="1000" height="1000" fill="white"/><circle cx="500" cy="500" r="260" fill="black"/></mask>
+    <path id="lowerArc" d="M 320 714 A 280 280 0 0 0 680 714"/>
+    <g id="side">
+      <!-- Swept horn and layered side armor. -->
+      <path d="M304 320C239 286 189 217 151 105C145 222 162 319 224 393L274 430Z" fill="url(#horn)" stroke="#28141a" stroke-width="6"/>
+      <path d="M159 136C173 246 205 305 267 361L291 330C229 288 192 225 159 136Z" fill="url(#armor)"/>
+      <path d="M157 141C169 250 204 322 250 366" stroke="#edc77c" stroke-width="3" opacity=".82"/>
+      <path d="M233 310L302 352L281 581L347 689L287 787L258 706L183 661L206 584L144 507L178 442L132 347L202 374Z" fill="url(#armor)" stroke="url(#edge)" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M154 364L225 401L265 474L235 560L212 538L187 464Z" fill="url(#red)" stroke="#e5ba70" stroke-width="3"/>
+      <path d="M168 382L216 414L247 476L232 516L220 474Z" fill="#fa4c4b" opacity=".45"/>
+      <path d="M193 642L243 592L304 675L283 750L265 687Z" fill="url(#red)" stroke="url(#edge)" stroke-width="4"/>
+      <path d="M205 641L245 612L288 676L280 710L261 672Z" fill="#f44443" opacity=".35"/>
+      <path d="M166 450L186 480M189 577L206 594M236 690L254 697" stroke="#f2cc7a" stroke-width="4"/>
+      <!-- Trident engraved into the armor. -->
+      <path d="M203 428L242 539M192 440L211 458L221 454M218 432L215 451L224 460M190 431L191 442M219 421L219 434" stroke="#edc783" stroke-width="5" stroke-linecap="square"/>
+      <circle cx="216" cy="558" r="34" fill="url(#gold)" stroke="#281721" stroke-width="4"/>
+      <circle cx="216" cy="558" r="26" fill="url(#medal)" stroke="#f4d58c" stroke-width="2"/>
+      <path d="M216 541L230 551L225 568H207L202 551Z" fill="#dbc18d"/>
+      <path d="M216 541V534M230 551L239 548M225 568L231 578M207 568L201 578M202 551L193 548" stroke="#dbc18d" stroke-width="3"/>
+      <circle cx="277" cy="703" r="5" fill="#f5ce77"/>
+      <circle cx="187" cy="395" r="4" fill="#f5ce77"/>
+    </g>
+  </defs>
+  <g mask="url(#avatar-opening)">
+  <use xlink:href="#side"/>
+  <use xlink:href="#side" transform="translate(1000 0) scale(-1 1)"/>
+  <!-- Concentric rings deliberately have no fill: the opening is real alpha. -->
+  <circle cx="500" cy="500" r="292" stroke="#17121a" stroke-width="72"/>
+  <circle cx="500" cy="500" r="292" stroke="url(#gold)" stroke-width="62"/>
+  <circle cx="500" cy="500" r="292" stroke="#3f1320" stroke-width="43"/>
+  <circle cx="500" cy="500" r="292" stroke="url(#red)" stroke-width="34"/>
+  <circle cx="500" cy="500" r="310" stroke="#ffe4a2" stroke-width="2" opacity=".72"/>
+  <circle cx="500" cy="500" r="270" stroke="#180e15" stroke-width="8"/>
+  <circle cx="500" cy="500" r="264" stroke="url(#gold)" stroke-width="8"/>
+  <path d="M286 305A291 291 0 0 1 714 305" stroke="#ffaaaa" stroke-width="3" opacity=".65"/>
+  <path d="M253 657A291 291 0 0 0 365 757M635 757A291 291 0 0 0 747 657" stroke="#f34949" stroke-width="3" opacity=".65"/>
+  <!-- Stadium-inspired gold studs, four per side. -->
+  <g fill="#efd188" stroke="#643e27" stroke-width="2">
+    <circle cx="215" cy="447" r="5"/><circle cx="215" cy="553" r="5"/>
+    <circle cx="251" cy="355" r="5"/><circle cx="251" cy="645" r="5"/>
+    <circle cx="785" cy="447" r="5"/><circle cx="785" cy="553" r="5"/>
+    <circle cx="749" cy="355" r="5"/><circle cx="749" cy="645" r="5"/>
+  </g>
+  <!-- Upper nameplate; it remains outside the avatar aperture. -->
+  <path d="M327 177L373 148H627L673 177L651 237H349Z" fill="#19151d" stroke="url(#gold)" stroke-width="6"/>
+  <path d="M344 180L382 164H618L656 180L642 221H358Z" fill="url(#red)" stroke="#b88c48" stroke-width="2"/>
+  <path d="M389 155L416 131H584L611 155" fill="#211922" stroke="url(#edge)" stroke-width="4"/>
+  <text x="500" y="202" text-anchor="middle" fill="#fff0bd" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="40" letter-spacing="8">UNITED</text>
+  <!-- Bottom supporter shield. -->
+  <path d="M390 760L420 746L500 766L580 746L610 760L589 838L500 925L411 838Z" fill="#20141c" stroke="url(#gold)" stroke-width="7"/>
+  <path d="M410 769L499 789L590 769L572 828L500 899L428 828Z" fill="url(#shield)" stroke="#d2a050" stroke-width="3"/>
+  <!-- Original horned devil emblem with an upright trident. -->
+  <g transform="translate(455 778) scale(.83)" fill="#f7d77f" stroke="#641b21" stroke-width="1.5" stroke-linejoin="round">
+    <path d="M35 28L29 7L47 19H66L83 7L77 30L70 40L76 65L64 91L75 112H56L48 88L43 111H24L37 86L33 62L20 55L10 66L1 59L16 43L35 45Z"/>
+    <path d="M70 43L86 52L102 43L109 52L88 65L72 58Z"/>
+    <path d="M72 78C106 102 122 83 106 72C100 68 93 70 94 77C98 75 101 77 100 81C95 87 83 82 77 73Z"/>
+    <path d="M105 13H112V97H105ZM93 13H99V29H120V13H126V35H93ZM103 9L109 0L115 9Z"/>
+    <path d="M43 29L50 32M60 32L68 28" stroke="#6f1821" stroke-width="4"/>
+  </g>
+  <path d="M382 852L413 833L500 852L587 833L618 852L601 891L500 909L399 891Z" fill="#15141c" stroke="url(#gold)" stroke-width="4"/>
+  <text x="500" y="887" text-anchor="middle" fill="#f6d989" font-family="Georgia, 'Times New Roman', serif" font-size="30" font-weight="700" letter-spacing="10">GGMU</text>
+  </g>
+</svg>

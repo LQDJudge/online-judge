@@ -685,8 +685,14 @@ MAGAZINE_EXCLUDED_COMMUNITY_ORG_SLUGS = (
 # celery-beat is running (`celery -A dmoj_celery beat`), separate from workers.
 QUIZ_EXPIRY_ENABLED = False
 QUIZ_EXPIRY_BATCH_SIZE = 100
+COURSE_REWARDS_ENABLED = True
+COURSE_REWARDS_BATCH_SIZE = 100
 
 CELERY_BEAT_SCHEDULE = {
+    "award-course-frames": {
+        "task": "judge.tasks.rewards.award_course_frames",
+        "schedule": crontab(minute=15),
+    },
     "expire-quiz-attempts": {
         "task": "judge.tasks.quiz.expire_quiz_attempts",
         "schedule": 30.0,

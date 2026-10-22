@@ -1,0 +1,22 @@
+{% macro avatar(profile, size=40, frame=none, preview=false) -%}
+  {% set viewer = request.user if request is defined else none %}
+  {% if not preview %}{% set frame = public_avatar_frame(profile, viewer) %}{% endif %}
+  {% set artwork = frame.artwork_url if frame else none %}
+  <span class="avatar-crest {{ 'avatar-crest--framed avatar-crest--' ~ frame.style if frame else '' }} {{ 'avatar-crest--artwork' if artwork else '' }} {{ 'avatar-crest--small' if size <= 48 else '' }}" style="--avatar-size: {{ size }}px{% if artwork %}; --frame-scale: {{ frame.artwork_scale }}; --frame-x: {{ frame.avatar_center_x }}%; --frame-y: {{ frame.avatar_center_y }}%{% endif %}"{% if frame %} title="{{ frame.name }}"{% endif %}>
+    {% if frame and not artwork %}
+      <span class="avatar-crest__wing avatar-crest__wing--left" aria-hidden="true"></span>
+      <span class="avatar-crest__wing avatar-crest__wing--right" aria-hidden="true"></span>
+    {% endif %}
+    <img class="user-img avatar-crest__image" loading="lazy" src="{{ public_gravatar(profile, viewer, size) }}" width="{{ size }}" height="{{ size }}" alt="{{ _('Ảnh đại diện') }}">
+    {% if frame %}
+      {% if artwork %}
+        <img class="avatar-crest__artwork" src="{{ artwork }}" alt="" aria-hidden="true" decoding="async">
+      {% else %}
+        <span class="avatar-crest__rim" aria-hidden="true"></span>
+        <span class="avatar-crest__gem" aria-hidden="true"></span>
+      {% endif %}
+      {% if frame.label %}<span class="avatar-crest__label" aria-hidden="true">{{ frame.label }}</span>{% endif %}
+      <span class="avatar-crest__sr-only">{{ _('Khung: %(name)s', name=frame.name) }}</span>
+    {% endif %}
+  </span>
+{%- endmacro %}

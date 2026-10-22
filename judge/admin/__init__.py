@@ -22,6 +22,7 @@ from judge.admin.organization import (
 )
 from judge.admin.problem import ProblemAdmin, ProblemPointsVoteAdmin
 from judge.admin.profile import ProfileAdmin, UserAdmin
+from judge.admin.reward import AvatarFrameAdmin, ProfileFrameAdmin
 from judge.admin.runtime import JudgeAdmin, LanguageAdmin
 from judge.admin.submission import SubmissionAdmin
 from judge.admin.taxon import (
@@ -45,6 +46,8 @@ from judge.admin.quiz import (
     QuizAnswerFileAdmin,
 )
 from judge.models import (
+    AvatarFrame,
+    ProfileFrame,
     BlogPost,
     Comment,
     CommentLock,
@@ -116,3 +119,7 @@ admin.site.register(CourseLessonQuiz, CourseLessonQuizAdmin)
 admin.site.register(QuizAttempt, QuizAttemptAdmin)
 admin.site.register(QuizAnswer, QuizAnswerAdmin)
 admin.site.register(QuizAnswerFile, QuizAnswerFileAdmin)
+
+
+admin.site.register(AvatarFrame, AvatarFrameAdmin)
+admin.site.register(ProfileFrame, ProfileFrameAdmin)

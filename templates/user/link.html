@@ -1,1 +1,2 @@
-<span class="{{ profile.css_class }} {{'user-with-img' if show_image}}">{%- if show_image %}<img class="user-img" loading="lazy" src="{{ public_gravatar(profile, request.user if request is defined else None) }}">{%- endif %}<a href="{{ url('user_page', profile.username) }}">{{ profile.get_public_username(request.user if request is defined else None) }}</a></span>
+{% from "user/avatar.html" import avatar with context %}
+<span class="{{ profile.css_class }} {{'user-with-img' if show_image}}">{%- if show_image %}{{ avatar(profile, 28) }}{%- endif %}<a href="{{ url('user_page', profile.username) }}">{{ profile.get_public_username(request.user if request is defined else None) }}</a></span>

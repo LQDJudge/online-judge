@@ -65,6 +65,7 @@ from judge.models.profile import (
     UsernameModerationCase,
     DYNAMIC_EFFECT_CHOICES,
 )
+from judge.models.reward import AvatarFrame, ProfileFrame
 from judge.models.runtime import Judge, Language, RuntimeVersion
 from judge.models.submission import (
     SUBMISSION_RESULT,

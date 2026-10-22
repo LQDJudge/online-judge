@@ -1,3 +1,4 @@
+{% from "user/avatar.html" import avatar with context %}
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}">
 
@@ -51,6 +52,7 @@
     <link rel="stylesheet" type="text/css" href="{{ static('markdown.css') }}">
     {% compress css %}
       <link rel="stylesheet" href="{{ static('style.css') }}">
+      <link rel="stylesheet" href="{{ static('avatar-frames.css') }}">
       {% if INLINE_FONTAWESOME %}
         <link rel="stylesheet" href="{{ static('fontawesome/css/all.min.css') }}">
       {% endif %}
@@ -220,7 +222,7 @@
           </span>
           {% if request.user.is_authenticated %}
             <span id="user-links">
-              <img class="user-img" src="{{ gravatar(request.profile.id, 32) }}" height="24" width="24">
+              {{ avatar(request.profile, 24) }}
               <i class="fa fa-angle-down" style="font-size: 18px; padding-top: 8px;"></i>
             </span>
             <div class="dropdown" id="userlink_dropdown" role="tooptip">
@@ -249,6 +251,9 @@
                   <div class="dropdown-item"><i class="fa fa-upload"></i> {{ _('My Files') }}</div>
                 </a>
               {% endif %}
+              <a href="{{ url('user_frames') }}">
+                <div class="dropdown-item"><i class="fa fa-award"></i> {{ _('Bộ sưu tập') }}</div>
+              </a>
               <a href="{{ url('user_edit_profile') }}">
                 <div class="dropdown-item"><i class="fa fa-gear"></i> {{ _('Settings') }}</div>
               </a>

@@ -3,7 +3,9 @@ from markdown.extensions import Extension
 import xml.etree.ElementTree as etree
 
 YOUTUBE_REGEX = (
-    r"(https?://)?(www\.)?" "(youtube\\.com/watch\\?v=|youtu\\.be/)" "([\\w-]+)(&[\\w=]*)?"
+    r"(https?://)?(www\.)?"
+    "(youtube\\.com/watch\\?v=|youtu\\.be/)"
+    "([\\w-]+)(&[\\w=]*)?"
 )
 
 

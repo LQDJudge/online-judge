@@ -1,0 +1,21 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+  <p>{% blocktrans %}Trao khung cho <strong>{{ recipient_count }}</strong> tài khoản trong danh sách đã chọn.{% endblocktrans %}</p>
+  <p>{{ recipient_preview|join:", " }}{% if recipient_count > 10 %} …{% endif %}</p>
+  <p>{% trans "Khung được thêm vào bộ sưu tập. Người nhận tự chọn đeo; khung đang dùng và lịch sử nhận thưởng được giữ nguyên." %}</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    {% for pk in selected_ids %}
+      <input type="hidden" name="{{ action_checkbox_name }}" value="{{ pk }}">
+    {% endfor %}
+    <input type="hidden" name="select_across" value="{{ select_across }}">
+    <input type="hidden" name="action" value="award_avatar_frame">
+    <div class="submit-row">
+      <input type="submit" name="apply" value="{% trans 'Trao khung' %}">
+      <a href="{% url 'admin:judge_profile_changelist' %}">{% trans "Cancel" %}</a>
+    </div>
+  </form>
+{% endblock %}

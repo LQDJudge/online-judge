@@ -146,6 +146,47 @@ python3 manage.py runserver 0.0.0.0:8000
     1. After changing code, Django will automatically rebuild, you just need to press F5
     2. Some styles are in .scss files. You need to recompile CSS to see changes.
 
+## Avatar frames
+
+Users open **Bộ sưu tập** from their account menu or profile to view, equip, or
+remove avatar frames. Course frames unlock at 100% weighted course points
+(including quizzes and contests) for enrolled users. Empty courses and hidden
+results cannot unlock frames. Awards persist after curriculum changes.
+
+The initial catalog includes Iron (`cp-sat`), Bronze (`cp-dong`), Silver
+(`cp-bac`), Gold (`cp-vang`), CSES (`cses`), and Problem Setter. Missing courses
+leave their frames locked; map them through **Avatar frames** in Django admin.
+To grant Problem Setter, add an **Awarded avatar frame** record in admin, select
+the profile and frame, and enter a reason. The grant records its administrator
+and timestamp. Deleting that record revokes the manual award without changing
+site roles or permissions.
+
+The **Manchester United - Red Devils** supporter frame is also included as a
+manual community gift, with packaged transparent artwork. To grant it to several
+users, open **Profiles** in admin, select recipients, and choose **Trao khung
+avatar cho tài khoản đã chọn** (award avatar frame). Select the frame and enter
+a reason on the confirmation page. To include every user, clear search/filters
+and use Django admin's **Select all** link across pages before running the
+action. The confirmation shows the recipient count. Existing awards and
+equipped frames are preserved; repeat grants are safe. Staff need the
+`judge.add_profileframe` permission as well as access to the profile list.
+
+Custom artwork can be uploaded under **Avatar frames** in admin (transparent
+PNG/WebP, up to 5 MB). Remove both the outer background and the circular avatar
+opening. Set the opening center X/Y as percentages of image width/height and its
+diameter as a percentage of image width. Artwork overlays the avatar at every
+size; the COURSE/CSES/SETTER label remains separate. Clearing artwork restores
+the built-in design.
+
+Apply migrations and build static files using the normal deployment steps.
+Backfill existing achievements with `python manage.py sync_course_rewards`.
+Use `--link-courses` to map previously missing default course slugs, or
+`--username username` to refresh one user.
+
+Opening the collection refreshes the user's awards. Celery worker and Beat
+also synchronize awards hourly at minute 15. `COURSE_REWARDS_ENABLED=False`
+disables the periodic task; `COURSE_REWARDS_BATCH_SIZE` defaults to 100.
+
 ## Testing
 
 ### Setup Test Database
