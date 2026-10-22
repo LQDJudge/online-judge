@@ -818,7 +818,7 @@ def moderation_view(request, room_id):
             room=room,
             revoked_at__isnull=True,
             expires_at__gt=timezone.now(),
-        ).values("id", "target_id", "reason", "expires_at", "duration_days",)[:101]
+        ).values("id", "target_id", "reason", "expires_at", "duration_days")[:101]
     )
     bans = list(
         RoomBan.objects.filter(room=room, revoked_at__isnull=True)
