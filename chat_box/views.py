@@ -72,6 +72,7 @@ from chat_box.services.moderation import (
     mute_member,
 )
 from chat_box.services.unread import mark_room_read
+from chat_box.thread_data import thread_render_context
 from chat_box.utils import (
     create_chat_event_grant,
     decrypt_url,
@@ -138,7 +139,10 @@ class ChatView(ListView):
     def get_message_page(self, last_id, page_size):
         message_ids = list(
             Message.objects.filter(
-                hidden=False, room=self.room_id, id__lt=last_id
+                hidden=False,
+                room=self.room_id,
+                id__lt=last_id,
+                thread_root__isnull=True,
             ).values_list("id", flat=True)[:page_size]
         )
         if not message_ids:
@@ -300,6 +304,7 @@ class ChatView(ListView):
                 **reaction_render_context(self.messages, request.profile),
                 **reply_render_context(self.messages, request.user),
                 **message_render_context(self.messages),
+                **thread_render_context(self.messages, request.profile),
             },
         )
 
@@ -316,6 +321,7 @@ class ChatView(ListView):
         context.update(reaction_render_context(self.messages, self.request.profile))
         context.update(reply_render_context(self.messages, self.request.user))
         context.update(message_render_context(self.messages))
+        context.update(thread_render_context(self.messages, self.request.profile))
         membership = self.membership
         context["room_membership"] = membership
         context["room_policy"] = RoomPolicy(
@@ -558,6 +564,7 @@ def mute_chat_user(
                 room=message.room,
                 hidden=False,
                 kind=Message.Kind.USER,
+                thread_root__isnull=True,
             )
             .order_by("-id")
             .values("id", "time")
@@ -894,6 +901,7 @@ def post_message(request):
                     if (
                         candidate.room_id == room.id
                         and candidate.kind == Message.Kind.USER
+                        and candidate.thread_root_id is None
                     ):
                         reply_to = candidate
                 except (ValueError, Message.DoesNotExist):
@@ -905,6 +913,7 @@ def post_message(request):
                 room=room,
                 reply_to=reply_to,
             )
+            ret["message"] = new_message.id
             UserRoom.objects.filter(pk=membership.pk).update(
                 last_read_message_id=new_message.id,
                 last_seen=timezone.now(),
@@ -965,6 +974,17 @@ def react_message(request):
         .first()
     )
     if not RoomPolicy(request.user, request.profile, room, membership).can_react():
+        return HttpResponseForbidden()
+    if (
+        message.thread_root_id
+        and not Message.objects.filter(
+            pk=message.thread_root_id,
+            room=room,
+            hidden=False,
+            kind=Message.Kind.USER,
+            thread_root__isnull=True,
+        ).exists()
+    ):
         return HttpResponseForbidden()
 
     # A muted user is silenced from chat interaction, reactions included.
@@ -1325,6 +1345,9 @@ def chat_message_ajax(request):
             ),
             **reaction_render_context([message], request.profile),
             **reply_render_context([message], request.user),
+            **message_render_context([message]),
+            **thread_render_context([message], request.profile),
+            "room_object": room,
         },
     )
 

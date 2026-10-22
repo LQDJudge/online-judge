@@ -12,7 +12,9 @@ def mark_room_read(room, profile):
         state=UserRoom.State.ACTIVE,
     )
     tail_id = (
-        Message.objects.filter(room=room, kind=Message.Kind.USER, hidden=False)
+        Message.objects.filter(
+            room=room, kind=Message.Kind.USER, hidden=False, thread_root__isnull=True
+        )
         .order_by("-id")
         .values_list("id", flat=True)
         .first()

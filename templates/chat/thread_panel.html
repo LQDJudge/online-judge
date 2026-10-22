@@ -1,0 +1,33 @@
+<aside id="chat-thread-panel" class="chat-thread-panel" aria-labelledby="chat-thread-title" hidden>
+  <header class="chat-thread-header">
+    <div><h2 id="chat-thread-title">{{ _('Thread') }}</h2><p id="chat-thread-channel"></p></div>
+    <button type="button" id="chat-thread-close" class="chat-thread-icon" aria-label="{{ _('Close thread') }}"><i class="fa fa-times" aria-hidden="true"></i></button>
+  </header>
+  <div id="chat-thread-scroll" class="chat-thread-scroll">
+    <ul id="chat-thread-root" class="chat-thread-messages"></ul>
+    <div class="chat-thread-divider"><span id="chat-thread-count"></span></div>
+    <button type="button" id="chat-thread-older" class="chat-thread-link" hidden>{{ _('Load earlier replies') }}</button>
+    <p id="chat-thread-loading" class="chat-thread-notice" role="status">{{ _('Loading thread...') }}</p>
+    <p id="chat-thread-load-error" class="chat-thread-notice" role="alert" hidden></p>
+    <button type="button" id="chat-thread-retry" class="chat-thread-link" hidden>{{ _('Try again') }}</button>
+    <p id="chat-thread-empty" class="chat-thread-notice" hidden>{{ _('Start the discussion by sending the first reply.') }}</p>
+    <ul id="chat-thread-replies" class="chat-thread-messages"></ul>
+  </div>
+  <button type="button" id="chat-thread-new" class="chat-thread-link" hidden>{{ _('New replies') }}</button>
+  <div class="chat-thread-follow-row"><button type="button" id="chat-thread-follow" aria-pressed="false">{{ _('Follow thread') }}</button></div>
+  <p id="chat-thread-readonly" class="chat-thread-notice" hidden></p>
+  <form id="chat-thread-form" class="chat-thread-composer">
+    <label class="sr-only" for="chat-thread-input">{{ _('Reply in thread') }}</label>
+    <textarea id="chat-thread-input" rows="3" maxlength="5000" placeholder="{{ _('Reply in thread') }}" disabled></textarea>
+    <div><small>{{ _('Only sent to this thread') }}</small><button type="submit" id="chat-thread-send" class="action-btn" disabled>{{ _('Send reply') }}</button></div>
+  </form>
+  <p id="chat-thread-send-error" class="chat-modal-error" role="alert"></p>
+  <span id="chat-thread-announcement" class="sr-only" role="status" aria-live="polite"></span>
+</aside>
+<div id="chat-threads-list-modal" class="chat-modal-backdrop" aria-hidden="true">
+  <div class="chat-modal chat-room-list-modal" role="dialog" aria-modal="true" aria-labelledby="chat-threads-list-title" tabindex="-1">
+    <div class="chat-thread-header"><h2 id="chat-threads-list-title">{{ _('Followed threads') }}</h2><button type="button" id="chat-threads-list-close" class="chat-thread-icon" aria-label="{{ _('Close') }}">×</button></div>
+    <div id="chat-threads-list"></div>
+    <button type="button" id="chat-threads-list-more" class="chat-thread-link" hidden>{{ _('Load more') }}</button>
+  </div>
+</div>

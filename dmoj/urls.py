@@ -13,6 +13,7 @@ from django.views.generic import RedirectView
 
 import chat_box.views as chat
 import chat_box.room_views as chat_rooms
+import chat_box.thread_views as chat_threads
 from judge import authentication
 from judge.forms import CustomAuthenticationForm
 from judge.sitemap import (
@@ -1851,6 +1852,31 @@ urlpatterns = [
         include(
             [
                 re_path(r"^rooms/$", chat_rooms.room_list_view, name="chat_room_list"),
+                re_path(
+                    r"^threads/followed/$",
+                    chat_threads.followed_threads,
+                    name="chat_followed_threads",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/threads/(?P<root_id>\d+)/$",
+                    chat_threads.thread_detail,
+                    name="chat_thread",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/threads/(?P<root_id>\d+)/reply/$",
+                    chat_threads.thread_reply,
+                    name="chat_thread_reply",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/threads/(?P<root_id>\d+)/read/$",
+                    chat_threads.thread_read,
+                    name="chat_thread_read",
+                ),
+                re_path(
+                    r"^room/(?P<room_id>\d+)/threads/(?P<root_id>\d+)/follow/$",
+                    chat_threads.thread_follow,
+                    name="chat_thread_follow",
+                ),
                 re_path(
                     r"^groups/create/$",
                     chat_rooms.create_group_view,

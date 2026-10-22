@@ -18724,3 +18724,83 @@ msgid "Profile content exceeds the AI batch limit; human review required."
 msgstr ""
 "Nội dung hồ sơ vượt quá giới hạn xử lý theo lô của AI; cần người kiểm duyệt "
 "xem xét."
+
+msgid "thread root"
+msgstr "tin nhắn gốc của thảo luận"
+
+msgid "You cannot view this room."
+msgstr "Bạn không thể xem phòng này."
+
+msgid "This thread is unavailable."
+msgstr "Thảo luận này không khả dụng."
+
+msgid "Invalid thread cursor."
+msgstr "Vị trí tải thảo luận không hợp lệ."
+
+msgid "The original message was hidden. This thread is read-only."
+msgstr "Tin nhắn gốc đã bị ẩn. Bạn chỉ có thể đọc thảo luận này."
+
+msgid "Invalid message identifier."
+msgstr "Mã tin nhắn không hợp lệ."
+
+msgid "This message identifier has already been used."
+msgstr "Mã tin nhắn này đã được sử dụng."
+
+msgid "Invalid follow preference."
+msgstr "Tùy chọn theo dõi không hợp lệ."
+
+msgid "Thread"
+msgstr "Thảo luận"
+
+msgid "Loading thread..."
+msgstr "Đang tải thảo luận..."
+
+msgid "Unable to load this thread. Try again."
+msgstr "Không tải được thảo luận. Hãy thử lại."
+
+#, python-format
+msgid "%(count)s replies"
+msgstr "%(count)s phản hồi"
+
+#, python-format
+msgid "%(count)s new"
+msgstr "%(count)s mới"
+
+msgid "Reply in thread"
+msgstr "Trả lời trong thảo luận"
+
+msgid "Follow thread"
+msgstr "Theo dõi thảo luận"
+
+msgid "Following"
+msgstr "Đang theo dõi"
+
+msgid "No followed threads yet."
+msgstr "Chưa có thảo luận đang theo dõi."
+
+msgid "Reply sent."
+msgstr "Đã gửi phản hồi."
+
+msgid "Only sent to this thread"
+msgstr "Chỉ gửi trong thảo luận này"
+
+msgid "Followed threads"
+msgstr "Thảo luận đang theo dõi"
+
+msgid "Close thread"
+msgstr "Đóng thảo luận"
+
+msgid "Load earlier replies"
+msgstr "Tải phản hồi trước"
+
+msgid "Try again"
+msgstr "Thử lại"
+
+msgid "Start the discussion by sending the first reply."
+msgstr "Gửi phản hồi đầu tiên để bắt đầu thảo luận."
+
+msgid "New replies"
+msgstr "Phản hồi mới"
+
+msgid "Send reply"
+msgstr "Gửi phản hồi"

@@ -82,6 +82,7 @@ def get_unread_boxes(profile):
         id__gt=Coalesce(OuterRef("last_read_message_id"), Value(0)),
         kind="user",
         hidden=False,
+        thread_root__isnull=True,
     ).exclude(author_id=profile.id)
     return (
         UserRoom.objects.filter(

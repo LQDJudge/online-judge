@@ -53,6 +53,8 @@ def remember_message_visibility(sender, instance, update_fields=None, **kwargs):
 
 @receiver(post_save, sender=Message)
 def invalidate_unread_cache_for_message(sender, instance, created, **kwargs):
+    if instance.thread_root_id is not None:
+        return
     became_visible_user_message = (
         created and instance.kind == Message.Kind.USER and not instance.hidden
     )
@@ -70,7 +72,11 @@ def invalidate_unread_cache_for_message(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=Message)
 def invalidate_unread_cache_for_deleted_message(sender, instance, **kwargs):
-    if instance.kind == Message.Kind.USER and not instance.hidden:
+    if (
+        instance.kind == Message.Kind.USER
+        and not instance.hidden
+        and not instance.thread_root_id
+    ):
         _record_unread_message_event(instance.room_id)
 
 
