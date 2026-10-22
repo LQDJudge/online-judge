@@ -38,6 +38,7 @@ def hide_message(message, user, profile, reason=""):
                 room=room,
                 hidden=False,
                 kind=Message.Kind.USER,
+                thread_root__isnull=True,
             )
             .order_by("-id")
             .values("id", "time")

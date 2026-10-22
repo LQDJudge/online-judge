@@ -14,6 +14,7 @@ from judge.utils.files import generate_secure_filename
 __all__ = [
     "Message",
     "MessageReaction",
+    "ThreadParticipation",
     "Room",
     "RoomRedirect",
     "UserRoom",
@@ -447,6 +448,15 @@ class Message(models.Model):
         on_delete=models.SET_NULL,
         related_name="replies",
     )
+    thread_root = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="thread_replies",
+        verbose_name=_("thread root"),
+    )
+    client_nonce = models.CharField(max_length=64, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         self.body = self.body.strip()
@@ -460,8 +470,26 @@ class Message(models.Model):
             models.Index(fields=["hidden", "room", "-id"]),
             models.Index(fields=["room", "kind", "hidden", "-id"]),
             models.Index(fields=["room", "author", "time"]),
+            models.Index(fields=["room", "thread_root", "hidden", "id"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["author", "client_nonce"], name="chat_message_author_nonce"
+            ),
         ]
         app_label = "chat_box"
+
+
+class ThreadParticipation(models.Model):
+    root = models.ForeignKey(Message, on_delete=CASCADE, related_name="thread_members")
+    user = models.ForeignKey(Profile, on_delete=CASCADE)
+    following = models.BooleanField(default=True)
+    last_read_reply_id = models.PositiveBigIntegerField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["root", "user"], name="chat_thread_user")
+        ]
 
 
 class MessageReaction(models.Model):
@@ -1049,7 +1077,9 @@ def _get_ignored_room_ids(user):
 @cache_wrapper(prefix="gfmi")
 def get_first_msg_id(room_id):
     try:
-        msg = Message.objects.filter(room=room_id, hidden=False).earliest("id")
+        msg = Message.objects.filter(
+            room=room_id, hidden=False, thread_root__isnull=True
+        ).earliest("id")
     except Message.DoesNotExist:
         return None
     return msg.id

@@ -141,6 +141,7 @@ def _batch_unread_counts(args_list):
                 predicate,
                 kind=Message.Kind.USER,
                 hidden=False,
+                thread_root__isnull=True,
             )
             .exclude(author_id=profile_id)
             .values("room_id")

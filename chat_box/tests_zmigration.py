@@ -19,7 +19,8 @@ class GeneralizedRoomMigrationTests(TransactionTestCase):
     def _post_teardown(self):
         # A setup/assertion failure can leave the schema at migrate_from. Restore
         # it before Django flushes using the current model definitions.
-        MigrationExecutor(connection).migrate([self.migrate_to])
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes("chat_box"))
         super()._post_teardown()
         # TransactionTestCase flushes data after the schema test. Restore the
         # singleton expected by later tests and by Profile creation signals.
@@ -214,7 +215,9 @@ class GeneralizedRoomMigrationTests(TransactionTestCase):
 
             lobby = Room.objects.get(singleton_key="lobby")
             self.assertEqual(
-                Message.objects.get(id=lobby_message.id).room_id,
+                Message.objects.values_list("room_id", flat=True).get(
+                    id=lobby_message.id
+                ),
                 lobby.id,
             )
             self.assertEqual(Message.objects.filter(room=lobby).count(), 1)
@@ -243,7 +246,7 @@ class GeneralizedRoomMigrationTests(TransactionTestCase):
             self.assertEqual(dm.direct_user_high_id, profiles[1].id)
             self.assertEqual(dm.last_msg_id, duplicate_reply.id)
             self.assertEqual(
-                Message.objects.get(id=dm_message.id).body,
+                Message.objects.values_list("body", flat=True).get(id=dm_message.id),
                 "Legacy direct message",
             )
             self.assertEqual(
@@ -261,9 +264,15 @@ class GeneralizedRoomMigrationTests(TransactionTestCase):
                 ).count(),
                 7,
             )
-            self.assertTrue(Message.objects.get(id=duplicate_hidden.id).hidden)
+            self.assertTrue(
+                Message.objects.values_list("hidden", flat=True).get(
+                    id=duplicate_hidden.id
+                )
+            )
             self.assertEqual(
-                Message.objects.get(id=duplicate_reply.id).reply_to_id,
+                Message.objects.values_list("reply_to_id", flat=True).get(
+                    id=duplicate_reply.id
+                ),
                 duplicate_parent.id,
             )
             self.assertTrue(
@@ -319,7 +328,9 @@ class GeneralizedRoomMigrationTests(TransactionTestCase):
             self.assertIsNone(ambiguous_history.direct_user_high_id)
             self.assertEqual(ambiguous_history.last_msg_id, self_message.id)
             self.assertEqual(
-                Message.objects.get(id=self_message.id).room_id,
+                Message.objects.values_list("room_id", flat=True).get(
+                    id=self_message.id
+                ),
                 ambiguous_history.id,
             )
             self.assertFalse(
@@ -329,7 +340,9 @@ class GeneralizedRoomMigrationTests(TransactionTestCase):
             self.assertEqual(saved_messages.direct_user_low_id, profiles[2].id)
             self.assertEqual(saved_messages.direct_user_high_id, profiles[2].id)
             self.assertEqual(
-                Message.objects.get(id=duplicate_self_message.id).room_id,
+                Message.objects.values_list("room_id", flat=True).get(
+                    id=duplicate_self_message.id
+                ),
                 saved_messages.id,
             )
             self.assertEqual(saved_messages.last_msg_id, duplicate_self_message.id)

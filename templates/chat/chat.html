@@ -41,7 +41,9 @@
         archiveRoom: "{{ url('chat_room_archive', 0) }}",
         restoreRoom: "{{ url('chat_room_restore', 0) }}",
         moderation: "{{ url('chat_room_moderation', 0) }}",
-        eventGrant: "{{ url('chat_event_grant', 0) }}"
+        eventGrant: "{{ url('chat_event_grant', 0) }}",
+        thread: "{{ url('chat_thread', 0, 0) }}",
+        followedThreads: "{{ url('chat_followed_threads') }}"
       },
       user: {
         id: {{ request.profile.id }},
@@ -69,6 +71,18 @@
       reactions: {{ chat_reactions|tojson }},
       reactionImages: {{ chat_reaction_image_urls|tojson }},
       i18n: {
+        threadTitle: "{{ _('Thread') }}",
+        threadLoading: "{{ _('Loading thread...') }}",
+        threadError: "{{ _('Unable to load this thread. Try again.') }}",
+        threadHidden: "{{ _('The original message was hidden. This thread is read-only.') }}",
+        threadReplies: "{{ _('%(count)s replies', count='%(count)s') }}",
+        threadNew: "{{ _('%(count)s new', count='%(count)s') }}",
+        threadReply: "{{ _('Reply in thread') }}",
+        threadFollow: "{{ _('Follow thread') }}",
+        threadFollowing: "{{ _('Following') }}",
+        threadEmptyList: "{{ _('No followed threads yet.') }}",
+        threadSent: "{{ _('Reply sent.') }}",
+        threadSendOnly: "{{ _('Only sent to this thread') }}",
         whoReacted: "{{ _('See who reacted') }}",
         newMessages: "{{ _('New message(s)') }}",
         newMessage: "{{ _('New message') }}",
@@ -244,6 +258,7 @@
               </div>
             </div>
           </div>
+          <button type="button" id="chat-followed-threads" class="chat-followed-threads"><i class="far fa-comments" aria-hidden="true"></i> {{ _('Followed threads') }} <span id="chat-followed-badge" hidden></span></button>
           <div id="chat-online-list">
             {% include "chat/online_status.html" %}
           </div>
@@ -328,6 +343,7 @@
           </div>
         </div>
       </div>
+      {% include 'chat/thread_panel.html' %}
       {% include 'chat/room_details_panel.html' %}
     </div>
     {% include 'chat/room_modals.html' %}

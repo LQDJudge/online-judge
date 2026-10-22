@@ -9,6 +9,10 @@
 {% set reply_quote = reply_quotes.get(message.id) if reply_quotes is defined and reply_quotes else None %}
 {% set can_interact_message = can_interact_room if can_interact_room is defined else false %}
 {% set message_author = message_authors.get(message.author_id, message.author_id) if message_authors is defined else message.author_id %}
+{% set dom_prefix = message_dom_prefix|default('') %}
+{% set is_thread = thread_view|default(false) %}
+{% set can_thread = room_object is defined and room_object.room_type != 'direct' and not is_thread and message.kind != 'system' and not (is_message_template|default(false)) %}
+{% set thread_summary = thread_summaries.get(message.id) if thread_summaries is defined else None %}
 {% if message.kind == 'system' %}
   <li class="message chat-system-message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="" data-time="{{ message.time.timestamp()|int }}">
     {% if message.system_event == 'join' %}
@@ -24,7 +28,7 @@
     {% endif %}
   </li>
 {% else %}
-  <li class="message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}" data-time="{{ message.time.timestamp()|int }}">
+  <li class="message" id="{{ dom_prefix }}message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}" data-time="{{ message.time.timestamp()|int }}" data-thread-root="{{ message.thread_root_id|default('') or '' }}">
     <div class="message-avatar">
       {% if message.author_id %}
         <img loading="lazy" src="{{ public_gravatar(message_author, request.user, 135) }}" class="profile-pic user-img">
@@ -53,8 +57,8 @@
           </div>
         {% endif %}
       {% endif %}
-      <div class="message-bubble-wrapper body-block message-block" id="message-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
-        <div class="message-text message-bubble {% if request.profile.id != message.author_id %}message-text-other message-bubble-other{% else %}message-text-myself message-bubble-self{% endif %}" id="message-text-{{ message.id }}">
+      <div class="message-bubble-wrapper body-block message-block" id="{{ dom_prefix }}message-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
+        <div class="message-text message-bubble {% if request.profile.id != message.author_id %}message-text-other message-bubble-other{% else %}message-text-myself message-bubble-self{% endif %}" id="{{ dom_prefix }}message-text-{{ message.id }}">
           {{message.body|markdown(lazy_load=False)|reference|str|safe }}
         </div>
         {% if request.profile and can_interact_message and chat_reactions is defined and not (is_message_template is defined and is_message_template) %}
@@ -70,10 +74,10 @@
             </div>
           </div>
         {% endif %}
-        {% if request.profile and can_interact_message and not (is_message_template is defined and is_message_template) %}
-          <button type="button" class="message-reply-toggle" data-id="{{ message.id }}" data-author="{{ message.author_id }}" title="{{ _('Reply') }}">
+        {% if request.profile and can_interact_message and not is_thread and not (is_message_template is defined and is_message_template) %}
+          <button type="button" class="message-reply-toggle" data-id="{{ message.id }}" data-author="{{ message.author_id }}" title="{{ _('Reply in thread') if can_thread else _('Reply') }}">
             <i class="fas fa-reply" aria-hidden="true"></i>
-            <span class="sr-only">{{ _('Reply') }}</span>
+            <span class="sr-only">{{ _('Reply in thread') if can_thread else _('Reply') }}</span>
           </button>
         {% endif %}
         {% if can_delete_message or can_mute_message %}
@@ -93,7 +97,7 @@
           </div>
         {% endif %}
       </div>
-      <div class="message-reactions{% if not (message_reaction and message_reaction.total) %} is-empty{% endif %}" id="message-reactions-{{ message.id }}" data-id="{{ message.id }}" data-my-reaction="{{ message_reaction.my_reaction if message_reaction and message_reaction.my_reaction else '' }}">
+      <div class="message-reactions{% if not (message_reaction and message_reaction.total) %} is-empty{% endif %}" id="{{ dom_prefix }}message-reactions-{{ message.id }}" data-id="{{ message.id }}" data-my-reaction="{{ message_reaction.my_reaction if message_reaction and message_reaction.my_reaction else '' }}">
         {% if message_reaction and message_reaction.total and chat_reactions is defined %}
           {% for code, emoji in chat_reactions %}
             {% if message_reaction.counts.get(code) %}
@@ -107,6 +111,13 @@
           {% endfor %}
         {% endif %}
       </div>
+      {% if can_thread %}
+        <button type="button" class="chat-thread-summary" data-root="{{ message.id }}" aria-controls="chat-thread-panel">
+          <i class="far fa-comments" aria-hidden="true"></i>
+          <span class="thread-summary-count">{% if thread_summary and thread_summary.reply_count %}{{ _('%(count)s replies', count=thread_summary.reply_count) }}{% else %}{{ _('Reply in thread') }}{% endif %}</span>
+          <span class="thread-summary-unread"{% if not (thread_summary and thread_summary.unread_count) %} hidden{% endif %}>{{ _('%(count)s new', count=thread_summary.unread_count) if thread_summary else '' }}</span>
+        </button>
+      {% endif %}
     </div>
   </li>
 {% endif %}

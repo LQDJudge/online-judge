@@ -372,7 +372,7 @@
     // Rebuild a message's reaction pill + picker-active state from a summary
     // ({counts, total, my_reaction}). Used by both the POST response and live events.
     renderReactions: function(messageId, summary) {
-      var $container = $('#message-reactions-' + messageId);
+      var $container = $('.message-reactions[data-id="' + messageId + '"]');
       if (!$container.length) return;
 
       // If a who-reacted popup was open, refresh it after the rebuild instead of
@@ -410,7 +410,7 @@
         $container.addClass('is-empty').empty();
       }
 
-      var $picker = $('#message-' + messageId).find('.reaction-picker');
+      var $picker = $('.message[data-id="' + messageId + '"]').find('.reaction-picker');
       $picker.find('.reaction-option').each(function() {
         $(this).toggleClass(
           'reaction-option-active',
@@ -550,6 +550,7 @@
     },
 
     showDetailsPanel: function() {
+      ChatThreads.close();
       $('#chat-container').addClass('details-open');
       $('#chat-details-panel').addClass('is-open').attr('aria-hidden', 'false');
       $('#chat-room-details').attr('aria-expanded', 'true');
@@ -857,6 +858,7 @@
 
     applyMutedState: function() {
       this.setMutedState(ChatConfig.user.isMuted);
+      if (ChatThreads) ChatThreads.updateComposer();
     },
 
     restoreInteractionAfterUnmute: function() {
@@ -904,6 +906,271 @@
   // ============================================
   // Message Handling
   // ============================================
+  var ChatThreads = {
+    root: null,
+    token: 0,
+    drafts: {},
+    canPost: false,
+    before: null,
+    loading: false,
+    sending: false,
+    nonce: null,
+    readCursor: 0,
+    lastBody: null,
+    listOffset: 0,
+
+    url: function(action, root, room) {
+      return ChatConfig.urls.thread.replace('/room/0/', '/room/' + (room || ChatState.roomId) + '/')
+        .replace('/threads/0/', '/threads/' + (root || this.root) + '/') + (action ? action + '/' : '');
+    },
+
+    init: function() {
+      var self = this;
+      $(document).on('click', '.chat-thread-summary', function() { self.open($(this).data('root')); });
+      $('#chat-thread-close').on('click', function() { self.close(); });
+      $('#chat-thread-input').on('input', function() { self.updateComposer(); });
+      if (typeof register_copy_clipboard === 'function') register_copy_clipboard($('#chat-thread-input'), function() { self.updateComposer(); });
+      $('#chat-thread-input').on('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.originalEvent.isComposing && e.keyCode !== 229) {
+          e.preventDefault(); self.send();
+        }
+      });
+      $('#chat-thread-form').on('submit', function(e) { e.preventDefault(); self.send(); });
+      $('#chat-thread-retry').on('click', function() { self.load(); });
+      $('#chat-thread-older').on('click', function() { self.load(true); });
+      $('#chat-thread-new').on('click', function() { self.load(false, true); });
+      $('#chat-thread-follow').on('click', function() {
+        var root = self.root, room = ChatState.roomId;
+        $.post(self.url('follow'), {following: $(this).attr('aria-pressed') === 'true' ? 'false' : 'true'})
+          .done(function(data) { if (self.matches(room, root)) self.summary(root, data.summary); self.refreshFollowed(); })
+          .fail(function() { $('#chat-thread-send-error').text(ChatConfig.i18n.threadError); });
+      });
+      $('#chat-thread-scroll').on('scroll', ChatUtils.debounce(function() {
+        self.markRead();
+        if (self.nearBottom() && !$('#chat-thread-new').prop('hidden')) self.load(false, true);
+      }, 200));
+      $(document).on('visibilitychange', function() {
+        if (!document.hidden) { self.refreshFollowed(); if (self.root) self.load(); }
+      });
+      $(window).on('popstate', function() {
+        var root = new URL(window.location.href).searchParams.get('thread');
+        if (root) self.open(root, false); else self.close(false);
+      });
+      $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && self.root && !$('.chat-modal-backdrop.is-open').length) self.close();
+      });
+      $('#chat-followed-threads').on('click', function() {
+        $('#chat-threads-list-modal').addClass('is-open').attr('aria-hidden', 'false');
+        $('#chat-threads-list-modal [role="dialog"]').focus();
+        self.refreshFollowed(true);
+      });
+      $('#chat-threads-list-close').on('click', function() {
+        $('#chat-threads-list-modal').removeClass('is-open').attr('aria-hidden', 'true');
+        $('#chat-followed-threads').focus();
+      });
+      $('#chat-threads-list-more').on('click', function() { self.refreshFollowed(true, true); });
+      $(document).on('click', '.chat-followed-thread', function() {
+        var room = String($(this).data('room')), root = $(this).data('root');
+        $('#chat-threads-list-close').trigger('click');
+        if (room === ChatState.roomId) { ChatUI.showRightPanel(); self.open(root); }
+        else ChatEvents.loadKnownRoom(room, null, null, function() { self.open(root); });
+      });
+      // Reconcile after reconnects and daemon outages without disturbing a scrolled reader.
+      setInterval(function() {
+        if (document.hidden) return;
+        self.refreshFollowed();
+        if (self.root && !self.loading && !self.sending) self.load();
+      }, 30000);
+      this.refreshFollowed();
+      var initial = new URL(window.location.href).searchParams.get('thread');
+      if (initial) this.open(initial, false);
+    },
+
+    matches: function(room, root) { return String(room) === ChatState.roomId && String(root) === String(this.root); },
+    nearBottom: function() {
+      var el = $('#chat-thread-scroll')[0];
+      return el.scrollHeight - el.scrollTop - el.clientHeight < 90;
+    },
+    updateComposer: function() {
+      var disabled = !this.root || !this.canPost || ChatUtils.isChatDisabled() || this.sending;
+      $('#chat-thread-input').prop('disabled', disabled);
+      $('#chat-thread-send').prop('disabled', disabled || !$('#chat-thread-input').val().trim());
+    },
+    summary: function(root, data) {
+      var $button = $('.chat-thread-summary[data-root="' + root + '"]');
+      $button.find('.thread-summary-count').text(data.reply_count ? interpolate(ChatConfig.i18n.threadReplies, {count: data.reply_count}, true) : ChatConfig.i18n.threadReply);
+      $button.find('.thread-summary-unread').prop('hidden', !data.unread_count).text(interpolate(ChatConfig.i18n.threadNew, {count: data.unread_count}, true));
+      if (String(root) === String(this.root)) {
+        $('#chat-thread-count').text(interpolate(ChatConfig.i18n.threadReplies, {count: data.reply_count}, true));
+        $('#chat-thread-follow').attr('aria-pressed', data.following ? 'true' : 'false').text(data.following ? ChatConfig.i18n.threadFollowing : ChatConfig.i18n.threadFollow);
+      }
+    },
+    open: function(root, updateHistory) {
+      if (!/^\d+$/.test(String(root))) return;
+      if (!this.root) this.channelScrollTop = ChatElements.chatBox.scrollTop();
+      if (this.root) this.drafts[this.root] = $('#chat-thread-input').val();
+      this.token++;
+      this.root = String(root);
+      this.canPost = false;
+      this.loading = false;
+      this.pendingRefresh = false;
+      this.pendingBottom = false;
+      this.focusOnLoad = true;
+      this.readCursor = 0;
+      this.before = null;
+      ChatUI.hideDetailsPanel();
+      $('#chat-container').addClass('thread-open');
+      $('#chat-thread-panel').prop('hidden', false);
+      $('#chat-thread-root, #chat-thread-replies').empty();
+      $('#chat-thread-count, #chat-thread-send-error').text('');
+      $('#chat-thread-new, #chat-thread-empty, #chat-thread-older, #chat-thread-readonly').prop('hidden', true);
+      $('#chat-thread-channel').text($('.info-name').first().text());
+      $('#chat-thread-input').val(this.drafts[this.root] || '');
+      if (updateHistory !== false) {
+        var url = new URL(window.location.href); url.searchParams.set('thread', this.root); history.pushState(null, '', url);
+      }
+      ChatElements.chatLog.find('.message').removeClass('thread-selected');
+      $('#message-' + this.root).addClass('thread-selected');
+      this.updateComposer();
+      this.load(false, true);
+    },
+    close: function(updateHistory) {
+      if (!this.root) return;
+      var root = this.root;
+      this.drafts[root] = $('#chat-thread-input').val();
+      this.root = null; this.token++; this.loading = false; this.canPost = false;
+      $('#chat-container').removeClass('thread-open');
+      $('#chat-thread-panel').prop('hidden', true);
+      $('#chat-thread-root, #chat-thread-replies').empty();
+      ChatElements.chatLog.find('.message').removeClass('thread-selected');
+      if (ChatUtils.isMobile()) {
+        $('#chat-area').addClass('mobile-visible');
+        $('.chat-sidebar').addClass('mobile-hidden');
+      }
+      ChatElements.chatBox.scrollTop(this.channelScrollTop || 0);
+      if (updateHistory !== false) {
+        var url = new URL(window.location.href); url.searchParams.delete('thread'); history.replaceState(null, '', url);
+      }
+      var $opener = $('.chat-thread-summary[data-root="' + root + '"]').first();
+      if ($opener.length) $opener[0].focus({preventScroll: true});
+    },
+    load: function(older, forceBottom) {
+      if (!this.root) return;
+      if (this.loading) { this.pendingRefresh = true; this.pendingBottom = this.pendingBottom || forceBottom; return; }
+      var self = this, root = this.root, room = ChatState.roomId, token = this.token;
+      var scroll = $('#chat-thread-scroll')[0], oldTop = scroll.scrollTop, oldHeight = scroll.scrollHeight;
+      var atBottom = this.nearBottom();
+      var hadContent = $('#chat-thread-replies .message').length > 0;
+      this.loading = true;
+      if (!hadContent) $('#chat-thread-loading').prop('hidden', false);
+      $('#chat-thread-load-error, #chat-thread-retry').prop('hidden', true);
+      $.get(this.url(), older && this.before ? {before: this.before} : {})
+        .done(function(data) {
+          if (token !== self.token || !self.matches(room, root)) return;
+          $('#chat-thread-root').html(data.root_hidden ? $('<li class="chat-thread-notice">').text(ChatConfig.i18n.threadHidden) : data.root_html);
+          // A background refresh must not replace history while someone is reading it.
+          if (!older && hadContent && !atBottom && !forceBottom) {
+            var last = Number($('#chat-thread-replies .message').last().data('id') || 0);
+            $('#chat-thread-new').prop('hidden', !data.summary.latest_reply_id || data.summary.latest_reply_id <= last);
+          } else {
+            if (older) $('#chat-thread-replies').prepend(data.replies_html);
+            else {
+              $('#chat-thread-replies').html(data.replies_html);
+            }
+            self.before = data.before;
+            $('#chat-thread-older').prop('hidden', !data.has_more);
+            $('#chat-thread-empty').prop('hidden', data.summary.reply_count > 0);
+            ChatUtils.postProcessMessages($('#chat-thread-root, #chat-thread-replies'), 'none');
+            if (older) scroll.scrollTop = oldTop + scroll.scrollHeight - oldHeight;
+            else if (forceBottom || atBottom) scroll.scrollTop = scroll.scrollHeight;
+            $('#chat-thread-new').prop('hidden', true);
+          }
+          self.canPost = data.can_post;
+          $('#chat-thread-input').attr('maxlength', data.max_length);
+          $('#chat-thread-readonly').prop('hidden', data.can_post).text(data.root_hidden ? ChatConfig.i18n.threadHidden : ChatUtils.disabledChatMessage());
+          self.summary(root, data.summary);
+          self.updateComposer();
+          if (self.focusOnLoad) {
+            self.focusOnLoad = false;
+            if (!ChatUtils.isMobile() && data.can_post) $('#chat-thread-input').focus();
+          }
+          self.markRead();
+        }).fail(function(response) {
+          if (token !== self.token || !self.matches(room, root)) return;
+          if (response.status === 403 || response.status === 404) {
+            self.canPost = false; $('#chat-thread-root, #chat-thread-replies').empty(); self.updateComposer();
+          }
+          $('#chat-thread-load-error').prop('hidden', false).text(response.responseJSON && response.responseJSON.error || ChatConfig.i18n.threadError);
+          $('#chat-thread-retry').prop('hidden', false);
+        }).always(function() {
+          if (token !== self.token) return;
+          self.loading = false; $('#chat-thread-loading').prop('hidden', true);
+          if (self.pendingRefresh) { var bottom = self.pendingBottom; self.pendingRefresh = false; self.pendingBottom = false; self.load(false, bottom); }
+        });
+    },
+    markRead: function() {
+      if (!this.root || document.hidden || !$('#chat-thread-panel').is(':visible')) return;
+      var viewport = $('#chat-thread-scroll')[0].getBoundingClientRect(), last = 0;
+      $('#chat-thread-replies .message').each(function() {
+        var bounds = this.getBoundingClientRect();
+        if (bounds.top < viewport.bottom && bounds.bottom > viewport.top) last = Math.max(last, Number($(this).data('id')));
+      });
+      if (!last || last <= this.readCursor) return;
+      var self = this, root = this.root, room = ChatState.roomId;
+      this.readCursor = last;
+      $.post(this.url('read'), {last_reply_id: last}).done(function(data) {
+        if (self.matches(room, root)) self.summary(root, data.summary);
+        self.refreshFollowed();
+      }).fail(function() { if (self.matches(room, root)) self.readCursor = 0; });
+    },
+    send: function() {
+      var body = $('#chat-thread-input').val().trim();
+      if (!body || this.sending || !this.canPost || ChatUtils.isChatDisabled()) return;
+      if (body.length > Number($('#chat-thread-input').attr('maxlength'))) return;
+      var self = this, root = this.root, room = ChatState.roomId;
+      if (root + ':' + body !== this.lastBody || !this.nonce) this.nonce = window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2);
+      this.lastBody = root + ':' + body;
+      this.sending = true; this.updateComposer(); $('#chat-thread-send-error').text('');
+      $.post(this.url('reply'), {body: body, client_nonce: this.nonce})
+        .done(function(data) {
+          self.drafts[root] = '';
+          if (self.matches(room, root)) {
+            $('#chat-thread-input').val(''); self.summary(root, data.summary);
+            $('#chat-thread-announcement').text(ChatConfig.i18n.threadSent);
+            self.load(false, true);
+          }
+          self.nonce = null; self.refreshFollowed();
+        }).fail(function(response) {
+          if (self.matches(room, root)) $('#chat-thread-send-error').text(response.responseJSON && response.responseJSON.error || ChatConfig.i18n.unableSend);
+        }).always(function() { self.sending = false; self.updateComposer(); });
+    },
+    refreshRoot: function(root, room) {
+      var self = this;
+      if (this.matches(room, root)) this.load();
+      else if (String(room) === ChatState.roomId) $.get(this.url('', root, room)).done(function(data) { self.summary(root, data.summary); });
+      this.refreshFollowed();
+    },
+    refreshFollowed: function(render, append) {
+      var self = this;
+      if (render && !append) { this.listOffset = 0; $('#chat-threads-list').empty(); }
+      $.get(ChatConfig.urls.followedThreads, {offset: append ? this.listOffset : 0}).done(function(data) {
+        if (!append) {
+          var unread = data.unread_count;
+          $('#chat-followed-badge').prop('hidden', !unread).text(unread > 99 ? '99+' : unread);
+        }
+        if (!render) return;
+        data.threads.forEach(function(thread) {
+          var $button = $('<button type="button" class="chat-followed-thread">').attr({'data-root': thread.id, 'data-room': thread.room});
+          $button.append($('<strong>').text(thread.room_name), $('<p>').text(thread.snippet), $('<small>').text(interpolate(ChatConfig.i18n.threadReplies, {count: thread.summary.reply_count}, true)));
+          if (thread.summary.unread_count) $button.append($('<span class="thread-summary-unread">').text(interpolate(ChatConfig.i18n.threadNew, {count: thread.summary.unread_count}, true)));
+          $('#chat-threads-list').append($button);
+        });
+        if (!data.threads.length && !append) $('#chat-threads-list').text(ChatConfig.i18n.threadEmptyList);
+        self.listOffset = data.next_offset; $('#chat-threads-list-more').prop('hidden', !data.has_more);
+      }).fail(function() { if (render) $('#chat-threads-list').text(ChatConfig.i18n.threadError); });
+    }
+  };
+
   var ChatMessages = {
     // Apply a reaction event. The broadcast carries the group counts (shared by
     // everyone) but my_reaction is per-viewer. If this event is the current user's
@@ -911,7 +1178,7 @@
     // this tab's highlight stays in sync; otherwise keep our own DOM state.
     // If the message isn't in the current view, there's nothing to do.
     applyReaction: function(message) {
-      var $container = $('#message-reactions-' + message.message);
+      var $container = $('.message-reactions[data-id="' + message.message + '"]').first();
       if (!$container.length) return;
       var myReaction;
       if (message.user_id === ChatConfig.user.id) {
@@ -1003,8 +1270,9 @@
       this.clearReplyBanner();
 
       ChatAPI.postMessage(body, roomId, tmpId, replyToId)
-        .done(function() {
+        .done(function(data) {
           $('#empty_msg').hide();
+          if (data.message && roomId === ChatState.roomId) ChatMessages.checkNewMessage(data.message, tmpId, roomId);
           ChatElements.chatInput.focus();
           ChatUI.moveRoomToTop(roomId);
         })
@@ -1105,8 +1373,15 @@
             // Recheck after the request: room history may have finished loading
             // while this individual-message request was in flight.
             if (room === ChatState.roomId && !$(messageSelector).length) {
-              ChatUI.addMessage(data);
-              if (!document.hidden) {
+              var channelVisible = !(ChatUtils.isMobile() && ChatThreads.root);
+              if (channelVisible) ChatUI.addMessage(data);
+              else {
+                var $backgroundMessage = $(data);
+                ChatElements.chatLog.append($backgroundMessage);
+                ChatUtils.postProcessMessages($backgroundMessage, 'incremental');
+                if (!isSelfAuthor) ChatUI.incrementUnreadBadge(room);
+              }
+              if (!document.hidden && channelVisible) {
                 ChatAPI.updateLastSeen(ChatState.roomId);
               }
               // Update sidebar: last message preview + move to top
@@ -1235,6 +1510,7 @@
         e.stopPropagation();
         if (ChatUtils.isChatDisabled()) return;
         var messageId = $(this).data('id');
+        if (ChatConfig.room.type !== 'direct') { ChatThreads.open(messageId); return; }
         var $msg = $('#message-' + messageId);
         var author = $msg.find('.message-header a').first().text().trim();
         var text = $msg.find('.message-text').first().text().trim();
@@ -1562,6 +1838,9 @@
             }
             // Recalculate message grouping to fix avatar/name visibility
             ChatUtils.mergeConsecutiveMessages();
+            $('.message[data-id="' + messageId + '"]').remove();
+            if (ChatThreads.root) ChatThreads.load();
+            ChatThreads.refreshFollowed();
           })
           .fail(function() {
             console.log('Failed to delete');
@@ -1608,8 +1887,8 @@
       $('.reaction-list-popup').remove();
     },
 
-    openReactionList: function(messageId, reaction) {
-      var $reactions = $('#message-reactions-' + messageId);
+    openReactionList: function(messageId, reaction, $reactions) {
+      $reactions = $reactions || $('.message-reactions[data-id="' + messageId + '"]').first();
       if (!$reactions.length) return;
       ChatEvents.closeReactionLists();
       var $popup = $('<div class="reaction-list-popup"></div>');
@@ -1638,13 +1917,14 @@
         e.stopPropagation();
         var messageId = $(this).data('id');
         var reaction = $(this).data('reaction') || '';
-        var $existingPopup = $('#message-reactions-' + messageId).find('.reaction-list-popup');
+        var $reactions = $(this).closest('.message-reactions');
+        var $existingPopup = $reactions.find('.reaction-list-popup');
         var alreadyOpen = $existingPopup.length > 0;
         var sameReactionOpen = alreadyOpen && ($existingPopup.data('reaction') || '') === reaction;
         ChatEvents.closeReactionPickers();
         ChatEvents.closeReactionLists();
         if (sameReactionOpen) return;          // second click closes it
-        ChatEvents.openReactionList(messageId, reaction);
+        ChatEvents.openReactionList(messageId, reaction, $reactions);
       });
 
       // Clicks inside the popup (e.g. a user link) shouldn't close it via the
@@ -1731,6 +2011,7 @@
     },
 
     setCurrentRoom: function(roomId, otherUserId) {
+      ChatThreads.close();
       ChatState.roomId = roomId;
       ChatState.otherUserId = otherUserId;
       ChatConfig.room.id = roomId;
@@ -1740,9 +2021,10 @@
       ChatMessages.clearReplyBanner();
     },
 
-    loadKnownRoom: function(roomId, $row, fallbackUrl) {
+    loadKnownRoom: function(roomId, $row, fallbackUrl, onLoaded) {
       if (String(roomId) === ChatState.roomId) {
         ChatUI.showRightPanel();
+        if (onLoaded) onLoaded();
         return;
       }
       if (ChatState.lockClickSpace) return;
@@ -1766,6 +2048,7 @@
             String(data.room.other_user_id || '')
           );
           self.openCurrentRoom($row, data);
+          if (onLoaded) onLoaded();
           // Visible sidebar rooms are already part of the active event grant.
           // Rooms opened from search, hidden-room lists, or creation flows are
           // not guaranteed to be present and still need an authorization refresh.
@@ -3129,7 +3412,7 @@
     bindVisibilityChange: function() {
       document.addEventListener('visibilitychange', function() {
         if (!document.hidden && ChatState.unreadCount > 0) {
-          ChatAPI.updateLastSeen(ChatState.roomId);
+          if (!(ChatUtils.isMobile() && ChatThreads.root)) ChatAPI.updateLastSeen(ChatState.roomId);
           ChatEvents.refreshStatus();
           ChatState.unreadCount = 0;
           document.title = ChatConfig.i18n.chatBox;
@@ -3406,7 +3689,9 @@
       }
 
       if (message.type === 'message_hidden') {
-        $('#message-' + message.message).remove();
+        $('.message[data-id="' + message.message + '"]').remove();
+        if (ChatThreads.root) ChatThreads.load();
+        ChatThreads.refreshFollowed();
         ChatUtils.mergeConsecutiveMessages();
         return;
       }
@@ -3415,6 +3700,7 @@
         if (String(message.room) === ChatState.roomId) {
           $('.message[data-author="' + message.user + '"]').remove();
           ChatUtils.mergeConsecutiveMessages();
+          if (ChatThreads.root) ChatThreads.load();
         }
         ChatEvents.refreshStatus();
         return;
@@ -3459,6 +3745,11 @@
         return;
       }
 
+      if (message.type === 'thread_reply') {
+        ChatThreads.refreshRoot(message.thread_root_id, message.room);
+        return;
+      }
+
       if (ChatState.pushedMessages.has(message.message)) {
         return;
       }
@@ -3489,6 +3780,7 @@
     ChatState.hasNext = parseInt($('.has_next').attr('value')) || 0;
 
     ChatEvents.init();
+    ChatThreads.init();
     ChatWebSocket.init();
 
     ChatAPI.updateLastSeen(ChatState.roomId);
