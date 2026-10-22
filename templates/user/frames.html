@@ -1,0 +1,95 @@
+{% extends "user/user-base.html" %}
+{% from "user/avatar.html" import avatar with context %}
+
+{% block title_ruler %}{% endblock %}
+{% block title_row %}
+  {% set tab = 'frames' %}
+  {% include "user/user-tabs.html" %}
+{% endblock %}
+
+{% block user_content %}
+  {% set collection = namespace(owned=0, equipped=false) %}
+  {% for item in frames %}
+    {% if item.owned %}{% set collection.owned = collection.owned + 1 %}{% endif %}
+    {% if item.equipped %}{% set collection.equipped = true %}{% endif %}
+  {% endfor %}
+  <div class="frame-collection {{ 'frame-collection--dark' if use_darkmode else '' }}">
+    <section class="frame-collection__intro">
+      <div>
+        <p class="frame-collection__eyebrow"><i class="fa fa-trophy" aria-hidden="true"></i> {{ _('DẤU ẤN NỖ LỰC') }}</p>
+        <h2>{{ _('Mỗi chặng đường, một khung thưởng.') }}</h2>
+        <p>{{ _('Hoàn thành khóa học hoặc nhận khung từ các hoạt động cộng đồng. Chọn khung yêu thích để thể hiện dấu ấn của bạn.') }}</p>
+      </div>
+      <div class="frame-collection__count">
+        <strong>{{ collection.owned }}<span> / {{ frames|length }}</span></strong>
+        <span>{{ _('khung đã mở khóa') }}</span>
+      </div>
+    </section>
+    <div class="frame-collection__toolbar">
+      <h3>{{ _('Bộ sưu tập khung') }}</h3>
+      {% if collection.equipped %}
+        <form method="post" action="{{ url('user_frames') }}">
+          {% csrf_token %}
+          <input type="hidden" name="frame" value="">
+          <button class="action-btn" type="submit"><i class="fa fa-circle-user" aria-hidden="true"></i> {{ _('Tháo khung hiện tại') }}</button>
+        </form>
+      {% endif %}
+    </div>
+    <div class="frame-collection__grid">
+      {% for item in frames %}
+        <article class="frame-card {{ 'frame-card--owned' if item.owned else 'frame-card--locked' }} {{ 'frame-card--equipped' if item.equipped else '' }}">
+          <div class="frame-card__art">
+            <span class="frame-card__status">
+              {% if item.equipped %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Đang dùng') }}
+              {% elif item.owned %}<i class="fa fa-unlock" aria-hidden="true"></i> {{ _('Đã mở khóa') }}
+              {% else %}<i class="fa fa-lock" aria-hidden="true"></i> {{ _('Chưa mở khóa') }}{% endif %}
+            </span>
+            {{ avatar(user, 104, item.frame, preview=true) }}
+          </div>
+          <div class="frame-card__body">
+            <p class="frame-card__category">{{ _('PHẦN THƯỞNG CỘNG ĐỒNG') if item.frame.unlock_type == 'manual' else _('THÀNH TÍCH KHÓA HỌC') }}</p>
+            <h3>{{ item.frame.name }}</h3>
+            <p class="frame-card__description">{{ item.frame.description }}</p>
+            {% if item.frame.unlock_type == 'course' %}
+              {% if item.progress and item.progress.total > 0 %}
+                <div class="frame-card__progress-label">
+                  <span>{{ _('Tiến độ điểm') }}</span>
+                  <strong>{{ 100 if item.progress.complete else item.progress.percentage|round(1, 'floor') }}%</strong>
+                </div>
+                <progress value="{{ item.progress.percentage }}" max="100" aria-label="{{ _('Tiến độ mở khóa %(name)s', name=item.frame.name) }}">{{ item.progress.percentage }}%</progress>
+                <p class="frame-card__requirement">{{ _('Đạt 100%% điểm toàn bộ khóa học để mở khóa.') }}</p>
+                {% if not item.owned and not item.progress.enrolled %}
+                  <p class="frame-card__requirement">{{ _('Tham gia khóa học để ghi nhận thành tựu của bạn.') }}</p>
+                {% endif %}
+              {% elif not item.frame.course_id %}
+                <p class="frame-card__requirement">{{ _('Khóa học sẽ được công bố sau.') }}</p>
+              {% else %}
+                <p class="frame-card__requirement"><i class="fa fa-graduation-cap" aria-hidden="true"></i> {{ _('Đạt 100%% điểm toàn bộ khóa học để mở khóa.') }}</p>
+              {% endif %}
+            {% else %}
+              <p class="frame-card__requirement"><i class="fa fa-award" aria-hidden="true"></i> {{ _('Khung do quản trị viên trao tặng.') }}</p>
+            {% endif %}
+            <div class="frame-card__action">
+              {% if item.equipped %}
+                <button class="action-btn" disabled><i class="fa fa-check" aria-hidden="true"></i> {{ _('Đang dùng') }}</button>
+              {% elif item.owned %}
+                <form method="post" action="{{ url('user_frames') }}">
+                  {% csrf_token %}
+                  <input type="hidden" name="frame" value="{{ item.frame.id }}">
+                  <button class="action-btn" type="submit">{{ _('Dùng khung này') }}</button>
+                </form>
+              {% elif item.frame.course_id %}
+                <a class="action-btn" href="{{ url('course_detail', item.frame.course.slug) }}">{{ _('Chinh phục khóa học') }} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+              {% else %}
+                <button class="action-btn" disabled><i class="fa fa-lock" aria-hidden="true"></i> {{ _('Chưa mở khóa') }}</button>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+      {% else %}
+        <p class="frame-collection__empty">{{ _('Những khung thưởng đầu tiên đang được chuẩn bị. Hãy tiếp tục luyện tập!') }}</p>
+      {% endfor %}
+    </div>
+    <p class="frame-collection__note"><i class="fa fa-circle-info" aria-hidden="true"></i> {{ _('Khung thưởng ghi nhận thành tích của bạn, không ảnh hưởng đến rating. Các khung đã mở khóa sẽ được lưu trong bộ sưu tập.') }}</p>
+  </div>
+{% endblock %}

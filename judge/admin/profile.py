@@ -8,6 +8,7 @@ from django.contrib.auth.forms import UserChangeForm
 
 
 from judge.models import Profile, ProfileInfo, ProfileModerationCase
+from judge.admin.reward import award_avatar_frame_action
 from judge.validators import (
     USERNAME_ALLOWED_MESSAGE,
     clean_username as clean_username_value,
@@ -69,6 +70,7 @@ class ProfileInfoInline(admin.StackedInline):
 
 
 class ProfileAdmin(VersionAdmin):
+    change_list_template = "admin/judge/profile/change_list.html"
     fields = (
         "user",
         "display_rank",
@@ -98,7 +100,7 @@ class ProfileAdmin(VersionAdmin):
     ordering = ("user__username",)
     search_fields = ("user__username", "ip", "user__email")
     list_filter = ("language", TimezoneFilter)
-    actions = ("recalculate_points",)
+    actions = ("recalculate_points", "award_avatar_frame")
     actions_on_top = True
     actions_on_bottom = True
     form = ProfileForm
@@ -123,6 +125,16 @@ class ProfileAdmin(VersionAdmin):
 
     def has_add_permission(self, request):
         return False
+
+    def has_award_frames_permission(self, request):
+        return request.user.has_perm("judge.add_profileframe")
+
+    @admin.action(
+        description=_("Trao khung avatar cho tài khoản đã chọn"),
+        permissions=["award_frames"],
+    )
+    def award_avatar_frame(self, request, queryset):
+        return award_avatar_frame_action(self, request, queryset)
 
     def has_delete_permission(self, request, obj=None):
         return False

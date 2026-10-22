@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "user/avatar.html" import avatar with context %}
 
 {% block media %}
   {% block user_media %}{% endblock %}
@@ -27,7 +28,7 @@
   <div class="user-info-page">
     <div class="user-sidebar">
       <div class="sidebar-avatar-wrapper">
-        <img class="user-img user-profile-img" src="{{ public_gravatar(user, request.user, 145) }}">
+        {{ avatar(user, 110 if public_avatar_frame(user, request.user) else 145) }}
       </div>
       {% if request.user.is_authenticated and request.profile != user and not show_disabled_profile_only and not hide_public_identity %}
         <div class="sidebar-actions">

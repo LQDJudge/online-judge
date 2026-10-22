@@ -1,4 +1,5 @@
 {% extends "user/base-users-table.html" %}
+{% from "user/avatar.html" import avatar with context %}
 
 {% block row_extra %}
   id="user-{{ user.username }}"
@@ -9,7 +10,7 @@
 {% endblock %}
 
 {% block after_rank %}
-  <td><img loading="lazy" style="max-width: none;" class="user-img" src="{{ public_gravatar(user, request.user, 40) }}" height="40px" width="40px"></td>
+  <td>{{ avatar(user, 40) }}</td>
 {% endblock %}
 
 {% block user_footer %}

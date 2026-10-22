@@ -8,3 +8,4 @@ from . import course
 from . import bookmark
 from . import quiz
 from . import official_school
+from . import reward

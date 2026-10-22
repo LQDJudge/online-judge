@@ -63,6 +63,7 @@ from judge.views import (
     custom_file_upload,
     quiz,
     theme,
+    rewards,
     direct_upload,
 )
 from judge.views import package_import
@@ -653,6 +654,7 @@ urlpatterns = [
             ]
         ),
     ),
+    path("user/frames/", rewards.AvatarFrameCollection.as_view(), name="user_frames"),
     re_path(r"^user$", user.UserAboutPage.as_view(), name="user_page"),
     re_path(r"^edit/profile/$", user.edit_profile, name="user_edit_profile"),
     re_path(r"^theme/$", theme.ThemeSettingsView.as_view(), name="theme_settings"),

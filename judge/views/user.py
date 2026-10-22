@@ -55,6 +55,7 @@ from judge.utils.hidden_results import (
     mark_hidden_result_submissions,
 )
 from judge.utils.profile_ranks import build_profile_rank_map
+from judge.utils.rewards import get_equipped_frame
 from judge.utils.problems import contest_completed_ids, user_completed_ids
 from judge.utils.unicode import utf8text
 from judge.models.profile import get_rating_rank, get_points_rank, get_contribution_rank
@@ -551,6 +552,7 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
         Profile.get_cached_instances(*user_ids)
         Profile.prefetch_cache_about(*user_ids)
         Profile.prefetch_cache_public_identity(*user_ids)
+        get_equipped_frame.batch([(profile_id,) for profile_id in user_ids])
         if context["users"]:
             rank_map = build_profile_rank_map(
                 self.object_list, context["users"], self.order, self.all_sorts

@@ -14,7 +14,7 @@ if ! [ -x "$(command -v autoprefixer)" ]; then
   exit 1
 fi
 
-FILES=(sass_processed/style.css sass_processed/content-description.css sass_processed/table.css sass_processed/ranks.css)
+FILES=(sass_processed/style.css sass_processed/content-description.css sass_processed/table.css sass_processed/ranks.css sass_processed/avatar-frames.css)
 
 cd `dirname $0`
 sass --silence-deprecation=import resources:sass_processed

@@ -8,6 +8,7 @@
     {{ make_tab('impersonate', 'fa-eye', url('impersonate-start', user.user.id), _('Impersonate'), force_new_page=True) }}
   {% endif %}
   {% if user == request.profile %}
+    {{ make_tab('frames', 'fa-award', url('user_frames'), _('Bộ sưu tập')) }}
     {{ make_tab('bookmark', 'fa-bookmark', url('user_bookmark'), _('Bookmarks')) }}
     {{ make_tab('edit', 'fa-gear', url('user_edit_profile'), _('Settings')) }}
     {{ make_tab('theme', 'fa-palette', url('theme_settings'), _('Theme')) }}
