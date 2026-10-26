@@ -18,14 +18,18 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import Group, Permission, User
 from django.forms import modelform_factory
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone, translation
 
+from bs4 import BeautifulSoup
+
 from judge.admin.contest import ContestProblemInlineForm
+from judge.content_mutation import publication_confirmation_token
 from judge.forms import CONTEST_EDIT_FIELD_SECTIONS, ContestEditForm
 from judge.models import (
     Contest,
+    ContestPublicRequest,
     ContestParticipation,
     ContestProblem,
     ContestSubmission,
@@ -35,6 +39,7 @@ from judge.models import (
     Problem,
     ProblemGroup,
     Profile,
+    PublicationRequestEvent,
     Submission,
 )
 from judge.models.course import CourseContest, CourseRole, RoleInCourse
@@ -241,6 +246,250 @@ class ContestEditTestBase(TestCase):
         }
         post.update(post_overrides)
         return ContestEditForm(data=post, instance=contest, user=user)
+
+
+@override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=True, LANGUAGE_CODE="en")
+class ContestEditCoordinatorControlsTests(ContestEditTestBase):
+    def test_contest_locked_after_opening_editor_rejects_save(self):
+        contest = self._make_contest("lockbeforesave", author=self.author)
+        self.client.force_login(self.author)
+        url = reverse("contest_edit", args=[contest.key])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].fields["name"].disabled)
+        data = self._contest_edit_post_data(contest, [])
+        data["name"] = "Unsaved author changes"
+
+        # Another account locks the contest while this editor is still open.
+        Contest.objects.filter(pk=contest.pk).update(is_locked=True)
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(
+            response,
+            "This content is locked. Contact a superuser to request an edit.",
+            status_code=403,
+        )
+        contest.refresh_from_db()
+        self.assertTrue(contest.is_locked)
+        self.assertNotEqual(contest.name, data["name"])
+        self.assertFalse(contest.contest_problems.exists())
+
+    def test_locked_contest_content_stays_readable_without_edit_controls(self):
+        contest = self._make_contest(
+            "readonlycontest", author=self.author, is_locked=True
+        )
+        contest.curators.add(self.curator.profile)
+        contest._curator_ids.dirty(contest)
+        problem = self._make_problem("readonlyitem")
+        ContestProblem.objects.create(
+            contest=contest, problem=problem, order=0, points=100
+        )
+        url = reverse("contest_edit", args=[contest.key])
+        for user in (self.author, self.curator):
+            with self.subTest(user=user.username):
+                self.client.force_login(user)
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'href="%s"' % url)
+                self.assertContains(
+                    response,
+                    "This content is locked. Contact a superuser to request an edit.",
+                )
+                self.assertTrue(
+                    all(
+                        field.disabled
+                        for field in response.context["form"].fields.values()
+                    )
+                )
+                self.assertTrue(
+                    all(
+                        field.disabled
+                        for form in response.context["rows_form"]
+                        for field in form.fields.values()
+                    )
+                )
+                soup = BeautifulSoup(response.content, "html.parser")
+                self.assertEqual(
+                    soup.select_one(".contest-edit-page")["data-readonly"], "1"
+                )
+                self.assertIsNotNone(
+                    soup.select_one(
+                        "fieldset.contest-editor-readonly[disabled] .sortable-formset"
+                    )
+                )
+                self.assertIsNotNone(soup.select_one("button[type=submit][disabled]"))
+                data = self._contest_edit_post_data(contest, [])
+                data["name"] = "Forged edit"
+                denied = self.client.post(url, data)
+                self.assertEqual(denied.status_code, 403)
+                contest.refresh_from_db()
+                self.assertNotEqual(contest.name, "Forged edit")
+                self.assertEqual(contest.contest_problems.count(), 1)
+        self.client.force_login(self.superuser)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].fields["name"].disabled)
+        self.assertNotContains(response, 'fieldset class="contest-editor-readonly"')
+        self.client.force_login(self.outsider)
+        self.assertIn(self.client.get(url).status_code, (403, 404))
+
+    def test_locked_scoped_contests_remain_readable_to_existing_managers(self):
+        for contest, user in (
+            (self.org_contest, self.org_admin),
+            (self.course_contest, self.teacher),
+        ):
+            with self.subTest(contest=contest.key):
+                Contest.objects.filter(pk=contest.pk).update(is_locked=True)
+                self.client.force_login(user)
+                response = self.client.get(reverse("contest_edit", args=[contest.key]))
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(response.context["form"].fields["name"].disabled)
+
+    def test_settings_controls_and_accessible_compact_field_help(self):
+        self.client.force_login(self.superuser)
+        response = self.client.get(
+            reverse("contest_edit", args=[self.public_contest.key])
+        )
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        self.assertFalse(soup.select(".contest-settings-grid"))
+        self.assertEqual(
+            [
+                [field["id"] for field in row.select(".form-row")]
+                for row in soup.select(".contest-inline-fields")
+            ],
+            [
+                ["is_visible-field", "is_locked-field"],
+                ["use_clarifications-field", "hide_problem_tags-field"],
+                ["public_scoreboard-field", "scoreboard_visibility-field"],
+                ["run_pretests_only-field"],
+                ["points_precision-field", "rate_limit-field"],
+            ],
+        )
+        for name in ("is_visible", "is_locked"):
+            field = soup.select_one("#%s-field" % name)
+            self.assertEqual(
+                field.find_previous("h3", class_="section-title").get_text(strip=True),
+                "Settings",
+            )
+        for name in ("format_name", "format_config"):
+            field = soup.select_one("#%s-field" % name)
+            self.assertEqual(
+                field.find_previous("h3", class_="section-title").get_text(strip=True),
+                "Format",
+            )
+        for wrapper in soup.select("[data-field-help]"):
+            button = wrapper.select_one("button[type=button]")
+            panel = wrapper.select_one(".contest-field-help-panel")
+            self.assertTrue(panel.has_attr("hidden"))
+            self.assertEqual(button["aria-expanded"], "false")
+            self.assertEqual(button["aria-controls"], panel["id"])
+            self.assertEqual(button["aria-describedby"], panel["id"])
+            self.assertTrue(button["aria-label"].startswith("Help for "))
+            self.assertIsNone(button.find_parent("label"))
+        self.assertIsNotNone(
+            soup.select_one("#run_pretests_only-field [data-field-help]")
+        )
+        self.assertFalse(soup.select(".form-help"))
+        config_button = soup.select_one("#format_name-field .config-toggle-btn")
+        self.assertIsNotNone(config_button)
+        self.assertIsNone(config_button.find_parent(class_="contest-field-help-panel"))
+
+    def test_visibility_and_lock_controls_are_superuser_only(self):
+        contest = self._make_contest("controls", author=self.author)
+        url = reverse("contest_edit", args=[contest.key])
+        self.client.force_login(self.superuser)
+        for visible in (False, True):
+            Contest.objects.filter(pk=contest.pk).update(is_visible=visible)
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertFalse(response.context["form"].fields["is_visible"].disabled)
+            self.assertIn("is_locked", response.context["form"].fields)
+            self.assertContains(response, 'name="is_locked"')
+        Contest.objects.filter(pk=contest.pk).update(is_visible=False)
+        self.client.force_login(self.author)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].fields["is_visible"].disabled)
+        self.assertNotIn("is_locked", response.context["form"].fields)
+        self.assertNotContains(response, 'name="is_locked"')
+
+    def test_superuser_can_lock_and_unlock_private_contest(self):
+        contest = self._make_contest("lockcontrols", author=self.author)
+        self.client.force_login(self.superuser)
+        for locked in (True, False):
+            data = self._contest_edit_post_data(contest, [])
+            data["is_locked"] = "on" if locked else ""
+            response = self.client.post(
+                reverse("contest_edit", args=[contest.key]), data
+            )
+            self.assertEqual(response.status_code, 302)
+            contest.refresh_from_db()
+            self.assertEqual(contest.is_locked, locked)
+            self.assertFalse(contest.is_visible)
+
+    def test_direct_publication_is_audited_and_locks_only_contest(self):
+        contest = self._make_contest("publishcontrols", author=self.author)
+        problem = self._make_problem("notpublished")
+        ContestProblem.objects.create(
+            contest=contest, problem=problem, order=0, points=100
+        )
+        pending = ContestPublicRequest.objects.create(
+            contest=contest, requested_by=self.author.profile
+        )
+        self.client.force_login(self.superuser)
+        data = self._contest_edit_post_data(
+            contest,
+            [
+                {
+                    "id": contest.contest_problems.get().pk,
+                    "problem_id": problem.pk,
+                    "order": 0,
+                }
+            ],
+        )
+        data["is_visible"] = "on"
+        data["confirm_withdraw_publication"] = "1"
+        data["publication_confirmation_token"] = publication_confirmation_token(pending)
+        response = self.client.post(reverse("contest_edit", args=[contest.key]), data)
+        self.assertEqual(response.status_code, 302)
+        contest.refresh_from_db()
+        pending.refresh_from_db()
+        problem.refresh_from_db()
+        self.assertTrue(contest.is_visible)
+        self.assertTrue(contest.is_locked)
+        self.assertFalse(problem.is_public)
+        self.assertEqual(pending.status, ContestPublicRequest.APPROVED)
+        self.assertTrue(
+            PublicationRequestEvent.objects.filter(
+                contest=contest,
+                actor=self.superuser.profile,
+                status=ContestPublicRequest.APPROVED,
+                reason="Published directly by a superuser from Content.",
+            ).exists()
+        )
+        # Deliberately unlocking an already-public contest must persist.
+        data["is_locked"] = ""
+        response = self.client.post(reverse("contest_edit", args=[contest.key]), data)
+        self.assertEqual(response.status_code, 302)
+        contest.refresh_from_db()
+        self.assertFalse(contest.is_locked)
+        data["is_visible"] = ""
+        response = self.client.post(reverse("contest_edit", args=[contest.key]), data)
+        self.assertEqual(response.status_code, 302)
+        contest.refresh_from_db()
+        self.assertFalse(contest.is_visible)
+
+    def test_regular_author_cannot_forge_visibility_or_lock(self):
+        contest = self._make_contest("forgedcontrols", author=self.author)
+        self.client.force_login(self.author)
+        data = self._contest_edit_post_data(contest, [])
+        data.update(is_visible="on", is_locked="on")
+        response = self.client.post(reverse("contest_edit", args=[contest.key]), data)
+        self.assertEqual(response.status_code, 302)
+        contest.refresh_from_db()
+        self.assertFalse(contest.is_visible)
+        self.assertFalse(contest.is_locked)
 
 
 class ContestEditPermissionTests(ContestEditTestBase):

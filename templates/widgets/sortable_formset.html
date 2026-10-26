@@ -25,6 +25,9 @@
 
   <div class="sortable-formset" data-prefix="{{ formset.prefix }}" data-order-field="{{ order_field }}">
     {{ formset.management_form }}
+    {% if formset.non_form_errors() %}
+      <div class="field-error red">{{ formset.non_form_errors() }}</div>
+    {% endif %}
 
     <table class="table sortable-table" {% if not has_forms %}style="display: none;"{% endif %}>
       <thead>

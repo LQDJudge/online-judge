@@ -9,6 +9,7 @@ import logging
 
 from judge.models import Submission
 from llm_service.llm_api import LLMService
+from llm_service.policies import streaming_options
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ class SolutionCodeGenerator:
             api_key,
             bot_name,
             sleep_time,
-            timeout=900,
+            **streaming_options("solution_code_generation"),
             feature="solution_code_generation",
             user_id=user_id,
         )

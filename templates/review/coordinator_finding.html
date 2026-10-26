@@ -1,0 +1,12 @@
+<article class="review-finding">
+  <div class="review-finding-meta">
+    {% if finding.get('severity') == 'blocking' %}<span class="review-status-badge red">{{ _("Blocking") }}</span>
+    {% elif finding.get('severity') == 'warning' %}<span class="review-status-badge orange">{{ _("Warning") }}</span>
+    {% else %}<span class="review-status-badge blue">{{ _("Information") }}</span>{% endif %}
+  </div>
+  <h4>{{ finding.get('claim', '') | review_inline_markdown | str | safe }}</h4>
+  {% if finding.get('reasoning') %}<div class="review-prose content-description">{{ finding['reasoning'] | review_markdown | str | safe }}</div>{% endif %}
+  {% if finding.get('suggested_probe_or_fix') or finding.get('recommendation') %}
+    <div class="review-recommendation"><strong>{{ _("Recommended action") }}</strong><div class="review-prose content-description">{{ (finding.get('suggested_probe_or_fix') or finding.get('recommendation')) | review_markdown | str | safe }}</div></div>
+  {% endif %}
+</article>

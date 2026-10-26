@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+  <div class="coordinator-page">
+    <p>{{ _("This is the immutable package captured for this review, not the object's current editable content.") }}</p>
+    <p>{{ _("Reviewed snapshot") }}: <code class="review-hash">{{ review_run.content_hash }}</code></p>
+    <p>{{ _("Readiness") }}: {{ review_run.readiness or _('Pending') }}</p>
+    {% if review_run.snapshot.get('statement') %}
+      <h3>{{ _("Problem statement") }}</h3>
+    <pre>{{ review_run.snapshot['statement'] }}</pre>
+    {% endif %}
+    <details><summary>{{ _("Frozen package metadata and evidence") }}</summary><pre>{{ review_run.snapshot | tojson(indent=2) }}</pre></details>
+  </div>
+{% endblock %}

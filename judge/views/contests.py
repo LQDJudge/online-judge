@@ -99,6 +99,13 @@ from judge.models.contest import (
     get_recent_contest_clarification_data,
 )
 from judge.models.contest_review import ContestPublicRequest
+from judge.review.workflow import publication_blockers
+from judge.review.presentation import publication_request_hint
+from judge.review.publication import (
+    publication_decision_blockers,
+    publish_without_review,
+)
+from judge.content_mutation import publication_confirmation_token
 from judge.tasks import run_moss
 from judge.utils.identity import build_semantic_formset_plan
 from judge.utils.celery import redirect_to_task_status
@@ -689,6 +696,10 @@ class ContestMixin(object):
         context["is_editor"] = self.is_editor
         context["is_tester"] = self.is_tester
         context["can_edit"] = self.can_edit
+        context["can_view_editor"] = self.object.can_manage_activity_by(
+            self.request.user
+        )
+        context["can_manage_contest_activity"] = context["can_view_editor"]
         context["can_access"] = self.can_access
 
         if not self.object.og_image or not self.object.summary:
@@ -708,7 +719,7 @@ class ContestMixin(object):
         ).exists()
         context["show_final_ranking"] = (
             self.object.format.has_hidden_subtasks or has_hidden_results
-        ) and self.object.is_editable_by(self.request.user)
+        ) and self.object.can_manage_activity_by(self.request.user)
         context["logo_override_image"] = self.object.logo_override_image
         context["organizations"] = self.object.get_visible_organizations(
             self.request.user
@@ -1036,7 +1047,7 @@ def can_view_contest_clarifications(contest, request):
         and request.participation.contest_id == contest.id
     ):
         return True
-    if contest.is_editable_by(user):
+    if contest.can_manage_activity_by(user):
         return True
     if user.has_perm("judge.see_private_contest"):
         return True
@@ -1060,7 +1071,7 @@ def is_contest_clonable(request, contest):
 
     if request.user.has_perm("judge.clone_contest"):
         return True
-    if contest.access_code and not contest.is_editable_by(request.user):
+    if contest.access_code and not contest.can_manage_activity_by(request.user):
         return False
     if (
         contest.end_time is not None
@@ -1107,6 +1118,7 @@ class ContestClone(ContestMixin, TitleMixin, SingleObjectFormView):
 
         contest.pk = None
         contest.is_visible = False
+        contest.is_locked = False
         contest.user_count = 0
         contest.key = form.cleaned_data["key"]
         contest.is_rated = False
@@ -1450,7 +1462,9 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        if not (self.object.ended or self.can_edit):
+        if not (
+            self.object.ended or self.object.can_manage_activity_by(self.request.user)
+        ):
             raise Http404()
 
         hidden_problem_ids = hidden_result_problem_ids(self.object, self.request.user)
@@ -1751,7 +1765,7 @@ class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
         ).exists()
         context["show_final_ranking"] = (
             self.object.format.has_hidden_subtasks or has_hidden_results
-        ) and self.object.is_editable_by(self.request.user)
+        ) and self.object.can_manage_activity_by(self.request.user)
         return context
 
 
@@ -2058,7 +2072,7 @@ class ContestFinalRanking(LoginRequiredMixin, ContestRanking):
     show_final = True
 
     def get_ranking_list(self):
-        if not self.object.is_editable_by(self.request.user):
+        if not self.object.can_manage_activity_by(self.request.user):
             raise Http404()
         has_hidden = (
             self.object.format.has_hidden_subtasks
@@ -2123,7 +2137,7 @@ class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
 class ContestParticipationDisqualify(ContestMixin, SingleObjectMixin, View):
     def get_object(self, queryset=None):
         contest = super().get_object(queryset)
-        if not contest.is_editable_by(self.request.user):
+        if not contest.can_manage_activity_by(self.request.user):
             raise Http404()
         return contest
 
@@ -2146,7 +2160,7 @@ class ContestParticipationDisqualify(ContestMixin, SingleObjectMixin, View):
 class ContestBulkDisqualify(ContestMixin, SingleObjectMixin, View):
     def get_object(self, queryset=None):
         contest = super().get_object(queryset)
-        if not contest.is_editable_by(self.request.user):
+        if not contest.can_manage_activity_by(self.request.user):
             raise Http404()
         return contest
 
@@ -2184,11 +2198,11 @@ class ContestMossMixin(ContestMixin, PermissionRequiredMixin):
 
     def get_object(self, queryset=None):
         contest = super().get_object(queryset)
-        if settings.MOSS_API_KEY is None or not contest.is_editable_by(
+        if settings.MOSS_API_KEY is None or not contest.can_manage_activity_by(
             self.request.user
         ):
             raise Http404()
-        if not contest.is_editable_by(self.request.user):
+        if not contest.can_manage_activity_by(self.request.user):
             raise Http404()
         return contest
 
@@ -2286,7 +2300,7 @@ class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView
     def is_accessible(self):
         if not self.request.user.is_authenticated:
             return False
-        return self.get_object().is_editable_by(self.request.user)
+        return self.get_object().can_manage_activity_by(self.request.user)
 
     def get(self, request, *args, **kwargs):
         if not self.is_accessible():
@@ -2933,10 +2947,23 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
     row_delete_confirm_field = "confirm_contest_problem_submission_delete"
     row_delete_preview_field = "preview_contest_problem_submission_delete"
 
-    def _user_can_edit(self, user, contest):
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if (
+            getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
+            and not self.request.user.is_superuser
+            and "is_visible" in form.fields
+        ):
+            form.fields["is_visible"].disabled = True
+        if self.object.is_locked and not self.request.user.is_superuser:
+            for field in form.fields.values():
+                field.disabled = True
+        return form
+
+    def _user_can_access_editor(self, user, contest):
         if not user.is_authenticated:
             return False
-        if contest.is_editable_by(user):
+        if contest.can_manage_activity_by(user):
             return True
         if hasattr(user, "profile"):
             for org in contest.organizations.all():
@@ -2950,11 +2977,16 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
                     return True
         return False
 
+    def _user_can_edit(self, user, contest):
+        return (
+            user.is_superuser or not contest.is_locked
+        ) and self._user_can_access_editor(user, contest)
+
     def should_bypass_access_check(self, contest):
         # Editors don't need to "join" a contest to edit it. NOTE: this hook
         # is invoked from inside ContestMixin.get_object() *before* self.object
         # is set — use the `contest` argument, never self.object.
-        return self._user_can_edit(self.request.user, contest)
+        return self._user_can_access_editor(self.request.user, contest)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -2971,11 +3003,20 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
                 _("You do not have permission to edit this contest."),
                 status=403,
             )
-        if not self._user_can_edit(request.user, self.object):
+        if not self._user_can_access_editor(request.user, self.object):
             return generic_message(
                 request,
                 _("Permission denied"),
                 _("You do not have permission to edit this contest."),
+                status=403,
+            )
+        if request.method not in ("GET", "HEAD", "OPTIONS") and not self._user_can_edit(
+            request.user, self.object
+        ):
+            return generic_message(
+                request,
+                _("Permission denied"),
+                _("This content is locked. Contact a superuser to request an edit."),
                 status=403,
             )
         return super().dispatch(request, *args, **kwargs)
@@ -2987,19 +3028,27 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         return kwargs
 
     def get_rows_formset(self, post=False):
-        return ContestRowFormSet(
+        formset = ContestRowFormSet(
             data=self.request.POST if post else None,
             prefix="rows",
             queryset=ContestProblem.objects.filter(contest=self.object).order_by(
                 "order"
             ),
         )
+        if self.object.is_locked and not self.request.user.is_superuser:
+            for form in formset:
+                for field in form.fields.values():
+                    field.disabled = True
+        return formset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if "rows_form" not in context:
             context["rows_form"] = self.get_rows_formset()
         context["field_sections"] = CONTEST_EDIT_FIELD_SECTIONS
+        context["can_view_editor"] = self._user_can_access_editor(
+            self.request.user, self.object
+        )
         # `page_type` is read by `make_tab_item` (templates/three-column-content.html)
         # to highlight the active sidebar tab.
         context["page_type"] = "edit"
@@ -3009,6 +3058,44 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         context["contest_public_request"] = ContestPublicRequest.objects.filter(
             contest=self.object, status=ContestPublicRequest.PENDING
         ).first()
+        context["coordinator_review_enabled"] = getattr(
+            settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False
+        )
+        context["publication_confirmation_token"] = publication_confirmation_token(
+            context["contest_public_request"]
+        )
+        latest_run = (
+            self.object.review_runs.order_by("-started_at", "-pk").first()
+            if context["coordinator_review_enabled"]
+            else None
+        )
+        context["publication_blockers"] = (
+            publication_blockers(latest_run, self.object)
+            if context["coordinator_review_enabled"]
+            else []
+        )
+        context["publication_ready"] = bool(
+            latest_run and not context["publication_blockers"]
+        )
+        pending = context["contest_public_request"]
+        if context["coordinator_review_enabled"] and pending:
+            context["publication_blockers"] = publication_decision_blockers(
+                self.object, pending.review_run
+            )
+        context["publication_request_hint"] = (
+            publication_request_hint(
+                latest_run, context["publication_blockers"], pending=bool(pending)
+            )
+            if context["coordinator_review_enabled"]
+            and (
+                pending
+                or (
+                    not context["publication_ready"]
+                    and not self.request.user.is_superuser
+                )
+            )
+            else ""
+        )
         return context
 
     def get_title(self):
@@ -3111,6 +3198,18 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         # SingleObjectFormView inherits FormView (not ModelFormMixin), so
         # FormView.form_valid does NOT save — call form.save() directly.
         self.object = form.save()
+        if (
+            getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
+            and self.request.user.is_superuser
+            and "is_visible" in form.changed_data
+            and self.object.is_visible
+            and not self.object.is_private
+            and not self.object.is_organization_private
+            and not self.object.is_in_course
+        ):
+            reason = _("Published directly by a superuser from Content.")
+            publish_without_review(self.object, self.request.user, reason)
+            self.object.refresh_from_db()
         maybe_trigger_contest_rescore(
             form, self.object, getattr(self, "rows_changed", False)
         )
@@ -3178,7 +3277,7 @@ class ContestLog(
     def _user_can_edit(self, user, contest):
         if not user.is_authenticated:
             return False
-        if contest.is_editable_by(user):
+        if contest.can_manage_activity_by(user):
             return True
         if hasattr(user, "profile"):
             for org in contest.organizations.all():

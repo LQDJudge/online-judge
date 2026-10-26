@@ -1,0 +1,29 @@
+<dialog id="problem-request-decision-dialog" class="review-dialog" aria-labelledby="problem-request-decision-heading">
+  <div class="review-dialog-heading"><h3 id="problem-request-decision-heading">{{ _('Request decision') }}</h3><button type="button" class="review-text-button" data-review-close aria-label="{{ _('Close') }}">×</button></div>
+  <p>{{ _('Accept by publishing through Problem Queue or Content, or reject this request with feedback.') }}</p>
+  <div class="review-dialog-actions">
+    <button type="button" class="action-btn outlined" data-review-dialog="problem-request-reject-dialog">{{ _('Reject request') }}</button>
+    <button type="button" class="action-btn" data-review-dialog="problem-request-accept-dialog">{{ _('Accept') }}</button>
+  </div>
+</dialog>
+<dialog id="problem-request-accept-dialog" class="review-dialog" aria-labelledby="problem-request-accept-heading">
+  <div class="review-dialog-heading"><h3 id="problem-request-accept-heading">{{ _('Accept publication request') }}</h3><button type="button" class="review-text-button" data-review-close aria-label="{{ _('Close') }}">×</button></div>
+  <p>{{ _('Check the statement, limits, tags, points, and organization restrictions before publishing. Publish through Problem Queue, or enable Publicly visible in Content and save.') }}</p>
+  <p>{{ _('Publication approves the pending request, locks the problem, posts the decision in Discussion, and notifies the requester.') }}</p>
+  <div class="review-dialog-actions">
+    <a class="action-btn outlined" href="{{ url('problem_edit', problem.code) }}">{{ _('Content') }}</a>
+    <a class="action-btn" href="{{ url('internal_problem_queue') }}?tab=request_public&amp;status=P">{{ _('Problem Queue') }}</a>
+  </div>
+</dialog>
+<dialog id="problem-request-reject-dialog" class="review-dialog" aria-labelledby="problem-request-reject-heading">
+  <div class="review-dialog-heading"><h3 id="problem-request-reject-heading">{{ _('Reject publication request') }}</h3><button type="button" class="review-text-button" data-review-close aria-label="{{ _('Close') }}">×</button></div>
+  <form class="coordinator-action-form" method="post" action="{{ url('internal_reject_problem') }}">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <input type="hidden" name="id" value="{{ problem.id }}">
+    <input type="hidden" name="request_token" value="{{ coordinator_request_decision_token }}">
+    <p>{{ _('Explain why this problem will not be published. The requester will be notified; the problem and AI review remain unchanged.') }}</p>
+    <label for="problem-request-rejection-reason">{{ _('Reason for rejection') }}</label>
+    <textarea id="problem-request-rejection-reason" name="feedback" rows="4" required></textarea>
+    <div class="review-dialog-actions"><button type="submit" class="action-btn">{{ _('Reject request') }}</button></div>
+  </form>
+</dialog>

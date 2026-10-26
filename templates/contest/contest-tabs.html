@@ -27,7 +27,7 @@
   {% endif %}
 
   {% if can_access %}
-    {% if (contest.ended and not contest.is_in_contest(request.user)) or can_edit %}
+    {% if (contest.ended and not contest.is_in_contest(request.user)) or can_manage_contest_activity %}
       {{ make_tab_item('stats', 'fa fa-pie-chart', url('contest_stats', contest.key), _('Statistics')) }}
     {% endif %}
   {% endif %}
@@ -35,16 +35,18 @@
   {% if show_final_ranking %}
     {{ make_tab_item('final_ranking', 'fa fa-bar-chart', url('contest_final_ranking', contest.key), _('Final rankings')) }}
   {% endif %}
-  {% if can_edit and (contest_has_hidden_subtasks or contest.freeze_after) %}
+  {% if can_manage_contest_activity and (contest_has_hidden_subtasks or contest.freeze_after) %}
     {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver'), force_new_page=True) }}
   {% endif %}
   {% if is_clonable %}
     {{ make_tab_item('clone', 'fas fa-clone', url('contest_clone', contest.key), _('Clone')) }}
   {% endif %}
-  {% if can_edit %}
+  {% if can_manage_contest_activity %}
     {% if perms.judge.moss_contest and has_moss_api_key %}
       {{ make_tab_item('moss', 'fa fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
     {% endif %}
+  {% endif %}
+  {% if can_edit or can_view_editor %}
     {{ make_tab_item('edit', 'fa fa-edit', url('contest_edit', contest.key), _('Edit')) }}
     {{ make_tab_item('log', 'fa fa-history', url('contest_log', contest.key), _('History')) }}
     {{ make_tab_item('review', 'fa fa-clipboard-check', url('contest_review_dashboard', contest.key), _('Review')) }}

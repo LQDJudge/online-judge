@@ -11,7 +11,7 @@
 
 {% block header %}
   <div style="float:right">
-    {% if can_edit_problem %}
+    {% if can_view_problem_editor %}
       [<a href="{{ url('problem_edit_solutions', problem.code) }}">{{ _('Edit') }}</a>]
     {% endif %}
   </div>

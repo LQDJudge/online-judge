@@ -3,6 +3,7 @@ import mimetypes
 import os
 
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db.models import Max
 from django.http import HttpResponseBadRequest, JsonResponse
@@ -18,7 +19,8 @@ from judge.forms import (
     PROBLEM_ATTACHMENT_MAX_SIZE_SUPERUSER,
     ProblemAttachmentForm,
 )
-from judge.models import Problem, ProblemAttachment
+from judge.models import Problem, ProblemAttachment, PublicRequest
+from judge.content_mutation import publication_confirmation_token
 from judge.utils.storage_helpers import serve_file_with_nginx
 
 
@@ -49,8 +51,18 @@ def _get_viewable(request, code):
 @login_required
 @ensure_csrf_cookie
 def attachments_tab(request, problem):
-    problem_obj = _get_editable(request, problem)
+    problem_obj = get_object_or_404(Problem, code=problem)
+    if not problem_obj.can_manage_activity_by(request.user):
+        raise PermissionDenied
     max_size, max_count = _attachment_limits(request.user)
+    pending = PublicRequest.objects.filter(
+        problem=problem_obj, status=PublicRequest.PENDING
+    ).first()
+    if pending and not (
+        getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
+        or pending.review_run_id
+    ):
+        pending = None
     return render(
         request,
         "problem/attachments.html",
@@ -59,6 +71,8 @@ def attachments_tab(request, problem):
             "attachments": problem_obj.attachments.all(),
             "title": _("Attachments for %s") % problem_obj.name,
             "page_type": "attachments",
+            "pending_publication": pending,
+            "publication_confirmation_token": publication_confirmation_token(pending),
             "attachment_limits_msg": _(
                 "Limit: up to %(count)d files, each up to %(mb)d MB."
             )

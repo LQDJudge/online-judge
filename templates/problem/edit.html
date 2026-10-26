@@ -1,4 +1,5 @@
 {% extends "problem/edit_base.html" %}
+{% from "widgets/publication_hint.html" import publication_hint %}
 {% set page_type = 'content' %}
 
 {% block js_media %}
@@ -6,6 +7,7 @@
   <script src="{{ static('jquery-ui.min.js') }}"></script>
   <script src="{{ static('problem_form.js') }}"></script>
   <script src="{{ static('widgets/cooldown_countdown.js') }}"></script>
+  <script src="{{ static('widgets/publication_save.js') }}"></script>
   <script type="text/javascript">
     $(document).ready(function() {
     // Initialize shared problem form utilities
@@ -312,10 +314,14 @@
 
 {% block edit_content %}
   <div class="problem-edit-form">
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data"
+          data-pending-publication="{{ '1' if public_request and public_request.status == 'P' and (coordinator_review_enabled or public_request.review_run_id) else '0' }}"
+          data-publication-confirmation-token="{{ publication_confirmation_token }}"
+          {% if published_contest_warning %}data-live-contest-warning="{{ published_contest_warning }}"{% endif %}
+          data-publication-save-warning="{{ _('Saving changes will withdraw the pending publication request. Continue and save the changed draft?') }}">
       {% csrf_token %}
 
-      {% if is_restricted %}
+      {% if is_restricted and not problem.is_locked %}
         <div class="alert alert-info">
           <i class="fa fa-lock"></i>
           {{ _('Some fields are locked because this problem is public. Contact an admin to modify them.') }}
@@ -337,6 +343,7 @@
       </div>
 
       <!-- Tab Content -->
+      {% if problem.is_locked and not request.user.is_superuser %}<fieldset class="problem-editor-readonly" disabled>{% endif %}
       <div class="tab-content">
         <!-- Content Tab -->
         <div class="tab-pane active" id="pane-content">
@@ -368,6 +375,17 @@
             <label for="{{ form.is_public.id_for_label }}"><b>{{ form.is_public.label }}{% if form.is_public.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
             {{ form.is_public }}
           </div>
+
+          {% if request.user.is_superuser and 'is_locked' in form.fields %}
+            <div class="form-row checkbox-field">
+              <label for="{{ form.is_locked.id_for_label }}"><b>{{ form.is_locked.label }}:</b></label>
+              {{ form.is_locked }}
+              <small class="gray">{{ form.is_locked.help_text }}</small>
+              {% for error in form.is_locked.errors %}
+                <p class="red">{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
 
           <div class="form-row">
             <label for="{{ form.organizations.id_for_label }}"><b>{{ _('Organizations') }}{% if form.organizations.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
@@ -613,11 +631,22 @@
 
       </div>
 
+      {% if problem.is_locked and not request.user.is_superuser %}</fieldset>{% endif %}
       <div class="form-actions" style="margin-top: 1em;">
-        <button type="submit" class="action-btn">{{ _('Save') }}</button>
+        <button type="submit" class="action-btn" {% if problem.is_locked and not request.user.is_superuser %}disabled{% endif %}>{{ _('Save') }}</button>
 
         {% if (not problem.is_public or problem.is_organization_private) and problem.can_request_public_by(request.user) %}
-          {% if public_request and public_request.status == 'P' %}
+          {% if coordinator_review_enabled %}
+            <a class="action-btn" href="{{ url('problem_review_dashboard', problem.code) }}">{{ _('Run Review') }}</a>
+            {% if public_request and public_request.status == 'P' %}
+              <button type="button" id="cancel-request-public-btn" class="action-btn">{{ _('Withdraw request') }}</button>
+            {% else %}
+              {% call publication_hint(not publication_ready and not request.user.is_superuser, publication_request_hint) %}
+                <button type="button" id="request-public-btn" class="action-btn" {% if not publication_ready and not request.user.is_superuser %}disabled{% endif %}>{{ _('Request publication') }}</button>
+              {% endcall %}
+            {% endif %}
+            <span id="request-public-status" class="form-actions-status"></span>
+          {% elif public_request and public_request.status == 'P' %}
             <span class="form-actions-status alert alert-info">
               <i class="fa fa-clock"></i> {{_("Awaiting admin approval.")}}
             </span>

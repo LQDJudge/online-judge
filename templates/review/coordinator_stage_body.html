@@ -1,0 +1,23 @@
+{% if stage.ui_result_detail %}<p><strong>{{ stage.ui_result_detail }}</strong></p>{% endif %}
+{% if stage.ui_reason %}<div class="review-prose">{{ stage.ui_reason | review_markdown | str | safe }}</div>{% endif %}
+{% if stage.ui_missing_label and not suppress_missing_notice %}<p class="review-muted">{{ stage.ui_missing_label }}</p>{% endif %}
+{% if stage.output_json %}
+  {% if stage.ui_summary and not compact_similarity %}<div class="review-prose content-description">{{ stage.ui_summary | review_markdown | str | safe }}</div>{% endif %}
+  {% if stage.ui_retrieval_complete %}
+    <h4>{{ stage.ui_retrieval_title }}</h4>
+    {% if stage.ui_candidates %}
+      <ul>{% for candidate in stage.ui_candidates %}<li>{% if candidate.url %}<a href="{{ candidate.url }}">{{ candidate.name }} ({{ candidate.code }})</a>{% else %}{{ _('This retrieved problem is no longer publicly available.') }}{% endif %}</li>{% endfor %}</ul>
+    {% else %}<p>{{ _('No eligible indexed problems were returned. This does not establish originality.') }}</p>{% endif %}
+    <p class="review-muted">{{ _('Search covers indexed public problems only. Retrieved candidates are not confirmed duplicates.') }}</p>
+  {% endif %}
+  {% for finding in stage.ui_findings %}
+    {% if not compact_similarity %}{% include 'review/coordinator_finding.html' %}
+    {% elif finding.get('suggested_probe_or_fix') or finding.get('recommendation') %}
+      <div class="review-recommendation"><strong>{{ _("Recommended action") }}</strong><div class="review-prose content-description">{{ (finding.get('suggested_probe_or_fix') or finding.get('recommendation')) | review_markdown | str | safe }}</div></div>
+    {% endif %}
+  {% endfor %}
+  {% for note in stage.ui_notes %}
+    <div class="review-stage-limitations"><h4>{{ note.title }}</h4><ul>{% for item in note['items'] %}<li>{{ item | review_markdown | str | safe }}</li>{% endfor %}</ul></div>
+  {% endfor %}
+{% endif %}
+{% include 'review/coordinator_stage_retry.html' %}

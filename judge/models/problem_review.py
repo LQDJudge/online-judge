@@ -2,16 +2,21 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from judge.models.problem import Problem
+from judge.models.review_coordinator import CoordinatorRunFields
 
 
-class ProblemReviewRun(models.Model):
+class ProblemReviewRun(CoordinatorRunFields):
     RUNNING = "R"
     DONE = "D"
     ERROR = "E"
+    BLOCKED = "B"
+    CANCELLED = "C"
     STATUS_CHOICES = [
         (RUNNING, _("Running")),
         (DONE, _("Done")),
         (ERROR, _("Error")),
+        (BLOCKED, _("Needs recovery")),
+        (CANCELLED, _("Cancelled")),
     ]
 
     problem = models.ForeignKey(

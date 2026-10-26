@@ -45,6 +45,23 @@ LATEX_BASIC_RULES = """
 3. Format large numbers with scientific notation where appropriate (e.g., $10^9$)
 """.strip()
 
+PROBLEM_STATEMENT_FORMAT_RULES = """
+LQDOJ problem statement template (proposal guide section 5):
+- Begin with the problem description; summarize the task when the story is long.
+- Use level-four Input, Output and Example section headings (#### Input,
+  #### Output, #### Example). Whitespace after #### is acceptable.
+- Describe the input/output clearly; present constraints as readable bullet points.
+- Give each example its own !!! question "Test X" block. Inside it use
+  ???+ "Input" and ???+ success "Output", each containing a fenced sample
+  code block (```sample). Indent each nested block by four additional spaces.
+- Put an optional sample explanation in ??? warning "Note" inside that example.
+  Do not require explanations when none are needed.
+- Use #### Scoring for declared subtasks/point allocations when applicable.
+  Do not invent subtasks or require a Scoring section for an unscored problem.
+- Preserve the statement's language and mathematical meaning. Use inline LaTeX
+  for mathematics, and follow the shared Markdown indentation/LaTeX rules.
+""".strip()
+
 
 def get_markdown_rules_for_prompt(start_number: int = 1) -> str:
     """

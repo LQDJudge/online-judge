@@ -81,6 +81,10 @@ class QuizQuestionCreatorListFilter(admin.SimpleListFilter):
 
 
 class QuizQuestionAdmin(CompareVersionAdmin):
+    def get_readonly_fields(self, request, obj=None):
+        fields = super().get_readonly_fields(request, obj)
+        return fields if request.user.is_superuser else (*fields, "is_locked")
+
     fieldsets = (
         (
             _("Basic Information"),
@@ -90,6 +94,7 @@ class QuizQuestionAdmin(CompareVersionAdmin):
                     "title",
                     "content",
                     "is_public",
+                    "is_locked",
                 ),
             },
         ),
@@ -166,6 +171,12 @@ class QuizQuestionAdmin(CompareVersionAdmin):
         return queryset.filter(access).distinct() if access else queryset.none()
 
     def has_change_permission(self, request, obj=None):
+        if (
+            obj is not None
+            and getattr(obj, "is_locked", False)
+            and not request.user.is_superuser
+        ):
+            return False
         if request.user.has_perm("judge.edit_all_problem") or obj is None:
             return True
         if not request.user.has_perm("judge.edit_own_problem"):
@@ -176,6 +187,11 @@ class QuizQuestionAdmin(CompareVersionAdmin):
         form = super(QuizQuestionAdmin, self).get_form(*args, **kwargs)
         form.base_fields["authors"].queryset = Profile.objects.all()
         return form
+
+    def has_delete_permission(self, request, obj=None):
+        if obj is not None and obj.is_locked and not request.user.is_superuser:
+            return False
+        return super().has_delete_permission(request, obj)
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
@@ -265,6 +281,15 @@ class QuizCreatorListFilter(admin.SimpleListFilter):
 
 
 class QuizAdmin(CompareVersionAdmin):
+    def get_readonly_fields(self, request, obj=None):
+        fields = super().get_readonly_fields(request, obj)
+        return fields if request.user.is_superuser else (*fields, "is_locked")
+
+    def has_delete_permission(self, request, obj=None):
+        return not (
+            obj is not None and obj.is_locked and not request.user.is_superuser
+        ) and super().has_delete_permission(request, obj)
+
     fieldsets = (
         (
             _("Basic Information"),
@@ -295,6 +320,7 @@ class QuizAdmin(CompareVersionAdmin):
                     "authors",
                     "curators",
                     "testers",
+                    "is_locked",
                 ),
             },
         ),
@@ -359,6 +385,8 @@ class QuizAdmin(CompareVersionAdmin):
         return queryset.filter(access).distinct() if access else queryset.none()
 
     def has_change_permission(self, request, obj=None):
+        if obj is not None and obj.is_locked and not request.user.is_superuser:
+            return False
         if request.user.has_perm("judge.edit_all_problem") or obj is None:
             return True
         if not request.user.has_perm("judge.edit_own_problem"):

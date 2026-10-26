@@ -1,4 +1,5 @@
 {% extends "two-column-content.html" %}
+{% from "widgets/publication_hint.html" import publication_hint %}
 {% from "widgets/sortable_formset.html" import sortable_formset %}
 
 {% block left_sidebar %}
@@ -12,6 +13,8 @@
   <script src="{{ static('jquery-ui.min.js') }}"></script>
   <script src="{{ static('widgets/sortable_formset.js') }}"></script>
   <script src="{{ static('widgets/cooldown_countdown.js') }}"></script>
+  <script src="{{ static('widgets/publication_save.js') }}"></script>
+  <script src="{{ static('widgets/field_help.js') }}"></script>
   <script>
     $(function() {
       $(document).on('click', '.config-toggle-btn', function() {
@@ -33,6 +36,7 @@
         $configField.show();
         $('.config-toggle-btn').text('{{ _("Hide Config") }}');
       }
+      if ($('.contest-edit-page').attr('data-readonly') === '1') return;
 
       function getFieldValue($field) {
         if (!$field.length) {
@@ -271,9 +275,14 @@
 {% endblock %}
 
 {% block middle_content %}
-  <div class="contest-edit-page">
+  {% set readonly_editor = contest.is_locked and not request.user.is_superuser %}
+  <div class="contest-edit-page" data-readonly="{{ '1' if readonly_editor else '0' }}">
     <h2>{{ title }}</h2>
-    <form action="" method="post">
+    {% if readonly_editor %}<p class="red" role="status">{{ _('This content is locked. Contact a superuser to request an edit.') }}</p>{% endif %}
+    <form action="" method="post"
+          data-pending-publication="{{ '1' if contest_public_request and (coordinator_review_enabled or contest_public_request.review_run_id) else '0' }}"
+          data-publication-confirmation-token="{{ publication_confirmation_token }}"
+          data-publication-save-warning="{{ _('Saving changes will withdraw the pending publication request. Continue and save the changed draft?') }}">
       {% csrf_token %}
       {% if form.errors or rows_form.errors %}
         <div class="alert alert-danger alert-dismissable">
@@ -285,47 +294,66 @@
       {% for section_label, field_names in field_sections %}
         <hr>
         <h3 class="section-title">{{ section_label }}</h3>
-        {% for fname in field_names %}
-          {% if fname in form.fields %}
-            {% set field = form[fname] %}
-            {% if not field.is_hidden %}
-              {% set is_block_field = field.html_name == 'description' %}
-              <div class="form-row{% if is_block_field %} form-row-block{% endif %}" id="{{ field.html_name }}-field">
-                <label for="{{ field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
-                {{ field }}
-                {% if field.errors %}
-                  <div class="field-error red">{{ field.errors }}</div>
-                {% endif %}
-                {% if field.help_text %}
-                  <small class="form-help gray">
-                    <i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}
-                    {% if field.html_name == 'format_name' %}
-                      <a href="{{ url('contest_format_instructions') }}" target="_blank">
-                        ({{ _('Instruction') }})
-                      </a>
-                      <button type="button" class="action-btn config-toggle-btn">
-                        {{ _('Config') }}
-                      </button>
+        {% set is_settings = 'use_clarifications' in field_names %}
+        {% set field_rows = [
+        ['is_visible', 'is_locked'],
+        ['use_clarifications', 'hide_problem_tags'],
+        ['public_scoreboard', 'scoreboard_visibility'],
+        ['run_pretests_only'],
+        ['points_precision', 'rate_limit']
+        ] if is_settings else [field_names] %}
+        <div class="contest-section-fields">
+          {% for row_fields in field_rows %}
+            {% if is_settings %}<div class="contest-inline-fields">{% endif %}
+            {% for fname in row_fields %}
+              {% if fname in form.fields %}
+                {% set field = form[fname] %}
+                {% if not field.is_hidden %}
+                  {% set is_block_field = field.html_name == 'description' %}
+                  <div class="form-row{% if is_block_field %} form-row-block{% endif %}" id="{{ field.html_name }}-field">
+                    <div class="contest-field-label">
+                      <label for="{{ field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+                      {% if field.help_text %}
+                        <div class="contest-field-help" data-field-help>
+                          <button type="button" class="contest-field-help-button" data-field-help-button aria-label="{{ _('Help for %(field)s', field=field.label) }}" aria-expanded="false" aria-controls="{{ field.id_for_label }}-help" aria-describedby="{{ field.id_for_label }}-help"><i class="fa fa-info-circle" aria-hidden="true"></i></button>
+                          <div id="{{ field.id_for_label }}-help" class="contest-field-help-panel" role="note" hidden>
+                            {{ field.help_text|safe }}
+                            {% if field.html_name == 'format_name' %}
+                              <a href="{{ url('contest_format_instructions') }}" target="_blank" rel="noopener">{{ _('Instruction') }}</a>
+                            {% endif %}
+                          </div>
+                        </div>
+                      {% endif %}
+                    </div>
+                    {{ field }}
+                    {% if field.html_name == 'format_name' %}<button type="button" class="action-btn config-toggle-btn">{{ _('Config') }}</button>{% endif %}
+                    {% if field.errors %}
+                      <div class="field-error red">{{ field.errors }}</div>
                     {% endif %}
-                  </small>
+                  </div>
                 {% endif %}
-              </div>
-            {% endif %}
-          {% endif %}
-        {% endfor %}
+              {% endif %}
+            {% endfor %}
+            {% if is_settings %}</div>{% endif %}
+          {% endfor %}
+        </div>
       {% endfor %}
 
       <hr>
       <h3 class="section-title">{{ _('Problems & Quizzes') }}</h3>
-      <p class="gray" style="margin-top: -0.5em; margin-bottom: 0.5em;">
-        <i class="fa fa-info-circle"></i>
-        {{ _('Use the Type toggle to choose whether each row is a problem or a quiz. Drag the handle to reorder.') }}
-      </p>
+      {% if not readonly_editor %}
+        <p class="gray" style="margin-top: -0.5em; margin-bottom: 0.5em;">
+          <i class="fa fa-info-circle"></i>
+          {{ _('Use the Type toggle to choose whether each row is a problem or a quiz. Drag the handle to reorder.') }}
+        </p>
+      {% endif %}
+      {% if readonly_editor %}<fieldset class="contest-editor-readonly" disabled>{% endif %}
       {{ sortable_formset(rows_form, {
       'order_field': 'order',
       'add_text': _('Add Row'),
       'empty_text': _('No problems or quizzes added yet.')
       }) }}
+      {% if readonly_editor %}</fieldset>{% endif %}
 
       {# Save + Request public sit side by side, mirroring the problem edit
          layout. The Request public button is `type="button"` so clicking it
@@ -333,9 +361,18 @@
          auto-review pipeline via fetch and on success redirects the browser
          to the contest review dashboard. Only visible on private contests. #}
       <div class="form-actions" style="margin-top: 1em;">
-        <button type="submit" class="action-btn">{{ _('Save') }}</button>
+        <button type="submit" class="action-btn" {% if readonly_editor %}disabled{% endif %}>{{ _('Save') }}</button>
         {% if (not contest.is_visible or contest.is_organization_private) and contest.can_request_public_by(request.user) %}
-          {% if contest_public_request %}
+          {% if coordinator_review_enabled %}
+            <a class="action-btn" href="{{ url('contest_review_dashboard', contest.key) }}">{{ _('Run Review') }}</a>
+            {% if contest_public_request %}
+              <button type="button" id="contest-cancel-request-btn" class="action-btn">{{ _('Withdraw request') }}</button>
+            {% else %}
+              {% call publication_hint(not publication_ready and not request.user.is_superuser, publication_request_hint) %}
+                <button type="button" id="contest-request-public-btn" class="action-btn" {% if not publication_ready and not request.user.is_superuser %}disabled{% endif %}>{{ _('Request publication') }}</button>
+              {% endcall %}
+            {% endif %}
+          {% elif contest_public_request %}
             {# A PENDING ContestPublicRequest already exists. Tell the author
                so they don't keep retrying, and offer a Cancel button so they
                can withdraw the row from the admin queue (e.g., misclicked, or
@@ -364,7 +401,7 @@
         (function () {
           var btn = document.getElementById("contest-request-public-btn");
           var statusEl = document.getElementById("contest-request-public-status");
-          if (!btn) return;
+          if (!btn && !document.getElementById("contest-cancel-request-btn")) return;
 
           var csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
           if (!csrfInput) return;
@@ -375,7 +412,7 @@
           // resources/widgets/cooldown_countdown.js.
           var cooldownStop = null;
 
-          btn.addEventListener("click", function () {
+          if (btn) btn.addEventListener("click", function () {
             statusEl.textContent = "";
             btn.disabled = true;
             var fd = new FormData();

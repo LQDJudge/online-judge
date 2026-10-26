@@ -36,5 +36,11 @@
 {% endblock %}
 
 {% block middle_content %}
+  {% if problem.is_locked and not request.user.is_superuser and page_type in ('content', 'data', 'attachments', 'solution_codes', 'languages', 'templates', 'solutions', 'translations', 'import') %}
+    <p class="red" role="status">{{ _('This content is locked. Contact a superuser to request an edit.') }}</p>
+  {% endif %}
+  {% set readonly_editor = problem.is_locked and not request.user.is_superuser and page_type in ('languages', 'templates', 'solutions', 'translations') %}
+  {% if readonly_editor %}<fieldset class="problem-editor-readonly" disabled>{% endif %}
   {% block edit_content %}{% endblock %}
+  {% if readonly_editor %}</fieldset>{% endif %}
 {% endblock %}

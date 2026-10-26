@@ -3,7 +3,9 @@ General LLM API service for Poe API calls
 Provides clean interface for various LLM tasks with image support
 """
 
+import asyncio
 import logging
+import math
 import os
 import re
 import signal
@@ -23,7 +25,16 @@ except Exception:
     default_storage = None
 
 import fastapi_poe as fp
+from fastapi_poe.client import PROTOCOL_VERSION
+import httpx
 import requests
+
+from llm_service.errors import (
+    LLMRequestCancelled,
+    LLMRequestError as LLMRequestError,
+    LLMRequestTimeout,
+    classify_provider_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +53,11 @@ class LLMService:
         user_id: Optional[int] = None,
         metadata: Optional[dict] = None,
         parameters: Optional[dict] = None,
+        transport_attempts: Optional[int] = None,
+        streaming_timeouts: Optional[dict] = None,
+        raise_errors: bool = False,
+        should_continue=None,
+        cancellation_poll_interval: float = 2,
     ):
         self.api_key = api_key
         self.bot_name = bot_name
@@ -52,6 +68,36 @@ class LLMService:
         self.user_id = user_id
         self.metadata = metadata or {}
         self.parameters = dict(parameters or {})
+        if transport_attempts is not None and (
+            isinstance(transport_attempts, bool)
+            or not isinstance(transport_attempts, int)
+            or transport_attempts < 1
+        ):
+            raise ValueError("transport_attempts must be a positive integer")
+        self.transport_attempts = transport_attempts
+        self.streaming_timeouts = dict(streaming_timeouts or {})
+        self.raise_errors = raise_errors
+        self.last_error = None
+        self.should_continue = should_continue
+        if cancellation_poll_interval <= 0 or not math.isfinite(
+            cancellation_poll_interval
+        ):
+            raise ValueError("Cancellation polling interval must be positive")
+        self.cancellation_poll_interval = cancellation_poll_interval
+        if self.streaming_timeouts:
+            for key in ("connect", "first_output", "idle", "total"):
+                value = self.streaming_timeouts.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(value)
+                    or value <= 0
+                ):
+                    raise ValueError("Streaming timeout %s must be positive" % key)
+            if transport_attempts != 1:
+                raise ValueError(
+                    "Streaming deadlines require one explicit transport attempt"
+                )
 
         if not self.api_key:
             raise ValueError("API_KEY is required")
@@ -65,6 +111,15 @@ class LLMService:
             return get_user_model().objects.filter(id=self.user_id).first()
         except Exception:
             return None
+
+    def retry_delay(self, default=2.5, max_wait=30):
+        """Bound synchronous consumer retries; long rate limits return to UI."""
+        if self.last_error:
+            if not self.last_error.retryable:
+                return None
+            delay = max(default, self.last_error.retry_after or 0)
+            return delay if delay <= max_wait else None
+        return default
 
     def _message_stats(self, messages):
         input_chars = 0
@@ -103,7 +158,18 @@ class LLMService:
                 attachment_count=attachment_count,
                 tool_count=len(tools or []),
                 error=(error or "")[:2000],
-                metadata=self.metadata,
+                metadata={
+                    **self.metadata,
+                    **(
+                        {
+                            "error_category": self.last_error.error_category,
+                            "retryable": self.last_error.retryable,
+                            "retry_after": self.last_error.retry_after,
+                        }
+                        if self.last_error
+                        else {}
+                    ),
+                },
             )
         except Exception:
             logger.exception("Failed to record AI usage log")
@@ -128,6 +194,7 @@ class LLMService:
             timeout if timeout is not None else getattr(self, "timeout", 120)
         )
         started_at = time.monotonic()
+        self.last_error = None
 
         def _timeout_handler(signum, frame):
             raise TimeoutError(f"LLM streaming timed out after {stream_timeout}s")
@@ -147,12 +214,17 @@ class LLMService:
 
             # Set a timeout to prevent indefinite hangs during streaming
             old_handler = None
-            if stream_timeout > 0:
+            if stream_timeout > 0 and not self.streaming_timeouts:
                 old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
                 signal.alarm(stream_timeout)
 
             try:
-                for partial in fp.get_bot_response_sync(**kwargs):
+                stream = (
+                    self._limited_transport_response(kwargs)
+                    if self.transport_attempts is not None
+                    else fp.get_bot_response_sync(**kwargs)
+                )
+                for partial in stream:
                     if partial.is_replace_response:
                         response = partial.text
                     else:
@@ -161,7 +233,7 @@ class LLMService:
                     if on_partial:
                         on_partial(response)
             finally:
-                if stream_timeout > 0:
+                if stream_timeout > 0 and not self.streaming_timeouts:
                     signal.alarm(0)
                     if old_handler is not None:
                         signal.signal(signal.SIGALRM, old_handler)
@@ -190,26 +262,204 @@ class LLMService:
             )
             return response
 
-        except TimeoutError as e:
+        except (TimeoutError, LLMRequestTimeout, httpx.TimeoutException) as e:
+            if not isinstance(e, LLMRequestTimeout):
+                kind = "connect" if isinstance(e, httpx.ConnectTimeout) else "total"
+                seconds = self.streaming_timeouts.get(kind, stream_timeout)
+                e = LLMRequestTimeout(kind, seconds)
             logger.error(f"LLM streaming timeout: {e}")
+            self.last_error = e
             self._record_usage(
                 messages,
                 tools,
                 started_at,
+                response=response,
                 status="timeout",
                 error=str(e),
             )
+            if self.raise_errors:
+                e.raw_response = response
+                raise e
             return None
+
         except Exception as e:
-            logger.error(f"Error during LLM API call: {e}")
+            error = classify_provider_error(e)
+            error.raw_response = response
+            self.last_error = error
+            logger.error("LLM request failed: %s", error)
             self._record_usage(
                 messages,
                 tools,
                 started_at,
+                response=response,
                 status="error",
-                error=str(e),
+                error=str(error),
             )
+            if self.raise_errors:
+                if error is e:
+                    raise
+                raise error from e
             return None
+
+    def _limited_transport_response(self, kwargs):
+        """The SDK convenience wrapper hides num_tries; use its public stream API."""
+        request = fp.QueryRequest(
+            query=kwargs["messages"],
+            user_id="",
+            conversation_id="",
+            message_id="",
+            version=PROTOCOL_VERSION,
+            type="query",
+        )
+        stream_kwargs = {
+            key: value for key, value in kwargs.items() if key != "messages"
+        }
+        if self.streaming_timeouts:
+            yield from self._deadline_transport_response(request, stream_kwargs)
+            return
+        generator = fp.stream_request(
+            request=request, num_tries=self.transport_attempts, **stream_kwargs
+        ).__aiter__()
+        loop = asyncio.new_event_loop()
+        try:
+            while True:
+                try:
+                    yield loop.run_until_complete(generator.__anext__())
+                except StopAsyncIteration:
+                    return
+        finally:
+            try:
+                pending = asyncio.all_tasks(loop)
+                for task in pending:
+                    task.cancel()
+                if pending:
+                    loop.run_until_complete(
+                        asyncio.gather(*pending, return_exceptions=True)
+                    )
+                loop.run_until_complete(generator.aclose())
+                loop.run_until_complete(loop.shutdown_asyncgens())
+            finally:
+                loop.close()
+
+    def _deadline_transport_response(self, request, stream_kwargs):
+        """Bound meaningful-output silence and total duration independently.
+
+        SSE keepalives/empty events do not reset the output deadline. Use an
+        owned async client so cancellation closes the connection, with no SDK
+        retries hidden inside the coordinator's persisted attempt budget.
+        """
+        limits = self.streaming_timeouts
+
+        async def responses():
+            last_check = None
+
+            async def check_cancelled():
+                nonlocal last_check
+                now = time.monotonic()
+                if self.should_continue is None or (
+                    last_check is not None
+                    and now - last_check < self.cancellation_poll_interval
+                ):
+                    return
+                last_check = now
+                if not await asyncio.to_thread(self.should_continue):
+                    raise LLMRequestCancelled(
+                        "The AI request was cancelled or its execution claim expired"
+                    )
+
+            await check_cancelled()
+
+            async def require_success(response):
+                # The SDK's SSE reader checks content type, not HTTP status.
+                # Preserve structured 401/402/429/5xx before SSE parsing wraps
+                # them as an opaque "expected text/event-stream" failure.
+                response.raise_for_status()
+
+            timeout = httpx.Timeout(
+                connect=limits["connect"],
+                read=None,
+                write=limits["connect"],
+                pool=limits["connect"],
+            )
+            async with httpx.AsyncClient(
+                timeout=timeout, event_hooks={"response": [require_success]}
+            ) as session:
+                stream = fp.stream_request(
+                    request=request, session=session, num_tries=1, **stream_kwargs
+                ).__aiter__()
+                started = last_output = time.monotonic()
+                received_output = False
+                pending = None
+                try:
+                    while True:
+                        now = time.monotonic()
+                        kind = "idle" if received_output else "first_output"
+                        remaining = limits[kind] - (now - last_output)
+                        total_remaining = limits["total"] - (now - started)
+                        if total_remaining <= remaining:
+                            kind, remaining = "total", total_remaining
+                        if remaining <= 0:
+                            raise LLMRequestTimeout(kind, limits[kind])
+                        try:
+                            pending = asyncio.create_task(stream.__anext__())
+                            deadline = time.monotonic() + remaining
+                            while True:
+                                remaining = deadline - time.monotonic()
+                                if remaining <= 0:
+                                    raise LLMRequestTimeout(kind, limits[kind])
+                                wait = (
+                                    min(remaining, self.cancellation_poll_interval)
+                                    if self.should_continue
+                                    else remaining
+                                )
+                                done, _ = await asyncio.wait({pending}, timeout=wait)
+                                await check_cancelled()
+                                if done:
+                                    partial = pending.result()
+                                    pending = None
+                                    break
+                        except StopAsyncIteration:
+                            return
+                        except asyncio.TimeoutError as exc:
+                            raise LLMRequestTimeout(kind, limits[kind]) from exc
+                        except Exception as exc:
+                            # Poe wraps HTTPX failures in BotError. Inspect only
+                            # the exception chain, never provider error text.
+                            cause = exc
+                            for _ in range(8):
+                                if isinstance(cause, httpx.ConnectTimeout):
+                                    raise LLMRequestTimeout(
+                                        "connect", limits["connect"]
+                                    ) from exc
+                                if cause.__cause__ is None:
+                                    break
+                                cause = cause.__cause__
+                            raise
+                        if partial.text:
+                            received_output = True
+                            last_output = time.monotonic()
+                        yield partial
+                finally:
+                    if pending is not None:
+                        pending.cancel()
+                        await asyncio.gather(pending, return_exceptions=True)
+                    await stream.aclose()
+
+        loop = asyncio.new_event_loop()
+        generator = responses()
+        try:
+            while True:
+                try:
+                    yield loop.run_until_complete(generator.__anext__())
+                except StopAsyncIteration:
+                    return
+        finally:
+            try:
+                loop.run_until_complete(generator.aclose())
+                loop.run_until_complete(loop.shutdown_default_executor())
+                loop.run_until_complete(loop.shutdown_asyncgens())
+            finally:
+                loop.close()
 
     def _remove_thinking_content(self, text: str) -> str:
         """

@@ -2,6 +2,8 @@
 {% set page_type = 'data' %}
 
 {% block js_media %}
+  <script src="{{ static('widgets/publication_save.js') }}"></script>
+  <script src="{{ static('widgets/problem_data_visibility.js') }}"></script>
   {{ data_form.media.js }}
   {{ valid_files_script }}
   <script type="text/javascript">
@@ -14,11 +16,29 @@
   <script type="text/javascript" src="{{ static('fine-uploader/jquery.fine-uploader.js') }}"></script>
   <script type="text/javascript">
     $(function () {
+      // Presentation still needs initialization when editing is disabled.
+      window.initProblemDataVisibility(document);
+      {% if problem.is_locked and not request.user.is_superuser %}
+        $('.problem-data-form a.action-btn, #add-generator-script, #edit-generator-script').hide();
+        return;
+      {% endif %}
       $("#problem-data-zipfile_fine_uploader").fineUploader({
         request: {
           endpoint: "{{url('problem_zip_upload', problem.code)}}",
           params: {
             'csrfmiddlewaretoken': '{{ csrf_token }}'
+          }
+        },
+        callbacks: {
+          onSubmit: function (id) {
+            {% if pending_publication %}
+              if (!confirm("{{ _('Uploading a changed test package will withdraw the pending publication request. Continue?')|escapejs }}")) return false;
+              this.setParams({
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                confirm_withdraw_publication: '1',
+                publication_confirmation_token: '{{ publication_confirmation_token }}'
+              }, id);
+            {% endif %}
           }
         },
         chunking: {
@@ -216,15 +236,10 @@
         let $validator = $('#id_problem-data-custom_checker_cpp');
         let $interactive = $('#id_problem-data-interactive_judge');
         let $ioi_signature = $("#id_problem-data-use_ioi_signature");
-        let $signature_table = $('#signature-grader-table');
 
         // Generator fields
         let $generator = $('#id_problem-data-generator');
         let $generator_script = $('#id_problem-data-generator_script');
-
-        $tr_checker = $custom_checker.closest("tr");
-        $tr_validator = $validator.closest("tr");
-        $tr_interactive = $interactive.closest("tr");
 
         // Check if generator has content
         var hasGenerator = {% if data_form.generator.value() %}true{% else %}false{% endif %};
@@ -278,40 +293,11 @@
         appendInstructionLink($interactive.parent(), "#interactive");
         appendInstructionLink($ioi_signature.parent(), "#ioi-signature");
 
-        $checker.change(function () {
-          $tr_checker.toggle($checker.val() == 'custom').change();
-          $tr_validator.toggle(['customcpp', 'testlib', 'testlibcms'].indexOf($checker.val()) !== -1).change();
-          $tr_interactive.toggle($checker.val() == 'interact' || $checker.val() == 'interacttl').change();
-        }).change();
-
-        $ioi_signature.change(function() {
-          $signature_table.toggle($ioi_signature.is(':checked'));
-        }).change();
-
-        // Output-only sub-fields (binary_data, output_zip_size_mb): only
-        // relevant when the problem is marked output-only.
         let $output_only = $('#id_problem-data-output_only');
-        let $tr_binary_data = $('#id_problem-data-binary_data').closest('tr');
-        let $tr_output_zip = $('#id_problem-data-output_zip_size_mb').closest('tr');
         appendInstructionLink($output_only.parent(), "#output-only");
-        $output_only.change(function () {
-          let on = $output_only.is(':checked');
-          $tr_binary_data.toggle(on);
-          $tr_output_zip.toggle(on);
-        }).change();
-
-        // Communication sub-fields (manager + num_processes): only relevant
-        // when the problem is marked as a Communication task.
         let $is_communication = $('#id_problem-data-is_communication');
-        let $tr_comm_manager = $('#id_problem-data-communication_manager').closest('tr');
-        let $tr_comm_num_proc = $('#id_problem-data-communication_num_processes').closest('tr');
         appendInstructionLink($is_communication.parent(), "#importing-ioi-tasks");
         appendInstructionLink($('#id_problem-data-communication_manager').parent(), "#importing-ioi-tasks");
-        $is_communication.change(function () {
-          let on = $is_communication.is(':checked');
-          $tr_comm_manager.toggle(on);
-          $tr_comm_num_proc.toggle(on);
-        }).change();
 
         // Testcase validator link
         var $validatorTd = $('#id_problem-data-testcase_validator').closest('td');
@@ -1536,84 +1522,88 @@
     </a>
   </div>
 
-  <form class="problem-data-form" action="" method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ cases_formset.management_form }}
-    {% if cases_formset.non_form_errors() %}
-      <ul class="errorlist">
-        {% for error in cases_formset.non_form_errors() %}
-          <li>{{ error }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-    <table class="table">
-      {{ data_form.as_table() }}
-      <th>
-        <label>{{_('Autofill testcases')}}:</label>
-      </th>
-      <td>
-        <div>
-          {{_('Batch mode')}}:
-          <select id="problem-type" style="width: 11em">
-            <option value="SUM" selected>{{_('Sum (VOI)')}}</option>
-            <option value="ICPC">{{_('All or 0 (ICPC)')}}</option>
-            <option value="MIN">{{_('Min (IOI)')}}</option>
-          </select>
-          <a id="fill-testcases" href="#">
-            <i class="fa fa-circle"></i>
-            {{_('Fill testcases')}}
-          </a>
-        </div>
-        <div style="margin-top: 1em;">
-          {{_("Batch start positions")}}:
-          <input id="batch_starts">
-        </div>
-        <div>
-          {{_("Leave empty if not use batch. If you want to divide to three batches [1, 4], [5, 8], [9, 10], enter: 1, 5, 9")}}
-        </div>
-        <div class="testcase-json-container" style="margin-top: 1em;">
-          <button type="button" class="btn btn-sm" id="open-custom-testcase-json">
-            <i class="fa fa-code"></i> {{_("Or use custom JSON")}}
-          </button>
-        </div>
-      </td>
-    </table>
+  <form class="problem-data-form" action="" method="POST" enctype="multipart/form-data"
+        data-pending-publication="{{ '1' if pending_publication else '0' }}"
+        data-publication-confirmation-token="{{ publication_confirmation_token }}"
+        data-publication-save-warning="{{ _('Saving changes will withdraw the pending publication request. Continue and save the changed draft?') }}">
+    <fieldset {% if problem.is_locked and not request.user.is_superuser %}disabled{% endif %}>
+      {% csrf_token %}
+      {{ cases_formset.management_form }}
+      {% if cases_formset.non_form_errors() %}
+        <ul class="errorlist">
+          {% for error in cases_formset.non_form_errors() %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <table class="table">
+        {{ data_form.as_table() }}
+        <th>
+          <label>{{_('Autofill testcases')}}:</label>
+        </th>
+        <td>
+          <div>
+            {{_('Batch mode')}}:
+            <select id="problem-type" style="width: 11em">
+              <option value="SUM" selected>{{_('Sum (VOI)')}}</option>
+              <option value="ICPC">{{_('All or 0 (ICPC)')}}</option>
+              <option value="MIN">{{_('Min (IOI)')}}</option>
+            </select>
+            <a id="fill-testcases" href="#">
+              <i class="fa fa-circle"></i>
+              {{_('Fill testcases')}}
+            </a>
+          </div>
+          <div style="margin-top: 1em;">
+            {{_("Batch start positions")}}:
+            <input id="batch_starts">
+          </div>
+          <div>
+            {{_("Leave empty if not use batch. If you want to divide to three batches [1, 4], [5, 8], [9, 10], enter: 1, 5, 9")}}
+          </div>
+          <div class="testcase-json-container" style="margin-top: 1em;">
+            <button type="button" class="btn btn-sm" id="open-custom-testcase-json">
+              <i class="fa fa-code"></i> {{_("Or use custom JSON")}}
+            </button>
+          </div>
+        </td>
+      </table>
 
     <!-- Generator Script Modal -->
-    <div id="generator-script-modal" style="display: none;">
-      <div class="modal-content">
-        <h3>{{_('Generator Script')}}</h3>
-        <p>{{_('Enter generator arguments for test cases. Each line represents arguments for one test case.')}}</p>
-        <div class="textarea-with-lines">
-          <div id="line-numbers"></div>
-          <textarea id="generator-script-textarea" rows="15" style="width: 100%; font-family: monospace; padding: 10px; border: none; outline: none; resize: vertical;"></textarea>
-        </div>
-        <div class="modal-buttons" style="margin-top: 15px; text-align: right;">
-          <button type="button" class="btn" id="cancel-generator-script">{{_('Cancel')}}</button>
-          <button type="button" class="action-btn" id="save-generator-script">{{_('Save')}}</button>
+      <div id="generator-script-modal" style="display: none;">
+        <div class="modal-content">
+          <h3>{{_('Generator Script')}}</h3>
+          <p>{{_('Enter generator arguments for test cases. Each line represents arguments for one test case.')}}</p>
+          <div class="textarea-with-lines">
+            <div id="line-numbers"></div>
+            <textarea id="generator-script-textarea" rows="15" style="width: 100%; font-family: monospace; padding: 10px; border: none; outline: none; resize: vertical;"></textarea>
+          </div>
+          <div class="modal-buttons" style="margin-top: 15px; text-align: right;">
+            <button type="button" class="btn" id="cancel-generator-script">{{_('Cancel')}}</button>
+            <button type="button" class="action-btn" id="save-generator-script">{{_('Save')}}</button>
+          </div>
         </div>
       </div>
-    </div>
 
     <!-- Testcase JSON Modal -->
-    <div id="testcase-json-modal" style="display: none;">
-      <div class="modal-content">
-        <h3>{{_('Custom testcase JSON')}}</h3>
-        <p>
-          {{_('Paste JSON to fill testcase rows. Each row should use either testcase or generator_args, not both.')}}
-        </p>
-        <button type="button" class="btn btn-sm" id="toggle-testcase-json-help">{{_('Show examples')}}</button>
-        <div id="testcase-json-help" style="display: none; margin-top: 1em;">
+      <div id="testcase-json-modal" style="display: none;">
+        <div class="modal-content">
+          <h3>{{_('Custom testcase JSON')}}</h3>
           <p>
-            {{_('This only fills rows on this page; click Apply! after reviewing the generated testcases.')}}
+            {{_('Paste JSON to fill testcase rows. Each row should use either testcase or generator_args, not both.')}}
           </p>
-          <p>{{_('Non-batched format')}}:</p>
+          <button type="button" class="btn btn-sm" id="toggle-testcase-json-help">{{_('Show examples')}}</button>
+          <div id="testcase-json-help" style="display: none; margin-top: 1em;">
+            <p>
+              {{_('This only fills rows on this page; click Apply! after reviewing the generated testcases.')}}
+            </p>
+            <p>{{_('Non-batched format')}}:</p>
           <pre style="white-space: pre-wrap;">[
   {"score": 1, "testcase": "1"},
   {"score": 1, "generator_args": "2 --small"},
   {"score": 2, "testcase": "complete-small-01"}
 ]</pre>
-          <p>{{_('Example format with two batches')}}:</p>
+            <p>{{_('Example format with two batches')}}:</p>
           <pre style="white-space: pre-wrap;">[
   {"score": 21, "testcases": ["subtask1-01", "subtask1-02", "subtask1-03"]},
   {"score": 79, "testcases": [
@@ -1622,121 +1612,121 @@
     "subtask2-03"
   ]}
 ]</pre>
-        </div>
-        <div class="textarea-with-lines">
-          <div id="testcase-json-line-numbers"></div>
-          <textarea id="testcase-json-textarea" rows="15" style="width: 100%; font-family: monospace; padding: 10px; border: none; outline: none; resize: vertical;"></textarea>
-        </div>
-        <div id="testcase-json-error" class="red" style="display: none; margin-top: 0.75em;"></div>
-        <div class="modal-buttons" style="margin-top: 15px; text-align: right;">
-          <button type="button" class="btn" id="cancel-testcase-json">{{_('Cancel')}}</button>
-          <button type="button" class="action-btn" id="fill-testcase-json">{{_('Fill testcases')}}</button>
+          </div>
+          <div class="textarea-with-lines">
+            <div id="testcase-json-line-numbers"></div>
+            <textarea id="testcase-json-textarea" rows="15" style="width: 100%; font-family: monospace; padding: 10px; border: none; outline: none; resize: vertical;"></textarea>
+          </div>
+          <div id="testcase-json-error" class="red" style="display: none; margin-top: 0.75em;"></div>
+          <div class="modal-buttons" style="margin-top: 15px; text-align: right;">
+            <button type="button" class="btn" id="cancel-testcase-json">{{_('Cancel')}}</button>
+            <button type="button" class="action-btn" id="fill-testcase-json">{{_('Fill testcases')}}</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    {{ signature_grader_formset.management_form }}
-    <div id="signature-grader-table" style="display: none; margin-top: 1em;">
-      <h3> {{_("IOI Signature Graders")}} </h3>
-      <table class="table">
+      {{ signature_grader_formset.management_form }}
+      <div id="signature-grader-table" style="display: none; margin-top: 1em;">
+        <h3> {{_("IOI Signature Graders")}} </h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{{ _('Language') }}</th>
+              <th>{{ _('Handler') }}</th>
+              <th>{{ _('Header') }}</th>
+              {% if signature_grader_formset.can_delete %}
+                <th>{{ _('Delete?') }}</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for form in signature_grader_formset %}
+              {% if form.non_field_errors() %}
+                <tr>
+                  <td colspan="4">
+                    <ul class="errorlist">
+                      {% for error in form.non_field_errors() %}
+                        <li>{{ error }}</li>
+                      {% endfor %}
+                    </ul>
+                  </td>
+                </tr>
+              {% endif %}
+              <tr>
+                <td>
+                  {{ form.id }}
+                  {{ form.language.errors }}
+                  {{ form.language }}
+                </td>
+                <td>
+                  {{ form.handler.errors }}
+                  {{ form.handler }}
+                </td>
+                <td>
+                  {{ form.header.errors }}
+                  {{ form.header }}
+                </td>
+                {% if signature_grader_formset.can_delete %}
+                  <td>{{ form.DELETE }}</td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <input type="submit" value="{{ _('Apply!') }}" class="action-btn" id="submit-button">
+
+      <h3> {{_("Test Cases")}} </h3>
+      <table id="case-table" class="table">
         <thead>
           <tr>
-            <th>{{ _('Language') }}</th>
-            <th>{{ _('Handler') }}</th>
-            <th>{{ _('Header') }}</th>
-            {% if signature_grader_formset.can_delete %}
-              <th>{{ _('Delete?') }}</th>
+            <th class="order-column"></th>
+            <th class="type-column">{{ _('Type') }}</th>
+            <th>{{ _('Input file') }}</th>
+            <th>{{ _('Output file') }}</th>
+            <th>{{ _('Points') }}</th>
+            <th>{{ _('Pretest?') }}</th>
+            <th>{{ _('Generator Args') }}</th>
+            {% if cases_formset.can_delete %}
+              <th>{{ _('Delete?') }}
+                <br>
+                <button type="button" id="delete-all-btn" title="{{ _('Remove all') }}">
+                  <i class="fa fa-times red"></i>
+                </button>
+              </th>
             {% endif %}
           </tr>
         </thead>
         <tbody>
-          {% for form in signature_grader_formset %}
+          {% for form in all_case_forms %}
             {% if form.non_field_errors() %}
               <tr>
-                <td colspan="4">
-                  <ul class="errorlist">
-                    {% for error in form.non_field_errors() %}
-                      <li>{{ error }}</li>
-                    {% endfor %}
-                  </ul>
-                </td>
+                <td colspan="{{ 10 + cases_formset.can_delete }}">{{ form.non_field_errors() }}</td>
               </tr>
             {% endif %}
-            <tr>
+            {% if form.prefix and '__prefix__' in form.prefix %}
+              </tbody>
+              <tbody class="extra-row-body" style="display: none">
+            {% endif %}
+            <tr data-type="{{ form['type'].value() }}">
               <td>
-                {{ form.id }}
-                {{ form.language.errors }}
-                {{ form.language }}
+                {{ form.id }}{{ form.order.errors }}
+                <span style="display:none">{{ form.order }}</span>
+                <i class="fa fa-fw fa-lg fa-ellipsis-v"></i>
+                <span class="order">{{ form['order'].value() or '' }}</span>
               </td>
-              <td>
-                {{ form.handler.errors }}
-                {{ form.handler }}
+              <td class="type-column">
+                {{ form.type.errors }}{{ form.type }}
               </td>
-              <td>
-                {{ form.header.errors }}
-                {{ form.header }}
+              <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
+                  form['input_file'].value() in valid_files) %} class="bad-file"{% endif %}>
+                {{ form.input_file.errors }}{{ form.input_file }}
               </td>
-              {% if signature_grader_formset.can_delete %}
-                <td>{{ form.DELETE }}</td>
-              {% endif %}
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <input type="submit" value="{{ _('Apply!') }}" class="action-btn" id="submit-button">
-
-    <h3> {{_("Test Cases")}} </h3>
-    <table id="case-table" class="table">
-      <thead>
-        <tr>
-          <th class="order-column"></th>
-          <th class="type-column">{{ _('Type') }}</th>
-          <th>{{ _('Input file') }}</th>
-          <th>{{ _('Output file') }}</th>
-          <th>{{ _('Points') }}</th>
-          <th>{{ _('Pretest?') }}</th>
-          <th>{{ _('Generator Args') }}</th>
-          {% if cases_formset.can_delete %}
-            <th>{{ _('Delete?') }}
-              <br>
-              <button type="button" id="delete-all-btn" title="{{ _('Remove all') }}">
-                <i class="fa fa-times red"></i>
-              </button>
-            </th>
-          {% endif %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for form in all_case_forms %}
-          {% if form.non_field_errors() %}
-            <tr>
-              <td colspan="{{ 10 + cases_formset.can_delete }}">{{ form.non_field_errors() }}</td>
-            </tr>
-          {% endif %}
-          {% if form.prefix and '__prefix__' in form.prefix %}
-            </tbody>
-            <tbody class="extra-row-body" style="display: none">
-          {% endif %}
-          <tr data-type="{{ form['type'].value() }}">
-            <td>
-              {{ form.id }}{{ form.order.errors }}
-              <span style="display:none">{{ form.order }}</span>
-              <i class="fa fa-fw fa-lg fa-ellipsis-v"></i>
-              <span class="order">{{ form['order'].value() or '' }}</span>
-            </td>
-            <td class="type-column">
-              {{ form.type.errors }}{{ form.type }}
-            </td>
-            <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
-                form['input_file'].value() in valid_files) %} class="bad-file"{% endif %}>
-              {{ form.input_file.errors }}{{ form.input_file }}
-            </td>
-        <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
-            form['output_file'].value() in valid_files) %} class="bad-file"{% endif %}>
-          {{ form.output_file.errors }}{{ form.output_file }}
-        </td>
+          <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
+              form['output_file'].value() in valid_files) %} class="bad-file"{% endif %}>
+            {{ form.output_file.errors }}{{ form.output_file }}
+          </td>
 <td>
   {{ form.points.errors }}{{ form.points }}
   {{ form.batch_scoring.errors }}
@@ -1768,6 +1758,7 @@
 </table>
 <input type="submit" value="{{ _('Apply!') }}" class="action-btn" id="submit-button">
 <div><a id="add-case-row" class="action-btn" href="#"><i class="fa fa-plus"></i> {{ _('Add new case') }}</a></div>
+</fieldset>
 </form>
 
 {% endblock %}

@@ -1,0 +1,8 @@
+{% if latest_run.status == 'B' and stage.status == 'E' and coordinator_can_run and (request.user.is_superuser or stage.manual_retries == 0) %}
+  <form class="coordinator-action-form" method="post" action="{{ url('coordinator_manage_review', coordinator_kind, coordinator_code, latest_run.id, 'retry') }}">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <input type="hidden" name="stage_id" value="{{ stage.stage_id }}">
+    <input type="hidden" name="confirm" value="yes">
+    <button class="action-btn small outlined" type="submit">{{ _("Retry section") }}</button>
+  </form>
+{% endif %}

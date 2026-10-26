@@ -24,6 +24,7 @@ from judge.models.problem_data import (
 )
 from judge.caching import cache_wrapper, CacheableModel
 from judge.utils.files import generate_secure_filename
+from judge.utils.content_lock import apply_publication_lock
 
 __all__ = [
     "ProblemGroup",
@@ -238,6 +239,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
     is_public = models.BooleanField(
         verbose_name=_("publicly visible"), db_index=True, default=False
     )
+    is_locked = models.BooleanField(default=False, verbose_name=_("content locked"))
     is_manually_managed = models.BooleanField(
         verbose_name=_("manually managed"),
         db_index=True,
@@ -320,12 +322,17 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
             profile.pk in self.get_author_ids() or profile.pk in self.get_curator_ids()
         )
 
-    def is_editable_by(self, user):
+    def can_manage_activity_by(self, user):
         if not user.is_authenticated:
             return False
         if user.is_superuser:
             return True
         return self.is_editor(user.profile)
+
+    def is_editable_by(self, user):
+        return (
+            user.is_superuser or not self.is_locked
+        ) and self.can_manage_activity_by(user)
 
     def can_request_public_by(self, user):
         """Who may request this problem be made public site-wide.
@@ -344,7 +351,9 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
             return False
         if user.is_superuser:
             return True
-        return self.is_editable_by(user) and user.has_perm("judge.add_problem")
+        # Lock restricts content edits, not reviewing/submitting/withdrawing a
+        # prepared candidate under the team's existing authority.
+        return self.is_editor(user.profile) and user.has_perm("judge.add_problem")
 
     def is_accessible_by(self, user, in_contest=True):
         # Problem is public.
@@ -385,7 +394,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         ).exists()
 
     def is_subs_manageable_by(self, user):
-        return self.is_editable_by(user)
+        return self.can_manage_activity_by(user)
 
     @classmethod
     def get_visible_problems(cls, user, profile=None):
@@ -701,6 +710,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
             super().save(update_fields=["pdf_description"])
 
     def save(self, should_move_data=True, *args, **kwargs):
+        apply_publication_lock(self, "is_public", kwargs)
         code_changed = self.__original_code and self.code != self.__original_code
         # Cap points to 1 for non-public problems to prevent abuse
         # Superusers can bypass this by setting _bypass_points_cap=True on the instance

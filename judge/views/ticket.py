@@ -169,9 +169,13 @@ class TicketMixin(object):
         if ticket.assignees.filter(id=profile_id).exists():
             return ticket
         linked = ticket.linked_item
-        if isinstance(linked, Problem) and linked.is_editable_by(self.request.user):
+        if isinstance(linked, Problem) and linked.can_manage_activity_by(
+            self.request.user
+        ):
             return ticket
-        if isinstance(linked, BlogPost) and linked.is_editable_by(self.request.user):
+        if isinstance(linked, BlogPost) and linked.can_manage_activity_by(
+            self.request.user
+        ):
             return ticket
         raise PermissionDenied()
 
@@ -233,7 +237,7 @@ class TicketView(TitleMixin, LoginRequiredMixin, TicketMixin, SingleObjectFormVi
         if not can_edit_assignees and self.object.linked_item:
             linked = self.object.linked_item
             if isinstance(linked, (BlogPost, Problem)):
-                can_edit_assignees = linked.is_editable_by(self.request.user)
+                can_edit_assignees = linked.can_manage_activity_by(self.request.user)
 
         context["can_edit_assignees"] = can_edit_assignees
         return context
@@ -356,9 +360,9 @@ class TicketAssigneeEditView(LoginRequiredMixin, TicketMixin, SingleObjectFormVi
                 linked = ticket.linked_item
                 can_edit = False
                 if isinstance(linked, BlogPost):
-                    can_edit = linked.is_editable_by(self.request.user)
+                    can_edit = linked.can_manage_activity_by(self.request.user)
                 elif isinstance(linked, Problem):
-                    can_edit = linked.is_editable_by(self.request.user)
+                    can_edit = linked.can_manage_activity_by(self.request.user)
 
                 if not can_edit:
                     return JsonResponse(
@@ -585,7 +589,7 @@ class TicketList(LoginRequiredMixin, ListView):
 class ProblemTicketListView(TicketList):
     def _get_queryset(self):
         problem = get_object_or_404(Problem, code=self.kwargs.get("problem"))
-        if problem.is_editable_by(self.request.user):
+        if problem.can_manage_activity_by(self.request.user):
             return problem.tickets.order_by("-id")
         elif problem.is_accessible_by(self.request.user):
             return problem.tickets.filter(own_ticket_filter(self.profile.id)).order_by(
@@ -700,7 +704,7 @@ class BlogTicketListView(TicketList):
         post = get_object_or_404(BlogPost, id=self.kwargs.get("id"))
         if not post.is_accessible_by(self.request.user):
             raise Http404()
-        if post.is_editable_by(self.request.user):
+        if post.can_manage_activity_by(self.request.user):
             return post.tickets.order_by("-id")
         else:
             return post.tickets.filter(own_ticket_filter(self.profile.id)).order_by(

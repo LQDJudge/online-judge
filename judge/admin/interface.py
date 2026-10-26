@@ -75,6 +75,11 @@ class BlogPostForm(ModelForm):
 
 
 class BlogPostAdmin(CompareVersionAdmin):
+    def has_delete_permission(self, request, obj=None):
+        return not (
+            obj is not None and obj.is_locked and not request.user.is_superuser
+        ) and super().has_delete_permission(request, obj)
+
     fieldsets = (
         (
             None,
@@ -84,6 +89,7 @@ class BlogPostAdmin(CompareVersionAdmin):
                     "slug",
                     "authors",
                     "visible",
+                    "is_locked",
                     "sticky",
                     "publish_on",
                     "organizations",
@@ -94,6 +100,11 @@ class BlogPostAdmin(CompareVersionAdmin):
         (_("Summary"), {"classes": ("collapse",), "fields": ("summary",)}),
     )
     prepopulated_fields = {"slug": ("title",)}
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = super().get_readonly_fields(request, obj)
+        return fields if request.user.is_superuser else (*fields, "is_locked")
+
     list_display = ("id", "title", "visible", "sticky", "publish_on")
     list_display_links = ("id", "title")
     ordering = ("-publish_on",)
@@ -101,6 +112,8 @@ class BlogPostAdmin(CompareVersionAdmin):
     date_hierarchy = "publish_on"
 
     def has_change_permission(self, request, obj=None):
+        if obj is not None and obj.is_locked and not request.user.is_superuser:
+            return False
         return (
             request.user.has_perm("judge.edit_all_post")
             or request.user.has_perm("judge.change_blogpost")

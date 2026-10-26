@@ -405,6 +405,7 @@ class ProblemSignatureGrader(models.Model):
 
 
 class ProblemValidation(models.Model):
+    review_evidence = models.JSONField(default=dict, blank=True)
     problem = models.ForeignKey(
         "Problem",
         related_name="validations",

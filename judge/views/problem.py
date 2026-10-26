@@ -36,6 +36,7 @@ from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
 from judge.views.comment import CommentableMixin
+from judge.review.provenance import solution_binding
 from judge.forms import (
     ProblemCloneForm,
     ProblemSubmitForm,
@@ -71,6 +72,9 @@ from judge.models.problem_review import (
     ProblemReviewRun,
 )
 from judge.models.public_request import PublicRequest
+from judge.content_mutation import publication_confirmation_token
+from judge.review.workflow import publication_blockers
+from judge.review.presentation import publication_request_hint
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.hidden_results import (
@@ -113,6 +117,10 @@ import reversion
 from reversion.models import Version
 
 from judge.tasks import rescore_problem
+from judge.review.publication import (
+    publication_decision_blockers,
+    publish_without_review,
+)
 from judge.tasks.llm import (
     generate_solution_task,
     improve_markdown_task,
@@ -142,7 +150,7 @@ def can_submit_current_contest_problem(request, participation):
 
     contest = participation.contest
     profile = request.profile
-    return contest.is_editable_by(request.user) or (
+    return contest.can_manage_activity_by(request.user) or (
         profile is not None and profile.id in contest.tester_ids
     )
 
@@ -159,6 +167,12 @@ class ProblemMixin(object):
     model = Problem
     slug_url_kwarg = "problem"
     slug_field = "code"
+
+    def can_access_editor(self, problem):
+        """Lock prevents writes, not the existing editorial team's read access."""
+        if self.request.method in ("GET", "HEAD"):
+            return problem.can_manage_activity_by(self.request.user)
+        return problem.is_editable_by(self.request.user)
 
     def get_object(self, queryset=None):
         problem = super(ProblemMixin, self).get_object(queryset)
@@ -297,6 +311,9 @@ class ProblemSolution(
         context["problem"] = self.problem
         context["has_solved_problem"] = self.problem.id in self.get_completed_problems()
         context["can_edit_problem"] = self.problem.is_editable_by(self.request.user)
+        context["can_view_problem_editor"] = self.problem.can_manage_activity_by(
+            self.request.user
+        )
 
         # Add comment context
         context = self.get_comment_context(context)
@@ -437,9 +454,10 @@ class ProblemDetail(
 
         can_edit = self.object.is_editable_by(user)
         context["can_edit_problem"] = can_edit
+        context["can_view_problem_editor"] = self.object.can_manage_activity_by(user)
         if user.is_authenticated:
             tickets = self.object.tickets
-            if not can_edit:
+            if not self.object.can_manage_activity_by(user):
                 tickets = tickets.filter(own_ticket_filter(user.profile.id))
             tickets = list(tickets.values("id", "is_open"))
 
@@ -767,7 +785,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             context["has_clarifications"] = clarifications.count() > 0
             context["clarifications"] = clarifications.order_by("-date")
             context["current_contest"] = participation.contest
-            if participation.contest.is_editable_by(self.request.user):
+            if participation.contest.can_manage_activity_by(self.request.user):
                 context["can_edit_contest"] = True
 
             # Get contest quizzes
@@ -1067,7 +1085,7 @@ def problem_submit(request, problem, submission=None):
             return HttpResponseForbidden("<h1>Not allowed to submit. Try later.</h1>")
         raise Http404()
 
-    if problem.is_editable_by(request.user):
+    if problem.can_manage_activity_by(request.user):
         judge_choices = tuple(
             Judge.objects.filter(online=True, problems=problem).values_list(
                 "name", "name"
@@ -1177,6 +1195,13 @@ def problem_submit(request, problem, submission=None):
 
             # Save a query
             model.source = source
+            if model.language.key == "OUTPUT" and problem.can_manage_activity_by(
+                request.user
+            ):
+                model.review_evidence = solution_binding(
+                    problem, source.source, output_artifact=True
+                )
+                model.save(update_fields=["review_evidence"])
             model.judge(rejudge=False, judge_id=form.cleaned_data["judge"])
 
             return HttpResponseRedirect(
@@ -1312,6 +1337,7 @@ class ProblemClone(
 
             problem.pk = None
             problem.is_public = False
+            problem.is_locked = False
             problem.is_organization_private = bool(organization_ids)
             problem.ac_rate = 0
             problem.user_count = 0
@@ -1336,6 +1362,19 @@ class ProblemEdit(
     template_name = "problem/edit.html"
     form_class = ProblemEditForm
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if (
+            getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
+            and not self.request.user.is_superuser
+            and "is_public" in form.fields
+        ):
+            form.fields["is_public"].disabled = True
+        if self.object.is_locked and not self.request.user.is_superuser:
+            for field in form.fields.values():
+                field.disabled = True
+        return form
+
     def get_title(self):
         return _("Edit {0}").format(self.object.name)
 
@@ -1356,7 +1395,7 @@ class ProblemEdit(
             return False
 
         problem = self.get_object()
-        return problem.is_editable_by(self.request.user)
+        return self.can_access_editor(problem)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -1396,6 +1435,17 @@ class ProblemEdit(
             problem._bypass_points_cap = self.request.user.is_superuser
             problem.save()
             form.save_m2m()
+
+            if (
+                getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
+                and self.request.user.is_superuser
+                and "is_public" in form.changed_data
+                and problem.is_public
+                and not problem.is_organization_private
+            ):
+                reason = _("Published directly by a superuser from Content.")
+                publish_without_review(problem, self.request.user, reason)
+                problem.refresh_from_db()
 
             reversion.set_user(self.request.user)
 
@@ -1523,6 +1573,9 @@ class ProblemEdit(
             context["public_request"] = self.object.public_request
         except PublicRequest.DoesNotExist:
             context["public_request"] = None
+        context["publication_confirmation_token"] = publication_confirmation_token(
+            context["public_request"]
+        )
 
         # Flag for template: are critical fields restricted?
         # Only lock when the problem is public to the whole site (not merely org-private).
@@ -1543,6 +1596,49 @@ class ProblemEdit(
             .first()
         )
         context["latest_review_run"] = latest_run
+        context["coordinator_review_enabled"] = getattr(
+            settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False
+        )
+        context["published_contest_warning"] = ""
+        if context["coordinator_review_enabled"]:
+            contests = list(
+                Contest.objects.filter(
+                    is_visible=True, contest_problems__problem_id=self.object.pk
+                )
+                .values_list("name", flat=True)
+                .distinct()
+            )
+            if contests:
+                context["published_contest_warning"] = _(
+                    "This problem is used by published contests: %(contests)s. Saving changes will affect their live problem content and invalidate review readiness."
+                ) % {"contests": ", ".join(contests)}
+        context["publication_ready"] = False
+        context["publication_blockers"] = []
+        if context["coordinator_review_enabled"]:
+            context["publication_blockers"] = publication_blockers(
+                latest_run, self.object
+            )
+            context["publication_ready"] = bool(
+                latest_run and not context["publication_blockers"]
+            )
+            pending = context["public_request"]
+            if pending and pending.status == "P":
+                context["publication_blockers"] = publication_decision_blockers(
+                    self.object, pending.review_run
+                )
+            context["publication_request_hint"] = (
+                publication_request_hint(
+                    latest_run,
+                    context["publication_blockers"],
+                    pending=bool(pending and pending.status == "P"),
+                )
+                if (pending and pending.status == "P")
+                or (
+                    not context["publication_ready"]
+                    and not self.request.user.is_superuser
+                )
+                else ""
+            )
         verdict = None
         if latest_run:
             if latest_run.status == ProblemReviewRun.RUNNING:
@@ -1610,7 +1706,7 @@ class ProblemLog(LoginRequiredMixin, RevisionDiffMixin, TitleMixin, ListView):
 
     def get(self, request, *args, **kwargs):
         self.problem = get_object_or_404(Problem, code=self.kwargs["problem"])
-        if not self.problem.is_editable_by(request.user):
+        if not self.problem.can_manage_activity_by(request.user):
             raise Http404()
         return super().get(request, *args, **kwargs)
 
@@ -1928,6 +2024,16 @@ class ProblemAdd(PermissionRequiredMixin, CreateView):
     form_class = ProblemAddForm
     model = Problem
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if (
+            getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
+            and not self.request.user.is_superuser
+            and "is_public" in form.fields
+        ):
+            form.fields["is_public"].disabled = True
+        return form
+
     def has_permission(self):
         if not self.request.user.is_authenticated:
             return False
@@ -2000,7 +2106,7 @@ class ProblemEditLanguageLimits(
             return False
 
         problem = self.get_object()
-        return problem.is_editable_by(self.request.user)
+        return self.can_access_editor(problem)
 
     def _is_restricted(self):
         """Check if language limits editing is restricted (site-public problem + non-superuser)."""
@@ -2106,7 +2212,7 @@ class ProblemEditLanguageTemplates(
             return False
 
         problem = self.get_object()
-        return problem.is_editable_by(self.request.user)
+        return self.can_access_editor(problem)
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -2223,7 +2329,7 @@ class ProblemEditSolutions(
             return False
 
         problem = self.get_object()
-        return problem.is_editable_by(self.request.user)
+        return self.can_access_editor(problem)
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -2377,7 +2483,7 @@ class ProblemEditTranslations(
             return False
 
         problem = self.get_object()
-        return problem.is_editable_by(self.request.user)
+        return self.can_access_editor(problem)
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()

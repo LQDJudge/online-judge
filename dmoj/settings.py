@@ -307,6 +307,7 @@ MIDDLEWARE = (
     "judge.timezone.TimezoneMiddleware",
     "impersonate.middleware.ImpersonateMiddleware",
     "judge.middleware.DMOJImpersonationMiddleware",
+    "judge.content_mutation.ContentMutationMiddleware",
     "judge.middleware.ContestMiddleware",
     "judge.middleware.CourseMiddleware",
     "judge.middleware.DarkModeMiddleware",
@@ -599,6 +600,20 @@ INFINITE_PAGINATION_MAX_PAGE = 1000
 # Auto-review pipeline (problem public requests)
 # ============================================================
 AUTO_REVIEW_ENABLED = True
+# Enable after local acceptance and the coordinated site/judge deployment.
+AUTO_REVIEW_COORDINATOR_ENABLED = False
+REVIEW_STAGE_LEASE_SECONDS = 600
+# Review-only transport policy; unrelated AI features keep their own defaults.
+REVIEW_LLM_CONNECT_TIMEOUT = 20
+REVIEW_LLM_FIRST_OUTPUT_TIMEOUT = 180
+REVIEW_LLM_IDLE_TIMEOUT = 120
+REVIEW_LLM_TIMEOUT = 480
+REVIEW_MAX_PROVIDER_RETRY_DELAY = 3600  # Longer cooldowns require manual recovery.
+AI_FEATURE_STREAMING_TIMEOUTS = (
+    {}
+)  # Optional per-feature overrides; see llm_service/policies.py.
+REVIEW_DIAGNOSTIC_RETENTION_DAYS = 30
+REVIEW_COORDINATOR_QUEUE = "review-coordinator"
 AUTO_REVIEW_REQUEST_COOLDOWN_SECONDS = (
     300  # 5 min between Request public presses (admins bypass)
 )
@@ -687,6 +702,16 @@ QUIZ_EXPIRY_ENABLED = False
 QUIZ_EXPIRY_BATCH_SIZE = 100
 
 CELERY_BEAT_SCHEDULE = {
+    "recover-coordinator-stage-leases": {
+        "task": "judge.tasks.coordinator.recover_review_leases",
+        "schedule": 60.0,
+        "options": {"queue": REVIEW_COORDINATOR_QUEUE},
+    },
+    "cleanup-review-diagnostics": {
+        "task": "judge.tasks.coordinator.cleanup_review_diagnostics",
+        "schedule": 86400.0,
+        "options": {"queue": REVIEW_COORDINATOR_QUEUE},
+    },
     "expire-quiz-attempts": {
         "task": "judge.tasks.quiz.expire_quiz_attempts",
         "schedule": 30.0,

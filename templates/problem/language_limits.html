@@ -48,7 +48,7 @@
                 <h4>{{ _('Edit Language Limits') }}</h4>
               </div>
 
-              {% if is_restricted %}
+              {% if is_restricted and not problem.is_locked %}
                 <div class="alert alert-info">
                   <i class="fa fa-lock"></i>
                   {{ _('Language limits are locked because this problem is public. Contact an admin to modify them.') }}

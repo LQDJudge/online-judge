@@ -14,6 +14,9 @@ from ai_features.quiz_import_service import (
     QUIZ_IMPORT_USER_PROMPT,
     parse_quiz_import_response,
 )
+from llm_service.config import get_config
+from llm_service.llm_api import LLMService
+from llm_service.policies import streaming_options
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +43,6 @@ def quiz_import_task(self, file_path, user_id):
         }
     """
     try:
-        from llm_service.config import get_config
-        from llm_service.llm_api import LLMService
-
         if not os.path.exists(file_path):
             return {"success": False, "error": "Uploaded file not found"}
 
@@ -79,7 +79,7 @@ def quiz_import_task(self, file_path, user_id):
         service = LLMService(
             api_key=config.api_key,
             bot_name=GEMINI_FLASH_BOT,
-            timeout=300,
+            **streaming_options("quiz_import"),
             feature="quiz_import",
             user_id=user_id,
         )

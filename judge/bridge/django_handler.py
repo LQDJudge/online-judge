@@ -5,6 +5,8 @@ import struct
 from django import db
 
 from judge.bridge.base_handler import Disconnect, ZlibPacketHandler
+from judge.models.review_evidence import ReviewEvidenceJob
+from judge.review.protocol import required_evidence_protocol
 
 logger = logging.getLogger("judge.bridge")
 size_pack = struct.Struct("!I")
@@ -19,6 +21,8 @@ class DjangoHandler(ZlibPacketHandler):
             "terminate-submission": self.on_termination,
             "disconnect-judge": self.on_disconnect_request,
             "validate-request": self.on_validate_request,
+            "review-evidence-request": self.on_review_evidence_request,
+            "cancel-review-evidence": self.on_cancel_review_evidence,
             "update-problems": self.on_update_problems,
             "bridge-status": self.on_bridge_status,
         }
@@ -70,6 +74,34 @@ class DjangoHandler(ZlibPacketHandler):
     def on_update_problems(self, data):
         self.judges.broadcast_update_problems()
         return {"name": "update-problems-received"}
+
+    def on_review_evidence_request(self, data):
+        job = ReviewEvidenceJob.objects.select_related("problem_run__problem").get(
+            job_id=data["job-id"], status="P"
+        )
+        success = self.judges.validate(
+            str(job.job_id),
+            job.problem_run.problem.code,
+            review=True,
+            protocol=required_evidence_protocol(job.operation, job.payload),
+        )
+        return {
+            "name": "review-evidence-received" if success else "review-evidence-failed",
+            "job-id": str(job.job_id),
+        }
+
+    def on_cancel_review_evidence(self, data):
+        identities = data.get("job-ids", [])
+        if not isinstance(identities, list) or len(identities) > 128:
+            return {"name": "cancel-review-evidence-failed"}
+        for identity in ReviewEvidenceJob.objects.filter(
+            job_id__in=identities, status="C"
+        ).values_list("job_id", flat=True):
+            key = str(identity)
+            handler = self.judges.validate_map.get(key)
+            if handler is not None and handler._validating == key:
+                handler.send({"name": "terminate-review-evidence", "validate-id": key})
+        return {"name": "cancel-review-evidence-received"}
 
     def on_bridge_status(self, data):
         return {

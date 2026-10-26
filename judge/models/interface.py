@@ -13,6 +13,7 @@ from judge.models.profile import Organization, Profile
 from judge.models.pagevote import PageVotable
 from judge.models.bookmark import Bookmarkable
 from judge.caching import cache_wrapper
+from judge.utils.content_lock import apply_publication_lock
 
 __all__ = ["MiscConfig", "validate_regex", "NavigationBar", "BlogPost"]
 
@@ -79,6 +80,7 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
     authors = models.ManyToManyField(Profile, verbose_name=_("authors"), blank=True)
     slug = models.SlugField(verbose_name=_("slug"))
     visible = models.BooleanField(verbose_name=_("public visibility"), default=False)
+    is_locked = models.BooleanField(default=False, verbose_name=_("content locked"))
     sticky = models.BooleanField(verbose_name=_("sticky"), default=False)
     publish_on = models.DateTimeField(verbose_name=_("publish after"))
     content = models.TextField(verbose_name=_("post content"))
@@ -108,6 +110,10 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
     def __str__(self):
         return self.title
 
+    def save(self, *args, **kwargs):
+        apply_publication_lock(self, "visible", kwargs)
+        return super().save(*args, **kwargs)
+
     def get_absolute_url(self):
         return reverse("blog_post", args=(self.id, self.slug))
 
@@ -130,12 +136,17 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
             user.is_authenticated and self.authors.filter(id=user.profile.id).exists()
         )
 
-    def is_editable_by(self, user):
+    def can_manage_activity_by(self, user):
         if not user.is_authenticated:
             return False
         if user.is_superuser:
             return True
         return user.profile.id in self.get_author_ids()
+
+    def is_editable_by(self, user):
+        return (
+            user.is_superuser or not self.is_locked
+        ) and self.can_manage_activity_by(user)
 
     @cache_wrapper(prefix="BPgai", expected_type=list)
     def get_author_ids(self):

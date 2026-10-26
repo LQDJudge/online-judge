@@ -13,6 +13,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
+from django.utils.translation import override
 
 from judge.models import (
     Contest,
@@ -214,7 +215,7 @@ class ProblemsReviewedCheckTest(TestCase):
         self.p1.save(update_fields=["is_public", "is_organization_private"])
         # p2 stays private.
 
-        with patch(
+        with override("en"), patch(
             "judge.review.contest_checks.problems_reviewed.trigger_problem_review_for"
         ) as mock_trigger:
             mock_trigger.return_value = None

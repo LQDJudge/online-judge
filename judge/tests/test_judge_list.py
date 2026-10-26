@@ -32,7 +32,7 @@ class FakeJudge:
         self.working = True
         self.submitted.append((id, problem, language))
 
-    def submit_validate(self, validate_id, problem_id):
+    def submit_validate(self, validate_id, problem_id, review=False):
         self.working = True
         self._validating = validate_id
 
@@ -73,6 +73,20 @@ class JudgeListFairnessTests(TestCase):
         j.working = busy
         self.jl.judges.add(j)
         return j
+
+    def test_advanced_review_waits_for_compatible_worker(self):
+        old = self._make_judge("old")
+        old.review_protocol = 1
+        self.jl.validate("profile-job", "p1", review=True, protocol=2)
+        self.assertIn("profile-job", self.jl.node_map)
+        self.assertFalse(old.working)
+        new = self._make_judge("new")
+        new.review_protocol = 2
+        self.jl._handle_free_judge(old)
+        self.assertIn("profile-job", self.jl.node_map)
+        self.jl._handle_free_judge(new)
+        self.assertIs(self.jl.validate_map["profile-job"], new)
+        self.assertNotIn("profile-job", self.jl.node_map)
 
     # Arrival-time behavior
 

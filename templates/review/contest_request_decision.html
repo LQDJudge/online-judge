@@ -1,0 +1,28 @@
+<dialog id="contest-request-decision-dialog" class="review-dialog" aria-labelledby="contest-request-decision-heading">
+  <div class="review-dialog-heading"><h3 id="contest-request-decision-heading">{{ _('Request decision') }}</h3><button type="button" class="review-text-button" data-review-close aria-label="{{ _('Close') }}">×</button></div>
+  <p>{{ _('Accept by completing publication in the contest settings, or reject this request with feedback.') }}</p>
+  <div class="review-dialog-actions">
+    <button type="button" class="action-btn outlined" data-review-dialog="contest-request-reject-dialog">{{ _('Reject request') }}</button>
+    <button type="button" class="action-btn" data-review-dialog="contest-request-accept-dialog">{{ _('Accept') }}</button>
+  </div>
+</dialog>
+<dialog id="contest-request-accept-dialog" class="review-dialog" aria-labelledby="contest-request-accept-heading">
+  <div class="review-dialog-heading"><h3 id="contest-request-accept-heading">{{ _('Accept publication request') }}</h3><button type="button" class="review-text-button" data-review-close aria-label="{{ _('Close') }}">×</button></div>
+  <p>{{ _('Check the contest settings before publishing: remove organization/private restrictions when appropriate, and enable Rated in Admin only for a rated contest.') }}</p>
+  <p>{{ _('Then enable Publicly visible and save. Publication approves the pending request, locks the contest, and notifies the requester. Included problems are not automatically published.') }}</p>
+  <div class="review-dialog-actions">
+    <a class="action-btn outlined" href="{{ url('admin:judge_contest_change', contest.id) }}">{{ _('Open Admin') }}</a>
+    <a class="action-btn" href="{{ url('contest_edit', contest.key) }}">{{ _('Open publication settings') }}</a>
+  </div>
+</dialog>
+<dialog id="contest-request-reject-dialog" class="review-dialog" aria-labelledby="contest-request-reject-heading">
+  <div class="review-dialog-heading"><h3 id="contest-request-reject-heading">{{ _('Reject publication request') }}</h3><button type="button" class="review-text-button" data-review-close aria-label="{{ _('Close') }}">×</button></div>
+  <form class="coordinator-action-form" method="post" action="{{ url('contest_review_reject', contest.key) }}">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <input type="hidden" name="request_token" value="{{ coordinator_request_decision_token }}">
+    <p>{{ _('Explain why this contest will not be published. The requester will be notified; the contest and AI review remain unchanged.') }}</p>
+    <label for="contest-request-rejection-reason">{{ _('Reason for rejection') }}</label>
+    <textarea id="contest-request-rejection-reason" name="feedback" rows="4" required></textarea>
+    <div class="review-dialog-actions"><button type="submit" class="action-btn">{{ _('Reject request') }}</button></div>
+  </form>
+</dialog>

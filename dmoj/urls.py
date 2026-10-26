@@ -70,6 +70,7 @@ from judge.views import quiz_import
 from judge.views import document_library
 from judge.views import review as problem_review
 from judge.views import contest_review
+from judge.views import coordinator_review, content_lock
 from judge.views.problem_attachment import (
     attachment_delete,
     attachment_download,
@@ -245,6 +246,31 @@ def paged_list_view(view, name, **kwargs):
 
 
 urlpatterns = [
+    re_path(
+        r"^content-lock/(?P<kind>problem|contest|quiz|question|post)/(?P<object_id>\d+)/$",
+        content_lock.toggle_content_lock,
+        name="content_lock_toggle",
+    ),
+    re_path(
+        r"^reviews/(?P<kind>problem|contest)/(?P<code>[\w-]+)/run/$",
+        coordinator_review.run_review,
+        name="coordinator_run_review",
+    ),
+    re_path(
+        r"^reviews/(?P<kind>problem|contest)/(?P<code>[\w-]+)/(?P<run_id>\d+)/(?P<action>cancel|retry)/$",
+        coordinator_review.manage_review,
+        name="coordinator_manage_review",
+    ),
+    re_path(
+        r"^reviews/(?P<kind>problem|contest)/(?P<code>[\w-]+)/(?P<run_id>\d+)/debug/$",
+        coordinator_review.review_debug,
+        name="coordinator_review_debug",
+    ),
+    re_path(
+        r"^reviews/(?P<kind>problem|contest)/(?P<code>[\w-]+)/(?P<run_id>\d+)/snapshot/$",
+        coordinator_review.review_snapshot,
+        name="coordinator_review_snapshot",
+    ),
     re_path("", include("pagedown.urls")),
     re_path(
         r"^$",

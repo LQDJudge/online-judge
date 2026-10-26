@@ -98,9 +98,8 @@ class OrganizationSelect2View(Select2View):
     def get_queryset(self):
         queryset = Organization.objects.filter(name__icontains=self.term)
 
-        # If user is superuser, show all organizations
-        # if self.request.user.is_superuser:
-        #     return queryset
+        if self.request.user.is_superuser:
+            return queryset
 
         # For regular users, only show organizations they are admin of
         if self.request.user.is_authenticated:
@@ -332,7 +331,7 @@ class QuizUserSearchSelect2View(UserSearchSelect2View):
     def get_queryset(self):
         quiz = get_object_or_404(Quiz, code=self.kwargs["quiz"])
         # Check if user can edit this quiz
-        if not quiz.is_editable_by(self.request.user):
+        if not quiz.can_manage_attempts_by(self.request.user):
             raise Http404()
 
         return Profile.objects.filter(

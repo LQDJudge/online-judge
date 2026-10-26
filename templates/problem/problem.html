@@ -248,7 +248,7 @@
     </div>
   {% endif %}
 
-  {% if can_edit_problem %}
+  {% if can_view_problem_editor %}
     <hr>
     <div class="link-row">
       <a href="{{ url('problem_edit', problem.code) }}">
@@ -374,7 +374,7 @@
       </div>
     </div>
   {% endif %}
-  {% if can_edit_problem %}
+  {% if can_view_problem_editor %}
     <div id="available-judges">
       <div class="toggle closed" id="judge-toggle">
         <i class="fa fa-chevron-right"></i><span

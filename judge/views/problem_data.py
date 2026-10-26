@@ -1,3 +1,4 @@
+import hashlib
 import json
 import mimetypes
 import os
@@ -36,6 +37,10 @@ from django.utils.translation import gettext as _
 from django.views.generic import DetailView, View
 
 from judge.highlight_code import highlight_code
+from judge.content_mutation import (
+    publication_change_confirmation,
+    publication_confirmation_token,
+)
 from judge.models import (
     CSV_CHECKER_KEYS,
     Problem,
@@ -63,6 +68,8 @@ from judge.widgets.fine_uploader import (
 from judge.widgets.file_edit import FileEditWidget
 from judge.views.problem import ProblemMixin
 from judge.judgeapi import validate_testcases
+from judge.review.provenance import solution_binding, validator_binding
+from judge.models.public_request import PublicRequest
 from judge.tasks.llm import generate_solution_codes_task
 from llm_service.config import CHATBOT_SUPPORTED_MODELS
 
@@ -375,11 +382,44 @@ class ProblemCaseFormSet(
 
 
 class ProblemManagerMixin(LoginRequiredMixin, ProblemMixin, DetailView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["coordinator_review_enabled"] = getattr(
+            settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False
+        )
+        pending = PublicRequest.objects.filter(
+            problem=self.object, status=PublicRequest.PENDING
+        ).first()
+        context["pending_publication"] = (
+            pending
+            if pending
+            and (context["coordinator_review_enabled"] or pending.review_run_id)
+            else None
+        )
+        context["publication_confirmation_token"] = publication_confirmation_token(
+            context["pending_publication"]
+        )
+        return context
+
     def get_object(self, queryset=None):
         problem = super(ProblemManagerMixin, self).get_object(queryset)
         if problem.is_manually_managed:
             raise Http404()
-        if self.request.user.is_superuser or problem.is_editable_by(self.request.user):
+        read_or_execute = self.request.method in {"GET", "HEAD"} or (
+            self.request.resolver_match
+            and self.request.resolver_match.url_name
+            in {
+                "problem_validate_testcases",
+                "problem_solution_codes_run",
+                "problem_solution_codes_run_one",
+            }
+        )
+        allowed = (
+            problem.can_manage_activity_by(self.request.user)
+            if read_or_execute
+            else problem.is_editable_by(self.request.user)
+        )
+        if allowed:
             return problem
         raise Http404()
 
@@ -399,7 +439,7 @@ class ProblemSubmissionDiff(TitleMixin, ProblemMixin, DetailView):
 
     def get_object(self, queryset=None):
         problem = super(ProblemSubmissionDiff, self).get_object(queryset)
-        if self.request.user.is_superuser or problem.is_editable_by(self.request.user):
+        if problem.can_manage_activity_by(self.request.user):
             return problem
         raise Http404()
 
@@ -559,6 +599,16 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
             and cases_formset.is_valid()
             and signature_grader_formset.is_valid()
         ):
+            changed = (
+                data_form.has_changed()
+                or cases_formset.has_changed()
+                or signature_grader_formset.has_changed()
+            )
+            confirmation = publication_change_confirmation(request, problem, changed)
+            if confirmation is not None:
+                return confirmation
+            if not changed:
+                return HttpResponseRedirect(request.get_full_path())
             with reversion.create_revision():
                 data = data_form.save()
                 for case in cases_formset.save(commit=False):
@@ -595,7 +645,7 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
 @login_required
 def problem_data_file(request, problem, path):
     object = get_object_or_404(Problem, code=problem)
-    if not object.is_editable_by(request.user):
+    if not object.can_manage_activity_by(request.user):
         raise Http404()
 
     response = HttpResponse()
@@ -621,7 +671,7 @@ def problem_data_file(request, problem, path):
 @login_required
 def problem_init_view(request, problem):
     problem = get_object_or_404(Problem, code=problem)
-    if not request.user.is_superuser and not problem.is_editable_by(request.user):
+    if not problem.can_manage_activity_by(request.user):
         raise Http404()
 
     try:
@@ -822,6 +872,27 @@ class ProblemValidatorSaveView(ProblemManagerMixin, View):
                 {"status": "error", "message": _("Invalid language.")}, status=400
             )
 
+        if not isinstance(code, str) or len(code.encode("utf-8")) > 10 * 1024 * 1024:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _("Invalid or oversized validator source."),
+                },
+                status=400,
+            )
+        existing = ProblemData.objects.filter(problem=problem).first()
+        if (
+            existing
+            and existing.testcase_validator
+            and existing.testcase_validator_language == language
+        ):
+            with existing.testcase_validator.open("rb") as source:
+                if source.read(10 * 1024 * 1024 + 1) == code.encode("utf-8"):
+                    return JsonResponse({"status": "ok"})
+        confirmation = publication_change_confirmation(request, problem, True)
+        if confirmation is not None:
+            return confirmation
+
         data, _ = ProblemData.objects.get_or_create(problem=problem)
 
         ext = "cpp" if language == "cpp" else "py"
@@ -894,6 +965,7 @@ class ValidateTestCasesView(ProblemManagerMixin, View):
             validate_id=validate_id,
             user=profile,
             status="P",
+            review_evidence=validator_binding(problem),
         )
 
         success = validate_testcases(problem.code, validate_id)
@@ -974,10 +1046,51 @@ class ProblemSolutionCodesView(TitleMixin, ProblemManagerMixin):
             .order_by("order")
         )
         context["max_solution_codes"] = MAX_SOLUTION_CODES
-        context["languages"] = list(
-            problem.usable_languages.values("id", "name", "key", "ace")
+        output_only = ProblemData.objects.filter(
+            problem=problem, output_only=True
+        ).exists()
+        context["languages"] = (
+            list(
+                problem.usable_languages.exclude(key__in=("OUTPUT", "SCAT")).values(
+                    "id", "name", "key", "ace"
+                )
+            )
+            if not output_only
+            else []
         )
         context["expected_result_choices"] = ProblemSolutionCode.EXPECTED_RESULT_CHOICES
+        context["output_only_review"] = output_only
+        if context["output_only_review"]:
+            context["output_review_examples"] = list(
+                Submission.objects.filter(
+                    problem=problem,
+                    language__key="OUTPUT",
+                    review_evidence__output_portfolio=True,
+                    status="D",
+                )
+                .exclude(result__in=("IE", "AB"))
+                .only("id", "status", "result", "case_points", "case_total")
+                .order_by("-id")[:12]
+            )
+            for example in context["output_review_examples"]:
+                example.review_status_label = (
+                    (example.result or example.get_status_display())
+                    if example.status == "D"
+                    else example.get_status_display()
+                )
+                example.review_result_tone = (
+                    (
+                        "green"
+                        if example.result == "AC"
+                        else (
+                            "orange"
+                            if example.result == "WA" and example.case_points > 0
+                            else "red"
+                        )
+                    )
+                    if example.status == "D"
+                    else "blue"
+                )
         context["ACE_URL"] = settings.ACE_URL
         if can_use_ai_features(self.request.user):
             context["supported_models"] = CHATBOT_SUPPORTED_MODELS
@@ -1012,10 +1125,17 @@ class ProblemSolutionCodesSaveView(ProblemManagerMixin, View):
             )
 
         valid_expected = {c[0] for c in ProblemSolutionCode.EXPECTED_RESULT_CHOICES}
-        valid_language_ids = set(Language.objects.values_list("id", flat=True))
+        valid_language_ids = dict(Language.objects.values_list("id", "key"))
 
         entries = []
         for i, entry in enumerate(data):
+            if not isinstance(entry, dict) or any(
+                not isinstance(entry.get(key, ""), str)
+                for key in ("name", "source_code", "expected_result")
+            ):
+                return JsonResponse(
+                    {"status": "error", "message": _("Invalid JSON.")}, status=400
+                )
             name = entry.get("name", "").strip()[:128]
             source_code = entry.get("source_code", "").strip()
             language_id = entry.get("language_id")
@@ -1029,11 +1149,21 @@ class ProblemSolutionCodesSaveView(ProblemManagerMixin, View):
                     },
                     status=400,
                 )
-            if language_id not in valid_language_ids:
+            if type(language_id) is not int or language_id not in valid_language_ids:
                 return JsonResponse(
                     {
                         "status": "error",
                         "message": _("Code #%d has invalid language.") % (i + 1),
+                    },
+                    status=400,
+                )
+            if valid_language_ids[language_id] in ("OUTPUT", "SCAT"):
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": _(
+                            "Upload the project or output archive through the Submit page."
+                        ),
                     },
                     status=400,
                 )
@@ -1094,7 +1224,7 @@ class ProblemSolutionCodesRunView(ProblemManagerMixin, View):
         problem = self.get_object()
         codes = (
             ProblemSolutionCode.objects.filter(problem=problem)
-            .select_related("last_submission")
+            .select_related("language", "last_submission")
             .order_by("order")
         )
 
@@ -1122,6 +1252,16 @@ class ProblemSolutionCodesRunView(ProblemManagerMixin, View):
             )
 
         usable_language_ids = set(problem.usable_languages.values_list("id", flat=True))
+        if any(sc.language.key in ("OUTPUT", "SCAT") for sc in codes_to_run):
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _(
+                        "Upload the project or output archive through the Submit page."
+                    ),
+                },
+                status=400,
+            )
         if any(sc.language_id not in usable_language_ids for sc in codes_to_run):
             return JsonResponse(
                 {
@@ -1149,11 +1289,16 @@ class ProblemSolutionCodesRunView(ProblemManagerMixin, View):
             )
 
         submission_ids = []
+        binding = solution_binding(problem, "")
         for sc in codes_to_run:
             sub = Submission.objects.create(
                 user=request.profile,
                 problem=problem,
                 language=sc.language,
+                review_evidence={
+                    **binding,
+                    "source_hash": hashlib.sha256(sc.source_code.encode()).hexdigest(),
+                },
             )
             SubmissionSource.objects.create(submission=sub, source=sc.source_code)
             sc.last_submission = sub
@@ -1198,6 +1343,16 @@ class ProblemSolutionCodesRunOneView(ProblemManagerMixin, View):
                 status=409,
             )
 
+        if sc.language.key in ("OUTPUT", "SCAT"):
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _(
+                        "Upload the project or output archive through the Submit page."
+                    ),
+                },
+                status=400,
+            )
         if not problem.usable_languages.filter(id=sc.language_id).exists():
             return JsonResponse(
                 {
@@ -1238,6 +1393,7 @@ class ProblemSolutionCodesRunOneView(ProblemManagerMixin, View):
             user=request.profile,
             problem=problem,
             language=sc.language,
+            review_evidence=solution_binding(problem, sc.source_code),
         )
         SubmissionSource.objects.create(submission=sub, source=sc.source_code)
         sc.last_submission = sub
@@ -1281,7 +1437,9 @@ class ProblemSolutionCodesStatusView(ProblemManagerMixin, View):
                 # Don't set all_graded = False for codes that were never run
                 continue
 
-            is_graded = sub.status == "D"
+            # Terminal failures must stop polling too; they are not successful
+            # execution evidence, but they are no longer pending judge work.
+            is_graded = sub.status in ("D", "CE", "IE", "AB")
             if not is_graded:
                 all_graded = False
 

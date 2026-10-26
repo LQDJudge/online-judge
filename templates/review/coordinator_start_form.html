@@ -1,0 +1,54 @@
+<div class="coordinator-page review-start-page">
+  <h3>{{ object.name }}</h3>
+  {% if errors %}
+    <div class="red" role="alert">
+      {% if preparation_blocked %}
+        <h4>{{ _('Preparation required') }}</h4>
+      {% else %}
+        <h4>{{ _('Review could not start') }}</h4>
+      {% endif %}
+      <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+  {% if not preparation_blocked %}
+    <p><span class="review-meta-tag">{{ _("Author credits: %(count)s/3", count=remaining_credits) }}</span></p>
+    {% if unchanged_since_last_review %}
+      <p>{{ _("Unchanged since the last review. Run again for a fresh assessment?") }}</p>
+    {% else %}
+      <p>{{ _("Start a new AI review of the current content?") }}</p>
+    {% endif %}
+    {% if request.user.is_superuser %}<p>{{ _("No author credits will be used.") }}</p>
+    {% else %}<p>{{ _("A completed review uses 1 credit; unresolved service failures use none.") }}</p>{% endif %}
+    {% if affects_contest_reviews %}<p class="review-muted">{{ _('Completing this review will make existing assessments of contests containing this problem need re-review. Contest reviews will not restart automatically.') }}</p>{% endif %}
+    <form method="post" action="{{ run_url }}" class="review-start-form">
+      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+      <input type="hidden" name="expected_content_hash" value="{{ expected_content_hash }}">
+      {% if children %}
+        <h3>{{ _("Select problems for a new review") }}</h3>
+        {% if request.user.is_superuser %}
+          <p>{{ _("Selected problems get a new review without using author credits. Others reuse their latest report.") }}</p>
+        {% else %}
+          <p>{{ _("Selected problems use their own review credits. Others reuse their latest report.") }}</p>
+        {% endif %}
+        <div class="review-bound-table" role="region" aria-label="{{ _('Select problems for a new review') }}" tabindex="0">
+          <table class="table striped modern">
+            <thead><tr><th>{{ _('New review') }}</th><th>{{ _('Credits') }}</th><th>{{ _('Current report') }}</th></tr></thead>
+            <tbody>{% for child in children %}
+              <tr><td><label><input type="checkbox" name="problems" value="{{ child.problem.id }}" {% if child.disabled %}disabled{% elif child.selected %}checked{% endif %}> {{ child.problem.name }}</label></td>
+                <td>{{ child.credits }}/3{% if request.user.is_superuser %} · {{ _('Superuser exempt') }}{% endif %}</td>
+                <td>{% if not child.supported %}{{ _('Unsupported content — manual review required.') }}{% else %}{{ child.readiness_display }}{% if child.latest and not child.fresh %}<div class="review-muted">{{ _('Needs re-review') }}</div>{% endif %}{% endif %}{% if not child.permitted %}<div class="review-muted">{{ _('You do not have permission to run this review.') }}</div>{% endif %}</td></tr>
+            {% endfor %}</tbody>
+          </table>
+        </div>
+      {% endif %}
+      {% if unsupported_quizzes %}
+        <p class="orange">{{ _('Unsupported content — manual review required.') }}</p>
+        <ul>{% for name in unsupported_quizzes %}<li>{{ name }}</li>{% endfor %}</ul>
+      {% endif %}
+      <input type="hidden" name="confirm" value="yes">
+      <div class="review-dialog-actions">{% if not is_modal %}<a href="{{ dashboard_url }}">{{ _('Go back') }}</a>{% endif %}<button class="action-btn" type="submit">{{ _("Run review") }}</button></div>
+    </form>
+  {% elif not is_modal %}
+    <a href="{{ dashboard_url }}">{{ _('Go back') }}</a>
+  {% endif %}
+</div>

@@ -1,0 +1,57 @@
+{% from "widgets/publication_hint.html" import publication_hint %}
+{% if coordinator_enabled or (latest_run and latest_run.workflow_version == 2) %}
+  <section class="review-card coordinator-overview">
+    <h3>{{ _("AI coordinator") }}</h3>
+    <p>{{ _("Author credits remaining: %(count)s", count=coordinator_credits) }}</p>
+    <p>{{ _("Current content") }}: {{ coordinator_content_status }}</p>
+    <p>{{ _("Readiness") }}: {{ coordinator_readiness_display }}</p>
+    {% if coordinator_can_start %}
+      <a class="action-btn" href="{{ url('coordinator_run_review', coordinator_kind, coordinator_code) }}">{{ _("Run review") }}</a>
+    {% elif coordinator_can_run and coordinator_credits == 0 and not request.user.is_superuser %}
+      <p>{{ _("No author review credits remain. Please ask a superuser.") }}</p>
+    {% elif coordinator_can_run and latest_run and latest_run.status in ('R', 'B') %}
+      <p>{{ _("A review is already running or awaiting recovery. Retry its failed section or cancel it first.") }}</p>
+    {% endif %}
+    {% if coordinator_show_submit %}
+      {% if request.user.is_superuser and latest_run.readiness not in ('READY', 'READY_WITH_WARNINGS') %}
+        <p>{{ _("A superuser may submit this current report for a manual publication decision. Publishing without sufficient passing evidence requires a recorded override reason.") }}</p>
+      {% endif %}
+      <form class="coordinator-action-form" method="post" action="{{ url('internal_request_public') if coordinator_kind == 'problem' else url('contest_request_public', contest.key) }}">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        {% if coordinator_kind == 'problem' %}<input type="hidden" name="id" value="{{ problem.id }}">{% endif %}
+        {% if latest_run %}<input type="hidden" name="run_id" value="{{ latest_run.id }}">{% endif %}
+        {% call publication_hint(not coordinator_can_submit, publication_request_hint) %}
+          <button class="action-btn" type="submit" {% if not coordinator_can_submit %}disabled{% endif %}>{{ _("Request publication") }}</button>
+        {% endcall %}
+      </form>
+    {% endif %}
+    {% if latest_run and latest_run.workflow_version == 2 %}
+      <p>{{ _("Reviewed snapshot") }}: <code class="review-hash">{{ latest_run.content_hash }}</code></p>
+      <a href="{{ url('coordinator_review_snapshot', coordinator_kind, coordinator_code, latest_run.id) }}">{{ _("View reviewed revision") }}</a>
+      {% if request.user.is_superuser %}
+        <a href="{{ url('coordinator_review_debug', coordinator_kind, coordinator_code, latest_run.id) }}">{{ _("Review diagnostics") }}</a>
+      {% endif %}
+      {% if coordinator_child_reports %}
+        <h3>{{ _("Bound problem reviews") }}</h3>
+        <p>{{ _("If a child review is infrastructure-blocked, open its report to retry the failed section. This contest retains the exact report identities captured for this run.") }}</p>
+        <ul>
+          {% for child in coordinator_child_reports %}
+            <li>{% if child.run %}<a href="{{ child.url }}">{{ child.problem.name }}</a>{% else %}{{ child.problem.name }}{% endif %} —
+              {% if child.run %}{{ child.run.readiness or child.run.get_status_display() }}{% else %}{{ _("Missing review") }}{% endif %}
+              — {{ _("Started by this contest review") if child.owned else _("Reused report") }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if coordinator_stale %}<p class="red">{{ _("Needs re-review — content has changed since this review.") }}</p>{% endif %}
+      <p>{{ _("Usage") }}: {% if coordinator_usage_tokens %}{{ _("Estimated tokens: %(count)s", count=coordinator_usage_tokens) }}{% else %}{{ _("Unavailable") }}{% endif %}</p>
+      {% if latest_run.status in ('R', 'B') and coordinator_can_run %}
+        <form class="coordinator-action-form" method="post" action="{{ url('coordinator_manage_review', coordinator_kind, coordinator_code, latest_run.id, 'cancel') }}">
+          <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+          {% include 'review/coordinator_cancel_notice.html' %}
+          <button class="action-btn" type="submit">{{ _("Cancel review") }}</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </section>
+{% endif %}

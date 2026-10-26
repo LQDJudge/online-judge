@@ -85,30 +85,32 @@
   <hr>
   <div class="quiz-questions">
     <h3 style="margin-bottom: 0.2em;"><i class="fa fa-fw fa-question-circle"></i>{{ _('Questions') }}</h3>
-    <table class="table quiz-questions-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>{{ _('Question') }}</th>
-          <th>{{ _('Type') }}</th>
-          <th>{{ _('Points') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for assignment in quiz_questions %}
+    <div class="quiz-questions-scroll" tabindex="0" role="region" aria-label="{{ _('Questions') }}">
+      <table class="table quiz-questions-table">
+        <thead>
           <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ assignment.question.title }}</td>
-            <td><span class="question-type-badge badge-{{ assignment.question.question_type }}">{{ assignment.question.get_question_type_display() }}</span></td>
-            <td>{{ assignment.points }}</td>
+            <th>#</th>
+            <th>{{ _('Question') }}</th>
+            <th>{{ _('Type') }}</th>
+            <th>{{ _('Points') }}</th>
           </tr>
-        {% else %}
-          <tr>
-            <td colspan="4" style="text-align: center;">{{ _('No questions added yet.') }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for assignment in quiz_questions %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ assignment.question.title }}</td>
+              <td><span class="question-type-badge badge-{{ assignment.question.question_type }}">{{ assignment.question.get_question_type_display() }}</span></td>
+              <td>{{ assignment.points }}</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center;">{{ _('No questions added yet.') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     <div style="margin-top: 0.5em; font-weight: bold;">
       {{ _('Total') }}: {{ question_count }} {{ _('questions') }}, {{ total_points }} {{ _('points') }}
       {% if quiz.time_limit %}

@@ -13,6 +13,7 @@ from judge.models.profile import Profile
 from judge.models.contest import ContestParticipation
 from judge.models.course import CourseLesson, Course
 from judge.utils.identity import ImmutableIdentityMixin
+from judge.utils.content_lock import apply_publication_lock
 from judge.utils.quiz_attempts import finalize_locked_attempt
 from judge.utils.quiz_grading import (
     auto_grade_answer,
@@ -88,6 +89,8 @@ class QuizQuestion(models.Model):
     )
 
     # Explanation shown after quiz completion
+    is_locked = models.BooleanField(default=False, verbose_name=_("Locked"))
+
     explanation = models.TextField(
         blank=True,
         verbose_name=_("Explanation"),
@@ -174,12 +177,18 @@ class QuizQuestion(models.Model):
             self.authors.filter(id=profile.id) | self.curators.filter(id=profile.id)
         ).exists()
 
+    def save(self, *args, **kwargs):
+        apply_publication_lock(self, "is_public", kwargs)
+        super().save(*args, **kwargs)
+
     def is_editable_by(self, user):
         """Check if user can edit (editor or superuser)"""
         if not user.is_authenticated:
             return False
         if user.is_superuser:
             return True
+        if self.is_locked:
+            return False
         return self.is_editor(user.profile)
 
     def get_tags_list(self):
@@ -340,6 +349,7 @@ class Quiz(models.Model):
         verbose_name=_("publicly visible"),
         help_text=_("Whether the quiz is publicly visible to all users"),
     )
+    is_locked = models.BooleanField(default=False, verbose_name=_("content locked"))
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
 
@@ -350,6 +360,10 @@ class Quiz(models.Model):
 
     def __str__(self):
         return f"{self.code} - {self.title}" if self.code else self.title
+
+    def save(self, *args, **kwargs):
+        apply_publication_lock(self, "is_public", kwargs)
+        return super().save(*args, **kwargs)
 
     def get_absolute_url(self):
         """Get the URL for this quiz"""
@@ -369,11 +383,19 @@ class Quiz(models.Model):
             return False
         if user.is_superuser:
             return True
+        if self.is_locked:
+            return False
         return self.is_editor(user.profile)
 
     def is_tester(self, profile):
         """Check if profile is a tester"""
         return self.testers.filter(id=profile.id).exists()
+
+    def can_manage_attempts_by(self, user):
+        """Content Lock does not remove existing grading/attempt access."""
+        return user.is_authenticated and (
+            user.is_superuser or self.is_editor(user.profile)
+        )
 
     def is_accessible_by(self, user, in_contest=True):
         """
@@ -526,7 +548,7 @@ class Quiz(models.Model):
         if hasattr(user, "profile") and self.is_editor(user.profile):
             return False
         if contest_problem and contest_problem.is_result_hidden:
-            return not contest_problem.contest.is_editable_by(user)
+            return not contest_problem.contest.can_manage_activity_by(user)
         if lesson_quiz and lesson_quiz.is_result_hidden:
             return not Course.is_editable_by(lesson_quiz.lesson.course, user.profile)
         return False
@@ -793,7 +815,7 @@ class QuizAttempt(models.Model):
 
         if (
             self.contest_participation_id
-            and self.contest_participation.contest.is_editable_by(user)
+            and self.contest_participation.contest.can_manage_activity_by(user)
         ):
             return True
 

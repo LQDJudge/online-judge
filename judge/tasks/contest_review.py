@@ -7,7 +7,7 @@ Mirrors `judge/tasks/review.py` for problems. Major shape differences:
   - Writes ContestReviewCheckResult rows, whose status enum adds WARNING on
     top of the problem-side SUCCESS/FAIL/SKIPPED/ERROR set.
   - Uses the CONTEST_PUBLIC_REQUEST_REVIEW_{DONE,ERROR} notification
-    categories so author + admin filters can pick them out from the problem
+    categories so authors can distinguish them from the problem
     review categories.
 
 Synthesis is currently a placeholder pass-through; CR-13 will replace
@@ -20,14 +20,12 @@ from datetime import datetime, timedelta, timezone
 
 from celery import shared_task
 from django.conf import settings
-from django.urls import reverse
 from django.utils import translation
 
-from judge.models import Profile
 from judge.models.contest_review import ContestReviewCheckResult, ContestReviewRun
-from judge.models.notification import Notification, NotificationCategory
 from judge.review.contest_registry import CONTEST_CHECKS
 from judge.review.prompts import CONTEST_SYNTHESIS_SYSTEM
+from judge.tasks.coordinator import advance_review, emit_completion
 from llm_service.config import get_config
 from llm_service.llm_api import LLMService
 
@@ -55,7 +53,7 @@ def review_contest(self, run_id):
     """
     Execute every check in CONTEST_CHECKS against the run's contest, writing
     one ContestReviewCheckResult row per check. Marks the run Done at the end.
-    Runner-level crashes mark the run as ERROR + notify so it doesn't stay
+    Runner-level crashes mark the run as ERROR so it doesn't stay
     stuck in RUNNING (the reaper would eventually pick it up, but explicit
     handling is faster + cleaner).
     """
@@ -68,6 +66,9 @@ def review_contest(self, run_id):
     except ContestReviewRun.DoesNotExist:
         logger.error("review_contest: ContestReviewRun %s not found", run_id)
         return {"success": False, "error": "run not found"}
+
+    if run.workflow_version == 2:
+        return advance_review("contest", run_id)
 
     try:
         contest = run.contest
@@ -193,88 +194,15 @@ def synthesize_contest_feedback(self, run_id):
 
 
 def _emit_contest_review_done_notifications(run):
-    """Notify author + superusers that the contest run finished.
-
-    Mirrors `_emit_review_done_notifications` from the problem pipeline,
-    using CONTEST_* notification categories so users can filter contest
-    reviews separately from problem reviews.
-    """
-    contest = run.contest
-    try:
-        dashboard_url = reverse("contest_review_dashboard", args=[contest.key])
-    except Exception:
-        dashboard_url = f"/contest/{contest.key}/review/"
-    try:
-        queue_url = (
-            reverse("contest_review_list") + f"?public=pending#contest-row-{contest.id}"
-        )
-    except Exception:
-        queue_url = f"/contests/review/?public=pending#contest-row-{contest.id}"
-
-    author_html_link = '<a href="%(dashboard)s">%(name)s</a>' % {
-        "dashboard": dashboard_url,
-        "name": contest.name,
-    }
-    admin_html_link = (
-        '<a href="%(dashboard)s">%(name)s</a>' ' (<a href="%(queue)s">%(review)s</a>)'
-    ) % {
-        "dashboard": dashboard_url,
-        "name": contest.name,
-        "queue": queue_url,
-        "review": "Review",
-    }
-
-    if run.triggered_by:
-        Notification.objects.create_notification(
-            owner=run.triggered_by,
-            category=NotificationCategory.CONTEST_PUBLIC_REQUEST_REVIEW_DONE,
-            html_link=author_html_link,
-            author=None,
-        )
-
-    superuser_profiles = Profile.objects.filter(user__is_superuser=True)
-    if run.triggered_by:
-        superuser_profiles = superuser_profiles.exclude(id=run.triggered_by.id)
-    for profile in superuser_profiles:
-        Notification.objects.create_notification(
-            owner=profile,
-            category=NotificationCategory.CONTEST_PUBLIC_REQUEST_NEW,
-            html_link=admin_html_link,
-            author=run.triggered_by,
-        )
+    """Notify current authors once; publication requests notify superusers separately."""
+    emit_completion("contest", run.pk)
 
 
 def _emit_contest_review_error_notifications(run, reason=""):
-    """Notify author + admins that a contest run errored (status=E)."""
-    contest = run.contest
-    try:
-        dashboard_url = reverse("contest_review_dashboard", args=[contest.key])
-    except Exception:
-        dashboard_url = f"/contest/{contest.key}/review/"
-
-    html_link = '<a href="%(dashboard)s">%(name)s</a>' % {
-        "dashboard": dashboard_url,
-        "name": contest.name,
-    }
-
-    if run.triggered_by:
-        Notification.objects.create_notification(
-            owner=run.triggered_by,
-            category=NotificationCategory.CONTEST_PUBLIC_REQUEST_REVIEW_ERROR,
-            html_link=html_link,
-            author=None,
-        )
-
-    superuser_profiles = Profile.objects.filter(user__is_superuser=True)
-    if run.triggered_by:
-        superuser_profiles = superuser_profiles.exclude(id=run.triggered_by.id)
-    for profile in superuser_profiles:
-        Notification.objects.create_notification(
-            owner=profile,
-            category=NotificationCategory.CONTEST_PUBLIC_REQUEST_REVIEW_ERROR,
-            html_link=html_link,
-            author=run.triggered_by,
-        )
+    """Keep infrastructure failures visible in logs and the review, not notifications."""
+    logger.warning(
+        "contest review %s needs infrastructure recovery: %s", run.pk, reason
+    )
 
 
 @shared_task(bind=True)
@@ -282,14 +210,14 @@ def reap_stale_contest_review_runs(self):
     """Mark any ContestReviewRun that has been Running too long as Error.
 
     Mirrors `reap_stale_review_runs` for problems but uses the contest-specific
-    timeout setting and emits CONTEST_* notification categories.
+    timeout setting and retains operational logs without notification spam.
     """
     translation.activate(getattr(settings, "LANGUAGE_CODE", "vi"))
     timeout = getattr(settings, "AUTO_REVIEW_CONTEST_RUN_TIMEOUT_SECONDS", 1800)
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(seconds=timeout)
     qs = ContestReviewRun.objects.filter(
-        status=ContestReviewRun.RUNNING, started_at__lt=cutoff
+        workflow_version=0, status=ContestReviewRun.RUNNING, started_at__lt=cutoff
     )
 
     stale_runs = list(qs.select_related("contest", "triggered_by"))

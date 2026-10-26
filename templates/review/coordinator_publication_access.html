@@ -1,0 +1,23 @@
+{% from 'review/coordinator_access_groups.html' import access_groups %}
+{% if coordinator_publication_access %}
+  <section class="review-card review-publication-access" aria-labelledby="review-publication-access-title">
+    <h3 id="review-publication-access-title" class="review-section-title"><i class="fa fa-shield review-heading-icon" aria-hidden="true"></i>{{ _('Publication access check') }} {% if coordinator_publication_access.material_concern %}<span class="review-status-badge orange">{{ _('Administrator check required') }}</span>{% else %}<span class="review-status-badge green">{{ _('Pass') }}</span>{% endif %}</h3>
+    {% if coordinator_publication_access.material_concern %}
+      <p>{{ _('Possible pre-release access requires administrator review. This is a risk signal, not proof of a leak.') }}</p>
+      <p>{{ _('These accounts are outside the contest’s current authors, curators and testers. Check their activity and whether they previously belonged to the team.') }}</p>
+      <div class="review-metadata">{% for label in coordinator_publication_access.summary %}<span class="review-meta-tag">{{ label }}</span>{% endfor %}</div>
+      {{ access_groups(coordinator_publication_access.visible_groups) }}
+      {% if coordinator_publication_access.more_groups %}
+        <details class="review-access-more">
+          <summary>{{ _('Show more') }} ({{ coordinator_publication_access.more_groups | length }})</summary>
+          {{ access_groups(coordinator_publication_access.more_groups) }}
+        </details>
+      {% endif %}
+      {% if coordinator_publication_access.has_access_roles %}<p class="review-muted">{{ _('Listed roles grant access. No recorded activity does not prove the content was never viewed.') }}</p>{% endif %}
+      <p class="review-muted">{{ _('This live publication check is separate from the saved technical review and does not require another AI review.') }}</p>
+    {% else %}
+      <p>{{ _('No outside-team access concerns found.') }}</p>
+      <p class="review-muted">{{ _('This check does not prove the content was never viewed.') }}</p>
+    {% endif %}
+  </section>
+{% endif %}

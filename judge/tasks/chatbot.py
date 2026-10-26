@@ -16,6 +16,7 @@ from judge.markdown import markdown as render_markdown
 from judge.models import Problem
 from llm_service.config import get_config
 from llm_service.llm_api import LLMService
+from llm_service.policies import streaming_options
 
 logger = logging.getLogger(__name__)
 
@@ -256,6 +257,7 @@ def chatbot_respond_task(
             bot_name=selected_model,
             sleep_time=config.sleep_time,
             feature="problem_chatbot",
+            **streaming_options("problem_chatbot"),
             user_id=user_id,
             metadata={"problem_id": problem.id, "problem_code": problem.code},
         )

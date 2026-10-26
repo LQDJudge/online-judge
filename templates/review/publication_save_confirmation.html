@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block js_media %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelector('[data-return-to-editor]').addEventListener('click', function (event) {
+        event.preventDefault();
+        window.history.back();
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block body %}
+  <p>{{ _('Saving these changes will withdraw the pending publication request and return the content to Draft.') }}</p>
+  <p>{{ _('Your changes have not been saved yet. Confirm below to save them, or return to the editor.') }}</p>
+  <form method="post" action="{{ save_url }}" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% for name, value in submitted_fields %}
+      <input type="hidden" name="{{ name }}" value="{{ value }}">
+    {% endfor %}
+    <input type="hidden" name="confirm_withdraw_publication" value="1">
+    <input type="hidden" name="publication_confirmation_token" value="{{ publication_confirmation_token }}">
+    {% if submitted_files %}
+      <p>{{ _('Please select the attached files again before confirming. Browsers cannot carry file selections to this page.') }}</p>
+      {% for file in submitted_files %}
+        <p>
+          <label>{{ file.names | join(', ') }}
+            <input type="file" name="{{ file.field }}" {% if file.names | length > 1 %}multiple{% endif %} required>
+          </label>
+        </p>
+      {% endfor %}
+    {% endif %}
+    <a href="{{ save_url }}" class="action-btn outlined" data-return-to-editor>{{ _('Return to editor') }}</a>
+    <button type="submit" class="action-btn">{{ _('Save changes and withdraw request') }}</button>
+  </form>
+{% endblock %}

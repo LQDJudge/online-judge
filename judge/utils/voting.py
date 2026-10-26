@@ -40,7 +40,7 @@ def can_user_access_votable(user, obj):
         return False
 
     if isinstance(obj, ProblemReviewRun):
-        return obj.problem.is_editable_by(user)
+        return obj.problem.can_manage_activity_by(user)
 
     access_check = getattr(obj, "is_accessible_by", None)
     if access_check is None:

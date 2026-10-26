@@ -11,7 +11,7 @@ from django.db.migrations.loader import MigrationLoader
 from django.test import TestCase
 from django.utils import timezone
 
-from judge.models import Language, Profile
+from judge.models import Language, Profile, Quiz, QuizQuestion
 
 tf_migration = import_module("judge.migrations.0276_unify_true_false")
 audit = tf_migration.audit
@@ -40,9 +40,8 @@ class TrueFalseMigrationTestCase(TestCase):
             user=user, defaults={"language": Language.objects.first()}
         )
         cls.profile_id = profile.pk
-        quiz = cls.apps.get_model("judge", "Quiz").objects.create(
-            code="tfmigration", title="Migration"
-        )
+        quiz = Quiz.objects.create(code="tfmigration", title="Migration")
+        quiz = cls.apps.get_model("judge", "Quiz").objects.get(pk=quiz.pk)
         cls.quiz_id = quiz.pk
         course = cls.apps.get_model("judge", "Course").objects.create(
             name="Migration", slug="tfmigration"
@@ -83,7 +82,8 @@ class TrueFalseMigrationTestCase(TestCase):
             multiple_true_false_score_table=[0, 10, 25, 50, 100],
         )
         values.update(kwargs)
-        return self.Question.objects.create(**values)
+        question = QuizQuestion.objects.create(**values)
+        return self.Question.objects.get(pk=question.pk)
 
     def answer(self, question, value, number=1):
         attempt = self.Attempt.objects.create(

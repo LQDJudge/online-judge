@@ -1,5 +1,30 @@
 @use "vars" as *;
 
+.problem-editor-readonly,
+.problem-data-form > fieldset {
+    // This fieldset groups controls for Lock, not a visible form panel.
+    border: 0;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+}
+
+#solution-results-section .table {
+    // Dense execution results use a plain grid. Shared card-style rounding
+    // otherwise leaves cell borders poking outside the table's curved surface.
+    border-radius: 0;
+    box-shadow: none;
+
+    th,
+    td {
+        border-radius: 0;
+    }
+
+    tbody tr:last-child td {
+        border-bottom: 1px solid $border_gray;
+    }
+}
+
 #problem-table {
     font-size: 0.93rem;
 
@@ -60,7 +85,12 @@
         transition: background-color linear 0.2s;
 
         &:hover {
-            background: #eaeaea;
+            // Cell-painted hover feedback preserves the rounded final row.
+            background: none;
+
+            > td {
+                background: $background_gray;
+            }
         }
     }
 }
@@ -1073,6 +1103,8 @@ input[name*="generator_args"] {
         td,
         tr > :nth-child(n) {
             display: flex !important;
+            // Mobile rows are cards and own their surface, not table stripes.
+            background: transparent;
             min-width: 0;
             width: auto;
             height: auto;
@@ -1732,6 +1764,20 @@ body:not(.problem-raw) {
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 
+    .form-actions > .action-btn,
+    .form-actions > .publication-request-control > .action-btn {
+        // Links and native buttons otherwise inherit different line heights
+        // and box sizing, despite sharing the same action-btn class.
+        box-sizing: border-box;
+        font-family: inherit;
+        font-size: 1em;
+        line-height: 1.2;
+        padding: 0.8em 1.4em;
+        min-height: 40px;
+        justify-content: center;
+        margin: 0;
+    }
+
     // Wider Code/Name inputs so long problem identifiers don't get truncated
     // visually. `width` (not `max-width`) actually expands the input past its
     // default `size=20`; `max-width: 100%` keeps it from overflowing narrow
@@ -1958,6 +2004,39 @@ body:not(.problem-raw) {
 }
 
 // Problem queue suggestion modal styles
+#publication-override-modal {
+    .suggestion-modal-content {
+        background-color: $background_light_gray;
+        border-color: $border_gray;
+    }
+
+    .suggestion-modal-header {
+        border-color: $border_gray;
+
+        h3 {
+            color: $widget_black;
+        }
+    }
+
+    .close {
+        background: none;
+        border: 0;
+        padding: 0;
+        color: $widget_black;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5em;
+    }
+
+    textarea {
+        width: 100%;
+        box-sizing: border-box;
+        resize: vertical;
+    }
+}
+
 .suggestion-modal {
     display: none;
     position: fixed;
@@ -2516,6 +2595,36 @@ body:not(.problem-raw) {
     }
 }
 
+
+.review-dashboard,
+.coordinator-page {
+    min-width: 0;
+
+    .review-hash {
+        overflow-wrap: anywhere;
+        word-break: break-all;
+        font-size: 0.9em;
+    }
+
+    pre {
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .coordinator-stage {
+        padding: 0.75em 0;
+        border-top: 1px solid;
+        border-color: inherit;
+
+        summary {
+            cursor: pointer;
+            overflow-wrap: anywhere;
+        }
+    }
+}
 
 .review-dashboard {
     .review-empty {

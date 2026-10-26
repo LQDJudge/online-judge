@@ -1,5 +1,6 @@
 # Core LLM API
 fastapi-poe
+httpx
 python-dotenv
 
 # HTTP requests for file downloads

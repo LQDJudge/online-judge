@@ -402,6 +402,7 @@ class EditHistoryViewTests(TestCase):
         response = self.client.post(
             reverse("contest_participation_disqualify", args=[contest.key]),
             {"participation": participation.id},
+            HTTP_ACCEPT_LANGUAGE="en",
         )
         self.assertEqual(response.status_code, 302)
         participation.refresh_from_db()

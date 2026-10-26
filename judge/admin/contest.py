@@ -2,6 +2,7 @@ import threading
 
 from django.urls import re_path
 from django.contrib import admin, messages
+from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import connection, transaction
 from django.db.models import Q, TextField
@@ -25,6 +26,7 @@ from judge.models import (
     Rating,
     OfficialContest,
 )
+from judge.review.publication import publish_without_review
 from judge.ratings import rate_contest
 from judge.utils.formsets import active_formset_forms
 from judge.utils.identity import SemanticIdentityInlineFormSet
@@ -242,6 +244,7 @@ class ContestAdmin(CompareVersionAdmin):
             {
                 "fields": (
                     "is_visible",
+                    "is_locked",
                     "use_clarifications",
                     "hide_problem_tags",
                     "public_scoreboard",
@@ -325,6 +328,8 @@ class ContestAdmin(CompareVersionAdmin):
             for action in ("make_visible", "make_hidden"):
                 actions[action] = self.get_action(action)
 
+        if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
+            actions.pop("make_visible", None)
         return actions
 
     def get_queryset(self, request):
@@ -338,6 +343,13 @@ class ContestAdmin(CompareVersionAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly = []
+        if not request.user.is_superuser:
+            readonly += ["is_locked"]
+        if (
+            getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
+            and not request.user.is_superuser
+        ):
+            readonly += ["is_visible"]
         if not request.user.has_perm("judge.contest_rating"):
             readonly += ["is_rated", "rate_all", "rate_exclude"]
         if not request.user.has_perm("judge.contest_access_code"):
@@ -370,6 +382,25 @@ class ContestAdmin(CompareVersionAdmin):
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
+        if (
+            getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
+            and request.user.is_superuser
+            and "is_visible" in form.changed_data
+        ):
+            obj = form.instance
+            obj.refresh_from_db()
+            if obj.is_visible and not (
+                obj.is_private or obj.is_organization_private or obj.is_in_course
+            ):
+                try:
+                    publish_without_review(
+                        obj,
+                        request.user,
+                        _("Published directly by a superuser from Admin."),
+                    )
+                except ValidationError as error:
+                    raise PermissionDenied(" ".join(error.messages)) from error
+                obj.refresh_from_db()
         # Only rescored if we did not already do so in `save_model`
         formset_changed = False
         if any(formset.has_changed() for formset in formsets):
@@ -384,7 +415,16 @@ class ContestAdmin(CompareVersionAdmin):
             return True
         return obj.is_editable_by(request.user)
 
+    def has_delete_permission(self, request, obj=None):
+        return not (
+            obj is not None and obj.is_locked and not request.user.is_superuser
+        ) and super().has_delete_permission(request, obj)
+
     def make_visible(self, request, queryset):
+        if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
+            raise PermissionDenied
+        if not request.user.is_superuser:
+            queryset = queryset.filter(is_locked=False)
         if not request.user.has_perm("judge.change_contest_visibility"):
             queryset = queryset.filter(
                 Q(is_private=True) | Q(is_organization_private=True)
@@ -403,11 +443,13 @@ class ContestAdmin(CompareVersionAdmin):
     make_visible.short_description = _("Mark contests as visible")
 
     def make_hidden(self, request, queryset):
+        if not request.user.is_superuser:
+            queryset = queryset.filter(is_locked=False)
         if not request.user.has_perm("judge.change_contest_visibility"):
             queryset = queryset.filter(
                 Q(is_private=True) | Q(is_organization_private=True)
             )
-        count = queryset.update(is_visible=True)
+        count = queryset.update(is_visible=False)
         self.message_user(
             request,
             ngettext(
@@ -666,6 +708,25 @@ class ContestPublicRequestAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
     raw_id_fields = ("contest", "requested_by", "reviewed_by")
     actions = None  # no bulk approve/reject — go through admin change_view
+
+    def has_add_permission(self, request):
+        return not getattr(
+            settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False
+        ) and super().has_add_permission(request)
+
+    def has_change_permission(self, request, obj=None):
+        if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False) or (
+            obj is not None and obj.review_run_id
+        ):
+            return False
+        return super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False) or (
+            obj is not None and obj.review_run_id
+        ):
+            return False
+        return super().has_delete_permission(request, obj)
 
     def get_queryset(self, request):
         return (

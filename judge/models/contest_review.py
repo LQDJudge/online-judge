@@ -21,15 +21,21 @@ without re-running anything.
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from judge.models.review_coordinator import CoordinatorRunFields
 
-class ContestReviewRun(models.Model):
+
+class ContestReviewRun(CoordinatorRunFields):
     RUNNING = "R"
     DONE = "D"
     ERROR = "E"
+    BLOCKED = "B"
+    CANCELLED = "C"
     STATUS_CHOICES = [
         (RUNNING, _("Running")),
         (DONE, _("Done")),
         (ERROR, _("Error")),
+        (BLOCKED, _("Needs recovery")),
+        (CANCELLED, _("Cancelled")),
     ]
 
     contest = models.ForeignKey(
@@ -177,10 +183,12 @@ class ContestPublicRequest(models.Model):
     PENDING = "P"
     APPROVED = "A"
     REJECTED = "R"
+    WITHDRAWN = "W"
     STATUS_CHOICES = [
         (PENDING, _("Pending")),
         (APPROVED, _("Approved")),
         (REJECTED, _("Rejected")),
+        (WITHDRAWN, _("Withdrawn")),
     ]
 
     contest = models.OneToOneField(
@@ -206,6 +214,15 @@ class ContestPublicRequest(models.Model):
         blank=True,
         verbose_name=_("admin feedback"),
     )
+    review_run = models.ForeignKey(
+        "judge.ContestReviewRun",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="publication_requests",
+    )
+    candidate_hash = models.CharField(max_length=64, blank=True)
+    override_reason = models.TextField(blank=True)
     reviewed_by = models.ForeignKey(
         "judge.Profile",
         on_delete=models.SET_NULL,

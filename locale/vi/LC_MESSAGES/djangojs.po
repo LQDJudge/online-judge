@@ -1,3 +1,4 @@
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
@@ -11,12 +12,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: crowdin.com\n"
-"X-Crowdin-Project: lqdoj2\n"
-"X-Crowdin-Language: vi\n"
 "X-Crowdin-File: djangojs.po\n"
-"X-Crowdin-Project-ID: 466004\n"
 "X-Crowdin-File-ID: 7\n"
+"X-Crowdin-Language: vi\n"
+"X-Crowdin-Project: lqdoj2\n"
+"X-Crowdin-Project-ID: 466004\n"
+"X-Generator: crowdin.com\n"
 
 #: resources/common.js:89
 msgctxt "time format with day"
@@ -217,3 +218,23 @@ msgstr "Xóa nhận định"
 #: resources/quiz.js:749
 msgid "%(count)s correct"
 msgstr "Đúng %(count)s nhận định"
+
+#: resources/widgets/coordinator_review.js:177
+msgid "Loading…"
+msgstr "Đang tải…"
+
+#: resources/widgets/coordinator_review.js:217
+msgid "Working…"
+msgstr "Đang xử lý…"
+
+#: resources/widgets/coordinator_review.js:245
+msgid "The review action could not be completed."
+msgstr "Không thể hoàn tất thao tác đánh giá."
+
+#: resources/widgets/coordinator_review.js:247
+msgid ""
+"The review action could not be completed. Please check the current status "
+"before trying again."
+msgstr ""
+"Không thể hoàn tất thao tác đánh giá. Hãy kiểm tra trạng thái hiện tại trước"
+" khi thử lại."
