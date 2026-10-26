@@ -1,0 +1,26 @@
+{% if latest_run and latest_run.workflow_version == 2 %}
+  <section class="review-card coordinator-stage-list">
+    <h3 class="review-section-title">{{ _("Review sections") }}</h3>
+    {% for group in coordinator_sections %}
+      <details id="review-stage-{{ group.id }}" class="coordinator-stage review-group" data-review-group="{{ group.id }}" {% if group.errors %}open{% endif %}>
+        <summary><span class="review-stage-name">{{ group.title }}</span><span class="review-status-badge {{ group.tone }}">{{ group.status }}</span></summary>
+        {% if not group.errors and group.evidence_limited %}<p class="review-muted">{{ _('Some evidence is unavailable; this limits the conclusions of this assessment.') }}</p>{% endif %}
+        {% if group.id == 'H7' and not group.errors %}{% include 'review/coordinator_similarity.html' %}{% endif %}
+        {% if group.show_primary %}
+          {% with stage=group.primary, compact_similarity=(group.id == 'H7' and not group.similarity.incomplete), suppress_missing_notice=group.errors %}{% include 'review/coordinator_stage_body.html' %}{% endwith %}
+        {% elif not group.errors %}<p class="review-muted">{{ _('This assessment is not available yet.') }}</p>{% endif %}
+        {% for finding in group.additional_findings %}{% include 'review/coordinator_finding.html' %}{% endfor %}
+        {% for note in group.additional_notes %}
+          <div class="review-stage-limitations"><h4>{{ note.title }}</h4><ul>{% for item in note['items'] %}<li>{{ item | review_markdown | str | safe }}</li>{% endfor %}</ul></div>
+        {% endfor %}
+        {% for stage in group.errors %}
+          <div class="review-stage-limitations" role="status">
+            <p>{% if stage != group.primary %}<strong>{{ _('Similarity search') if stage.stage_id == 'S' else stage.display_name }}</strong> — {% endif %}{{ stage.ui_reason }}</p>
+            {% include 'review/coordinator_stage_retry.html' %}
+          </div>
+        {% endfor %}
+        {% if group.errors %}<p class="review-muted">{{ _('Completed results are kept. Retry only the failed section; no need to restart the review.') }}</p>{% endif %}
+      </details>
+    {% endfor %}
+  </section>
+{% endif %}

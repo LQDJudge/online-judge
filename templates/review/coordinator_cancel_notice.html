@@ -1,0 +1,19 @@
+{% set cancel_credit_cost = coordinator_cancel_targets | sum(attribute='credit') %}
+<p>{{ _('Cancel this review? Completed section results will be kept.') }}</p>
+{% if cancel_credit_cost == 1 %}
+  <p title="{{ _('Credit cost is recalculated when you cancel.') }}">{{ _('Cancelling will use 1 author review credit.') }}</p>
+{% elif cancel_credit_cost %}
+  <p title="{{ _('Credit cost is recalculated when you cancel.') }}">{{ _('Cancelling will use %(count)s author review credits.', count=cancel_credit_cost) }}</p>
+{% else %}
+  <p>{{ _('No author credits will be deducted.') }}</p>
+{% endif %}
+{% if request.user.is_superuser and cancel_credit_cost %}
+  <p>{{ _('These reviews were started by authors. Superuser-started reviews use no author credits.') }}</p>
+{% endif %}
+{% if coordinator_kind == 'contest' %}
+  <p>{{ _('Also cancels unfinished problem reviews started by this run.') }}</p>
+  {% if coordinator_cancel_targets | length > 1 %}
+    <ul>{% for target in coordinator_cancel_targets %}<li>{{ target.name }} · {{ _('Credits: %(count)s', count=target.credit) }}</li>{% endfor %}</ul>
+  {% endif %}
+{% endif %}
+<input type="hidden" name="confirm" value="yes">

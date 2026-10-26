@@ -98,7 +98,8 @@ class AIUsageLogTests(TestCase):
         log = AIUsageLog.objects.get()
         self.assertEqual(log.status, AIUsageLog.STATUS_ERROR)
         self.assertEqual(log.feature, "quiz_ai")
-        self.assertIn("poe unavailable", log.error)
+        self.assertEqual(log.metadata["error_category"], "provider")
+        self.assertNotIn("poe unavailable", log.error)
 
     def test_tag_problem_task_records_requesting_user(self):
         user = get_user_model().objects.create_user("tagger")
@@ -128,8 +129,8 @@ class AIUsageLogTests(TestCase):
         with (
             patch("ai_features.problem_tag_service.get_config", fake_llm_config),
             patch.object(
-                llm_api.fp,
-                "get_bot_response_sync",
+                LLMService,
+                "_limited_transport_response",
                 return_value=[
                     SimpleNamespace(
                         text='{"is_valid": true, "points": 100, "tags": ["math"], "reason": null}',

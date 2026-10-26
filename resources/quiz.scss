@@ -445,6 +445,11 @@ form.quiz-join-pseudotab {
 }
 
 // Quiz Detail Page
+.quiz-questions-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 .quiz-detail-page {
   max-width: 900px;
   margin: 0 auto;

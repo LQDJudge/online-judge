@@ -31,6 +31,7 @@ from judge.models.bookmark import Bookmarkable
 from judge.fulltext import SearchManager
 from judge.caching import cache_wrapper
 from judge.utils.identity import ImmutableIdentityMixin
+from judge.utils.content_lock import apply_publication_lock
 
 __all__ = [
     "Contest",
@@ -170,6 +171,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             "specified organizations."
         ),
     )
+    is_locked = models.BooleanField(default=False, verbose_name=_("content locked"))
     is_rated = models.BooleanField(
         verbose_name=_("contest rated"),
         help_text=_("Whether this contest can be rated."),
@@ -414,6 +416,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
 
     def save(self, *args, **kwargs):
         earliest_start_time = datetime(1999, 5, 4).replace(tzinfo=datetime_timezone.utc)
+        apply_publication_lock(self, "is_visible", kwargs)
         if self.start_time < earliest_start_time:
             self.start_time = earliest_start_time
 
@@ -687,7 +690,11 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         else:
             return True
 
-    def is_editable_by(self, user):
+    def can_manage_activity_by(self, user):
+        if not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
         # If the user can edit all contests
         if user.has_perm("judge.edit_all_contest"):
             return True
@@ -697,6 +704,11 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             return True
 
         return False
+
+    def is_editable_by(self, user):
+        return (
+            user.is_superuser or not self.is_locked
+        ) and self.can_manage_activity_by(user)
 
     def can_request_public_by(self, user):
         """Who may request this contest be made public site-wide.
@@ -714,7 +726,10 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             return False
         if user.is_superuser:
             return True
-        return self.is_editable_by(user) and user.has_perm("judge.add_problem")
+        return (
+            user.has_perm("judge.edit_all_contest")
+            or (hasattr(user, "profile") and user.profile.pk in self.editor_ids)
+        ) and user.has_perm("judge.add_problem")
 
     @classmethod
     def get_visible_contests(cls, user, show_own_contests_only=False):

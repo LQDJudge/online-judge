@@ -15,7 +15,7 @@ class Resolver(TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.contest = get_object_or_404(Contest, key=kwargs.get("contest"))
-        if not self.contest.is_editable_by(request.user):
+        if not self.contest.can_manage_activity_by(request.user):
             return HttpResponseForbidden()
 
         has_hidden = self.contest.format.has_hidden_subtasks
@@ -40,10 +40,13 @@ class Resolver(TemplateView):
         context["content_title"] = contest.name + " " + _("Resolver")
         context["contest"] = contest
         context["can_edit"] = contest.is_editable_by(self.request.user)
+        context["can_view_editor"] = contest.can_manage_activity_by(self.request.user)
+        context["can_manage_contest_activity"] = context["can_view_editor"]
         context["can_access"] = True
         context["contest_has_hidden_subtasks"] = contest.format.has_hidden_subtasks
         context["show_final_ranking"] = (
-            contest.format.has_hidden_subtasks and context["can_edit"]
+            contest.format.has_hidden_subtasks
+            and context["can_manage_contest_activity"]
         )
         context["is_clonable"] = False
         context["now"] = timezone.now()

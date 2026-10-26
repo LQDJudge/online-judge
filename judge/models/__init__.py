@@ -1,4 +1,5 @@
 from reversion import revisions
+from judge.models.review_evidence import ReviewEvidenceJob
 
 from judge.models.official_school import OfficialSchool
 from judge.models.choices import (
@@ -107,7 +108,7 @@ from judge.models.problem_duplicate import (
     ProblemDuplicateReport,
     ProblemDuplicateReviewHistory,
 )
-from judge.models.public_request import PublicRequest
+from judge.models.public_request import PublicRequest, PublicationRequestEvent
 from judge.models.problem_review import (
     ProblemReviewRun,
     ProblemReviewCheckResult,
@@ -154,3 +155,8 @@ revisions.register(CourseLessonQuiz)
 revisions.register(QuizAttempt)
 revisions.register(QuizAnswer)
 del revisions
+from judge.models.review_coordinator import (
+    ContestReviewDependency,
+    ReviewStage,
+    ReviewStageAttempt,
+)

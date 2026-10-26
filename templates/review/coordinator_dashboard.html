@@ -1,0 +1,216 @@
+{% from "widgets/publication_hint.html" import publication_hint %}
+<div class="review-dashboard review-workspace" data-review-workspace data-status-url="{{ coordinator_status_url }}" data-theme-toggle-url="{{ url('toggle_darkmode') }}">
+  {% if coordinator_kind == 'contest' %}<h2 class="content-title">{{ contest.name }} — {{ _('Review') }}</h2><hr>{% endif %}
+  <section class="review-card review-header" {% if latest_run %}id="run-status"
+             data-run-id="{{ latest_run.id }}" data-status="{{ latest_run.status }}"
+             data-viewing-history="{{ '1' if viewing_history else '0' }}"
+             data-stage-progress="{{ coordinator_stage_progress | tojson | forceescape }}"{% endif %}>
+      <div class="review-header-row">
+        <div class="review-header-info">
+          {% if latest_run %}
+            <strong>{{ _('Review run') }} #{{ latest_run_index or latest_run.id }}</strong>
+            <span class="review-header-meta">· {{ _('Triggered by') }} {% if latest_run.triggered_by %}{{ link_user(latest_run.triggered_by) }}{% else %}{{ _('(unknown)') }}{% endif %} · {{ latest_run.started_at | date(_('N j, Y, g:i a')) }}</span>
+          {% else %}<strong>{{ _('No review yet') }}</strong>{% endif %}
+          <div class="review-metadata">
+            {% for label in coordinator_problem_type_labels %}<span class="review-meta-tag">{{ label }}</span>{% endfor %}
+            {% if coordinator_usage_display %}<span class="review-meta-tag review-meta-usage" title="{{ _('Estimated usage, not provider billing. Contest usage includes only child reviews started by this run.') }}">{{ _('Estimated tokens: %(count)s', count=coordinator_usage_display) }}</span>{% endif %}
+            <span class="review-meta-tag {% if coordinator_credits == 0 and not request.user.is_superuser %}orange{% endif %}" title="{{ _('Shared by all authors. Superuser runs do not consume author credits.') }}">{{ _('%(count)s/3 credits left', count=coordinator_credits) }}</span>
+          </div>
+        </div>
+        <div class="review-header-controls">
+          <div class="review-workspace-actions">
+            {% if coordinator_can_start %}
+              <a class="action-btn small" data-review-start href="{{ url('coordinator_run_review', coordinator_kind, coordinator_code) }}">{{ _('Run review') }}</a>
+            {% elif coordinator_can_run and coordinator_credits == 0 and not request.user.is_superuser %}
+              <button class="action-btn small" disabled>{{ _('Run review') }}</button>
+            {% endif %}
+            {% if coordinator_can_withdraw %}
+              <button class="action-btn small outlined" type="button" data-review-dialog="review-withdraw-dialog">{{ _('Withdraw request') }}</button>
+            {% elif coordinator_show_submit %}
+              <form class="coordinator-action-form" method="post" action="{{ url('internal_request_public') if coordinator_kind == 'problem' else url('contest_request_public', contest.key) }}">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                {% if coordinator_kind == 'problem' %}<input type="hidden" name="id" value="{{ problem.id }}">{% endif %}
+                {% if latest_run %}<input type="hidden" name="run_id" value="{{ latest_run.id }}">{% endif %}
+                {% call publication_hint(not coordinator_can_submit, publication_request_hint) %}
+                  <button class="action-btn small outlined" type="submit" {% if not coordinator_can_submit %}disabled{% endif %}>{{ _('Request publication') }}</button>
+                {% endcall %}
+              </form>
+            {% endif %}
+            {% if coordinator_can_decide_request %}
+              <button type="button" class="action-btn small outlined" data-review-dialog="{{ coordinator_kind }}-request-decision-dialog">{{ _('Request decision') }}</button>
+            {% endif %}
+            {% if latest_run and latest_run.status in ('R', 'B') and coordinator_can_run %}
+              <button class="action-btn small outlined" data-review-dialog="review-cancel-dialog">{{ _('Cancel review') }}</button>
+            {% endif %}
+          </div>
+          {% if history_entries | length > 1 %}
+            <div class="review-header-history">
+              <label for="review-history-select">{{ _('View run') }}</label>
+              <select id="review-history-select" class="review-history-select">
+                {% for entry in history_entries %}
+                  <option value="{{ url('problem_review_dashboard', problem.code) if coordinator_kind == 'problem' else url('contest_review_dashboard', contest.key) }}?run={{ entry.index }}" {% if entry.id == latest_run.id %}selected{% endif %}>#{{ entry.index }} — {{ entry.status_display }}{% if entry.is_latest %} ({{ _('latest') }}){% endif %}</option>
+                {% endfor %}
+              </select>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+  <div id="review-live-notices">
+    {% if coordinator_can_run and coordinator_credits == 0 and not request.user.is_superuser %}<p class="orange">{{ _('No author review credits remain. Please ask a superuser.') }}</p>{% endif %}
+    {% if viewing_history %}
+      <div class="review-notice"><i class="fa fa-history"></i> {{ _('You are viewing a historical run.') }} <a href="{{ url('problem_review_dashboard', problem.code) if coordinator_kind == 'problem' else url('contest_review_dashboard', contest.key) }}" data-review-latest>{{ _('Return to the latest run') }} →</a></div>
+    {% endif %}
+  </div>
+  <section class="review-card coordinator-overview review-outcome">
+    <div class="review-outcome-heading">
+      <div><div class="review-eyebrow">{{ _('AI coordinator') }}</div><h3 class="{{ coordinator_state_class }}">{{ coordinator_state_title }}</h3></div>
+      {% if latest_run %}<span class="review-status-badge {{ coordinator_execution_class }}">{{ latest_run.get_status_display() }}</span>{% endif %}
+    </div>
+    <div class="review-outcome-facts">
+      <div class="review-outcome-fact"><span class="review-fact-label">{{ _('Current content') }}</span><strong class="review-status-badge {{ coordinator_content_class }}">{{ coordinator_content_status }}</strong></div>
+      <div class="review-outcome-fact"><span class="review-fact-label">{{ _('Readiness') }}</span><strong class="review-status-badge {{ coordinator_readiness_class }}">{{ coordinator_readiness_display }}</strong></div>
+      {% if coordinator_publication_request %}
+        <div class="review-outcome-fact"><span class="review-fact-label">{{ _('Publication request') }}</span><strong class="review-status-badge {{ 'green' if coordinator_publication_request.status == 'A' else 'red' if coordinator_publication_request.status == 'R' else 'blue' if coordinator_publication_request.status == 'P' else 'gray' }}">{{ coordinator_publication_request.get_status_display() }}</strong></div>
+      {% endif %}
+    </div>
+    {% if coordinator_stale %}<p class="review-muted"><strong>{{ _('Result for the reviewed version') }}:</strong> {{ coordinator_reviewed_readiness_display }}</p>{% endif %}
+    {% if coordinator_stale and coordinator_changes %}
+      {% if coordinator_changes | length == 1 %}
+        <p class="review-muted" data-review-changes><strong>{{ _('Why re-review is needed') }}:</strong> {{ coordinator_changes[0] }}</p>
+      {% else %}
+        <details class="review-muted" data-review-changes>
+          <summary>{{ _('Why re-review is needed') }}</summary>
+          <ul>{% for change in coordinator_changes %}<li>{{ change }}</li>{% endfor %}</ul>
+        </details>
+      {% endif %}
+    {% endif %}
+    {% if not latest_run %}<p>{{ _('Prepare the package and execution evidence before starting an AI review.') }}</p>{% endif %}
+    {% if latest_run and coordinator_partial %}
+      <p role="status">{{ _('Some checks could not finish. No credit is used while recovery is pending.') }}</p>
+      {% if coordinator_blocked_stages %}
+        <p>{{ _('Blocked sections') }}:
+          {% for stage in coordinator_blocked_stages %}<button class="review-text-button" data-review-section="{{ stage.stage_id }}">{{ stage.display_name }}</button>{% if not loop.last %}, {% endif %}{% endfor %}
+        </p>
+      {% elif coordinator_kind == 'contest' %}
+        <p>{{ _('Open the problem reports below to retry their failed checks.') }}</p>
+      {% endif %}
+      {% if latest_run.status == 'R' %}<p>{{ _('Other sections are still running.') }}</p>{% endif %}
+      {% if coordinator_search_disabled %}<p>{{ _('Similarity search is disabled. Ask an administrator to enable it.') }}</p>{% endif %}
+    {% endif %}
+    {% if latest_run and latest_run.status in ('R', 'B') %}
+      <div class="review-progress" role="status" aria-live="polite"><progress value="{{ coordinator_completed_stages }}" max="{{ coordinator_stages | length or 1 }}" aria-label="{{ _('Review progress') }}"></progress><span>{{ coordinator_progress_label }}</span></div>
+    {% endif %}
+    {% if coordinator_can_submit and request.user.is_superuser and latest_run.readiness not in ('READY', 'READY_WITH_WARNINGS') %}<p>{{ _('A superuser may submit this current report for a manual publication decision. Publishing without sufficient passing evidence requires a recorded override reason.') }}</p>{% endif %}
+  </section>
+
+  {% if latest_run %}
+    <div class="review-tabs" role="tablist" aria-label="{{ _('Review') }}">
+      <button id="review-tab-overview" role="tab" aria-controls="review-panel-overview" aria-selected="true" data-review-tab="overview">{{ _('Overview') }}</button>
+      <button id="review-tab-sections" role="tab" aria-controls="review-panel-sections" aria-selected="false" tabindex="-1" data-review-tab="sections">{{ _('Review sections') }}</button>
+      <button id="review-tab-discussion" role="tab" aria-controls="review-panel-discussion" aria-selected="false" tabindex="-1" data-review-tab="discussion">{{ _('Discussion') }} <span id="review-discussion-count" class="review-meta-tag" data-content-type-id="{{ comment_content_type_id }}" data-object-id="{{ comment_object_id }}">{{ all_comment_count or 0 }}</span></button>
+    </div>
+    <section id="review-panel-overview" role="tabpanel" aria-labelledby="review-tab-overview" tabindex="0">
+      <div id="review-live-feedback">
+        <section class="review-card review-summary">
+          <h3 class="review-section-title"><i class="fa fa-magic review-heading-icon" aria-hidden="true"></i>{{ _('AI-synthesized feedback') }}</h3>
+          {% if coordinator_partial and latest_run.summary_report %}<p class="review-muted">{{ _('Partial feedback — required review evidence is still missing.') }}</p>{% endif %}
+          {% if latest_run.summary_report %}<div class="review-summary-body content-description">{{ latest_run.summary_report | review_markdown | str | safe }}</div>
+          {% else %}<p class="review-muted">{{ _('No coordinator feedback is available for this run. Review the section results below.') }}</p><button class="review-text-button" data-review-show-sections>{{ _('View review sections') }} →</button>{% endif %}
+          {% if coordinator_profile_gaps %}
+            <p><strong>{{ _('Evidence still needed') }}</strong></p>
+            <ul>{% for gap in coordinator_profile_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
+          {% endif %}
+        </section>
+        {% if coordinator_findings %}
+          <section class="review-card review-attention" aria-labelledby="review-attention-title">
+            <h3 id="review-attention-title" class="review-section-title"><i class="fa fa-flag review-heading-icon" aria-hidden="true"></i>{{ _('What needs attention') }}</h3>
+            {% if coordinator_findings_provisional %}<p class="review-muted">{{ _('Provisional findings — coordinator synthesis is pending.') }}</p>{% endif %}
+            {% for finding in coordinator_findings %}
+              <article class="review-finding">
+                <div class="review-finding-meta"><span class="review-status-badge {% if finding.get('severity') == 'blocking' %}red{% elif finding.get('severity') == 'warning' %}orange{% else %}blue{% endif %}">{{ finding.severity_display }}</span><span>{{ finding.section_title }}</span></div>
+                <h4>{{ finding.claim | review_inline_markdown | str | safe }}</h4>
+                {% if finding.get('reasoning') %}<div class="review-prose content-description">{{ finding.reasoning | review_markdown | str | safe }}</div>{% endif %}
+                {% if finding.get('suggested_probe_or_fix') or finding.get('recommendation') %}<div class="review-recommendation"><strong>{{ _('Suggested next step') }}</strong><div class="review-prose content-description">{{ (finding.get('suggested_probe_or_fix') or finding.get('recommendation')) | review_markdown | str | safe }}</div></div>{% endif %}
+                {% if finding.section_id %}<button class="review-text-button" data-review-section="{{ finding.section_id }}">{{ _('View reasoning and evidence') }} →</button>{% endif %}
+              </article>
+            {% endfor %}
+            {% if coordinator_findings_count > coordinator_findings | length %}<p>{{ _('Additional findings are available in the review sections.') }}</p>{% endif %}
+          </section>
+        {% endif %}
+        {% if coordinator_child_reports or coordinator_unsupported_items %}
+          <section class="review-card review-problem-reports" aria-labelledby="review-problem-reports-title">
+            <h3 id="review-problem-reports-title" class="review-section-title"><i class="fa fa-list-alt review-heading-icon" aria-hidden="true"></i>{{ _('Problem reviews used by this run') }}</h3>
+            <div class="review-bound-table" role="region" aria-label="{{ _('Bound problem reviews') }}" tabindex="0">
+              <table class="table striped modern">
+                <thead><tr><th>{{ _('Problem') }}</th><th>{{ _('Estimated difficulty') }}</th><th>{{ _('Readiness') }}</th><th>{{ _('Review source') }}</th><th>{{ _('Auto-review') }}</th></tr></thead>
+                <tbody>
+                  {% for child in coordinator_child_reports %}
+                    <tr>
+                      <td><a href="{{ url('problem_detail', child.problem.code) }}">{{ child.name }}</a></td>
+                      <td>{{ child.difficulty if child.difficulty is not none else _('Unavailable') }}</td>
+                      <td><span class="review-status-badge {{ child.readiness_class }}">{{ child.readiness_display }}</span></td>
+                      <td>
+                        {% if child.owned %}{{ _('Started by this run') }}
+                        {% elif child.run %}{{ _('Reused') }}
+                        {% else %}{{ _('Unavailable') }}{% endif %}
+                      </td>
+                      <td>
+                        {% if child.unsupported %}{{ _('Unsupported content — manual review required.') }}
+                        {% elif child.url %}
+                          {% if child.newer_review_url %}
+                            <a href="{{ child.url }}">{{ _('Review used') }} ↗</a>
+                            <div title="{{ _('This contest assessment still relies on the earlier problem review.') }}"><a href="{{ child.newer_review_url }}">{{ _('Latest review') }} ↗</a> · <span class="review-muted">{{ _('Not used') }}</span></div>
+                            {% if child.newer_review_in_progress %}<div class="review-muted">{{ _('New problem review in progress') }}</div>{% endif %}
+                          {% else %}
+                            <a href="{{ child.url }}">{{ _('View review') }} ↗</a>
+                          {% endif %}
+                        {% else %}{{ _('Unavailable') if child.run else _('Missing review') }}{% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                  {% for name in coordinator_unsupported_items %}<tr><td>{{ name }}</td><td>{{ _('Unavailable') }}</td><td>{{ _('Manual review') }}</td><td colspan="2">{{ _('Unsupported content — manual review required.') }}</td></tr>{% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <p class="review-muted">{{ _('These are the exact problem reports captured for this contest run. Missing, stale or unacceptable reports cannot establish readiness.') }}</p>
+          </section>
+        {% endif %}
+        {% include 'review/coordinator_publication_access.html' %}
+      </div>
+    </section>
+    <section id="review-panel-sections" role="tabpanel" aria-labelledby="review-tab-sections" tabindex="0" hidden>{% include 'review/coordinator_stages.html' %}</section>
+    <section id="review-panel-discussion" role="tabpanel" aria-labelledby="review-tab-discussion" tabindex="0" hidden>
+      {% if not coordinator_live %}
+        <p class="review-muted">{{ _('This discussion is shared across review runs, so earlier feedback and replies remain available.') }}</p>
+        <section class="review-card review-comments">{% include 'comments/list.html' %}</section>
+      {% endif %}
+    </section>
+  {% endif %}
+  <dialog id="review-start-dialog" class="review-dialog" aria-labelledby="review-start-heading"><div class="review-dialog-heading"><h3 id="review-start-heading">{{ _('Run review') }}</h3><button type="button" class="review-text-button" data-review-close aria-label="{{ _('Close') }}">×</button></div><div data-review-start-content><p>{{ _('Loading…') }}</p></div></dialog>
+  {% if latest_run and latest_run.status in ('R', 'B') and coordinator_can_run %}
+    <dialog id="review-cancel-dialog" class="review-dialog" aria-labelledby="review-cancel-heading">
+      <div class="review-dialog-heading"><h3 id="review-cancel-heading">{{ _('Cancel review') }}</h3><button type="button" class="review-text-button" data-review-close aria-label="{{ _('Close') }}">×</button></div>
+      <form class="coordinator-action-form" method="post" action="{{ url('coordinator_manage_review', coordinator_kind, coordinator_code, latest_run.id, 'cancel') }}">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        {% include 'review/coordinator_cancel_notice.html' %}
+        <div class="review-dialog-actions"><button class="action-btn" type="submit">{{ _('Cancel review') }}</button></div>
+      </form>
+    </dialog>
+  {% endif %}
+  {% if coordinator_can_withdraw %}
+    <dialog id="review-withdraw-dialog" class="review-dialog" aria-labelledby="review-withdraw-heading">
+      <div class="review-dialog-heading"><h3 id="review-withdraw-heading">{{ _('Withdraw request') }}</h3><button type="button" class="review-text-button" data-review-close aria-label="{{ _('Close') }}">×</button></div>
+      <form class="coordinator-action-form" method="post" action="{{ url('internal_cancel_request_public') if coordinator_kind == 'problem' else url('contest_request_cancel', contest.key) }}">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        {% if coordinator_kind == 'problem' %}<input type="hidden" name="id" value="{{ problem.id }}">{% endif %}
+        <p>{{ _('Withdraw this publication request? Your review results and credits will not change. You can request publication again later.') }}</p>
+        <div class="review-dialog-actions"><button class="action-btn" type="submit">{{ _('Withdraw request') }}</button></div>
+      </form>
+    </dialog>
+  {% endif %}
+  {% if coordinator_can_decide_request %}
+    {% if coordinator_kind == 'problem' %}{% include 'review/problem_request_decision.html' %}
+    {% else %}{% include 'review/contest_request_decision.html' %}{% endif %}
+  {% endif %}
+</div>

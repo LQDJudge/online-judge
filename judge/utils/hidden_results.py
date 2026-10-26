@@ -17,7 +17,7 @@ def format_data_key(contest_problem):
 
 
 def hidden_result_problem_ids(contest, user):
-    if contest.is_editable_by(user):
+    if contest.can_manage_activity_by(user):
         return set()
     return set(
         contest.contest_problems.filter(
@@ -27,7 +27,7 @@ def hidden_result_problem_ids(contest, user):
 
 
 def hidden_result_contest_problem_ids(contest, user):
-    if contest.is_editable_by(user):
+    if contest.can_manage_activity_by(user):
         return set()
     return set(
         contest.contest_problems.filter(is_result_hidden=True).values_list(
@@ -37,7 +37,7 @@ def hidden_result_contest_problem_ids(contest, user):
 
 
 def hidden_result_format_keys(contest, user):
-    if contest.is_editable_by(user):
+    if contest.can_manage_activity_by(user):
         return set()
     return {
         format_data_key(contest_problem)
@@ -48,7 +48,7 @@ def hidden_result_format_keys(contest, user):
 
 
 def is_problem_result_hidden(contest, problem_id, user):
-    if not contest or contest.is_editable_by(user):
+    if not contest or contest.can_manage_activity_by(user):
         return False
     return contest.contest_problems.filter(
         problem_id=problem_id, is_result_hidden=True

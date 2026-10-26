@@ -966,6 +966,13 @@ function onWindowReady() {
     initDynamicContentObserver();
 
     $('a').click(function() {
+        // These links open/close review dialogs, not page navigation.
+        var reviewDialog = document.getElementById('review-start-dialog');
+        if ((this.hasAttribute('data-review-start') && reviewDialog &&
+                typeof reviewDialog.showModal === 'function') ||
+                (this.hasAttribute('data-review-close-link') && this.closest('dialog'))) {
+            return;
+        }
         var href = $(this).attr('href');
         var target = $(this).attr('target');
         if (!href || href === '#' || href.startsWith("javascript") ||

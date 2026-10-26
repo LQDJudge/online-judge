@@ -304,7 +304,7 @@
         </div>
       </div>
     {% endif %}
-    <div id="page-container">
+    <div id="page-container" class="{% block page_container_class %}{% endblock %}">
       <div id="media">
         {% block media %}{% endblock %}
       </div>
@@ -341,6 +341,7 @@
         <script src="{{ static('libs/clipboard/clipboard.js') }}"></script>
         {% include "extra_js.html" %}
         <script src="{{ static('common.js') }}"></script>
+        <script src="{{ static('widgets/publication_hint.js') }}"></script>
         <script src="{{ static('libs/clipboard/tooltip.js') }}"></script>
         <script type="text/javascript" src="{{ static('libs/featherlight/featherlight.min.js') }}"></script>
         <script>

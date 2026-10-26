@@ -185,6 +185,14 @@ class QuizObjectEditorMixin(UserPassesTestMixin):
         if self.request.user.is_superuser:
             return True
         quiz = self.get_object()
+        if self.request.resolver_match and self.request.resolver_match.url_name in {
+            "quiz_statistics",
+            "quiz_export_csv",
+            "quiz_question_analysis",
+            "quiz_grade_tab",
+            "quiz_regrade",
+        }:
+            return quiz.can_manage_attempts_by(self.request.user)
         return quiz.is_editable_by(self.request.user)
 
     def handle_no_permission(self):
@@ -2549,7 +2557,7 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
             raise Http404(_("Quiz not found."))
 
         # Cache is_editor to avoid repeated DB queries in get_context_data
-        self._is_editor = quiz.is_editable_by(self.request.user)
+        self._is_editor = quiz.can_manage_attempts_by(self.request.user)
         if not can_access_attempt:
             raise PermissionDenied(_("You cannot view this result."))
 
@@ -2649,7 +2657,7 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
             if username and username != self.request.profile.user.username:
                 # Check if current user can view other users' attempts
                 quiz = self.get_quiz()
-                if quiz.is_editable_by(self.request.user):
+                if quiz.can_manage_attempts_by(self.request.user):
                     from judge.models import Profile
 
                     try:
@@ -2923,7 +2931,7 @@ class AttemptGrade(LoginRequiredMixin, QuizEditorMixin, TitleMixin, DetailView):
 
     def get_object(self, queryset=None):
         attempt = get_object_or_404(QuizAttempt, pk=self.kwargs["attempt_id"])
-        if not attempt.quiz.is_editable_by(self.request.user):
+        if not attempt.quiz.can_manage_attempts_by(self.request.user):
             raise PermissionDenied(_("You cannot grade this quiz."))
         return attempt
 
@@ -3044,7 +3052,7 @@ class AnswerGrade(LoginRequiredMixin, QuizEditorMixin, View):
         except QuizAnswer.DoesNotExist:
             return JsonResponse({"error": "Answer not found"}, status=404)
 
-        if not answer.attempt.quiz.is_editable_by(request.user):
+        if not answer.attempt.quiz.can_manage_attempts_by(request.user):
             return JsonResponse({"error": "Permission denied"}, status=403)
 
         try:
@@ -3187,7 +3195,7 @@ class QuizGradesExportCSV(LoginRequiredMixin, QuizObjectEditorMixin, View):
     def get(self, request, *args, **kwargs):
         quiz = get_object_or_404(Quiz, code=kwargs["code"])
 
-        if not quiz.is_editable_by(request.user):
+        if not quiz.can_manage_attempts_by(request.user):
             raise PermissionDenied(_("You cannot export this quiz's grades."))
 
         # Create the HttpResponse object with CSV header
@@ -3494,7 +3502,7 @@ class ContestQuizAttemptsAjax(View):
         # Check if results should be hidden
         is_result_hidden = (
             contest_problem.is_result_hidden
-            and not contest_obj.is_editable_by(request.user)
+            and not contest_obj.can_manage_activity_by(request.user)
         )
 
         return render(
@@ -4080,7 +4088,7 @@ class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailVi
             quiz__code=self.kwargs["code"],
         )
 
-        self._is_editor = attempt.quiz.is_editable_by(self.request.user)
+        self._is_editor = attempt.quiz.can_manage_attempts_by(self.request.user)
         if not attempt.is_accessible_by(self.request.user):
             raise PermissionDenied(_("You cannot view this result."))
 

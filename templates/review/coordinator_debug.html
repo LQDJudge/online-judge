@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block body %}
+  <div class="coordinator-page">
+    <p>{{ _("Protected technical data. Raw attempt diagnostics expire according to the retention policy; essential snapshot and section context remain available.") }}</p>
+    <p>{{ _("Reviewed snapshot") }}: <code class="review-hash">{{ review_run.content_hash }}</code></p>
+    {% for job in evidence_jobs %}
+      <details>
+        <summary>{{ job.operation }} — {{ job.id }} — {{ job.status }}</summary>
+        <p>{{ _("Attempt %(number)s", number=job.attempt) }}</p>
+      <pre>{{ job.error }}</pre>
+        <p>{{ _("Preview") }}{% if job.preview_truncated %} (20,000…){% endif %}</p>
+      <pre>{{ job.result_preview }}</pre>
+      </details>
+    {% endfor %}
+    {% for stage in stages %}
+      <details>
+        <summary>{{ stage.stage_id }} — {{ stage.get_status_display() }}</summary>
+        <h3>{{ _("Structured evidence and notes") }}</h3>
+      <pre>{{ stage.output_json | tojson(indent=2) }}</pre>
+        <h3>{{ _("Saved section context") }}</h3>
+      <pre>{{ stage.input_json | tojson(indent=2) }}</pre>
+        <h3>{{ _("Exact provider request") }}</h3>
+      <pre>{{ stage.request_json | tojson(indent=2) }}</pre>
+        {% for attempt in stage.attempt_records.all() %}
+          <h3>{{ _("Attempt %(number)s", number=attempt.number) }}</h3>
+        <pre>{{ attempt.usage_json | tojson(indent=2) }}</pre>
+        <pre>{{ attempt.error }}</pre>
+        <pre>{{ attempt.raw_response }}</pre>
+        {% endfor %}
+      </details>
+    {% endfor %}
+  </div>
+{% endblock %}

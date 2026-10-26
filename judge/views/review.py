@@ -1,6 +1,8 @@
 """Dashboard for the auto-review pipeline."""
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 from django.db.models import F, Q
@@ -8,7 +10,9 @@ from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonRespons
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
+from django.views.decorators.vary import vary_on_headers
 from django.views.generic import ListView
 
 from judge.models import Comment, Problem, Profile
@@ -24,20 +28,25 @@ from judge.models.public_request import PublicRequest
 from judge.review.registry import CHECKS
 from judge.review.triggers import trigger_problem_review_for
 from judge.review.verdict import batched_verdicts
+from judge.review.workflow import enabled, is_review_readable
 from judge.utils.community import can_use_community_features
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.views import QueryStringSortMixin, TitleMixin
 from judge.views.comment.forms import CommentForm
 from judge.views.comment.mixins import is_comment_locked
 from judge.views.comment.utils import parse_sort_params
+from judge.views.coordinator_review import coordinator_context, run_review
 
 
+@login_required
+@never_cache
+@vary_on_headers("X-Review-Live")
 def problem_review_dashboard(request, problem):
     """Render the review dashboard for a problem. Editors + superusers only."""
     if not request.user.is_authenticated:
         return HttpResponseForbidden()
     problem_obj = get_object_or_404(Problem, code=problem)
-    if not problem_obj.is_editable_by(request.user):
+    if not is_review_readable(problem_obj, request.user):
         return HttpResponseForbidden()
 
     # All runs for this problem, oldest first. We compute per-run index from
@@ -59,6 +68,12 @@ def problem_review_dashboard(request, problem):
     # human-readable and stable across DB restores. Falls back to latest if
     # the param is missing, out of range, or non-numeric.
     selected = latest
+    raw_id = request.GET.get("run_id")
+    if raw_id:
+        try:
+            selected = next((run for run in all_runs if run.pk == int(raw_id)), latest)
+        except ValueError:
+            pass
     raw_run = request.GET.get("run")
     if raw_run:
         try:
@@ -110,6 +125,14 @@ def problem_review_dashboard(request, problem):
         "history_entries": history_entries,
         "problem_public_request": problem_public_request,
     }
+    context.update(coordinator_context(problem_obj, selected, request.user))
+    if (
+        request.headers.get("X-Review-Live") == "1"
+        and selected
+        and selected.workflow_version == 2
+    ):
+        context["coordinator_live"] = True
+        return render(request, "review/coordinator_dashboard.html", context)
 
     # Comments are anchored to the FIRST run for this problem so the
     # discussion thread is continuous across re-runs. Authors and admins
@@ -171,12 +194,14 @@ def _attach_comment_context(request, context, target):
     )
 
 
+@never_cache
+@vary_on_headers("X-Review-Progress")
 def problem_review_status(request, problem):
     """JSON endpoint used by dashboard polling."""
     if not request.user.is_authenticated:
         return JsonResponse({"error": "auth required"}, status=403)
     problem_obj = get_object_or_404(Problem, code=problem)
-    if not problem_obj.is_editable_by(request.user):
+    if not is_review_readable(problem_obj, request.user):
         return JsonResponse({"error": "permission denied"}, status=403)
 
     latest = (
@@ -186,6 +211,21 @@ def problem_review_status(request, problem):
     )
     if not latest:
         return JsonResponse({"run": None})
+
+    if request.headers.get("X-Review-Progress") == "1" and latest.workflow_version == 2:
+        return JsonResponse(
+            {
+                "run": {
+                    "id": latest.id,
+                    "status": latest.status,
+                    "coordinator_stages": list(
+                        latest.coordinator_stages.order_by("id").values(
+                            "stage_id", "status"
+                        )
+                    ),
+                }
+            }
+        )
 
     return JsonResponse(
         {
@@ -197,6 +237,17 @@ def problem_review_status(request, problem):
                     latest.finished_at.isoformat() if latest.finished_at else None
                 ),
                 "summary_report": latest.summary_report,
+                "readiness": latest.readiness,
+                "workflow_version": latest.workflow_version,
+                "coordinator_stages": (
+                    list(
+                        latest.coordinator_stages.order_by("id").values(
+                            "stage_id", "status", "reason", "output_json"
+                        )
+                    )
+                    if latest.workflow_version == 2
+                    else []
+                ),
                 "check_results": [
                     {
                         "check_id": c.check_id,
@@ -224,6 +275,8 @@ def problem_review_rerun(request, problem):
     that's never had a public-request. The trigger_problem_review_for helper
     handles the supersede-prior-runs step inside an atomic block.
     """
+    if enabled():
+        return run_review(request, "problem", problem)
     if not request.user.is_authenticated or not request.user.is_superuser:
         return HttpResponseForbidden()
     problem_obj = get_object_or_404(Problem, code=problem)
@@ -240,19 +293,29 @@ def problem_review_rerun(request, problem):
 # Review list page — /problems/review/
 # ----------------------------------------------------------------------------
 
-VERDICT_FILTER_CHOICES = ("pass", "fail", "running", "error")
-# Note: `in_contest` is only relevant for the problem dashboard (a contest
-# can't be "in" another contest). Contest view defines its own subset.
+VERDICT_FILTER_CHOICES = (
+    "pass",
+    "warning",
+    "fail",
+    "manual",
+    "incomplete",
+    "stale",
+    "cancelled",
+    "running",
+    "error",
+)
 PUBLIC_REQUEST_FILTER_CHOICES = (
     "pending",
     "approved",
     "rejected",
-    "in_contest",
+    "withdrawn",
     "none",
 )
 
 
-class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
+class ProblemReviewListView(
+    LoginRequiredMixin, QueryStringSortMixin, TitleMixin, ListView
+):
     """List of problems with at least one auto-review run.
 
     Two surfaces depending on permissions:
@@ -275,6 +338,11 @@ class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
     all_sorts = frozenset(("name", "last_reviewed", "public_status"))
     default_sort = "-last_reviewed"
     default_desc = frozenset(("last_reviewed",))
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_superuser and not request.GET:
+            return HttpResponseRedirect(request.path + "?public=pending")
+        return super().get(request, *args, **kwargs)
 
     def get_title(self):
         return _("Problem reviews")
@@ -328,26 +396,32 @@ class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
         if author_ids:
             qs = qs.filter(authors__id__in=author_ids)
 
+        # Site-public content has already been approved for publication, even
+        # when published directly without updating/creating a request record.
+        # Keep filtering and sorting consistent with the displayed badge.
+        qs = qs.annotate(
+            dashboard_public_status=models.Case(
+                models.When(
+                    is_public=True,
+                    is_organization_private=False,
+                    then=models.Value(PublicRequest.APPROVED),
+                ),
+                default=F("public_request__status"),
+                output_field=models.CharField(),
+            )
+        )
         public = self.request.GET.get("public")
         if public == "pending":
-            qs = qs.filter(public_request__status=PublicRequest.PENDING)
+            qs = qs.filter(dashboard_public_status=PublicRequest.PENDING)
         elif public == "approved":
-            qs = qs.filter(public_request__status=PublicRequest.APPROVED)
+            qs = qs.filter(dashboard_public_status=PublicRequest.APPROVED)
         elif public == "rejected":
-            qs = qs.filter(public_request__status=PublicRequest.REJECTED)
-        elif public == "in_contest":
-            # Belongs to ANY contest AND has no per-problem PublicRequest
-            # (otherwise the per-problem request status takes priority in
-            # the pill rendering, so we'd want the user to filter by that).
-            # `.distinct()` immediately because the M2M join through
-            # `contests` would otherwise multiply rows for problems used
-            # in multiple contests, inflating the paginator's count().
-            qs = qs.filter(
-                contests__isnull=False, public_request__isnull=True
-            ).distinct()
+            qs = qs.filter(dashboard_public_status=PublicRequest.REJECTED)
+        elif public == "withdrawn":
+            qs = qs.filter(dashboard_public_status=PublicRequest.WITHDRAWN)
         elif public == "none":
-            # Truly orphan: no contest membership AND no PublicRequest.
-            qs = qs.filter(contests__isnull=True, public_request__isnull=True)
+            # Contest membership does not create a problem publication request.
+            qs = qs.filter(dashboard_public_status__isnull=True)
 
         verdict = self.request.GET.get("verdict")
         if verdict in VERDICT_FILTER_CHOICES:
@@ -369,13 +443,13 @@ class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
 
         order_field = self.order  # e.g. '-last_reviewed' / 'name'
         if order_field.lstrip("-") == "public_status":
-            # Order by the OneToOne status string. NULL (no request) sorts
+            # Order by the displayed status. NULL (no request) sorts
             # last regardless of direction by treating NULL as a sentinel.
             qs = qs.order_by(
                 (
-                    F("public_request__status").asc(nulls_last=True)
+                    F("dashboard_public_status").asc(nulls_last=True)
                     if not order_field.startswith("-")
-                    else F("public_request__status").desc(nulls_last=True)
+                    else F("dashboard_public_status").desc(nulls_last=True)
                 ),
                 "-id",
             )
@@ -408,21 +482,6 @@ class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
             for pr in PublicRequest.objects.filter(problem_id__in=item_ids)
         }
 
-        # Which of these problems belong to ANY contest (private or public)?
-        # The "publish path" for those is the contest's Request Public flow,
-        # not a per-problem one — so the template shows a "Trong kỳ thi"
-        # pill instead of the default "Chưa yêu cầu". Broader than just
-        # private contests: even if the contest is public, the per-problem
-        # request would be a duplicate of the contest's publish state.
-        in_any_contest = set(
-            Problem.objects.filter(
-                id__in=item_ids,
-                contests__isnull=False,
-            )
-            .values_list("id", flat=True)
-            .distinct()
-        )
-
         # Preload the selected author profiles so select2 can render their
         # chips on initial page load (it can't reach back into the AJAX
         # endpoint without an extra round-trip per chip).
@@ -436,7 +495,6 @@ class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
                 "latest_runs": latest_runs,
                 "verdicts": verdicts,
                 "public_requests": public_requests,
-                "in_any_contest": in_any_contest,
                 "search_query": self.request.GET.get("search", ""),
                 "active_verdict": self.request.GET.get("verdict", ""),
                 "active_public": self.request.GET.get("public", ""),

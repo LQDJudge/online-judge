@@ -16,6 +16,7 @@ from django.db.models import Q
 
 from judge.models import ProblemSolutionCode, Submission
 from llm_service.llm_api import LLMService
+from llm_service.policies import streaming_options
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,12 @@ class ProblemTagger:
         user_id=None,
     ):
         self.llm_service = LLMService(
-            api_key, bot_name, sleep_time, feature="problem_tagging", user_id=user_id
+            api_key,
+            bot_name,
+            sleep_time,
+            feature="problem_tagging",
+            user_id=user_id,
+            **streaming_options("problem_tagging"),
         )
         self.sleep_time = sleep_time
 
@@ -485,8 +491,11 @@ PROBLEM STATEMENT:
 
             # Delay before retrying (only reached if no response)
             if attempt < max_retries - 1:
+                delay = self.llm_service.retry_delay(self.sleep_time)
+                if delay is None:
+                    break
                 logger.info(f"Retrying in {self.sleep_time} seconds...")
-                time.sleep(self.sleep_time)
+                time.sleep(delay)
 
         # Return invalid result if all retries fail (only happens if no response at all)
         return {

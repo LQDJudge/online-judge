@@ -1,3 +1,4 @@
+import re
 import secrets
 from operator import attrgetter
 import pyotp
@@ -50,6 +51,7 @@ from judge.models import (
     Course,
 )
 from judge import contest_format
+from judge.review.artifact_readers import output_source_filename
 
 from judge.widgets import (
     HeavyPreviewPageDownWidget,
@@ -257,8 +259,11 @@ class ProblemSubmitForm(ModelForm):
             self.fields["judge"].choices = judge_choices
 
     def allow_url_as_source(self):
-        key = self.cleaned_data["language"].key
-        filename = self.files["source_file"].name
+        language = self.cleaned_data.get("language")
+        if language is None:
+            return False
+        key = language.key
+        filename = self.files["source_file"].name.lower()
         if key == "OUTPUT" and self.problem.data_files.output_only:
             return filename.endswith(".zip")
         if key == "SCAT":
@@ -266,6 +271,10 @@ class ProblemSubmitForm(ModelForm):
         return False
 
     def clean(self):
+        # Field validation may already have rejected the language or upload.
+        # Do not index missing cleaned fields or write an invalid upload.
+        if self._errors:
+            return self.cleaned_data
         # Path A: client uploaded directly to S3 and passed us the key
         uploaded_key = self.data.get("uploaded_file_key")
         if uploaded_key:
@@ -273,7 +282,14 @@ class ProblemSubmitForm(ModelForm):
             # presigned flow. The token issuance endpoint is login_required +
             # rate-limited, and S3 keys are server-generated random tokens, so
             # cross-user replay requires guessing a 32-char random key.
-            if not (uploaded_key.startswith("submissions/") and "/" in uploaded_key):
+            if not (
+                uploaded_key.startswith("submissions/")
+                and re.fullmatch(
+                    r"[A-Za-z0-9_-][A-Za-z0-9_.-]{0,199}",
+                    uploaded_key[len("submissions/") :],
+                )
+                and ".." not in uploaded_key[len("submissions/") :]
+            ):
                 raise ValidationError(_("Invalid uploaded file reference."))
             # Filename without the 'submissions/' prefix is what submission_source_file expects
             bare = uploaded_key[len("submissions/") :]
@@ -299,6 +315,20 @@ class ProblemSubmitForm(ModelForm):
                     reverse("submission_source_file", args=(self.source_file_name,))
                 )
             del self.files["source_file"]
+        if self.cleaned_data["language"].key in ("OUTPUT", "SCAT"):
+            try:
+                filename = output_source_filename(self.cleaned_data.get("source", ""))
+                if self.request is None:
+                    raise ValueError("No canonical site origin")
+                # File-based runtimes fetch this URL outside the contestant
+                # sandbox. Never forward an arbitrary pasted host or redirector.
+                self.cleaned_data["source"] = self.request.build_absolute_uri(
+                    reverse("submission_source_file", args=(filename,))
+                )
+            except ValueError as error:
+                raise ValidationError(
+                    _("Upload the project or output archive through the Submit page.")
+                ) from error
         return self.cleaned_data
 
     class Meta:
@@ -524,6 +554,7 @@ class ContestEditForm(AuthorManagedRoleFieldsMixin, ModelForm):
         self._setup_role_fields()
 
         if not (self.user and self.user.is_superuser):
+            self.fields.pop("is_locked", None)
             self.fields["organizations"].disabled = True
 
             # `is_visible` rule mirrors Problem's `is_public` gating: a contest
@@ -584,6 +615,7 @@ class ContestEditForm(AuthorManagedRoleFieldsMixin, ModelForm):
         model = Contest
         fields = (
             "is_visible",
+            "is_locked",
             "key",
             "name",
             "start_time",
@@ -611,6 +643,8 @@ class ContestEditForm(AuthorManagedRoleFieldsMixin, ModelForm):
             "private_contestants",
             "view_contest_scoreboard",
         )
+        labels = {"is_locked": _("Lock")}
+        help_texts = {"is_locked": _("When enabled, only superusers can edit.")}
         widgets = {
             "authors": HeavySelect2MultipleWidget(data_view="profile_select2"),
             "curators": HeavySelect2MultipleWidget(data_view="profile_select2"),
@@ -636,17 +670,19 @@ class ContestEditForm(AuthorManagedRoleFieldsMixin, ModelForm):
 
 
 # Section grouping for the unified contest edit page. Mirrors Django Admin's
-# fieldsets (judge/admin/contest.py:183-244) with two intentional changes:
-#   - `is_visible` moved out of Settings into Format (per UX feedback).
+# fieldsets (judge/admin/contest.py:183-244) with intentional changes:
+#   - Visibility and Lock controls live together in Settings.
 #   - Rating/problem_label_script/tags omitted (admin-only fields not exposed
 #     to non-superuser editors).
 CONTEST_EDIT_FIELD_SECTIONS = [
     (_("Basic"), ["key", "name", "authors", "curators", "testers"]),
     (_("Scheduling"), ["start_time", "end_time", "time_limit", "freeze_after"]),
-    (_("Format"), ["format_name", "format_config", "is_visible"]),
+    (_("Format"), ["format_name", "format_config"]),
     (
         _("Settings"),
         [
+            "is_visible",
+            "is_locked",
             "use_clarifications",
             "hide_problem_tags",
             "public_scoreboard",
@@ -1284,6 +1320,9 @@ class ProblemEditForm(AuthorManagedRoleFieldsMixin, DirectUploadFormMixin, Model
         self.fields["types"].required = False
         self.fields["group"].required = False
 
+        if not self.user or not self.user.is_superuser:
+            self.fields.pop("is_locked", None)
+
         if (
             self.instance
             and self.instance.pk
@@ -1455,6 +1494,7 @@ class ProblemEditForm(AuthorManagedRoleFieldsMixin, DirectUploadFormMixin, Model
             "code",
             "name",
             "is_public",
+            "is_locked",
             "organizations",
             "date",
             "authors",
@@ -1475,6 +1515,8 @@ class ProblemEditForm(AuthorManagedRoleFieldsMixin, DirectUploadFormMixin, Model
             # Language fields
             "allowed_languages",
         ]
+        labels = {"is_locked": _("Lock")}
+        help_texts = {"is_locked": _("When enabled, only superusers can edit.")}
         widgets = {
             "authors": HeavySelect2MultipleWidget(
                 data_view="profile_select2",

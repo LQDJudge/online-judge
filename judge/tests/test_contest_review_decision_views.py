@@ -79,7 +79,9 @@ class ContestDecisionViewTest(TestCase):
 
     def test_admin_reject(self):
         self.client.force_login(self.admin.user)
-        resp = self.client.post("/contest/vdc/review/reject", {"feedback": ""})
+        resp = self.client.post(
+            "/contest/vdc/review/reject", {"feedback": "Not suitable for publication."}
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.json()["success"])
         self.pr.refresh_from_db()

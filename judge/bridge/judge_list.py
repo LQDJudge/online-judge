@@ -13,7 +13,9 @@ except ImportError:
 logger = logging.getLogger("judge.bridge")
 
 PriorityMarker = namedtuple("PriorityMarker", "priority")
-ValidateItem = namedtuple("ValidateItem", "validate_id problem_id")
+ValidateItem = namedtuple(
+    "ValidateItem", "validate_id problem_id review protocol", defaults=[False, 1]
+)
 
 # Priorities 0, 1, 2 are user-initiated (official contest, private contest,
 # default). Priorities 3, 4 are admin-initiated rejudges. User-tier entries
@@ -98,7 +100,10 @@ class JudgeList(object):
 
                 if isinstance(val, ValidateItem):
                     # Validation entries bypass per-user fairness.
-                    if val.problem_id in judge.problems:
+                    if val.problem_id in judge.problems and (
+                        not val.review
+                        or getattr(judge, "review_protocol", 0) >= val.protocol
+                    ):
                         self.validate_map[val.validate_id] = judge
                         self._set_judge_validation(
                             judge, val.validate_id, val.problem_id
@@ -257,7 +262,10 @@ class JudgeList(object):
 
     def _dispatch_reserved_validation(self, judge, item, priority):
         try:
-            judge.submit_validate(item.validate_id, item.problem_id)
+            if item.review:
+                judge.submit_validate(item.validate_id, item.problem_id, review=True)
+            else:
+                judge.submit_validate(item.validate_id, item.problem_id)
         except Exception:
             logger.exception(
                 "Failed to dispatch validation %s (%s) to %s",
@@ -267,7 +275,12 @@ class JudgeList(object):
             )
             self._release_validation(judge, item.validate_id)
             self._fail_judge(judge)
-            self.validate(item.validate_id, item.problem_id)
+            self.validate(
+                item.validate_id,
+                item.problem_id,
+                review=item.review,
+                protocol=item.protocol,
+            )
             return False
         return True
 
@@ -376,7 +389,7 @@ class JudgeList(object):
             self._fail_judge(judge, clear_work=False)
         return False
 
-    def validate(self, validate_id, problem_id):
+    def validate(self, validate_id, problem_id, review=False, protocol=1):
         """Dispatch validation to an available judge or queue it."""
         while True:
             with self.lock:
@@ -386,12 +399,14 @@ class JudgeList(object):
                 candidates = [
                     judge
                     for judge in self.judges
-                    if not judge.working and problem_id in judge.problems
+                    if not judge.working
+                    and problem_id in judge.problems
+                    and (not review or getattr(judge, "review_protocol", 0) >= protocol)
                 ]
                 if not candidates:
                     # Queue at lowest priority
                     self.node_map[validate_id] = self.queue.insert(
-                        ValidateItem(validate_id, problem_id),
+                        ValidateItem(validate_id, problem_id, review, protocol),
                         self.priority[self.priorities - 1],
                     )
                     logger.info("Queued validation: %s", validate_id)
@@ -399,7 +414,7 @@ class JudgeList(object):
 
                 judge = min(candidates, key=attrgetter("load"))
                 logger.info("Dispatched validation %s to: %s", validate_id, judge.name)
-                item = ValidateItem(validate_id, problem_id)
+                item = ValidateItem(validate_id, problem_id, review, protocol)
                 self.validate_map[validate_id] = judge
                 self._set_judge_validation(judge, validate_id, problem_id)
 

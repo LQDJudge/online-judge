@@ -85,7 +85,7 @@ class HomeFeedView(FeedView):
                 ).select_related("contest", "problem__problem")
                 context["has_clarifications"] = clarifications.count() > 0
                 context["clarifications"] = clarifications.order_by("-date")
-                if participation.contest.is_editable_by(self.request.user):
+                if participation.contest.can_manage_activity_by(self.request.user):
                     context["can_edit_contest"] = True
 
         now = timezone.now()

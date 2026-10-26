@@ -202,34 +202,72 @@
           });
         });
 
-    // Function to handle the "Publish" button click
-        $(".publish-button").on("click", function () {
-          const button = $(this);
+    // Ask for an override reason only when the server requires one.
+        function publishProblem(button, reason) {
           const problemDiv = button.closest(".problem-container");
           const problemId = button.data("problem-id");
+          const modal = $('#publication-override-modal');
+          button.prop('disabled', true);
+          $('#submit-publication-override').prop('disabled', true);
 
-          if (!confirm('{{_("Are you sure you want to publish this problem? This will make it public and remove organization restrictions.")}}')) {
-            return;
+          function handleFailure(response) {
+            if (response.requires_override) {
+              modal.data('publish-button', button);
+              $('#publication-override-explanation').text(response.error);
+              $('#publication-override-reason').val(reason || '');
+              $('#publication-override-error').empty();
+              $('body').css('overflow', 'hidden');
+              modal.addClass('show');
+              $('#publication-override-reason').trigger('focus');
+            } else if (modal.hasClass('show')) {
+              $('#publication-override-error').text(response.error || '{{_("An error occurred.")}}');
+            } else {
+              alert(response.error || '{{_("An error occurred.")}}');
+            }
           }
 
-          button.prop('disabled', true);
           $.ajax({
             url: "{{url('internal_publish_problem')}}",
             type: "POST",
-            data: { id: problemId },
+            data: { id: problemId, override_reason: reason || '' },
             success: function (response) {
               if (response.success) {
                 problemDiv.hide();
+                modal.removeClass('show');
+                $('body').css('overflow', 'auto');
               } else {
-                alert(response.error || '{{_("An error occurred.")}}');
-                button.prop('disabled', false);
+                handleFailure(response);
               }
             },
-            error: function () {
-              alert('{{_("An error occurred. Please try again.")}}');
+            error: function (xhr) {
+              handleFailure(xhr.responseJSON || {error: '{{_("An error occurred. Please try again.")}}'});
+            },
+            complete: function () {
               button.prop('disabled', false);
+              $('#submit-publication-override').prop('disabled', false);
             },
           });
+        }
+
+        $(".publish-button").on("click", function () {
+          if (confirm('{{_("Are you sure you want to publish this problem? This will make it public and remove organization restrictions.")}}')) {
+            publishProblem($(this), '');
+          }
+        });
+
+        $('#publication-override-form').on('submit', function (event) {
+          event.preventDefault();
+          const input = $('#publication-override-reason')[0];
+          input.value = input.value.trim();
+          if (!input.reportValidity()) return;
+          $('#publication-override-error').empty();
+          publishProblem($('#publication-override-modal').data('publish-button'), input.value);
+        });
+
+        $(document).on('keydown', function (event) {
+          if (event.key === 'Escape' && $('#publication-override-modal').hasClass('show')) {
+            $('#publication-override-modal .close').trigger('click');
+          }
         });
 
     // Function to handle the "Reject" button click - show modal
@@ -773,12 +811,13 @@
           <b>{{ _('Auto-review') }}:</b>
           {% set v = review_verdicts.get(problem.id) %}
           {% if v %}
-            <a href="{{ url('problem_review_dashboard', problem.code) }}"
+            <a href="{{ url('problem_review_dashboard', problem.code) }}{% if pr and pr.review_run_id %}?run_id={{ pr.review_run_id }}{% endif %}"
                class="auto-review-badge auto-review-badge-{{ v }}">
               {% if v == 'pass' %}<i class="fa fa-check"></i> {{ _('Pass') }}
               {% elif v == 'fail' %}<i class="fa fa-times"></i> {{ _('Fail') }}
               {% elif v == 'running' %}<i class="fa fa-spinner fa-spin"></i> {{ _('Running') }}
               {% elif v == 'error' %}<i class="fa fa-exclamation-triangle"></i> {{ _('Error') }}
+              {% elif v in ('warning', 'manual', 'incomplete', 'stale', 'cancelled') %}<i class="fa fa-exclamation-triangle"></i> {{ {'warning': _('Ready with warnings'), 'manual': _('Manual review'), 'incomplete': _('Incomplete'), 'stale': _('Needs re-review'), 'cancelled': _('Cancelled')}[v] }}
               {% endif %}
             </a>
           {% else %}
@@ -872,6 +911,25 @@
       <button type="button" class="action-btn background-gray cancel-modal">{{_("Cancel")}}</button>
       <button type="button" class="action-btn" id="apply-suggestions">{{_("Apply Changes")}}</button>
     </div>
+  </div>
+</div>
+
+<!-- Exceptional publication confirmation -->
+<div id="publication-override-modal" class="suggestion-modal" role="dialog" aria-modal="true" aria-labelledby="publication-override-title" aria-describedby="publication-override-explanation">
+  <div class="suggestion-modal-content">
+    <div class="suggestion-modal-header">
+      <h3 id="publication-override-title">{{ _('Publish with override') }}</h3>
+      <button type="button" class="close" aria-label="{{ _('Close') }}">&times;</button>
+    </div>
+    <form id="publication-override-form">
+      <p id="publication-override-explanation"></p>
+      <label for="publication-override-reason">{{ _('Reason for publishing') }}</label>
+      <textarea id="publication-override-reason" rows="3" required></textarea>
+      <p id="publication-override-error" class="red" role="alert"></p>
+      <div class="suggestion-actions">
+        <button type="submit" class="action-btn" id="submit-publication-override">{{ _('Publish') }}</button>
+      </div>
+    </form>
   </div>
 </div>
 

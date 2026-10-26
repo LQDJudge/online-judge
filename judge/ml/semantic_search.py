@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files.storage import default_storage
-from django.db import connection
+from django.db import connection, connections
 
 from judge.models import Problem
 
@@ -504,8 +504,13 @@ def is_problem_searchable(problem):
     return bool(problem.is_public and not problem.is_organization_private)
 
 
+def _semantic_connection():
+    alias = getattr(settings, "SEMANTIC_SEARCH_DATABASE_ALIAS", None)
+    return connections[alias] if alias else connection
+
+
 def prune_problem_embedding(problem_id):
-    with connection.cursor() as cursor:
+    with _semantic_connection().cursor() as cursor:
         cursor.execute(
             f"DELETE FROM {SEMANTIC_TABLE} WHERE problem_id = %s", [problem_id]
         )
@@ -515,7 +520,7 @@ def prune_problem_embedding(problem_id):
 
 
 def _existing_content_hash(problem_id):
-    with connection.cursor() as cursor:
+    with _semantic_connection().cursor() as cursor:
         cursor.execute(
             f"""
             SELECT content_hash
@@ -539,7 +544,7 @@ def _error_content_hash(problem_id):
 
 def _record_index_error(problem_id, content_hash, error_text):
     content_hash = content_hash or _error_content_hash(problem_id)
-    with connection.cursor() as cursor:
+    with _semantic_connection().cursor() as cursor:
         cursor.execute(
             f"DELETE FROM {SEMANTIC_TABLE} WHERE problem_id = %s", [problem_id]
         )
@@ -566,7 +571,7 @@ def _record_index_error(problem_id, content_hash, error_text):
 
 
 def _upsert_embedding(problem_id, content_hash, vector_text):
-    with connection.cursor() as cursor:
+    with _semantic_connection().cursor() as cursor:
         cursor.execute(
             f"""
             INSERT INTO {SEMANTIC_TABLE}
@@ -629,6 +634,43 @@ def index_problem_embedding(problem, force=False):
 
 
 def prune_stale_embeddings():
+    if getattr(settings, "SEMANTIC_SEARCH_DATABASE_ALIAS", None):
+        # A vector sidecar cannot JOIN the authoritative application database.
+        # Walk bounded ID batches, never one ORM lookup per indexed problem.
+        counts = {}
+        for table, key in (
+            (SEMANTIC_TABLE, "embeddings_deleted"),
+            (SEMANTIC_ERROR_TABLE, "errors_deleted"),
+        ):
+            deleted = 0
+            after = -1
+            with _semantic_connection().cursor() as cursor:
+                while True:
+                    cursor.execute(
+                        f"SELECT problem_id FROM {table} WHERE problem_id > %s ORDER BY problem_id LIMIT 1000",
+                        [after],
+                    )
+                    ids = [row[0] for row in cursor.fetchall()]
+                    if not ids:
+                        break
+                    after = ids[-1]
+                    eligible = set(
+                        Problem.objects.filter(
+                            pk__in=ids,
+                            is_public=True,
+                            is_organization_private=False,
+                        ).values_list("pk", flat=True)
+                    )
+                    stale = [identity for identity in ids if identity not in eligible]
+                    if stale:
+                        placeholders = ",".join(["%s"] * len(stale))
+                        cursor.execute(
+                            f"DELETE FROM {table} WHERE problem_id IN ({placeholders})",
+                            stale,
+                        )
+                        deleted += cursor.rowcount
+            counts[key] = deleted
+        return counts
     with connection.cursor() as cursor:
         cursor.execute(f"""
             DELETE e FROM {SEMANTIC_TABLE} e
@@ -646,31 +688,50 @@ def prune_stale_embeddings():
 
 
 def _semantic_vector_search(query_vec, limit, exclude_id=None):
+    alias = getattr(settings, "SEMANTIC_SEARCH_DATABASE_ALIAS", None)
     exclude_clause = ""
     params = [query_vec, get_semantic_model(), get_semantic_dims()]
     if exclude_id is not None:
         exclude_clause = "AND e.problem_id != %s"
         params.append(exclude_id)
 
+    visibility_join = (
+        "" if alias else "INNER JOIN judge_problem p ON p.id = e.problem_id"
+    )
+    visibility_filter = (
+        "" if alias else "AND p.is_public = 1 AND p.is_organization_private = 0"
+    )
     sql = f"""
         SELECT e.problem_id,
                (1 - VEC_DISTANCE_COSINE(e.embedding, Vec_FromText(%s))) AS score
         FROM {SEMANTIC_TABLE} e
-        INNER JOIN judge_problem p ON p.id = e.problem_id
+        {visibility_join}
         WHERE e.model = %s
           AND e.dims = %s
-          AND p.is_public = 1
-          AND p.is_organization_private = 0
+          {visibility_filter}
           {exclude_clause}
         ORDER BY VEC_DISTANCE_COSINE(e.embedding, Vec_FromText(%s))
         LIMIT %s
     """
-    params += [query_vec, limit]
-    with connection.cursor() as cursor:
+    # Leave room for outdated private/deleted vectors, then authorize in one
+    # application query. No sidecar visibility snapshot is trusted or required.
+    params += [query_vec, max(50, limit * 5) if alias else limit]
+    with _semantic_connection().cursor() as cursor:
         cursor.execute(sql, params)
-        return [
+        rows = [
             (int(problem_id), float(score)) for problem_id, score in cursor.fetchall()
         ]
+    if alias and rows:
+        # Recheck authoritative rows before any consumer sees sidecar results.
+        eligible = set(
+            Problem.objects.filter(
+                pk__in=[identity for identity, _ in rows],
+                is_public=True,
+                is_organization_private=False,
+            ).values_list("pk", flat=True)
+        )
+        rows = [(identity, score) for identity, score in rows if identity in eligible]
+    return rows[:limit]
 
 
 def _format_results(rows):
@@ -714,7 +775,7 @@ def search_problems(query, limit=DEFAULT_LIMIT):
 
 
 def _stored_problem_embedding(problem_id):
-    with connection.cursor() as cursor:
+    with _semantic_connection().cursor() as cursor:
         cursor.execute(
             f"""
             SELECT Vec_ToText(embedding)

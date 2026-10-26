@@ -2,6 +2,41 @@
 @use "vars" as *;
 @use "sass:color";
 
+.publication-request-control {
+    display: inline-flex;
+    position: relative;
+    cursor: help;
+
+    > button:disabled {
+        pointer-events: none;
+    }
+
+    &:focus-visible {
+        outline: 2px solid $theme_color;
+        outline-offset: 3px;
+        border-radius: 6px;
+    }
+
+    .publication-request-tooltip {
+        position: fixed;
+        z-index: 1005;
+        width: max-content;
+        max-width: min(22rem, calc(100vw - 16px));
+        box-sizing: border-box;
+        padding: 0.65em 0.85em;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        background: $background_light_gray;
+        color: $widget_black;
+        font-size: 0.9rem;
+        font-weight: normal;
+        line-height: 1.5;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        text-align: left;
+    }
+}
+
 
 @-ms-viewport {
     min-width: 480px;
@@ -859,6 +894,40 @@ noscript #noscript {
     margin: 0 auto;
     border-right: 1px solid $border_gray;
     border-left: 1px solid $border_gray;
+
+    // Collapsible panels and tabs change the content height. Keep the footer
+    // in flow instead of relying on a fixed bottom-padding allowance.
+    &.column-layout {
+        display: flex;
+        flex-direction: column;
+
+        > #content {
+            flex: 1 0 auto;
+            height: auto;
+        }
+
+        > footer {
+            position: static;
+            flex: none;
+            width: auto;
+            height: auto;
+            min-height: 40px;
+            box-sizing: border-box;
+            padding: $space-md $space-sm;
+
+            #footer-content > br:first-child {
+                display: none;
+            }
+        }
+
+        @media (min-width: 800px) {
+            // Match the centered main column, leaving the fixed sidebar clear.
+            &:has(.left-sidebar) > footer {
+                width: calc(min(100%, #{$layout-max-width}) * 0.83);
+                margin-left: calc((100% - min(100%, #{$layout-max-width})) / 2 + min(100%, #{$layout-max-width}) * 0.15);
+            }
+        }
+    }
 }
 
 // border-bottom: 1px solid rgb(204, 204, 204)

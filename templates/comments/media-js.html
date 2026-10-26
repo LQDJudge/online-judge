@@ -23,6 +23,23 @@
         placeholder: '{{ _('Write a comment...') }}'
       };
 
+      function commentPosted(xhr) {
+        var value = xhr.getResponseHeader('X-Comment-Count');
+        var count = value !== null && /^\d+$/.test(value) ? Number(value) : NaN;
+        if (!Number.isSafeInteger(count)) return;
+        var $badge = $('.comment-count-badge');
+        if ($badge.length) {
+          $badge.text('(' + count + ')');
+        } else {
+          $('#comment-header').append(' <span class="comment-count-badge">(' + count + ')</span>');
+        }
+        document.dispatchEvent(new CustomEvent('lqdoj:comment-posted', {detail: {
+          contentTypeId: commentConfig.contentTypeId,
+          objectId: commentConfig.objectId,
+          count: count
+        }}));
+      }
+
       function getCommentPostError(xhr, fallback) {
         try {
           var response = JSON.parse(xhr.responseText);
@@ -137,7 +154,7 @@
             url: commentConfig.postUrl,
             type: 'POST',
             data: formDataObj,
-            success: function(response) {
+            success: function(response, textStatus, xhr) {
               // Reset the editor to minimal mode
               newCommentEditor.reset();
 
@@ -145,14 +162,7 @@
               $('#comment-0').prepend(response);
               $('.no-comments-message').hide();
 
-              // Update comment count
-              var $commentCountBadge = $('.comment-count-badge');
-              if ($commentCountBadge.length) {
-                var currentCount = parseInt($commentCountBadge.text().replace(/[()]/g, ''));
-                $commentCountBadge.text('(' + (currentCount + 1) + ')');
-              } else {
-                $('#comment-header').append(' <span class="comment-count-badge">(1)</span>');
-              }
+              commentPosted(xhr);
 
               // Initialize new comment functionality
               renderKatex($('#comments')[0]);
@@ -258,7 +268,8 @@
               url: commentConfig.postUrl,
               type: 'POST',
               data: formDataObj,
-              success: function(response) {
+              success: function(response, textStatus, xhr) {
+                commentPosted(xhr);
                 // Clean up editor and form
                 editor.destroy();
                 $('#' + formId).remove();

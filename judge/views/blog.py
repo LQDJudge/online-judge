@@ -146,7 +146,7 @@ class PostView(
                 elif is_author and not self.object.visible:
                     context["editable_orgs"].append(org)
 
-        if self.object.is_editable_by(self.request.user):
+        if self.object.can_manage_activity_by(self.request.user):
             context["num_open_tickets"] = self.object.tickets.filter(
                 is_open=True
             ).count()

@@ -444,7 +444,7 @@ def post_comment(request):
     # Set vote_score for template (new comment has no votes yet)
     comment.vote_score = 0
 
-    return render(
+    response = render(
         request,
         "comments/content.html",
         {
@@ -454,6 +454,10 @@ def post_comment(request):
             "perms": PermWrapper(request.user),
         },
     )
+    response["X-Comment-Count"] = str(
+        get_visible_comment_count(comment.content_type_id, comment.object_id)
+    )
+    return response
 
 
 def _update_contribution_for_comment_vote(comment_id, delta):

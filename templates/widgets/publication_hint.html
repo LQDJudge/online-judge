@@ -1,0 +1,10 @@
+{% macro publication_hint(disabled, hint) %}
+  {% if disabled and hint %}
+    <span class="publication-request-control" data-publication-hint tabindex="0" role="button" aria-disabled="true" aria-label="{{ _('Request publication') }}" aria-describedby="publication-request-hint">
+      {{ caller() }}
+      <span id="publication-request-hint" class="publication-request-tooltip" role="tooltip" hidden>{{ hint }}</span>
+    </span>
+  {% else %}
+    {{ caller() }}
+  {% endif %}
+{% endmacro %}

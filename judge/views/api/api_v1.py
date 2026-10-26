@@ -66,7 +66,7 @@ def api_v1_contest_detail(request, contest):
     )
 
     can_see_problems = (
-        in_contest or contest.ended or contest.is_editable_by(request.user)
+        in_contest or contest.ended or contest.can_manage_activity_by(request.user)
     )
     hidden_format_keys = hidden_result_format_keys(contest, request.user)
 

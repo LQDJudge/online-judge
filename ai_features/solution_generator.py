@@ -7,6 +7,7 @@ import time
 from typing import Optional, Dict, Any
 import logging
 from llm_service.llm_api import LLMService
+from llm_service.policies import streaming_options
 from llm_service.prompt_guidelines import get_markdown_rules_for_prompt
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class SolutionGenerator:
             bot_name,
             sleep_time,
             feature="solution_generation",
+            **streaming_options("solution_generation"),
             user_id=user_id,
         )
         self.sleep_time = sleep_time
@@ -441,8 +443,11 @@ OUTPUT: Provide ONLY the solution markdown in the format shown in the template. 
 
             # Delay before retrying
             if attempt < max_retries - 1:
+                delay = self.llm_service.retry_delay(self.sleep_time)
+                if delay is None:
+                    break
                 logger.info(f"Retrying in {self.sleep_time} seconds...")
-                time.sleep(self.sleep_time)
+                time.sleep(delay)
 
         return {
             "success": False,

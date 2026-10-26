@@ -2111,6 +2111,13 @@ a.contest-clarification-problem:hover {
 // (`.form-row` keeps label and field on a single baseline, `<hr>` separates
 // sections). Widths are constrained per input type so the form doesn't sprawl.
 .contest-edit-page {
+    .contest-editor-readonly {
+        border: 0;
+        padding: 0;
+        margin: 0;
+        min-width: 0;
+    }
+
     .form-row {
         display: flex;
         align-items: baseline;
@@ -2118,15 +2125,14 @@ a.contest-clarification-problem:hover {
         gap: 0.4em 0.75em;
         margin-bottom: 1em;
 
-        > label {
+        > .contest-field-label {
             flex: 0 0 auto;
             margin: 0;
             font-weight: 600;
         }
 
-        // Errors and help text break to a new line under the field.
-        > .field-error,
-        > .form-help {
+        // Validation errors remain visible below the field.
+        > .field-error {
             flex-basis: 100%;
             margin-top: 0.1em;
             font-size: 0.9em;
@@ -2138,27 +2144,87 @@ a.contest-clarification-problem:hover {
     .form-row.form-row-block {
         display: block;
 
-        > label {
-            display: block;
+        > .contest-field-label {
+            display: flex;
             margin-bottom: 0.4em;
         }
 
-        > .field-error,
-        > .form-help {
+        > .field-error {
             display: block;
             margin-top: 0.4em;
             font-size: 0.9em;
         }
     }
 
-    .form-help i.fa {
-        margin-right: 0.25em;
+    .contest-field-label {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.35em;
+
+        label {
+            margin: 0;
+        }
+    }
+
+    .contest-field-help {
+        display: inline-block;
+    }
+
+    .contest-field-help-button {
+        border: 0;
+        padding: 0.2em;
+        background: transparent;
+        box-shadow: none;
+        color: $theme_color;
+        font: inherit;
+        cursor: pointer;
+
+        &:focus-visible {
+            outline: 2px solid $theme_color;
+            outline-offset: 2px;
+            border-radius: 50%;
+        }
+    }
+
+    .contest-field-help-panel {
+        position: fixed;
+        z-index: 1000;
+        box-sizing: border-box;
+        width: 25em;
+        max-width: calc(100vw - 16px);
+        max-height: min(20em, calc(100vh - 16px));
+        overflow: auto;
+        padding: 0.85em 1em;
+        border: 1px solid $border_gray;
+        border-radius: 8px;
+        background: $background_light_gray;
+        color: $widget_black;
+        font-size: 0.9em;
+        font-weight: normal;
+        line-height: 1.5;
+
+        &[hidden] {
+            display: none;
+        }
     }
 
     .section-title {
         margin: 0 0 0.6em 0;
         font-size: 1.25em;
         font-weight: 700;
+    }
+
+    // Related settings share a row, as in problem Content metadata. Keep
+    // each control beside its own label instead of stretching them apart.
+    .contest-inline-fields {
+        display: flex;
+        flex-wrap: wrap;
+        column-gap: 2em;
+
+        > .form-row {
+            flex: 1 1 24em;
+            min-width: 0;
+        }
     }
 
     hr {

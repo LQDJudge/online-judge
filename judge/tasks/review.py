@@ -6,14 +6,12 @@ from datetime import datetime, timedelta, timezone
 
 from celery import shared_task
 from django.conf import settings
-from django.urls import reverse
 from django.utils import translation
 
-from judge.models import Profile
-from judge.models.notification import Notification, NotificationCategory
 from judge.models.problem_review import ProblemReviewCheckResult, ProblemReviewRun
 from judge.review.prompts import SYNTHESIS_SYSTEM
 from judge.review.registry import CHECKS
+from judge.tasks.coordinator import advance_review, emit_completion
 from llm_service.config import get_config
 from llm_service.llm_api import LLMService
 
@@ -38,16 +36,12 @@ def review_problem(self, run_id, emit_notifications=True):
     Execute every check in CHECKS against the ProblemReviewRun's problem, writing
     one ProblemReviewCheckResult row per check. Marks the run Done at the end.
     If the runner itself crashes outside per-check handling, mark the run as
-    ERROR and notify so it doesn't stay stuck in RUNNING (the reaper would
+    ERROR so it doesn't stay stuck in RUNNING (the reaper would
     eventually pick it up, but explicit handling is faster + cleaner).
 
-    emit_notifications: when False, the per-problem "review done"/"new public
-    request"/"review error" notifications are suppressed. The contest-review
-    pipeline triggers per-problem reviews as a side effect of reviewing the
-    contest — it emits its own contest-level notifications instead, so the
-    per-problem ones would just be duplicate spam pointing at a public queue
-    the problem was never added to (contest-triggered runs create no
-    PublicRequest). Author-facing and admin-rerun flows leave this True.
+    emit_notifications: legacy contest-triggered child reviews can suppress
+    per-problem completion notifications. Otherwise only current authors hear
+    when the review finishes; superusers hear about publication requests instead.
     """
     # Celery tasks run outside the HTTP request cycle, so Django's locale
     # middleware never fires. Without an explicit activate(), gettext() falls
@@ -61,6 +55,9 @@ def review_problem(self, run_id, emit_notifications=True):
     except ProblemReviewRun.DoesNotExist:
         logger.error("review_problem: ProblemReviewRun %s not found", run_id)
         return {"success": False, "error": "run not found"}
+
+    if run.workflow_version == 2:
+        return advance_review("problem", run_id)
 
     # Idempotency guard for the common redelivery case. Celery delivers
     # at-least-once, so this task can be handed the same run_id more than once —
@@ -123,8 +120,7 @@ def review_problem(self, run_id, emit_notifications=True):
     except Exception as exc:
         # Runner-level crash (e.g., DB connection drop mid-loop, unhandled
         # exception in the registry iteration itself). Don't leave the run
-        # stuck in RUNNING. Mark ERROR and notify both author and admins so
-        # someone can take action — silent failure is the worst outcome.
+        # stuck in RUNNING. Keep ERROR visible in the report and operational logs.
         logger.exception("review_problem crashed for run %s", run_id)
         ProblemReviewRun.objects.filter(id=run_id).update(
             status=ProblemReviewRun.ERROR,
@@ -200,110 +196,30 @@ def synthesize_feedback(self, run_id):
 
 
 def _emit_review_done_notifications(run):
-    """Notify the author + superusers that the run finished.
-
-    Author and admin see DIFFERENT html_links: the author's link goes only
-    to the review dashboard (where they have permission); admins additionally
-    see a "(Review)" suffix linking to the admin queue (where only they have
-    permission). Reusing one html_link for both audiences was the original
-    bug — author-side notifications contained an admin-only link that 404'd.
-    """
-    problem = run.problem
-    try:
-        dashboard_url = reverse("problem_review_dashboard", args=[problem.code])
-    except Exception:
-        dashboard_url = f"/problem/{problem.code}/review/"
-    try:
-        queue_url = reverse("internal_problem_queue") + "?tab=request_public&status=P"
-    except Exception:
-        queue_url = "/internal/queue/?tab=request_public&status=P"
-
-    author_html_link = '<a href="%(dashboard)s">%(name)s</a>' % {
-        "dashboard": dashboard_url,
-        "name": problem.name,
-    }
-    admin_html_link = (
-        '<a href="%(dashboard)s">%(name)s</a>' ' (<a href="%(queue)s">%(review)s</a>)'
-    ) % {
-        "dashboard": dashboard_url,
-        "name": problem.name,
-        "queue": queue_url,
-        "review": "Review",
-    }
-
-    if run.triggered_by:
-        Notification.objects.create_notification(
-            owner=run.triggered_by,
-            category=NotificationCategory.PUBLIC_REQUEST_REVIEW_DONE,
-            html_link=author_html_link,
-            author=None,
-        )
-
-    superuser_profiles = Profile.objects.filter(user__is_superuser=True)
-    if run.triggered_by:
-        superuser_profiles = superuser_profiles.exclude(id=run.triggered_by.id)
-    for profile in superuser_profiles:
-        Notification.objects.create_notification(
-            owner=profile,
-            category=NotificationCategory.PUBLIC_REQUEST_NEW,
-            html_link=admin_html_link,
-            author=run.triggered_by,
-        )
+    """Notify current authors once; publication requests notify superusers separately."""
+    emit_completion("problem", run.pk)
 
 
 def _emit_review_error_notifications(run, reason=""):
-    """Notify author + admins that a review run errored (status=E).
-
-    Symmetric with _emit_review_done_notifications but uses the dedicated
-    PUBLIC_REQUEST_REVIEW_ERROR category. Called from the runner exception
-    path and the reaper when a stuck run is timed out — both cases need
-    the user to know something went wrong rather than fail silently.
-    """
-    problem = run.problem
-    try:
-        dashboard_url = reverse("problem_review_dashboard", args=[problem.code])
-    except Exception:
-        dashboard_url = f"/problem/{problem.code}/review/"
-
-    html_link = '<a href="%(dashboard)s">%(name)s</a>' % {
-        "dashboard": dashboard_url,
-        "name": problem.name,
-    }
-
-    if run.triggered_by:
-        Notification.objects.create_notification(
-            owner=run.triggered_by,
-            category=NotificationCategory.PUBLIC_REQUEST_REVIEW_ERROR,
-            html_link=html_link,
-            author=None,
-        )
-
-    superuser_profiles = Profile.objects.filter(user__is_superuser=True)
-    if run.triggered_by:
-        superuser_profiles = superuser_profiles.exclude(id=run.triggered_by.id)
-    for profile in superuser_profiles:
-        Notification.objects.create_notification(
-            owner=profile,
-            category=NotificationCategory.PUBLIC_REQUEST_REVIEW_ERROR,
-            html_link=html_link,
-            author=run.triggered_by,
-        )
+    """Keep infrastructure failures visible in logs and the review, not notifications."""
+    logger.warning(
+        "problem review %s needs infrastructure recovery: %s", run.pk, reason
+    )
 
 
 @shared_task(bind=True)
 def reap_stale_review_runs(self):
     """Mark any ProblemReviewRun that has been Running too long as Error.
 
-    Also notifies author + admins so the author isn't left waiting on a run
-    that silently timed out. Without notification, the dashboard's polling
-    JS keeps spinning indefinitely with no signal.
+    Infrastructure failures stay visible in the report and operational logs,
+    without sending repeated author or administrator notifications.
     """
     translation.activate(getattr(settings, "LANGUAGE_CODE", "vi"))
     timeout = getattr(settings, "AUTO_REVIEW_RUN_TIMEOUT_SECONDS", 1800)
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(seconds=timeout)
     qs = ProblemReviewRun.objects.filter(
-        status=ProblemReviewRun.RUNNING, started_at__lt=cutoff
+        workflow_version=0, status=ProblemReviewRun.RUNNING, started_at__lt=cutoff
     )
 
     # Capture the runs about to be marked ERROR so we can notify per-run.

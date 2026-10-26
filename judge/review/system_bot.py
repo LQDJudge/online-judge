@@ -14,9 +14,11 @@ from human comments via the username/avatar.
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.utils.translation import gettext as _
 
-from judge.models import Comment, Profile
+from judge.models import Comment, Problem, Profile
 from judge.models.problem_review import ProblemReviewRun
+from judge.models.contest_review import ContestReviewRun
 from judge.models.runtime import Language
 
 # Username must match the `user_page` URL regex `\w+` (letters/digits/underscore
@@ -94,10 +96,6 @@ def post_system_comment_on_contest_review(contest, body):
     FIRST ContestReviewRun for the contest so admin decisions land alongside
     prior auto-review feedback (same UX rationale as problem reviews).
     """
-    # Local import keeps the bot module decoupled from contest_review at
-    # module-import time — problem-only setups don't need the import to load.
-    from judge.models.contest_review import ContestReviewRun
-
     anchor = (
         ContestReviewRun.objects.filter(contest=contest).order_by("started_at").first()
     )
@@ -116,3 +114,30 @@ def post_system_comment_on_contest_review(contest, body):
         hidden=False,
     )
     return comment
+
+
+def post_publication_decision_comment(obj, status, reviewer, feedback=""):
+    """Record the human publication decision, not a change to AI readiness."""
+    reviewer_token = "[user:%s]" % reviewer.user.username
+    if status == "A":
+        body = _("**[System]** Publication request approved by %(name)s.") % {
+            "name": reviewer_token
+        }
+    else:
+        body = _("**[System]** Publication request rejected by %(name)s.") % {
+            "name": reviewer_token
+        }
+    if feedback.strip():
+        body += "\n\n" + "\n".join(
+            "> " + line for line in feedback.strip().splitlines()
+        )
+    post = (
+        post_system_comment_on_review
+        if isinstance(obj, Problem)
+        else post_system_comment_on_contest_review
+    )
+    return post(obj, body)
+
+
+def post_contest_publication_decision_comment(contest, status, reviewer, feedback=""):
+    return post_publication_decision_comment(contest, status, reviewer, feedback)

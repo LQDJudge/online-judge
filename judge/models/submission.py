@@ -45,6 +45,7 @@ SUBMISSION_RESULT = (
 
 
 class Submission(models.Model):
+    review_evidence = models.JSONField(default=dict, blank=True)
     STATUS = (
         ("QU", _("Queued")),
         ("P", _("Processing")),
@@ -279,7 +280,7 @@ class Submission(models.Model):
 
         if check_contest:
             contest = self.contest_object
-            if contest and contest.is_editable_by(user):
+            if contest and contest.can_manage_activity_by(user):
                 return True
 
         from judge.utils.problems import (

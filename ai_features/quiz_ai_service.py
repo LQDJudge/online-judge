@@ -10,6 +10,7 @@ import logging
 from typing import Dict, Any
 
 from llm_service.llm_api import LLMService
+from llm_service.policies import streaming_options
 from llm_service.config import get_config
 from llm_service.prompt_guidelines import get_markdown_rules_for_prompt
 
@@ -86,6 +87,7 @@ class QuizAIService:
             bot_name=self.config.get_bot_name_for_markdown(),
             sleep_time=self.config.sleep_time,
             feature="quiz_ai",
+            **streaming_options("quiz_ai"),
             user_id=user_id,
         )
 

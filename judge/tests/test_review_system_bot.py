@@ -14,6 +14,19 @@ from judge.review.system_bot import (
 
 
 class SystemBotProfileTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        Language.objects.get_or_create(
+            key="PY3",
+            defaults={
+                "name": "Python 3",
+                "short_name": "PY3",
+                "common_name": "Python",
+                "ace": "python",
+                "pygments": "python3",
+            },
+        )
+
     def test_creates_bot_on_first_call(self):
         # No bot user exists initially in a fresh test DB.
         self.assertFalse(User.objects.filter(username=SYSTEM_BOT_USERNAME).exists())

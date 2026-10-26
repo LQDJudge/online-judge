@@ -8,7 +8,15 @@ from judge.models import Contest, Language, Problem, ProblemGroup, Profile
 from judge.models.contest_review import ContestReviewRun
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.problem_review import ProblemReviewCheckResult, ProblemReviewRun
-from judge.tasks.review import synthesize_feedback
+from judge.tasks.review import (
+    synthesize_feedback,
+    _emit_review_done_notifications,
+    _emit_review_error_notifications,
+)
+from judge.tasks.contest_review import (
+    _emit_contest_review_done_notifications,
+    _emit_contest_review_error_notifications,
+)
 
 
 class SynthesisTest(TestCase):
@@ -123,27 +131,23 @@ class NotificationEmissionTest(TestCase):
         )
         cls.problem.authors.add(cls.profile)
 
-    def test_emits_to_author_and_admin(self):
-        from judge.tasks.review import _emit_review_done_notifications
-
+    def test_problem_completion_notifies_authors_not_admins(self):
         run = ProblemReviewRun.objects.create(
             problem=self.problem,
             triggered_by=self.profile,
             input_hash="x" * 64,
             status=ProblemReviewRun.DONE,
         )
-        with patch("judge.tasks.review.reverse", return_value="/stub/"):
-            _emit_review_done_notifications(run)
-        self.assertGreaterEqual(
-            Notification.objects.filter(owner=self.profile).count(), 1
+        _emit_review_done_notifications(run)
+        _emit_review_done_notifications(run)
+        notice = Notification.objects.get(owner=self.profile)
+        self.assertEqual(
+            notice.category, NotificationCategory.PUBLIC_REQUEST_REVIEW_DONE
         )
-        self.assertGreaterEqual(
-            Notification.objects.filter(owner=self.admin).count(), 1
-        )
+        self.assertIn("?run_id=%s" % run.pk, notice.html_link)
+        self.assertFalse(Notification.objects.filter(owner=self.admin).exists())
 
-    def test_contest_admin_review_notification_links_to_contest_review_list(self):
-        from judge.tasks.contest_review import _emit_contest_review_done_notifications
-
+    def test_contest_completion_notifies_authors_not_admins(self):
         contest = Contest.objects.create(
             key="contestnotif",
             name="Contest Notification",
@@ -160,13 +164,20 @@ class NotificationEmissionTest(TestCase):
 
         _emit_contest_review_done_notifications(run)
 
-        admin_notification = Notification.objects.get(
-            owner=self.admin,
-            category=NotificationCategory.CONTEST_PUBLIC_REQUEST_NEW,
+        _emit_contest_review_done_notifications(run)
+        notice = Notification.objects.get(
+            owner=self.profile,
+            category=NotificationCategory.CONTEST_PUBLIC_REQUEST_REVIEW_DONE,
         )
-        self.assertIn("/contests/review/?public=pending", admin_notification.html_link)
         self.assertIn(
-            f"#contest-row-{contest.id}",
-            admin_notification.html_link,
+            "/contest/contestnotif/review?run_id=%s" % run.pk, notice.html_link
         )
-        self.assertNotIn("internal/problem_queue", admin_notification.html_link)
+        self.assertFalse(Notification.objects.filter(owner=self.admin).exists())
+
+    def test_infrastructure_failures_do_not_send_notifications(self):
+        run = ProblemReviewRun.objects.create(
+            problem=self.problem, triggered_by=self.profile, status="E"
+        )
+        _emit_review_error_notifications(run, reason="Provider unavailable")
+        _emit_contest_review_error_notifications(run, reason="Provider unavailable")
+        self.assertFalse(Notification.objects.exists())

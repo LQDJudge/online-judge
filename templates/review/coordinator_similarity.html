@@ -1,0 +1,15 @@
+{% macro comparison(item) %}
+  <article class="review-similarity-match">
+    <div class="review-finding-meta"><span class="review-status-badge {{ item.tone }}">{{ item.label }}</span></div>
+    <h4>{% if item.candidate.url %}<a href="{{ item.candidate.url }}">{{ item.candidate.name }} ({{ item.candidate.code }})</a>{% else %}{{ _('This retrieved problem is no longer publicly available.') }}{% endif %}</h4>
+    <div class="review-prose content-description">{{ item.reason | review_markdown | str | safe }}</div>
+    {% if item.differences %}<div class="review-stage-limitations"><strong>{{ _('Substantive differences') }}</strong><ul>{% for difference in item.differences %}<li>{{ difference | review_markdown | str | safe }}</li>{% endfor %}</ul></div>{% endif %}
+    {% if item.significance %}<div class="review-prose content-description">{{ item.significance | review_markdown | str | safe }}</div>{% endif %}
+  </article>
+{% endmacro %}
+<h4 class="review-similarity-result">{{ group.similarity.title }}</h4>
+{% for item in group.similarity.matches %}{{ comparison(item) }}{% endfor %}
+{% if group.similarity.other %}
+  <details class="review-supporting"><summary>{{ _('Similar problems') }}</summary>{% for item in group.similarity.other %}{{ comparison(item) }}{% endfor %}</details>
+{% endif %}
+{% if not group.similarity.incomplete %}<p class="review-muted">{{ _('Compared with indexed public problems; not a guarantee of originality.') }}</p>{% endif %}

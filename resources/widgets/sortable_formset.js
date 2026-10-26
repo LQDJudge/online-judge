@@ -20,6 +20,9 @@ class SortableFormset {
   }
 
   init() {
+    if (this.container.closest && this.container.closest('fieldset[disabled]')) {
+      return;
+    }
     this.initSortable();
     this.initAddRow();
     this.initRemoveRow();

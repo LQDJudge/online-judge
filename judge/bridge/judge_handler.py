@@ -26,6 +26,7 @@ from judge.models import (
     Language,
     LanguageLimit,
     Problem,
+    ProblemSolutionCode,
     Profile,
     ProblemTestCase,
     ProblemValidation,
@@ -43,6 +44,9 @@ from judge.tasks.submission import (
     update_user_points,
 )
 from judge.utils.problem_data import notify_problem_authors
+from judge.models.review_evidence import ReviewEvidenceJob
+from judge.review.provenance import accept_attestation
+from judge.tasks.coordinator import refresh_review_freshness
 
 logger = logging.getLogger("judge.bridge")
 json_log = logging.getLogger("judge.json.bridge")
@@ -83,6 +87,19 @@ def _queue_result_statistics(submission):
             )
 
 
+def _queue_review_freshness(submission):
+    if not getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
+        return
+    if not ProblemSolutionCode.objects.filter(
+        last_submission_id=submission.id
+    ).exists():
+        return
+    try:
+        refresh_review_freshness.delay(submission.problem_id)
+    except Exception:
+        logger.exception("Could not schedule review evidence freshness update")
+
+
 def _synchronize_terminal_failure(submission_id):
     """Reconcile state after a submission ends without a grading-end packet."""
     try:
@@ -96,6 +113,7 @@ def _synchronize_terminal_failure(submission_id):
         submission.update_contest()
         finished_submission(submission)
         _queue_result_statistics(submission)
+        _queue_review_freshness(submission)
 
         if (
             submission.contest_object_id
@@ -248,6 +266,7 @@ class JudgeHandler(ZlibPacketHandler):
             "validate-case": self.on_validate_case,
             "validate-end": self.on_validate_end,
             "validate-error": self.on_validate_error,
+            "review-evidence-result": self.on_review_evidence_result,
         }
         self._working = False
         self._working_data = {}
@@ -308,6 +327,11 @@ class JudgeHandler(ZlibPacketHandler):
                 _ensure_connection()
                 ProblemValidation.objects.filter(validate_id=self._validating).update(
                     status="E", error="Judge disconnected"
+                )
+                ReviewEvidenceJob.objects.filter(
+                    job_id=self._validating, status__in=("P", "R")
+                ).update(
+                    status="E", error="Judge disconnected", finished=timezone.now()
                 )
             except Exception:
                 logger.exception(
@@ -471,6 +495,7 @@ class JudgeHandler(ZlibPacketHandler):
         self.timeout = 60
         self._update_supported_problems(packet["problems"])
         self.executors = packet["executors"]
+        self.review_protocol = packet.get("review-evidence-protocol", 0)
         self.name = packet["id"]
 
         self.send({"name": "handshake-success"})
@@ -589,6 +614,9 @@ class JudgeHandler(ZlibPacketHandler):
                 "problem-id": problem,
                 "language": language,
                 "source": source,
+                "review-binding": Submission.objects.values_list(
+                    "review_evidence", flat=True
+                ).get(pk=id),
                 "time-limit": data.time,
                 "memory-limit": data.memory,
                 "short-circuit": data.short_circuit,
@@ -601,17 +629,75 @@ class JudgeHandler(ZlibPacketHandler):
             }
         )
 
-    def submit_validate(self, validate_id, problem_id):
+    def submit_validate(self, validate_id, problem_id, review=False):
         self._working = True
         self._validating = validate_id
         self._validating_problem = problem_id
-        self.send(
-            {
-                "name": "validate-request",
-                "validate-id": validate_id,
-                "problem-id": problem_id,
+        packet = {
+            "name": "validate-request",
+            "validate-id": validate_id,
+            "problem-id": problem_id,
+        }
+        job = ReviewEvidenceJob.objects.filter(job_id=validate_id).first()
+        if review and job is None:
+            # A bounded retry rotates the job UUID. Its older queued item must
+            # never fall back to ordinary, mutable-package validation.
+            self._free_self_validation()
+            return
+        if job is not None:
+            if job.status != "P":
+                self._free_self_validation()
+                return
+            packet["review-job"] = {
+                "operation": job.operation,
+                "snapshot_hash": job.snapshot_hash,
+                "payload_hash": job.payload_hash,
+                "payload": job.payload,
             }
-        )
+            claimed = ReviewEvidenceJob.objects.filter(pk=job.pk, status="P").update(
+                status="R", started=timezone.now(), judge_name=self.name
+            )
+            if not claimed:
+                self._free_self_validation()
+                return
+        else:
+            packet["review-binding"] = (
+                ProblemValidation.objects.values_list("review_evidence", flat=True)
+                .filter(validate_id=validate_id)
+                .first()
+                or {}
+            )
+        self.send(packet)
+
+    def on_review_evidence_result(self, packet):
+        _ensure_connection()
+        job_id = packet.get("validate-id")
+        if (
+            self._validating != job_id
+            or self.judges.validate_map.get(job_id) is not self
+        ):
+            return
+        job = ReviewEvidenceJob.objects.filter(
+            job_id=job_id, status="R", judge_name=self.name
+        ).first()
+        if job is not None:
+            result = packet.get("result", {})
+            valid = (
+                isinstance(result, dict)
+                and result.get("payload_hash") == job.payload_hash
+                and result.get("snapshot_hash") == job.snapshot_hash
+            )
+            ReviewEvidenceJob.objects.filter(pk=job.pk, status="R").update(
+                status="D" if valid and not result.get("infrastructure_error") else "E",
+                result=result if valid else {},
+                error=(
+                    str(result.get("infrastructure_error", ""))[:1000]
+                    if valid
+                    else "Evidence identity mismatch"
+                ),
+                finished=timezone.now(),
+            )
+        self._free_self_validation()
 
     def _kill_if_no_response(self):
         logger.error(
@@ -780,6 +866,17 @@ class JudgeHandler(ZlibPacketHandler):
             )
 
     def on_grading_end(self, packet):
+        binding = (
+            Submission.objects.values_list("review_evidence", flat=True)
+            .filter(pk=packet["submission-id"])
+            .first()
+        )
+        if binding:
+            Submission.objects.filter(pk=packet["submission-id"]).update(
+                review_evidence=accept_attestation(
+                    binding, packet.get("review-evidence")
+                )
+            )
         logger.info("%s: Grading has ended on: %s", self.name, packet["submission-id"])
         self.batch_id = None
 
@@ -952,6 +1049,7 @@ class JudgeHandler(ZlibPacketHandler):
                 },
             )
             self._post_update_submission(submission.id, "grading-end", done=True)
+            _queue_review_freshness(submission)
         finally:
             self._free_self(packet)
 
@@ -1370,11 +1468,35 @@ class JudgeHandler(ZlibPacketHandler):
     def on_validate_end(self, packet):
         _ensure_connection()
         validate_id = packet["validate-id"]
+        binding = (
+            ProblemValidation.objects.values_list("review_evidence", flat=True)
+            .filter(validate_id=validate_id)
+            .first()
+        )
+        if binding:
+            ProblemValidation.objects.filter(validate_id=validate_id).update(
+                review_evidence=accept_attestation(
+                    binding, packet.get("review-evidence")
+                )
+            )
         ProblemValidation.objects.filter(validate_id=validate_id).update(
             status="D",
             passed=packet["passed"],
             failed_count=packet["failed"],
         )
+        if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
+            problem_id = (
+                ProblemValidation.objects.filter(validate_id=validate_id)
+                .values_list("problem_id", flat=True)
+                .first()
+            )
+            if problem_id:
+                try:
+                    refresh_review_freshness.delay(problem_id)
+                except Exception:
+                    logger.exception(
+                        "Could not schedule validator evidence freshness update"
+                    )
         event.post(
             f"validate_{validate_id}",
             {

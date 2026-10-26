@@ -10,6 +10,7 @@ from .problem_tagger import ProblemTagger
 from .markdown_improver import MarkdownImprover
 from .solution_generator import SolutionGenerator
 from llm_service.llm_api import LLMService
+from llm_service.policies import streaming_options
 from llm_service.config import get_config
 import logging
 
@@ -32,6 +33,7 @@ class ProblemTagService:
             bot_name=self.config.bot_name,
             sleep_time=self.config.sleep_time,
             feature="problem_ai",
+            **streaming_options("problem_ai"),
             user_id=user_id,
         )
         self.markdown_improver = MarkdownImprover(

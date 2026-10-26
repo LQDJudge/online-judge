@@ -30,6 +30,7 @@
 {% endblock %}
 
 {% block js_media %}
+  <script src="{{ static('widgets/publication_save.js') }}"></script>
   <script type="text/javascript">
     function loadAce(callback) {
       if (typeof ace !== 'undefined') return callback();
@@ -46,6 +47,12 @@
     function initValidator() {
       // Ace editor for validator code
       var editor = ace.edit('validator-editor');
+      var contentEditable = {{ 'false' if problem.is_locked and not request.user.is_superuser else 'true' }};
+      editor.setReadOnly(!contentEditable);
+      function saveBeforeExecution(options) {
+        if (contentEditable) return $.ajax(options);
+        options.success();
+      }
       var langMode = $('#validator-language').val() === 'python' ? 'python' : 'c_cpp';
       editor.getSession().setMode('ace/mode/' + langMode);
       editor.getSession().setUseWrapMode(true);
@@ -183,7 +190,7 @@
 
         // Save first, then run
         $runBtn.prop('disabled', true);
-        $.ajax({
+        saveBeforeExecution({
           url: '{{ url("problem_validator_save", problem.code) }}',
           method: 'POST',
           headers: {'X-CSRFToken': '{{ csrf_token }}'},
@@ -251,7 +258,7 @@
   <div class="validator-editor-section">
     <div class="validator-editor-header">
       <h3 style="margin: 0;">{{ _('Validator Code') }}</h3>
-      <select id="validator-language">
+      <select id="validator-language" {% if problem.is_locked and not request.user.is_superuser %}disabled{% endif %}>
         <option value="cpp" {% if validator_language == 'cpp' %}selected{% endif %}>C/C++</option>
         <option value="python" {% if validator_language == 'python' %}selected{% endif %}>Python</option>
       </select>
@@ -260,7 +267,7 @@
   </div>
 
   <div class="validator-actions">
-    <button id="save-validator-btn" class="action-btn" type="button">
+    <button id="save-validator-btn" class="action-btn" type="button" {% if problem.is_locked and not request.user.is_superuser %}disabled{% endif %}>
       <i class="fa fa-save"></i> {{ _('Save') }}
     </button>
     <button id="run-validation" class="action-btn" type="button">

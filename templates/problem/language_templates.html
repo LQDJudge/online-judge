@@ -14,7 +14,7 @@
         $(this).closest('.alert').fadeOut(300);
       });
 
-    // Initialize syntax highlighting for existing templates - make them all editable
+    // Initialize syntax highlighting; locked templates remain read-only.
       $('.template-source-code').each(function() {
         var editor = ace.edit(this);
         var language = $(this).data('language');
@@ -22,7 +22,7 @@
 
         editor.setTheme('ace/theme/github');
         editor.getSession().setMode('ace/mode/' + language);
-        editor.setReadOnly(false); // Make editable
+        editor.setReadOnly({{ 'true' if problem.is_locked and not request.user.is_superuser else 'false' }});
         editor.setShowPrintMargin(false);
         editor.setHighlightActiveLine(true);
         editor.renderer.setShowGutter(true);
@@ -50,6 +50,7 @@
       $('#ace_source').on('ace_load', function(e, editor) {
         console.log('ACE editor loaded');
         window.ace_source = editor;
+        editor.setReadOnly({{ 'true' if problem.is_locked and not request.user.is_superuser else 'false' }});
         editor.setTheme('ace/theme/github');
         editor.getSession().setUseWrapMode(true);
         editor.setFontSize(14);
@@ -69,6 +70,7 @@
           if (aceElement && typeof ace !== 'undefined') {
             console.log('Fallback ACE initialization');
             window.ace_source = ace.edit('ace_source');
+            window.ace_source.setReadOnly({{ 'true' if problem.is_locked and not request.user.is_superuser else 'false' }});
             window.ace_source.setTheme('ace/theme/github');
             window.ace_source.getSession().setUseWrapMode(true);
             window.ace_source.setFontSize(14);

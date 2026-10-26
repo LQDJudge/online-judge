@@ -1,0 +1,34 @@
+{% macro access_groups(groups) %}
+  <div class="review-bound-table" role="region" aria-label="{{ _('Publication access check') }}" tabindex="0">
+    <table class="table striped modern">
+      <thead><tr><th>{{ _('Account') }}</th><th>{{ _('Problem or quiz') }}</th><th>{{ _('Activity') }}</th></tr></thead>
+      <tbody>
+        {% for group in groups %}
+          <tr>
+            <td>{{ link_user(group.profile) }}</td>
+            <td><a href="{{ group.item_url }}">{{ group.item_name }}</a></td>
+            <td>
+              {% for label in group.access_labels %}<div>{{ label }}</div>{% endfor %}
+              {% if group.submission_count %}<div>{{ group.submission_label }}</div>{% endif %}
+              {% if group.attempt_count %}<div>{{ group.attempt_label }}</div>{% endif %}
+              {% if not group.record_count %}
+                <div class="review-muted">{% if group.kind == 'problem' %}{{ _('No recorded submissions') }}{% else %}{{ _('No recorded attempts') }}{% endif %}</div>
+              {% endif %}
+              {% if group.records %}
+                <details class="review-access-records">
+                  <summary>{{ _('View activity') }}</summary>
+                  <ul>
+                    {% for record in group.records %}
+                      <li><a href="{{ record.activity_url }}">{{ record.activity }}</a> — {{ record.date | date(_('N j, Y, g:i a')) }}{% if record.context %}<div class="review-muted">{{ record.context }}</div>{% endif %}</li>
+                    {% endfor %}
+                  </ul>
+                  {% if group.shown_records < group.record_count %}<p class="review-muted">{{ _('Showing the latest %(shown)s of %(total)s records.', shown=group.shown_records, total=group.record_count) }}</p>{% endif %}
+                </details>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endmacro %}

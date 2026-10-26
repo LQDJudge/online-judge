@@ -2,7 +2,8 @@ from operator import attrgetter
 
 from django import forms
 from django.contrib import admin
-from django.core.exceptions import ValidationError
+from django.conf import settings
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.forms import ModelForm, TextInput
@@ -206,6 +207,7 @@ class ProblemAdmin(CompareVersionAdmin):
                     "code",
                     "name",
                     "is_public",
+                    "is_locked",
                     "organizations",
                     "date",
                     "authors",
@@ -277,11 +279,17 @@ class ProblemAdmin(CompareVersionAdmin):
             func, name, desc = self.get_action("make_private")
             actions[name] = (func, name, desc)
 
+        if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
+            actions.pop("make_public", None)
         return actions
 
     def get_readonly_fields(self, request, obj=None):
         fields = self.readonly_fields
-        if not request.user.has_perm("judge.change_public_visibility"):
+        if not request.user.is_superuser:
+            fields += ("is_locked",)
+        if not request.user.has_perm("judge.change_public_visibility") or getattr(
+            settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False
+        ):
             fields += ("is_public",)
         return fields
 
@@ -303,6 +311,10 @@ class ProblemAdmin(CompareVersionAdmin):
         transaction.on_commit(rescore_problem.s(problem_id).delay)
 
     def make_public(self, request, queryset):
+        if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
+            raise PermissionDenied
+        if not request.user.is_superuser:
+            queryset = queryset.filter(is_locked=False)
         count = queryset.update(is_public=True)
         for problem_id in queryset.values_list("id", flat=True):
             self._rescore(request, problem_id)
@@ -319,6 +331,8 @@ class ProblemAdmin(CompareVersionAdmin):
     make_public.short_description = _("Mark problems as public")
 
     def make_private(self, request, queryset):
+        if not request.user.is_superuser:
+            queryset = queryset.filter(is_locked=False)
         count = queryset.update(is_public=False)
         for problem_id in queryset.values_list("id", flat=True):
             self._rescore(request, problem_id)
@@ -349,6 +363,8 @@ class ProblemAdmin(CompareVersionAdmin):
         return queryset.filter(access).distinct() if access else queryset.none()
 
     def has_change_permission(self, request, obj=None):
+        if obj is not None and obj.is_locked and not request.user.is_superuser:
+            return False
         if request.user.has_perm("judge.edit_all_problem") or obj is None:
             return True
         if request.user.has_perm("judge.edit_public_problem") and obj.is_public:
@@ -356,6 +372,11 @@ class ProblemAdmin(CompareVersionAdmin):
         if not request.user.has_perm("judge.edit_own_problem"):
             return False
         return obj.is_editor(request.profile)
+
+    def has_delete_permission(self, request, obj=None):
+        return not (
+            obj is not None and obj.is_locked and not request.user.is_superuser
+        ) and super().has_delete_permission(request, obj)
 
     def formfield_for_manytomany(self, db_field, request=None, **kwargs):
         if db_field.name == "allowed_languages":

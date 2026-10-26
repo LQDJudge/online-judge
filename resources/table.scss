@@ -8,16 +8,21 @@
     margin-bottom: 0.5em;
     background: rgba(0, 0, 0, 0.01);
 
-    &.striped tr:nth-child(even) {
+    // Paint standard stripes on cells so rounded corner cells can shape
+    // the surface without clipping the table's shadow or descendants.
+    // Dense users/scoreboard tables own their row colors and sticky cells.
+    &.striped:not(:where(#users-table)) > tbody > tr:nth-child(even) > td,
+    &.striped:where(#users-table) > tbody > tr:nth-child(even) {
         background: $background_light_gray;
     }
 
-    &.striped tr:nth-child(odd) {
+    &.striped:not(:where(#users-table)) > tbody > tr:nth-child(odd) > td,
+    &.striped:where(#users-table) > tbody > tr:nth-child(odd) {
         background: $surface-primary;
     }
 
     &.no-border {
-        td, th {
+        td, th, tr:last-child td {
             border: none;
         }
     }
@@ -80,10 +85,6 @@
         border-bottom-right-radius: $radius-lg;
     }
 
-    tr:last-child td {
-        border-bottom: 0;
-    }
-
     th {
         font-weight: normal;
 
@@ -98,11 +99,13 @@
         }
     }
 
-    tbody tr {
+    > tbody > tr > td {
         transition: background-color 0.12s ease;
     }
 
-    tbody tr:hover {
+    &:not(:where(#users-table)) > tbody > tr:hover > td,
+    &.striped:not(:where(#users-table)) > tbody > tr:hover > td,
+    &:where(#users-table) > tbody > tr:hover {
         background: $background_gray;
     }
 }

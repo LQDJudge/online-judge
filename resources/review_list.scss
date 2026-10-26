@@ -1,11 +1,37 @@
 @use "vars" as *;
 
+// Keep filters within reach instead of below a long table on mobile.
+@media (max-width: 799px) {
+    .review-list-layout.middle-right-content {
+        display: flex;
+        flex-direction: column;
+
+        > .right-sidebar {
+            order: -1;
+            padding-left: 0;
+            margin-bottom: 1em;
+        }
+    }
+}
+
 // Styles for /problems/review/ and /contests/review/.
 // Both list templates wrap their root in `.review-list-page` so these rules
 // don't leak into other tables. Colors come from the semantic tokens in
 // vars.scss so dark-mode generation picks up the right variants.
 
 .review-list-page {
+    min-width: 0;
+
+    .review-list-table-wrapper {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    @media (max-width: 799px) {
+        .review-list-table {
+            min-width: 650px;
+        }
+    }
 
     .review-list-table {
         // `table-layout: fixed` + explicit width: 100% is what stops the
@@ -30,10 +56,9 @@
         // Column widths under table-layout: fixed. These percentages
         // proportion the available 100% across the columns; browser honors
         // them strictly (no auto-grow).
-        .col-name { width: 28%; }
-        .col-authors { width: 18%; }
-        .col-verdict { width: 13%; }
-        .col-public { width: 16%; }
+        .col-name { width: 30%; }
+        .col-authors { width: 16%; }
+        .col-verdict, .col-public { width: 19%; }
         .col-when { width: 16%; }
 
         // Wrap long content rather than ellipsis-truncate. `overflow-wrap:
@@ -71,7 +96,9 @@
         border-radius: $radius-pill;
         font-size: 0.85em;
         font-weight: 600;
-        white-space: nowrap;
+        white-space: normal;
+        max-width: 100%;
+        box-sizing: border-box;
 
         .fa {
             margin-right: 0.25em;
@@ -90,6 +117,10 @@
         &.verdict-running {
             background: $color-message-info-bg;
             color: $color-message-info-text;
+        }
+        &.verdict-warning {
+            background: $color-message-warning-bg;
+            color: $color-message-warning-text;
         }
         &.verdict-none {
             background: $color-message-debug-bg;
@@ -116,23 +147,28 @@
         &.publish-none {
             opacity: 0.55;
         }
-        // Problem is in a private contest — info-tone, distinct from the
-        // "no request" gray. Reads as "publishing via the contest flow".
-        &.publish-in-contest {
-            background: $color-message-info-bg;
-            color: $color-message-info-text;
-        }
     }
 
     // Pending/approved/rejected pills become anchor links for admins (see
     // publish_pill macro in problem/review_list.html). Strip default link
     // chrome so they look identical to the non-admin span versions.
-    a.publish-pill {
+    a.publish-pill, a.review-result-link {
         text-decoration: none;
 
         &:hover {
             opacity: 0.85;
         }
+
+        &:focus-visible {
+            outline: 2px solid currentColor;
+            outline-offset: 3px;
+        }
+    }
+
+    a.review-result-link {
+        display: inline-block;
+        max-width: 100%;
+        border-radius: $radius-pill;
     }
 
     // Pagination needs breathing room from the table — matches the visual

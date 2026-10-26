@@ -160,7 +160,7 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
 
 def get_hidden_subtasks(request, submission):
     contest = submission.contest_object
-    if contest and contest.is_editable_by(request.user):
+    if contest and contest.can_manage_activity_by(request.user):
         return set()
     # Per-problem is_result_hidden: hide ALL batches
     if contest:
@@ -234,7 +234,7 @@ class SubmissionStatus(SubmissionDetailBase):
 
     def can_manage_test_data(self):
         if not hasattr(self, "_can_manage_test_data"):
-            self._can_manage_test_data = self.object.problem.is_editable_by(
+            self._can_manage_test_data = self.object.problem.can_manage_activity_by(
                 self.request.user
             )
         return self._can_manage_test_data
@@ -252,7 +252,7 @@ class SubmissionStatus(SubmissionDetailBase):
             return True
         if self.can_manage_test_data():
             return True
-        if contest.is_editable_by(self.request.user):
+        if contest.can_manage_activity_by(self.request.user):
             return True
         if not problem.is_public:
             return False
@@ -272,7 +272,7 @@ class SubmissionStatus(SubmissionDetailBase):
         context["is_result_hidden"] = False
         contest_sub = submission.contest_or_none
         if contest_sub and contest_sub.is_result_hidden:
-            if not submission.contest_object.is_editable_by(self.request.user):
+            if not submission.contest_object.can_manage_activity_by(self.request.user):
                 context["is_result_hidden"] = True
         context["last_msg"] = event.last()
         context["batches"] = group_test_cases(
@@ -461,7 +461,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 queryset = queryset.filter(user=self.request.profile)
             if (
                 self.contest.format.has_hidden_subtasks
-                and not self.contest.is_editable_by(self.request.user)
+                and not self.contest.can_manage_activity_by(self.request.user)
             ):
                 queryset = queryset.filter(user=self.request.profile)
             if self.contest.freeze_after and not self.include_frozen:
@@ -543,7 +543,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         return (
             self.in_contest
             and self.contest.format.has_hidden_subtasks
-            and not self.contest.is_editable_by(self.request.user)
+            and not self.contest.can_manage_activity_by(self.request.user)
         )
 
     def modify_attrs(self, submission):
@@ -583,7 +583,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 self.modify_attrs(submission)
         mark_hidden_result_submissions(context["submissions"], self.request.user)
         context["is_in_editable_contest"] = (
-            self.in_contest and self.contest.is_editable_by(self.request.user)
+            self.in_contest and self.contest.can_manage_activity_by(self.request.user)
         )
         # Add pagination context for parameter-based pagination
         context.update(paginate_query_context(self.request))
@@ -619,7 +619,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 i for i in self.selected_statuses if i in allowed_statuses
             ]
 
-        if self.in_contest and self.contest.is_editable_by(self.request.user):
+        if self.in_contest and self.contest.can_manage_activity_by(self.request.user):
             self.include_frozen = True
 
         if "results" in request.GET:
@@ -884,7 +884,7 @@ def single_submission(request, submission_id, show_problem=True):
     is_in_editable_contest = False
     if authenticated and request.in_contest:
         contest = request.profile.current_contest.contest
-        is_in_editable_contest = contest.is_editable_by(request.user)
+        is_in_editable_contest = contest.can_manage_activity_by(request.user)
 
     if not submission.problem.is_accessible_by(request.user):
         raise Http404()
@@ -894,7 +894,7 @@ def single_submission(request, submission_id, show_problem=True):
         and submission.contest_object_id
         and not submission.contest_object.can_see_full_scoreboard(request.user)
         and submission.user_id != request.profile.id
-        and not submission.contest_object.is_editable_by(request.user)
+        and not submission.contest_object.can_manage_activity_by(request.user)
     ):
         raise Http404()
 
@@ -1120,7 +1120,7 @@ class UserContestSubmissions(ForceContestMixin, UserProblemSubmissions):
         context = super().get_context_data(**kwargs)
         context["contest"] = self.contest
         context["page_type"] = "submissions"
-        context["can_edit"] = self.contest.is_editable_by(self.request.user)
+        context["can_edit"] = self.contest.can_manage_activity_by(self.request.user)
         context["can_access"] = self.contest.is_accessible_by(self.request.user)
         context["now"] = timezone.now()
         context["user_filter"] = "me"
@@ -1175,7 +1175,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
 
                 if subtask in hidden_subtasks.get(
                     str(problem_id), set()
-                ) and not self.contest.is_editable_by(self.request.user):
+                ) and not self.contest.can_manage_activity_by(self.request.user):
                     best_subtasks[subtask] = {
                         "submission": None,
                         "contest_time": None,
@@ -1224,7 +1224,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
         contest_problem = self.contest.contest_problems.get(problem=self.problem)
         result_hidden = (
             contest_problem.is_result_hidden
-            and not self.contest.is_editable_by(self.request.user)
+            and not self.contest.can_manage_activity_by(self.request.user)
         )
         context["is_result_hidden"] = result_hidden
 
@@ -1234,7 +1234,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
         if (
             result_hidden
             or not self.contest.format.has_hidden_subtasks
-            or self.contest.is_editable_by(self.request.user)
+            or self.contest.can_manage_activity_by(self.request.user)
         ):
             for s in context["submissions"]:
                 if not hasattr(s, "contest"):

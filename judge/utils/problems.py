@@ -1,10 +1,12 @@
 from collections import defaultdict
 from math import e
 from datetime import datetime, timedelta
+import logging
 import random
 from enum import Enum
 
 from django.conf import settings
+from django.db import ProgrammingError
 from django.db.models import Case, Count, ExpressionWrapper, F, Max, Q, When
 from django.db.models.fields import FloatField
 from django.utils import timezone
@@ -15,6 +17,8 @@ from judge.models import Problem, Submission
 from judge.models.submission import BestSubmission
 from judge.ml.vector_store import VectorStore
 from judge.caching import cache_wrapper
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     "contest_completed_ids",
@@ -240,11 +244,20 @@ def get_related_problems(profile, problem, limit=8):
     problemset = problemset.exclude(id__in=user_completed_ids(profile))
     problemset = problemset.exclude(id=problem.id)
 
-    two_tower_model = VectorStore("two_tower")
-    results = two_tower_model.problem_neighbors(problem, problemset, limit * 2)
-    if not results:
-        cf_model = VectorStore("collab_filter")
-        results = cf_model.problem_neighbors(problem, problemset, limit * 2)
+    try:
+        two_tower_model = VectorStore("two_tower")
+        results = two_tower_model.problem_neighbors(problem, problemset, limit * 2)
+        if not results:
+            cf_model = VectorStore("collab_filter")
+            results = cf_model.problem_neighbors(problem, problemset, limit * 2)
+    except ProgrammingError as error:
+        if not error.args or error.args[0] != 1146:
+            raise
+        # Recommendation embeddings are optional and independent of review
+        # semantic search. A partial local ML installation must not hide the
+        # statement itself. Do not suppress unrelated SQL errors.
+        logger.warning("Problem recommendations unavailable: %s", error)
+        return None
 
     results = list(set([i[1] for i in results]))
     random.seed(datetime.now().strftime("%d%m%Y"))
