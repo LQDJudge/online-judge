@@ -515,7 +515,7 @@
               if (data.code === 'PENDING' || data.code === 'STARTED') {
                 setTimeout(function () { pollGenerateStatus(taskId); }, 2000);
               } else if (data.code === 'SUCCESS' && data.success) {
-                showMessage(interpolate({{ _("Generated %(count)s solution codes. Reloading...")|tojson }}, {count: data.count}, true), false);
+                showMessage(interpolate({{ _("Generated %(count)s solution codes. Reloading...", count="%(count)s")|tojson }}, {count: data.count}, true), false);
                 setTimeout(function () { location.reload(); }, 1000);
               } else {
                 var errMsg = (data.error || '{{ _("Generation failed.") }}');

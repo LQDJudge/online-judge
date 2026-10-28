@@ -19851,6 +19851,9 @@ msgstr "Một số code lời giải chưa được chạy."
 msgid "Generated %(count)s solution codes. Reloading..."
 msgstr "Đã tạo %(count)s code lời giải. Đang tải lại trang..."
 
+msgid "The sign-in service is temporarily unavailable. Please try signing in again."
+msgstr "Dịch vụ đăng nhập đang tạm thời gián đoạn. Vui lòng thử đăng nhập lại."
+
 #: templates/problem/solution_codes.html:571
 msgid ""
 "For output-only review, upload your example output archives through Submit. "

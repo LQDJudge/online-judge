@@ -184,12 +184,6 @@ class ContestForm(ModelForm):
         self.fields["banned_users"].widget.can_add_related = False
         self.fields["view_contest_scoreboard"].widget.can_add_related = False
 
-    def clean(self):
-        cleaned_data = super(ContestForm, self).clean()
-        cleaned_data["banned_users"].filter(
-            current_contest__contest=self.instance
-        ).update(current_contest=None)
-
     class Meta:
         widgets = {
             "authors": AdminHeavySelect2MultipleWidget(data_view="profile_select2"),
@@ -382,6 +376,11 @@ class ContestAdmin(CompareVersionAdmin):
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
+        # Validation must not modify participation, and a new contest has no PK
+        # until save_model has run. Apply bans only after all forms are accepted.
+        form.instance.banned_users.filter(
+            current_contest__contest_id=form.instance.pk
+        ).update(current_contest=None)
         if (
             getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
             and request.user.is_superuser

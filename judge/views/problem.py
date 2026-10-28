@@ -1464,6 +1464,9 @@ class ProblemEdit(
 
     def form_invalid(self, form):
         """Handle invalid form with formsets"""
+        # Model validation can leave an invalid code on the instance. Restore
+        # saved page context without losing the bound form's POST data/errors.
+        self.object.refresh_from_db()
         return self.render_to_response(self.get_context_data(form=form))
 
     def post(self, request, *args, **kwargs):

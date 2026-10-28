@@ -3137,9 +3137,7 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         # or already-saved rows persisted while the user sees a form error.
         form_valid = form.is_valid()
         if not rows_valid or not form_valid:
-            return self.render_to_response(
-                self.get_context_data(form=form, rows_form=rows_formset)
-            )
+            return self._render_unsaved_form(form, rows_formset)
 
         try:
             rows_update = ContestRowsUpdate(self.object, rows_formset)
@@ -3152,9 +3150,7 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
             messages.error(
                 self.request, self._delete_confirmation_message(delete_count)
             )
-            return self.render_to_response(
-                self.get_context_data(form=form, rows_form=rows_formset)
-            )
+            return self._render_unsaved_form(form, rows_formset)
 
         try:
             with transaction.atomic(), revisions.create_revision():
@@ -3178,6 +3174,12 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
 
     def _rows_validation_error_response(self, form, rows_formset, error):
         messages.error(self.request, self._validation_error_message(error))
+        return self._render_unsaved_form(form, rows_formset)
+
+    def _render_unsaved_form(self, form, rows_formset):
+        # ModelForm validation mutates its instance even when invalid. Keep
+        # navigation/context on saved values; bound forms retain POST data/errors.
+        self.object.refresh_from_db()
         return self.render_to_response(
             self.get_context_data(form=form, rows_form=rows_formset)
         )

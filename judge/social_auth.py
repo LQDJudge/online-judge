@@ -9,7 +9,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext as _
-from requests import HTTPError
+from requests import HTTPError, RequestException
 from reversion import revisions
 from social_core.backends.github import GithubOAuth2
 from social_core.exceptions import InvalidEmail, SocialAuthBaseException
@@ -140,4 +140,27 @@ class SocialAuthExceptionMiddleware(OldSocialAuthExceptionMiddleware):
                     reverse("social_auth_error"),
                     quote(self.get_message(request, exception)),
                 )
+            )
+        match = getattr(request, "resolver_match", None)
+        if (
+            isinstance(exception, RequestException)
+            and match is not None
+            and match.app_name == "social"
+            and match.url_name in ("begin", "complete")
+        ):
+            # Provider exceptions may contain authorization codes or tokens in
+            # URLs/bodies. Log only safe metadata and show a generic message.
+            response = getattr(exception, "response", None)
+            logger.warning(
+                "Social sign-in request failed (backend=%s, status=%s, error=%s)",
+                match.kwargs.get("backend", "unknown"),
+                getattr(response, "status_code", None),
+                type(exception).__name__,
+            )
+            message = _(
+                "The sign-in service is temporarily unavailable. "
+                "Please try signing in again."
+            )
+            return HttpResponseRedirect(
+                "%s?message=%s" % (reverse("social_auth_error"), quote(message))
             )
