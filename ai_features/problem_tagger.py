@@ -17,6 +17,7 @@ from django.db.models import Q
 from judge.models import ProblemSolutionCode, Submission
 from llm_service.llm_api import LLMService
 from llm_service.policies import streaming_options
+from llm_service.prompt_guidelines import DIFFICULTY_RATING_RULES
 
 logger = logging.getLogger(__name__)
 
@@ -343,45 +344,7 @@ B) AI / output-only / Kaggle-style. Expect: task description, data description (
 
 A problem is `is_valid=true` if it falls into EITHER style and the reader can tell what to predict and how submissions will be scored. Missing classical-CP-only elements (sample I/O, time/memory limits, integer constraints) is FINE for style B.
 
-DIFFICULTY RATING GUIDELINES:
-Use the LQDOJ 100-3000 difficulty scale. Return an integer, preferably rounded to the nearest 100 unless the problem clearly sits between two buckets.
-
-Rate the intended full-score solution, not only the implementation length or the names of standard algorithms used. If author's accepted source code is available, use it to infer the solution approach, but still judge the difficulty of discovering and proving that approach from the statement. If no source code is available, infer the intended full-score solution from the constraints, subtasks, scoring rules, and required output; do not default the rating downward merely because the implementation is unknown.
-
-Problem code, name, source, contest, division, and format may provide useful calibration context, especially when no accepted source code or editorial is available. Use that context as a weak prior after examining the actual task requirements; it should help resolve uncertainty, but it must not override clear evidence from the statement.
-
-Before choosing points, privately evaluate these axes:
-- Key insight and modeling: how hard it is to find the main observation, reduction, invariant, construction, state representation, strategy, or objective transformation.
-- Algorithmic depth: whether the solution uses direct implementation, standard techniques, advanced combinations, unusual data structures, optimization, math, or ML methodology.
-- Correctness and edge cases: how much proof, case analysis, protocol/scoring reasoning, or constraint-sensitive reasoning is needed.
-- Implementation burden: code complexity, data handling, precision, optimization, debugging risk, and integration with the required submission format.
-
-Before assigning points, privately form a plausible full-score solution outline: the main idea, why it is correct, and why it fits the constraints or scoring rules. If your outline is only a list of tags or a partial-subtask idea, treat the problem as harder and choose the higher plausible band.
-
-Use the hardest essential axis to calibrate the rating, not a simple average. A compact solution can still be very hard if the central model or proof is hidden. A long solution should be rated high only when the length reflects necessary algorithmic or reasoning difficulty rather than boilerplate. Familiar labels such as tree, greedy, DP, binary search, Fenwick tree, DSU, or segment tree do not cap the rating if the hard part is deriving the correct model, invariant, reduction, or proof.
-
-Do not reserve 2800-3000 only for unfamiliar technique names. Use 2800+ when the full solution requires discovering a structural theorem, hidden reduction, optimal strategy, compressed representation of a huge implicit state, or a construction whose validity is hard to prove for every input. Use 2500-2700 for one major non-obvious idea or several tightly interacting advanced ideas. Use 2100-2400 only when, after the main observation, the solution is mostly a known technique with moderate proof and implementation burden.
-
-For constructive, output-object, signature-grader, or strategy tasks, include the difficulty of designing a valid object or sequence of actions, satisfying every checker condition, and optimizing it when required. If such a task asks for an optimal strategy or a globally valid construction under large constraints, rate the structural proof and correctness burden as a primary difficulty source, even if the final code uses familiar primitives.
-
-For classical CP, calibrate as:
-- 100-300: First-programming exercises: print, read input, one arithmetic expression.
-- 400-600: Very easy conditionals/loops, direct formulas, simple digit/string processing.
-- 700-900: Easy implementation, simple math, basic simulation, straightforward ad-hoc.
-- 1000-1200: Non-trivial beginner/bronze problems requiring a small observation, simple greedy, prefix sums, or brute force within constraints.
-- 1300-1600: Standard algorithms: basic DP, graph traversal, binary search, sorting/two-pointers with a clear invariant.
-- 1700-2000: Advanced but still common techniques or combinations: harder DP, shortest paths, data structures, number theory, constructive reasoning.
-- 2100-2400: Hard problems requiring a substantial independent idea, optimization, proof, or combination of known techniques.
-- 2500-2700: Very hard problems requiring a non-obvious model, reduction, invariant, construction, strategy, or several advanced ideas that interact tightly.
-- 2800-3000: Elite problems where deriving the full solution is the main difficulty: deep or unusual modeling, difficult proof, communication/strategy constraints, output-only optimization, or multiple hard ideas that must all fit together.
-
-For AI / output-only problems, calibrate as:
-- 100-600: Tutorial dataset task where a baseline script or direct rule is enough.
-- 700-1000: Clean tabular/image/text classification or regression with standard metric and obvious baseline.
-- 1100-1500: Bigger or noisier dataset, class imbalance, semi-supervised labels, feature engineering, or classical ML model selection expected.
-- 1600-2000: CV / NLP / signal task requiring non-trivial neural models, custom data loading, or careful preprocessing.
-- 2100-2400: Hard CV / NLP / structured prediction with strict constraints, retrieval / segmentation / multi-output scoring, or limited labels.
-- 2500-3000: Research-frontier AI tasks, novel modalities, LLM-judged outputs, dense prediction with custom metric, or difficult optimization.
+{DIFFICULTY_RATING_RULES}
 
 TAG SELECTION RULES:
 1. Choose 1-4 most relevant tags that represent the CORE technique(s) needed.

@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 
@@ -65,34 +64,3 @@ class PublicRequest(models.Model):
 
     def __str__(self):
         return f"{self.problem.code} - {self.get_status_display()}"
-
-
-class PublicationRequestEvent(models.Model):
-    """Append-only candidate/decision history behind legacy one-to-one requests."""
-
-    problem = models.ForeignKey(
-        "judge.Problem", null=True, blank=True, on_delete=models.CASCADE
-    )
-    contest = models.ForeignKey(
-        "judge.Contest", null=True, blank=True, on_delete=models.CASCADE
-    )
-    problem_run = models.ForeignKey(
-        "judge.ProblemReviewRun", null=True, blank=True, on_delete=models.PROTECT
-    )
-    contest_run = models.ForeignKey(
-        "judge.ContestReviewRun", null=True, blank=True, on_delete=models.PROTECT
-    )
-    actor = models.ForeignKey("judge.Profile", null=True, on_delete=models.SET_NULL)
-    status = models.CharField(max_length=1)
-    candidate_hash = models.CharField(max_length=64, blank=True)
-    reason = models.TextField(blank=True)
-    readiness = models.CharField(max_length=32, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if not self._state.adding:
-            raise ValidationError(_("Publication history is immutable."))
-        return super().save(*args, **kwargs)
-
-    class Meta:
-        ordering = ["-created_at", "-pk"]

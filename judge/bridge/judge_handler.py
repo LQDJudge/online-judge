@@ -44,9 +44,12 @@ from judge.tasks.submission import (
     update_user_points,
 )
 from judge.utils.problem_data import notify_problem_authors
-from judge.models.review_evidence import ReviewEvidenceJob
-from judge.review.provenance import accept_attestation
-from judge.tasks.coordinator import refresh_review_freshness
+from judge.auto_review.test_statistics import (
+    active_extraction,
+    parse_extraction_request_id,
+    valid_extraction_result,
+)
+from judge.tasks.coordinator import complete_extraction, refresh_review_freshness
 
 logger = logging.getLogger("judge.bridge")
 json_log = logging.getLogger("judge.json.bridge")
@@ -88,11 +91,12 @@ def _queue_result_statistics(submission):
 
 
 def _queue_review_freshness(submission):
-    if not getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
-        return
-    if not ProblemSolutionCode.objects.filter(
-        last_submission_id=submission.id
-    ).exists():
+    if (
+        not (submission.review_evidence or {}).get("output_portfolio")
+        and not ProblemSolutionCode.objects.filter(
+            last_submission_id=submission.id
+        ).exists()
+    ):
         return
     try:
         refresh_review_freshness.delay(submission.problem_id)
@@ -266,7 +270,7 @@ class JudgeHandler(ZlibPacketHandler):
             "validate-case": self.on_validate_case,
             "validate-end": self.on_validate_end,
             "validate-error": self.on_validate_error,
-            "review-evidence-result": self.on_review_evidence_result,
+            "test-statistics-result": self.on_test_statistics_result,
         }
         self._working = False
         self._working_data = {}
@@ -306,6 +310,9 @@ class JudgeHandler(ZlibPacketHandler):
             self._no_response_job.cancel()
             self._no_response_job = None
 
+        owns_validation = (
+            self._validating and self.judges.validate_map.get(self._validating) is self
+        )
         # remove() atomically cleans submission_map/validate_map and returns orphaned work
         sub, working_data = self.judges.remove(self)
 
@@ -321,18 +328,28 @@ class JudgeHandler(ZlibPacketHandler):
         json_log.info(
             self._make_json_log(action="disconnect", info="judge disconnected")
         )
-        if self._validating:
+        if owns_validation:
             logger.info("Judge disconnected during validation %s", self._validating)
             try:
                 _ensure_connection()
-                ProblemValidation.objects.filter(validate_id=self._validating).update(
-                    status="E", error="Judge disconnected"
-                )
-                ReviewEvidenceJob.objects.filter(
-                    job_id=self._validating, status__in=("P", "R")
-                ).update(
-                    status="E", error="Judge disconnected", finished=timezone.now()
-                )
+                if self._validating.startswith("stats_"):
+                    stage_id, token = parse_extraction_request_id(self._validating)
+                    if active_extraction(stage_id, token) is not None:
+                        complete_extraction.delay(
+                            stage_id,
+                            str(token),
+                            {
+                                "protocol": 1,
+                                "phase_id": stage_id,
+                                "attempt_token": str(token),
+                                "status": "infrastructure_error",
+                                "error": "Judge disconnected",
+                            },
+                        )
+                else:
+                    ProblemValidation.objects.filter(
+                        validate_id=self._validating
+                    ).update(status="E", error="Judge disconnected")
             except Exception:
                 logger.exception(
                     "Failed to mark validation %s as error on disconnect",
@@ -495,7 +512,7 @@ class JudgeHandler(ZlibPacketHandler):
         self.timeout = 60
         self._update_supported_problems(packet["problems"])
         self.executors = packet["executors"]
-        self.review_protocol = packet.get("review-evidence-protocol", 0)
+        self.statistics_protocol = packet.get("test-statistics-protocol", 0)
         self.name = packet["id"]
 
         self.send({"name": "handshake-success"})
@@ -614,9 +631,6 @@ class JudgeHandler(ZlibPacketHandler):
                 "problem-id": problem,
                 "language": language,
                 "source": source,
-                "review-binding": Submission.objects.values_list(
-                    "review_evidence", flat=True
-                ).get(pk=id),
                 "time-limit": data.time,
                 "memory-limit": data.memory,
                 "short-circuit": data.short_circuit,
@@ -629,75 +643,62 @@ class JudgeHandler(ZlibPacketHandler):
             }
         )
 
-    def submit_validate(self, validate_id, problem_id, review=False):
+    def submit_validate(self, validate_id, problem_id, statistics_request=None):
         self._working = True
         self._validating = validate_id
         self._validating_problem = problem_id
-        packet = {
-            "name": "validate-request",
-            "validate-id": validate_id,
-            "problem-id": problem_id,
-        }
-        job = ReviewEvidenceJob.objects.filter(job_id=validate_id).first()
-        if review and job is None:
-            # A bounded retry rotates the job UUID. Its older queued item must
-            # never fall back to ordinary, mutable-package validation.
+        if statistics_request is None:
+            self.send(
+                {
+                    "name": "validate-request",
+                    "validate-id": validate_id,
+                    "problem-id": problem_id,
+                }
+            )
+            return
+        stage_id, token = parse_extraction_request_id(validate_id)
+        stage = active_extraction(stage_id, token)
+        if stage is None or stage.problem_run.problem.code != problem_id:
             self._free_self_validation()
             return
-        if job is not None:
-            if job.status != "P":
-                self._free_self_validation()
-                return
-            packet["review-job"] = {
-                "operation": job.operation,
-                "snapshot_hash": job.snapshot_hash,
-                "payload_hash": job.payload_hash,
-                "payload": job.payload,
+        # This attempt was validated on bridge admission; recheck after queue wait.
+        self.send(
+            {
+                "name": "test-statistics-request",
+                "request-id": validate_id,
+                "request": statistics_request,
             }
-            claimed = ReviewEvidenceJob.objects.filter(pk=job.pk, status="P").update(
-                status="R", started=timezone.now(), judge_name=self.name
-            )
-            if not claimed:
-                self._free_self_validation()
-                return
-        else:
-            packet["review-binding"] = (
-                ProblemValidation.objects.values_list("review_evidence", flat=True)
-                .filter(validate_id=validate_id)
-                .first()
-                or {}
-            )
-        self.send(packet)
+        )
 
-    def on_review_evidence_result(self, packet):
+    def on_test_statistics_result(self, packet):
         _ensure_connection()
-        job_id = packet.get("validate-id")
+        identity = packet.get("request-id")
         if (
-            self._validating != job_id
-            or self.judges.validate_map.get(job_id) is not self
+            self._validating != identity
+            or self.judges.validate_map.get(identity) is not self
         ):
             return
-        job = ReviewEvidenceJob.objects.filter(
-            job_id=job_id, status="R", judge_name=self.name
-        ).first()
-        if job is not None:
-            result = packet.get("result", {})
-            valid = (
-                isinstance(result, dict)
-                and result.get("payload_hash") == job.payload_hash
-                and result.get("snapshot_hash") == job.snapshot_hash
-            )
-            ReviewEvidenceJob.objects.filter(pk=job.pk, status="R").update(
-                status="D" if valid and not result.get("infrastructure_error") else "E",
-                result=result if valid else {},
-                error=(
-                    str(result.get("infrastructure_error", ""))[:1000]
-                    if valid
-                    else "Evidence identity mismatch"
-                ),
-                finished=timezone.now(),
-            )
-        self._free_self_validation()
+        try:
+            stage_id, token = parse_extraction_request_id(identity)
+            stage = active_extraction(stage_id, token)
+            if stage is None:
+                return
+            result = packet.get("result")
+            valid = valid_extraction_result(result, stage_id, token)
+            if not valid:
+                result = {
+                    "protocol": 1,
+                    "phase_id": stage_id,
+                    "attempt_token": str(token),
+                    "status": "infrastructure_error",
+                    "error": "Invalid statistics response",
+                }
+            complete_extraction.delay(stage_id, str(token), result)
+        except Exception:
+            # The existing run timeout exposes recovery if broker delivery fails.
+            logger.exception("Could not complete test statistics %s", identity)
+        finally:
+            self._free_self_validation()
 
     def _kill_if_no_response(self):
         logger.error(
@@ -866,17 +867,6 @@ class JudgeHandler(ZlibPacketHandler):
             )
 
     def on_grading_end(self, packet):
-        binding = (
-            Submission.objects.values_list("review_evidence", flat=True)
-            .filter(pk=packet["submission-id"])
-            .first()
-        )
-        if binding:
-            Submission.objects.filter(pk=packet["submission-id"]).update(
-                review_evidence=accept_attestation(
-                    binding, packet.get("review-evidence")
-                )
-            )
         logger.info("%s: Grading has ended on: %s", self.name, packet["submission-id"])
         self.batch_id = None
 
@@ -1468,35 +1458,23 @@ class JudgeHandler(ZlibPacketHandler):
     def on_validate_end(self, packet):
         _ensure_connection()
         validate_id = packet["validate-id"]
-        binding = (
-            ProblemValidation.objects.values_list("review_evidence", flat=True)
-            .filter(validate_id=validate_id)
-            .first()
-        )
-        if binding:
-            ProblemValidation.objects.filter(validate_id=validate_id).update(
-                review_evidence=accept_attestation(
-                    binding, packet.get("review-evidence")
-                )
-            )
         ProblemValidation.objects.filter(validate_id=validate_id).update(
             status="D",
             passed=packet["passed"],
             failed_count=packet["failed"],
         )
-        if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
-            problem_id = (
-                ProblemValidation.objects.filter(validate_id=validate_id)
-                .values_list("problem_id", flat=True)
-                .first()
-            )
-            if problem_id:
-                try:
-                    refresh_review_freshness.delay(problem_id)
-                except Exception:
-                    logger.exception(
-                        "Could not schedule validator evidence freshness update"
-                    )
+        problem_id = (
+            ProblemValidation.objects.filter(validate_id=validate_id)
+            .values_list("problem_id", flat=True)
+            .first()
+        )
+        if problem_id:
+            try:
+                refresh_review_freshness.delay(problem_id)
+            except Exception:
+                logger.exception(
+                    "Could not schedule validator evidence freshness update"
+                )
         event.post(
             f"validate_{validate_id}",
             {

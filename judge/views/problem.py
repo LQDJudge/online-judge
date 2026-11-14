@@ -36,7 +36,7 @@ from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
 from judge.views.comment import CommentableMixin
-from judge.review.provenance import solution_binding
+from judge.auto_review.execution_freshness import solution_execution_hash
 from judge.forms import (
     ProblemCloneForm,
     ProblemSubmitForm,
@@ -68,13 +68,12 @@ from judge.models import (
 )
 from judge.models.problem_data import ProblemSolutionCode, ProblemTestCase
 from judge.models.problem_review import (
-    ProblemReviewCheckResult,
     ProblemReviewRun,
 )
 from judge.models.public_request import PublicRequest
 from judge.content_mutation import publication_confirmation_token
-from judge.review.workflow import publication_blockers
-from judge.review.presentation import publication_request_hint
+from judge.auto_review.workflow import publication_blockers
+from judge.auto_review.presentation import publication_request_hint
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.hidden_results import (
@@ -117,10 +116,11 @@ import reversion
 from reversion.models import Version
 
 from judge.tasks import rescore_problem
-from judge.review.publication import (
+from judge.auto_review.publication import (
     publication_decision_blockers,
     publish_without_review,
 )
+from judge.auto_review.verdict import verdict_for_run
 from judge.tasks.llm import (
     generate_solution_task,
     improve_markdown_task,
@@ -1198,10 +1198,11 @@ def problem_submit(request, problem, submission=None):
             if model.language.key == "OUTPUT" and problem.can_manage_activity_by(
                 request.user
             ):
-                model.review_evidence = solution_binding(
-                    problem, source.source, output_artifact=True
+                model.review_evidence = {"output_portfolio": True}
+                model.execution_hash = solution_execution_hash(
+                    problem, source.source, model.language_id
                 )
-                model.save(update_fields=["review_evidence"])
+                model.save(update_fields=["review_evidence", "execution_hash"])
             model.judge(rejudge=False, judge_id=form.cleaned_data["judge"])
 
             return HttpResponseRedirect(
@@ -1364,11 +1365,7 @@ class ProblemEdit(
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        if (
-            getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
-            and not self.request.user.is_superuser
-            and "is_public" in form.fields
-        ):
+        if not self.request.user.is_superuser and "is_public" in form.fields:
             form.fields["is_public"].disabled = True
         if self.object.is_locked and not self.request.user.is_superuser:
             for field in form.fields.values():
@@ -1437,8 +1434,7 @@ class ProblemEdit(
             form.save_m2m()
 
             if (
-                getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
-                and self.request.user.is_superuser
+                self.request.user.is_superuser
                 and "is_public" in form.changed_data
                 and problem.is_public
                 and not problem.is_organization_private
@@ -1599,61 +1595,40 @@ class ProblemEdit(
             .first()
         )
         context["latest_review_run"] = latest_run
-        context["coordinator_review_enabled"] = getattr(
-            settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False
-        )
         context["published_contest_warning"] = ""
-        if context["coordinator_review_enabled"]:
-            contests = list(
-                Contest.objects.filter(
-                    is_visible=True, contest_problems__problem_id=self.object.pk
-                )
-                .values_list("name", flat=True)
-                .distinct()
+        contests = list(
+            Contest.objects.filter(
+                is_visible=True, contest_problems__problem_id=self.object.pk
             )
-            if contests:
-                context["published_contest_warning"] = _(
-                    "This problem is used by published contests: %(contests)s. Saving changes will affect their live problem content and invalidate review readiness."
-                ) % {"contests": ", ".join(contests)}
+            .values_list("name", flat=True)
+            .distinct()
+        )
+        if contests:
+            context["published_contest_warning"] = _(
+                "This problem is used by published contests: %(contests)s. Saving changes will affect their live problem content and invalidate review readiness."
+            ) % {"contests": ", ".join(contests)}
         context["publication_ready"] = False
         context["publication_blockers"] = []
-        if context["coordinator_review_enabled"]:
-            context["publication_blockers"] = publication_blockers(
-                latest_run, self.object
+        context["publication_blockers"] = publication_blockers(latest_run, self.object)
+        context["publication_ready"] = bool(
+            latest_run and not context["publication_blockers"]
+        )
+        pending = context["public_request"]
+        if pending and pending.status == "P":
+            context["publication_blockers"] = publication_decision_blockers(
+                self.object, pending.review_run
             )
-            context["publication_ready"] = bool(
-                latest_run and not context["publication_blockers"]
+        context["publication_request_hint"] = (
+            publication_request_hint(
+                latest_run,
+                context["publication_blockers"],
+                pending=bool(pending and pending.status == "P"),
             )
-            pending = context["public_request"]
-            if pending and pending.status == "P":
-                context["publication_blockers"] = publication_decision_blockers(
-                    self.object, pending.review_run
-                )
-            context["publication_request_hint"] = (
-                publication_request_hint(
-                    latest_run,
-                    context["publication_blockers"],
-                    pending=bool(pending and pending.status == "P"),
-                )
-                if (pending and pending.status == "P")
-                or (
-                    not context["publication_ready"]
-                    and not self.request.user.is_superuser
-                )
-                else ""
-            )
-        verdict = None
-        if latest_run:
-            if latest_run.status == ProblemReviewRun.RUNNING:
-                verdict = "running"
-            elif latest_run.status == ProblemReviewRun.ERROR:
-                verdict = "error"
-            else:
-                has_fail = latest_run.check_results.filter(
-                    status=ProblemReviewCheckResult.FAIL
-                ).exists()
-                verdict = "fail" if has_fail else "pass"
-        context["review_verdict"] = verdict
+            if (pending and pending.status == "P")
+            or (not context["publication_ready"] and not self.request.user.is_superuser)
+            else ""
+        )
+        context["review_verdict"] = verdict_for_run(latest_run)
 
         return context
 
@@ -2029,11 +2004,7 @@ class ProblemAdd(PermissionRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        if (
-            getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
-            and not self.request.user.is_superuser
-            and "is_public" in form.fields
-        ):
+        if not self.request.user.is_superuser and "is_public" in form.fields:
             form.fields["is_public"].disabled = True
         return form
 

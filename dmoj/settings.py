@@ -599,10 +599,6 @@ INFINITE_PAGINATION_MAX_PAGE = 1000
 # ============================================================
 # Auto-review pipeline (problem public requests)
 # ============================================================
-AUTO_REVIEW_ENABLED = True
-# Enable after local acceptance and the coordinated site/judge deployment.
-AUTO_REVIEW_COORDINATOR_ENABLED = False
-REVIEW_STAGE_LEASE_SECONDS = 600
 # Review-only transport policy; unrelated AI features keep their own defaults.
 REVIEW_LLM_CONNECT_TIMEOUT = 20
 REVIEW_LLM_FIRST_OUTPUT_TIMEOUT = 180
@@ -612,32 +608,16 @@ REVIEW_MAX_PROVIDER_RETRY_DELAY = 3600  # Longer cooldowns require manual recove
 AI_FEATURE_STREAMING_TIMEOUTS = (
     {}
 )  # Optional per-feature overrides; see llm_service/policies.py.
-REVIEW_DIAGNOSTIC_RETENTION_DAYS = 30
-REVIEW_COORDINATOR_QUEUE = "review-coordinator"
-AUTO_REVIEW_REQUEST_COOLDOWN_SECONDS = (
-    300  # 5 min between Request public presses (admins bypass)
-)
-AUTO_REVIEW_RUN_TIMEOUT_SECONDS = 1800  # 30 min before a stuck run is reaped
-AUTO_REVIEW_DUPLICATE_THRESHOLD = 0.93  # cosine sim threshold for duplicate_detection
-AUTO_REVIEW_TL_HEADROOM_RATIO = 0.8  # main AC must use < this fraction of TL
-AUTO_REVIEW_SUBTASK_TOLERANCE_PCT = 5.0  # OI subtask % must be within this band
-AUTO_REVIEW_STATEMENT_MIN_CHARS = 100  # min statement length for artifacts_present
-AUTO_REVIEW_LLM_RETRY_COUNT = 3  # LLM retry budget per call
-AUTO_REVIEW_JUDGE_WAIT_TIMEOUT_SECONDS = (
-    600  # max time to wait for an internal submission
+AUTO_REVIEW_RUN_TIMEOUT_SECONDS = (
+    3600  # Overall deadline; intentional recovery waits are excluded.
 )
 
 # ============================================================
 # Contest auto-review (mirrors problem auto-review, contest-scoped)
 # ============================================================
-AUTO_REVIEW_CONTEST_ENABLED = True
-AUTO_REVIEW_CONTEST_REQUEST_COOLDOWN_SECONDS = (
-    300  # 5 min between Request public presses (admins bypass)
-)
 AUTO_REVIEW_CONTEST_RUN_TIMEOUT_SECONDS = (
-    1800  # 30 min before a stuck contest run is reaped
+    3600  # Overall deadline; waiting child reviews are handled separately.
 )
-AUTO_REVIEW_CONTEST_LEAK_DETAILS_CAP = 50  # max leaker rows stored in details_json
 
 # ============================================================
 # Periodic moderation and maintenance
@@ -702,15 +682,9 @@ QUIZ_EXPIRY_ENABLED = False
 QUIZ_EXPIRY_BATCH_SIZE = 100
 
 CELERY_BEAT_SCHEDULE = {
-    "recover-coordinator-stage-leases": {
-        "task": "judge.tasks.coordinator.recover_review_leases",
-        "schedule": 60.0,
-        "options": {"queue": REVIEW_COORDINATOR_QUEUE},
-    },
     "cleanup-review-diagnostics": {
         "task": "judge.tasks.coordinator.cleanup_review_diagnostics",
         "schedule": 86400.0,
-        "options": {"queue": REVIEW_COORDINATOR_QUEUE},
     },
     "expire-quiz-attempts": {
         "task": "judge.tasks.quiz.expire_quiz_attempts",

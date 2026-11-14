@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
 
-from judge.models import Language, Problem, ProblemGroup, Profile
+from judge.models import Language, Problem, ProblemGroup, Profile, ReviewStage
 from judge.models.problem_review import ProblemReviewRun
 from judge.tasks.review import reap_stale_review_runs
 
@@ -55,7 +55,7 @@ class ReaperTest(TestCase):
         )
         reap_stale_review_runs()
         review_run.refresh_from_db()
-        self.assertEqual(review_run.status, ProblemReviewRun.ERROR)
+        self.assertEqual(review_run.status, ProblemReviewRun.BLOCKED)
 
     def test_fresh_running_run_left_alone(self):
         review_run = ProblemReviewRun.objects.create(
@@ -68,23 +68,25 @@ class ReaperTest(TestCase):
         review_run.refresh_from_db()
         self.assertEqual(review_run.status, ProblemReviewRun.RUNNING)
 
-    def test_reaped_run_emits_error_notification(self):
-        # The reaper must notify author + admins when timing out a run.
-        # Without this, the author's dashboard polling JS spins forever
-        # because nothing tells them the run was abandoned.
-        review_run = ProblemReviewRun.objects.create(
+    def test_reaped_run_requests_author_recovery(self):
+        run = ProblemReviewRun.objects.create(
             problem=self.problem,
             triggered_by=self.profile,
             input_hash="x" * 64,
-            status=ProblemReviewRun.RUNNING,
+            status="R",
         )
-        ProblemReviewRun.objects.filter(id=review_run.id).update(
+        ReviewStage.objects.create(
+            problem_run=run, stage_id="problem_contract", status="Q"
+        )
+        ProblemReviewRun.objects.filter(pk=run.pk).update(
             started_at=timezone.now() - timedelta(hours=2)
         )
-        with patch("judge.tasks.review._emit_review_error_notifications") as mock_emit:
-            result = reap_stale_review_runs()
-        self.assertEqual(result["reaped"], 1)
-        mock_emit.assert_called_once()
-        # The first positional arg should be the ProblemReviewRun instance.
-        called_with_run = mock_emit.call_args[0][0]
-        self.assertEqual(called_with_run.id, review_run.id)
+        with patch("judge.tasks.coordinator.emit_recovery.delay") as notify:
+            with self.captureOnCommitCallbacks(execute=True):
+                reap_stale_review_runs()
+        run.refresh_from_db()
+        self.assertEqual(run.status, "B")
+        notify.assert_called_once_with("problem", run.pk)
+        stage = run.coordinator_stages.get()
+        self.assertEqual(stage.status, "E")
+        self.assertEqual(stage.error_category, "worker_timeout")

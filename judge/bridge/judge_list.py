@@ -14,7 +14,9 @@ logger = logging.getLogger("judge.bridge")
 
 PriorityMarker = namedtuple("PriorityMarker", "priority")
 ValidateItem = namedtuple(
-    "ValidateItem", "validate_id problem_id review protocol", defaults=[False, 1]
+    "ValidateItem",
+    "validate_id problem_id review protocol request",
+    defaults=[False, 1, None],
 )
 
 # Priorities 0, 1, 2 are user-initiated (official contest, private contest,
@@ -102,7 +104,7 @@ class JudgeList(object):
                     # Validation entries bypass per-user fairness.
                     if val.problem_id in judge.problems and (
                         not val.review
-                        or getattr(judge, "review_protocol", 0) >= val.protocol
+                        or getattr(judge, "statistics_protocol", 0) >= val.protocol
                     ):
                         self.validate_map[val.validate_id] = judge
                         self._set_judge_validation(
@@ -263,7 +265,9 @@ class JudgeList(object):
     def _dispatch_reserved_validation(self, judge, item, priority):
         try:
             if item.review:
-                judge.submit_validate(item.validate_id, item.problem_id, review=True)
+                judge.submit_validate(
+                    item.validate_id, item.problem_id, statistics_request=item.request
+                )
             else:
                 judge.submit_validate(item.validate_id, item.problem_id)
         except Exception:
@@ -280,6 +284,7 @@ class JudgeList(object):
                 item.problem_id,
                 review=item.review,
                 protocol=item.protocol,
+                request=item.request,
             )
             return False
         return True
@@ -389,7 +394,7 @@ class JudgeList(object):
             self._fail_judge(judge, clear_work=False)
         return False
 
-    def validate(self, validate_id, problem_id, review=False, protocol=1):
+    def validate(self, validate_id, problem_id, review=False, protocol=1, request=None):
         """Dispatch validation to an available judge or queue it."""
         while True:
             with self.lock:
@@ -401,12 +406,17 @@ class JudgeList(object):
                     for judge in self.judges
                     if not judge.working
                     and problem_id in judge.problems
-                    and (not review or getattr(judge, "review_protocol", 0) >= protocol)
+                    and (
+                        not review
+                        or getattr(judge, "statistics_protocol", 0) >= protocol
+                    )
                 ]
                 if not candidates:
                     # Queue at lowest priority
                     self.node_map[validate_id] = self.queue.insert(
-                        ValidateItem(validate_id, problem_id, review, protocol),
+                        ValidateItem(
+                            validate_id, problem_id, review, protocol, request
+                        ),
                         self.priority[self.priorities - 1],
                     )
                     logger.info("Queued validation: %s", validate_id)
@@ -414,7 +424,7 @@ class JudgeList(object):
 
                 judge = min(candidates, key=attrgetter("load"))
                 logger.info("Dispatched validation %s to: %s", validate_id, judge.name)
-                item = ValidateItem(validate_id, problem_id, review, protocol)
+                item = ValidateItem(validate_id, problem_id, review, protocol, request)
                 self.validate_map[validate_id] = judge
                 self._set_judge_validation(judge, validate_id, problem_id)
 
@@ -436,6 +446,30 @@ class JudgeList(object):
                 )
             self._clear_judge_work(judge)
         self._handle_free_judge(judge)
+
+    def cancel_statistics(self, identities):
+        """Drop queued work and ask reserved judges to stop without freeing early."""
+        active = []
+        with self.lock:
+            for identity in identities:
+                node = self.node_map.get(identity)
+                if (
+                    node is not None
+                    and isinstance(node.value, ValidateItem)
+                    and node.value.review
+                ):
+                    self.queue.remove(node)
+                    del self.node_map[identity]
+                judge = self.validate_map.get(identity)
+                if judge is not None and judge._validating == identity:
+                    active.append((judge, identity))
+        for judge, identity in active:
+            try:
+                judge.send(
+                    {"name": "terminate-test-statistics", "request-id": identity}
+                )
+            except Exception:
+                logger.warning("Could not cancel test statistics on %s", judge.name)
 
     def check_priority(self, priority):
         return 0 <= priority < self.priorities

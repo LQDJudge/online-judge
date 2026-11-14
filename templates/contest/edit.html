@@ -280,7 +280,8 @@
     <h2>{{ title }}</h2>
     {% if readonly_editor %}<p class="red" role="status">{{ _('This content is locked. Contact a superuser to request an edit.') }}</p>{% endif %}
     <form action="" method="post"
-          data-pending-publication="{{ '1' if contest_public_request and (coordinator_review_enabled or contest_public_request.review_run_id) else '0' }}"
+          data-review-save-probe="1"
+          data-pending-publication="{{ '1' if contest_public_request else '0' }}"
           data-publication-confirmation-token="{{ publication_confirmation_token }}"
           data-publication-save-warning="{{ _('Saving changes will withdraw the pending publication request. Continue and save the changed draft?') }}">
       {% csrf_token %}
@@ -363,33 +364,13 @@
       <div class="form-actions" style="margin-top: 1em;">
         <button type="submit" class="action-btn" {% if readonly_editor %}disabled{% endif %}>{{ _('Save') }}</button>
         {% if (not contest.is_visible or contest.is_organization_private) and contest.can_request_public_by(request.user) %}
-          {% if coordinator_review_enabled %}
-            <a class="action-btn" href="{{ url('contest_review_dashboard', contest.key) }}">{{ _('Run Review') }}</a>
-            {% if contest_public_request %}
-              <button type="button" id="contest-cancel-request-btn" class="action-btn">{{ _('Withdraw request') }}</button>
-            {% else %}
-              {% call publication_hint(not publication_ready and not request.user.is_superuser, publication_request_hint) %}
-                <button type="button" id="contest-request-public-btn" class="action-btn" {% if not publication_ready and not request.user.is_superuser %}disabled{% endif %}>{{ _('Request publication') }}</button>
-              {% endcall %}
-            {% endif %}
-          {% elif contest_public_request %}
-            {# A PENDING ContestPublicRequest already exists. Tell the author
-               so they don't keep retrying, and offer a Cancel button so they
-               can withdraw the row from the admin queue (e.g., misclicked, or
-               want to keep editing before admins look at it). #}
-            <span class="form-actions-status alert alert-info">
-              <i class="fa fa-clock"></i> {{ _("Awaiting admin approval.") }}
-            </span>
-            <button type="button" id="contest-request-public-btn" class="action-btn">
-              <i class="fa fa-redo"></i> {{ _("Re-run review") }}
-            </button>
-            <button type="button" id="contest-cancel-request-btn" class="action-btn">
-              <i class="fa fa-times"></i> {{ _("Cancel request") }}
-            </button>
+          <a class="action-btn" href="{{ url('contest_review_dashboard', contest.key) }}">{{ _('Run Review') }}</a>
+          {% if contest_public_request %}
+            <button type="button" id="contest-cancel-request-btn" class="action-btn">{{ _('Withdraw request') }}</button>
           {% else %}
-            <button type="button" id="contest-request-public-btn" class="action-btn">
-              <i class="fa fa-globe"></i> {{ _("Request public") }}
-            </button>
+            {% call publication_hint(not publication_ready and not request.user.is_superuser, publication_request_hint) %}
+              <button type="button" id="contest-request-public-btn" class="action-btn" {% if not publication_ready and not request.user.is_superuser %}disabled{% endif %}>{{ _('Request publication') }}</button>
+            {% endcall %}
           {% endif %}
           <span id="contest-request-public-status" class="red form-actions-status"></span>
         {% endif %}
@@ -475,4 +456,5 @@
       </script>
     {% endif %}
   </div>
+  {% include "auto_review/save_confirmation_dialog.html" %}
 {% endblock %}

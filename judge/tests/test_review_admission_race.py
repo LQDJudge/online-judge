@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission, User
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import close_old_connections, connections
-from django.test import TransactionTestCase, skipUnlessDBFeature, override_settings
+from django.test import TransactionTestCase, skipUnlessDBFeature
 from django.utils import timezone
 
 from judge.models import (
@@ -19,10 +19,9 @@ from judge.models import (
     ProblemGroup,
     Profile,
 )
-from judge.review import workflow
+from judge.auto_review import workflow
 
 
-@override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=True)
 class ReviewAdmissionRaceTests(TransactionTestCase):
     def setUp(self):
         cache.clear()
@@ -86,9 +85,11 @@ class ReviewAdmissionRaceTests(TransactionTestCase):
                 connections.close_all()
 
         with patch(
-            "judge.review.workflow.build_problem_snapshot", return_value=snapshot
-        ), patch("judge.review.workflow.preparation_errors", return_value=[]), patch(
-            "judge.review.workflow.enqueue"
+            "judge.auto_review.workflow.build_problem_context", return_value=snapshot
+        ), patch(
+            "judge.auto_review.workflow.preparation_errors", return_value=[]
+        ), patch(
+            "judge.auto_review.workflow.enqueue"
         ) as enqueue:
             with ThreadPoolExecutor(max_workers=2) as executor:
                 outcomes = list(executor.map(start, self.actors))
@@ -121,7 +122,10 @@ class ReviewAdmissionRaceTests(TransactionTestCase):
                 barrier.wait(timeout=10)
                 try:
                     run = workflow.start_contest_review(
-                        current, actor, confirm_unchanged=True
+                        current,
+                        actor,
+                        selected_problem_ids=[self.problem.pk],
+                        confirm_unchanged=True,
                     )
                     return "admitted", run.pk
                 except ValidationError:
@@ -129,7 +133,16 @@ class ReviewAdmissionRaceTests(TransactionTestCase):
             finally:
                 connections.close_all()
 
-        with patch("judge.review.workflow.enqueue") as enqueue:
+        with patch(
+            "judge.auto_review.workflow.build_problem_context",
+            return_value={"kind": "problem", "input_hash": "b" * 64, "artifacts": {}},
+        ), patch(
+            "judge.auto_review.workflow.current_content_hash", return_value="b" * 64
+        ), patch(
+            "judge.auto_review.workflow.preparation_errors", return_value=[]
+        ), patch(
+            "judge.auto_review.workflow.enqueue"
+        ) as enqueue:
             with ThreadPoolExecutor(max_workers=2) as executor:
                 outcomes = list(executor.map(start, self.actors))
         self.assertCountEqual(
@@ -137,5 +150,5 @@ class ReviewAdmissionRaceTests(TransactionTestCase):
         )
         self.assertEqual(contest.review_runs.count(), 1)
         self.assertEqual(contest.review_runs.get().child_dependencies.count(), 1)
-        self.assertEqual(self.problem.review_runs.count(), 0)
-        enqueue.assert_called_once()
+        self.assertEqual(self.problem.review_runs.count(), 1)
+        self.assertEqual(enqueue.call_count, 2)

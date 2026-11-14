@@ -131,6 +131,7 @@ class License(models.Model):
 
 
 class Problem(CacheableModel, PageVotable, Bookmarkable):
+    review_files_revision = models.PositiveBigIntegerField(default=1, editable=False)
     code = models.CharField(
         max_length=30,
         verbose_name=_("problem code"),

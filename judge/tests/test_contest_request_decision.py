@@ -18,15 +18,17 @@ from judge.models import (
     ContestReviewRun,
     Language,
     Profile,
-    PublicationRequestEvent,
 )
 from judge.models.notification import Notification, NotificationCategory
-from judge.review.publication import publication_decision_token, publish_without_review
-from judge.review.snapshots import build_contest_snapshot
-from judge.review.system_bot import SYSTEM_BOT_USERNAME
+from judge.auto_review.publication import (
+    publication_decision_token,
+    publish_without_review,
+)
+from judge.auto_review.contest_context import build_contest_context
+from judge.auto_review.system_bot import SYSTEM_BOT_USERNAME
 
 
-@override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=True, LANGUAGE_CODE="en")
+@override_settings(LANGUAGE_CODE="en")
 class ContestRequestDecisionTest(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -57,22 +59,19 @@ class ContestRequestDecisionTest(TestCase):
             end_time=timezone.now() + timedelta(days=1, hours=2),
         )
         self.contest.authors.add(self.author.profile)
-        snapshot = build_contest_snapshot(self.contest, [])
+        snapshot = build_contest_context(self.contest, [])
         self.run = ContestReviewRun.objects.create(
             contest=self.contest,
             triggered_by=self.author.profile,
-            workflow_version=2,
             status="D",
             readiness="READY",
-            snapshot=snapshot,
-            content_hash=snapshot["content_hash"],
-            input_hash=snapshot["input_hash"],
+            input_hash=snapshot["content_hash"],
         )
         self.request_row = ContestPublicRequest.objects.create(
             contest=self.contest,
             requested_by=self.author.profile,
             review_run=self.run,
-            candidate_hash=self.run.content_hash,
+            candidate_hash=self.run.input_hash,
         )
         self.url = reverse("contest_review_dashboard", args=[self.contest.key])
         self.reject_url = reverse("contest_review_reject", args=[self.contest.key])
@@ -189,9 +188,7 @@ class ContestRequestDecisionTest(TestCase):
         )
 
     def test_decision_comment_uses_shared_first_run_thread(self):
-        older = ContestReviewRun.objects.create(
-            contest=self.contest, workflow_version=2, status="D"
-        )
+        older = ContestReviewRun.objects.create(contest=self.contest, status="D")
         ContestReviewRun.objects.filter(pk=older.pk).update(
             started_at=self.run.started_at - timedelta(days=1)
         )
@@ -267,11 +264,6 @@ class ContestRequestDecisionTest(TestCase):
         self.assertEqual(self.request_row.status, "A")
         self.assertTrue(self.contest.is_visible)
         self.assertTrue(self.contest.is_locked)
-        self.assertTrue(
-            PublicationRequestEvent.objects.filter(
-                contest=self.contest, status="A"
-            ).exists()
-        )
         notes = Notification.objects.filter(
             category=NotificationCategory.CONTEST_PUBLIC_REQUEST_APPROVED
         )
@@ -356,11 +348,6 @@ class ContestRequestDecisionTest(TestCase):
         self.assertEqual(self.request_row.status, "A")
         self.assertTrue(self.contest.is_visible)
         self.assertTrue(self.contest.is_locked)
-        self.assertFalse(
-            PublicationRequestEvent.objects.filter(
-                contest=self.contest, status="W"
-            ).exists()
-        )
         self.assertEqual(
             Notification.objects.filter(
                 category=NotificationCategory.CONTEST_PUBLIC_REQUEST_APPROVED

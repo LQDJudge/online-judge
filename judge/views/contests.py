@@ -99,9 +99,9 @@ from judge.models.contest import (
     get_recent_contest_clarification_data,
 )
 from judge.models.contest_review import ContestPublicRequest
-from judge.review.workflow import publication_blockers
-from judge.review.presentation import publication_request_hint
-from judge.review.publication import (
+from judge.auto_review.workflow import publication_blockers
+from judge.auto_review.presentation import publication_request_hint
+from judge.auto_review.publication import (
     publication_decision_blockers,
     publish_without_review,
 )
@@ -2949,11 +2949,7 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        if (
-            getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
-            and not self.request.user.is_superuser
-            and "is_visible" in form.fields
-        ):
+        if not self.request.user.is_superuser and "is_visible" in form.fields:
             form.fields["is_visible"].disabled = True
         if self.object.is_locked and not self.request.user.is_superuser:
             for field in form.fields.values():
@@ -3058,27 +3054,16 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         context["contest_public_request"] = ContestPublicRequest.objects.filter(
             contest=self.object, status=ContestPublicRequest.PENDING
         ).first()
-        context["coordinator_review_enabled"] = getattr(
-            settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False
-        )
         context["publication_confirmation_token"] = publication_confirmation_token(
             context["contest_public_request"]
         )
-        latest_run = (
-            self.object.review_runs.order_by("-started_at", "-pk").first()
-            if context["coordinator_review_enabled"]
-            else None
-        )
-        context["publication_blockers"] = (
-            publication_blockers(latest_run, self.object)
-            if context["coordinator_review_enabled"]
-            else []
-        )
+        latest_run = self.object.review_runs.order_by("-started_at", "-pk").first()
+        context["publication_blockers"] = publication_blockers(latest_run, self.object)
         context["publication_ready"] = bool(
             latest_run and not context["publication_blockers"]
         )
         pending = context["contest_public_request"]
-        if context["coordinator_review_enabled"] and pending:
+        if pending:
             context["publication_blockers"] = publication_decision_blockers(
                 self.object, pending.review_run
             )
@@ -3086,8 +3071,7 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
             publication_request_hint(
                 latest_run, context["publication_blockers"], pending=bool(pending)
             )
-            if context["coordinator_review_enabled"]
-            and (
+            if (
                 pending
                 or (
                     not context["publication_ready"]
@@ -3201,8 +3185,7 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         # FormView.form_valid does NOT save — call form.save() directly.
         self.object = form.save()
         if (
-            getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
-            and self.request.user.is_superuser
+            self.request.user.is_superuser
             and "is_visible" in form.changed_data
             and self.object.is_visible
             and not self.object.is_private

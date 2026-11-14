@@ -9687,11 +9687,6 @@ msgstr[0] ""
 "\n"
 "          Vui lòng sửa lỗi bên dưới.\n"
 "        "
-msgstr[1] ""
-"\n"
-"          Vui lòng sửa các lỗi bên dưới.\n"
-"        "
-
 #: templates/admin/judge/profile/change_form.html:14
 #: templates/admin/judge/profile/change_form.html:17
 msgid "Edit user"
@@ -20685,8 +20680,8 @@ msgstr "Lưu thay đổi và rút yêu cầu"
 #~ msgid "AI usage"
 #~ msgstr "sử dụng AI"
 
-#~ msgid "Overview"
-#~ msgstr "Tổng quan"
+msgid "Overview"
+msgstr "Tổng quan"
 
 #~ msgid "Total (s)"
 #~ msgstr "Tổng (giây)"
@@ -20846,8 +20841,8 @@ msgstr "Lưu thay đổi và rút yêu cầu"
 #~ msgid "%(n)d problem(s) have failing reviews"
 #~ msgstr "%(n)d bài có đánh giá không đạt"
 
-#~ msgid "Run review"
-#~ msgstr "Chạy đánh giá"
+msgid "Run review"
+msgstr "Chạy đánh giá"
 
 #~ msgid ""
 #~ "No fully-AC reference submission — depends on solutions_rubric reference "
@@ -21114,3 +21109,187 @@ msgstr "Lưu thay đổi và rút yêu cầu"
 
 #~ msgid "Try another name or clear the school filters."
 #~ msgstr "Thử tên khác hoặc bỏ bộ lọc trường."
+
+
+#: judge/content_mutation.py:425
+msgid "Saving will cancel this problem's running review."
+msgstr "Lưu thay đổi sẽ hủy lượt đánh giá đang chạy của bài này."
+
+#: judge/content_mutation.py:427
+msgid "Saving will cancel affected running contest reviews."
+msgstr "Các lượt đánh giá kỳ thi đang chạy có liên quan cũng sẽ bị hủy."
+
+#: judge/content_mutation.py:431
+#| msgid ""
+#| "No eligible problem reviews are attached to this contest review."
+msgid ""
+"Unfinished problem reviews started by those contest reviews will also be "
+"cancelled."
+msgstr ""
+"Các lượt đánh giá bài chưa hoàn tất do những lượt đánh giá kỳ thi đó tạo ra "
+"cũng sẽ bị hủy."
+
+#: judge/content_mutation.py:436
+#| msgid ""
+#| "Uploading a changed test package will withdraw the pending publication "
+#| "request. Continue?"
+msgid "Saving changes will withdraw the pending publication request."
+msgstr "Lưu thay đổi sẽ rút yêu cầu công khai đang chờ duyệt."
+
+#: judge/content_mutation.py:457
+#| msgid "Cancel review"
+msgid "Save and cancel reviews?"
+msgstr "Lưu thay đổi và hủy đánh giá?"
+
+#: judge/review/coordinator.py:346
+#| msgid ""
+#| "The AI service credentials are not configured. An administrator must check "
+#| "the settings."
+msgid "The AI service credentials are not configured."
+msgstr ""
+"Chưa cấu hình thông tin kết nối dịch vụ AI. Hãy liên hệ quản trị viên."
+
+#: judge/review/coordinator.py:373
+#| msgid ""
+#| "This stage exceeds the safe model context limit; no source was silently "
+#| "omitted."
+msgid ""
+"The review input exceeds the supported size; no source was silently omitted."
+msgstr ""
+"Dữ liệu cần đánh giá vượt giới hạn xử lý. Hệ thống chưa gửi yêu cầu AI và "
+"không tự ý bỏ bớt mã nguồn."
+
+#: judge/review/coordinator.py:380
+#| msgid "This invitation is no longer available."
+msgid "This review attempt is no longer active."
+msgstr "Lần xử lý này đã kết thúc hoặc được thay thế."
+
+#: judge/review/coordinator.py:432
+#| msgid "The review provider request could not complete."
+msgid "The AI service request could not complete."
+msgstr "Chưa thể nhận đủ phản hồi từ dịch vụ AI."
+
+#: judge/review/inputs.py:518 judge/review/inputs.py:521
+#: judge/review/inputs.py:546 judge/review/inputs.py:549
+#| msgid "Invalid role selected."
+msgid "Invalid problem file reference."
+msgstr "Thông tin tệp của bài không hợp lệ."
+
+#: judge/review/inputs.py:525 judge/review/inputs.py:555
+#| msgid "Review artifact exceeds this operation's input limit."
+msgid "Problem file exceeds this operation's input limit."
+msgstr "Tệp của bài vượt giới hạn xử lý của thao tác này."
+
+#: judge/review/presentation.py:347
+#| msgid "A readable problem statement is required."
+msgid "No candidate problems were returned."
+msgstr "Tìm kiếm chưa trả về bài nào để đối chiếu."
+
+#: judge/review/workflow.py:192
+#| msgid ""
+#| "The reviewed content has changed. Run a new review before requesting "
+#| "publication."
+msgid ""
+"This content is already public on the site. Review is for content awaiting "
+"publication."
+msgstr ""
+"Nội dung này đã công khai toàn hệ thống. Tính năng đánh giá dành cho nội "
+"dung đang chuẩn bị công khai."
+
+#: judge/review/workflow.py:198
+#| msgid ""
+#| "A review is already running or awaiting recovery. Retry its failed section "
+#| "or cancel it first."
+msgid ""
+"A review is already running. Cancel it or recover its failed section first."
+msgstr ""
+"Đã có một lượt đánh giá đang chạy. Hãy hủy lượt đó hoặc thử lại phần gặp sự "
+"cố trước."
+
+#: judge/review/workflow.py:238
+#| msgid "This problem is duplicated."
+msgid "This problem is already public on the site."
+msgstr "Bài này đã công khai toàn hệ thống."
+
+#: judge/review/workflow.py:244
+#| msgid ""
+#| "A required package artifact could not be read. Fix the package before "
+#| "reviewing."
+msgid ""
+"A required problem file could not be read. Check Test Data before reviewing."
+msgstr ""
+"Không đọc được một tệp bắt buộc của bài. Hãy kiểm tra mục Dữ liệu test trước"
+" khi đánh giá."
+
+#: judge/review/workflow.py:264 judge/review/workflow.py:282
+#| msgid "The roster changed. Review it and try again."
+msgid "The content changed. Check it and confirm again."
+msgstr "Nội dung đã thay đổi. Hãy kiểm tra và xác nhận lại."
+
+#: judge/review/workflow.py:301
+#, python-format
+msgid "This contest contains already-public problems: %(codes)s."
+msgstr "Kỳ thi có các bài đã công khai toàn hệ thống: %(codes)s."
+
+#: judge/review/workflow.py:324
+#, python-format
+msgid "Problem %(code)s needs a current review. Select it to run a new one."
+msgstr ""
+"Bài %(code)s chưa có đánh giá phù hợp với nội dung hiện tại. Hãy chọn bài "
+"này để đánh giá lại."
+
+#: judge/review/workflow.py:374
+#| msgid "Wait for the review to finish."
+msgid "Wait for the running review to finish."
+msgstr "Hãy chờ lượt đánh giá đang chạy hoàn tất."
+
+#: judge/review/workflow.py:443
+#| msgid "This review was cancelled. Complete a new review first."
+msgid "This review cannot be retried. Start a current review instead."
+msgstr ""
+"Không thể thử lại lượt đánh giá này. Hãy chạy đánh giá mới cho nội dung hiện"
+" tại."
+
+#: judge/review/workflow.py:454
+#| msgid "Please wait %(seconds)s seconds before posting again."
+msgid "Please wait for the service cooldown before retrying."
+msgstr "Dịch vụ AI đang yêu cầu tạm chờ. Hãy thử lại sau."
+
+#: judge/tasks/coordinator.py:74 judge/tasks/coordinator.py:174
+#| msgid "Test statistics extraction"
+msgid "Test statistics could not be extracted."
+msgstr "Chưa đọc được số liệu thống kê từ bộ test."
+
+#: judge/tasks/coordinator.py:118
+msgid "No usable statistics helper was provided."
+msgstr "Chưa có mã phù hợp để đọc số liệu thống kê từ bộ test."
+
+#: judge/tasks/coordinator.py:277
+#| msgid "The review worker did not finish this section."
+msgid "The review worker did not finish in time. Retry this section."
+msgstr ""
+"Phần đánh giá này chưa hoàn tất trong thời gian cho phép. Hãy thử lại phần "
+"này."
+
+#: templates/problem/validator.html:136 templates/problem/validator.html:287
+msgid "Test data or validator changed. Run Validation again."
+msgstr ""
+"Bộ test hoặc mã kiểm tra dữ liệu đã thay đổi. Hãy chạy lại Run Validation."
+
+msgid "Save changes"
+msgstr "Lưu thay đổi"
+
+msgid "You do not have permission to view this problem review."
+msgstr "Bạn không có quyền xem đánh giá của bài này."
+
+msgid "A linked problem review is no longer accessible."
+msgstr "Không còn quyền truy cập một bản đánh giá bài trong kỳ thi."
+
+msgid "An included problem review is missing, incomplete, or needs attention."
+msgstr "Một bài trong kỳ thi chưa có đánh giá đầy đủ hoặc cần được xử lý."
+
+msgid "Upload and judge at least one valid current output example on all official tests before reviewing."
+msgstr "Hãy tải lên và chấm ít nhất một bộ kết quả hợp lệ trên toàn bộ test hiện tại trước khi đánh giá."
+
+msgid "The review task could not be delivered. Retry this section."
+msgstr "Không thể gửi tác vụ đánh giá. Hãy thử lại phần này."

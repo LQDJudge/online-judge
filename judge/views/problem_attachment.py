@@ -3,7 +3,6 @@ import mimetypes
 import os
 
 from django.contrib.auth.decorators import login_required
-from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db.models import Max
 from django.http import HttpResponseBadRequest, JsonResponse
@@ -58,11 +57,6 @@ def attachments_tab(request, problem):
     pending = PublicRequest.objects.filter(
         problem=problem_obj, status=PublicRequest.PENDING
     ).first()
-    if pending and not (
-        getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
-        or pending.review_run_id
-    ):
-        pending = None
     return render(
         request,
         "problem/attachments.html",

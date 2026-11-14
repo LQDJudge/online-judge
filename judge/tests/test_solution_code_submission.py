@@ -17,7 +17,7 @@ from judge.models import (
     SubmissionSource,
 )
 from judge.models.problem_data import ProblemData, ProblemSolutionCode
-from judge.review.snapshots import _capture_output_examples
+from judge.auto_review.problem_context import _capture_output_examples
 from judge.forms import ProblemSubmitForm
 
 
@@ -114,7 +114,7 @@ class SolutionCodeSubmissionTest(TestCase):
             source="http://unavailable.example/submission_source_file/example.zip",
         )
         with patch(
-            "judge.review.snapshots.open_output_source",
+            "judge.auto_review.problem_context.open_output_source",
             side_effect=AssertionError("Failed download entered review evidence"),
         ):
             self.assertEqual(_capture_output_examples(self.problem, False, True), [])

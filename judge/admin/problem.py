@@ -2,8 +2,7 @@ from operator import attrgetter
 
 from django import forms
 from django.contrib import admin
-from django.conf import settings
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.forms import ModelForm, TextInput
@@ -273,24 +272,15 @@ class ProblemAdmin(CompareVersionAdmin):
         actions = super(ProblemAdmin, self).get_actions(request)
 
         if request.user.has_perm("judge.change_public_visibility"):
-            func, name, desc = self.get_action("make_public")
-            actions[name] = (func, name, desc)
-
             func, name, desc = self.get_action("make_private")
             actions[name] = (func, name, desc)
-
-        if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
-            actions.pop("make_public", None)
         return actions
 
     def get_readonly_fields(self, request, obj=None):
         fields = self.readonly_fields
         if not request.user.is_superuser:
             fields += ("is_locked",)
-        if not request.user.has_perm("judge.change_public_visibility") or getattr(
-            settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False
-        ):
-            fields += ("is_public",)
+        fields += ("is_public",)
         return fields
 
     def show_authors(self, obj):
@@ -309,26 +299,6 @@ class ProblemAdmin(CompareVersionAdmin):
         from judge.tasks import rescore_problem
 
         transaction.on_commit(rescore_problem.s(problem_id).delay)
-
-    def make_public(self, request, queryset):
-        if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
-            raise PermissionDenied
-        if not request.user.is_superuser:
-            queryset = queryset.filter(is_locked=False)
-        count = queryset.update(is_public=True)
-        for problem_id in queryset.values_list("id", flat=True):
-            self._rescore(request, problem_id)
-        self.message_user(
-            request,
-            ngettext(
-                "%d problem successfully marked as public.",
-                "%d problems successfully marked as public.",
-                count,
-            )
-            % count,
-        )
-
-    make_public.short_description = _("Mark problems as public")
 
     def make_private(self, request, queryset):
         if not request.user.is_superuser:

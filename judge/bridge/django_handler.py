@@ -5,8 +5,10 @@ import struct
 from django import db
 
 from judge.bridge.base_handler import Disconnect, ZlibPacketHandler
-from judge.models.review_evidence import ReviewEvidenceJob
-from judge.review.protocol import required_evidence_protocol
+from judge.auto_review.test_statistics import (
+    active_extraction,
+    parse_extraction_request_id,
+)
 
 logger = logging.getLogger("judge.bridge")
 size_pack = struct.Struct("!I")
@@ -21,8 +23,8 @@ class DjangoHandler(ZlibPacketHandler):
             "terminate-submission": self.on_termination,
             "disconnect-judge": self.on_disconnect_request,
             "validate-request": self.on_validate_request,
-            "review-evidence-request": self.on_review_evidence_request,
-            "cancel-review-evidence": self.on_cancel_review_evidence,
+            "test-statistics-request": self.on_test_statistics_request,
+            "cancel-test-statistics": self.on_cancel_test_statistics,
             "update-problems": self.on_update_problems,
             "bridge-status": self.on_bridge_status,
         }
@@ -75,33 +77,40 @@ class DjangoHandler(ZlibPacketHandler):
         self.judges.broadcast_update_problems()
         return {"name": "update-problems-received"}
 
-    def on_review_evidence_request(self, data):
-        job = ReviewEvidenceJob.objects.select_related("problem_run__problem").get(
-            job_id=data["job-id"], status="P"
-        )
+    def on_test_statistics_request(self, data):
+        identity = data.get("request-id")
+        stage_id, token = parse_extraction_request_id(identity)
+        stage = active_extraction(stage_id, token)
+        request = data.get("request")
+        if stage is None or not isinstance(request, dict):
+            return {"name": "test-statistics-failed", "request-id": identity}
+        if (
+            set(request)
+            != {"problem_code", "phase_id", "attempt_token", "helper_source"}
+            or request["problem_code"] != stage.problem_run.problem.code
+            or request["phase_id"] != stage_id
+            or isinstance(request["phase_id"], bool)
+            or request["attempt_token"] != str(token)
+            or not isinstance(request["helper_source"], str)
+            or not 0 < len(request["helper_source"].encode("utf8")) <= 256 * 1024
+        ):
+            return {"name": "test-statistics-failed", "request-id": identity}
         success = self.judges.validate(
-            str(job.job_id),
-            job.problem_run.problem.code,
-            review=True,
-            protocol=required_evidence_protocol(job.operation, job.payload),
+            identity, request["problem_code"], review=True, protocol=1, request=request
         )
         return {
-            "name": "review-evidence-received" if success else "review-evidence-failed",
-            "job-id": str(job.job_id),
+            "name": "test-statistics-received" if success else "test-statistics-failed",
+            "request-id": identity,
         }
 
-    def on_cancel_review_evidence(self, data):
-        identities = data.get("job-ids", [])
+    def on_cancel_test_statistics(self, data):
+        identities = data.get("request-ids")
         if not isinstance(identities, list) or len(identities) > 128:
-            return {"name": "cancel-review-evidence-failed"}
-        for identity in ReviewEvidenceJob.objects.filter(
-            job_id__in=identities, status="C"
-        ).values_list("job_id", flat=True):
-            key = str(identity)
-            handler = self.judges.validate_map.get(key)
-            if handler is not None and handler._validating == key:
-                handler.send({"name": "terminate-review-evidence", "validate-id": key})
-        return {"name": "cancel-review-evidence-received"}
+            return {"name": "cancel-test-statistics-failed"}
+        for identity in identities:
+            parse_extraction_request_id(identity)
+        self.judges.cancel_statistics(identities)
+        return {"name": "cancel-test-statistics-received"}
 
     def on_bridge_status(self, data):
         return {

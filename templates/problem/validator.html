@@ -132,6 +132,8 @@
             '{{ _("Error") }}: ' + $('<span>').text(st.error).html() +
             '</span>'
           );
+        } else if (st.is_stale) {
+          $summary.html('<span class="gray">{{ _("Test data or validator changed. Run Validation again.") }}</span>');
         } else if (st.passed === true) {
           $summary.html(
             '<span class="green"><i class="fa fa-check-circle"></i> ' +
@@ -281,7 +283,9 @@
     <h3>{{ _('Validation Results') }}</h3>
     <div id="validation-summary" style="margin-bottom: 1em;">
       {% if latest_validation %}
-        {% if latest_validation.status == 'D' and latest_validation.passed %}
+        {% if validation_stale %}
+          <span class="gray">{{ _('Test data or validator changed. Run Validation again.') }}</span>
+        {% elif latest_validation.status == 'D' and latest_validation.passed %}
           <span class="green"><i class="fa fa-check-circle"></i> {{ _('All test cases passed validation.') }}</span>
         {% elif latest_validation.status == 'D' and not latest_validation.passed %}
           <span class="red"><i class="fa fa-times-circle"></i>

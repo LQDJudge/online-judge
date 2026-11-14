@@ -9,7 +9,7 @@ from judge.models import Comment, Contest, Language, Problem, ProblemGroup, Prof
 from judge.models.contest_review import ContestReviewRun
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.problem_review import ProblemReviewRun
-from judge.review.comment_notify import notify_review_comment
+from judge.auto_review.comment_notify import notify_review_comment
 
 
 def _make_language():

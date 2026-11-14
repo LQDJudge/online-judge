@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from judge.models import Contest, Language, Profile
 from judge.models.contest_review import ContestPublicRequest, ContestReviewRun
-from judge.review.contest_hashing import compute_contest_input_hash
+from judge.auto_review.review_context import current_content_hash
 
 
 def _make_language():
@@ -53,7 +53,7 @@ class ContestDecisionViewTest(TestCase):
         ContestReviewRun.objects.create(
             contest=self.contest,
             triggered_by=self.author,
-            input_hash=compute_contest_input_hash(self.contest),
+            input_hash=current_content_hash(self.contest),
         )
         self.pr = ContestPublicRequest.objects.create(
             contest=self.contest, requested_by=self.author
@@ -68,14 +68,17 @@ class ContestDecisionViewTest(TestCase):
 
     def test_admin_accept(self):
         self.client.force_login(self.admin.user)
-        resp = self.client.post("/contest/vdc/review/accept", {"feedback": "great"})
+        resp = self.client.post(
+            "/contest/vdc/review/accept",
+            {"feedback": "great", "override_reason": "Reviewed by administrator"},
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.json()["success"])
         self.pr.refresh_from_db()
         self.assertEqual(self.pr.status, ContestPublicRequest.APPROVED)
-        self.assertEqual(self.pr.feedback, "great")
+        self.assertEqual(self.pr.override_reason, "Reviewed by administrator")
         self.contest.refresh_from_db()
-        self.assertFalse(self.contest.is_visible)
+        self.assertTrue(self.contest.is_visible)
 
     def test_admin_reject(self):
         self.client.force_login(self.admin.user)
@@ -95,11 +98,10 @@ class ContestDecisionViewTest(TestCase):
         self.assertEqual(self.pr.status, ContestPublicRequest.PENDING)
 
     def test_accept_with_no_request_returns_error(self):
-        # The pr-is-None branch: admin acts on a contest whose public request
-        # was deleted/never existed. Should be 200 with success=False.
+        # Direct publication without a reviewed request requires a reason.
         self.pr.delete()
         self.client.force_login(self.admin.user)
         resp = self.client.post("/contest/vdc/review/accept", {"feedback": "x"})
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 400)
         self.assertFalse(resp.json()["success"])
         self.assertIn("error", resp.json())

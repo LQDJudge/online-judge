@@ -261,16 +261,6 @@ urlpatterns = [
         coordinator_review.manage_review,
         name="coordinator_manage_review",
     ),
-    re_path(
-        r"^reviews/(?P<kind>problem|contest)/(?P<code>[\w-]+)/(?P<run_id>\d+)/debug/$",
-        coordinator_review.review_debug,
-        name="coordinator_review_debug",
-    ),
-    re_path(
-        r"^reviews/(?P<kind>problem|contest)/(?P<code>[\w-]+)/(?P<run_id>\d+)/snapshot/$",
-        coordinator_review.review_snapshot,
-        name="coordinator_review_snapshot",
-    ),
     re_path("", include("pagedown.urls")),
     re_path(
         r"^$",
