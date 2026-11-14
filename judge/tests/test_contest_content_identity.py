@@ -1,13 +1,8 @@
 import copy
-from types import SimpleNamespace
 
 from django.test import SimpleTestCase
 
-from judge.review.snapshots import (
-    contest_review_content,
-    digest_json,
-    reviewed_content_hash,
-)
+from judge.auto_review.review_hash import contest_review_content
 
 
 class ContestContentIdentityTests(SimpleTestCase):
@@ -214,17 +209,3 @@ class ContestContentIdentityTests(SimpleTestCase):
                 self.assertNotEqual(
                     contest_review_content(before), contest_review_content(changed)
                 )
-
-    def test_legacy_snapshot_is_compared_without_rewriting_history(self):
-        snapshot = self.snapshot()
-        frozen = copy.deepcopy(snapshot)
-        run = SimpleNamespace(snapshot=snapshot, content_hash="old broad hash")
-        self.assertEqual(
-            reviewed_content_hash(run), digest_json(contest_review_content(snapshot))
-        )
-        self.assertEqual(snapshot, frozen)
-        self.assertEqual(run.content_hash, "old broad hash")
-        minimal = SimpleNamespace(
-            snapshot={"kind": "contest"}, content_hash="opaque legacy hash"
-        )
-        self.assertEqual(reviewed_content_hash(minimal), "opaque legacy hash")

@@ -8,8 +8,6 @@ Comment thread is anchored to the FIRST contest review run so discussion
 spans across re-runs (same pattern as problem review).
 """
 
-from datetime import timedelta
-
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -34,18 +32,11 @@ from judge.models.comment import (
 )
 from judge.models.contest_review import (
     ContestPublicRequest,
-    ContestReviewCheckResult,
     ContestReviewRun,
 )
-from judge.review.contest_hashing import compute_contest_input_hash
-from judge.review.contest_registry import CONTEST_CHECKS
-from judge.review.decisions import (
-    accept_contest_public_request,
-    reject_contest_public_request,
-)
-from judge.review.verdict import batched_verdicts
-from judge.review.workflow import enabled, is_review_readable
-from judge.review.publication import (
+from judge.auto_review.verdict import batched_verdicts
+from judge.auto_review.workflow import contest_report_readable, is_review_readable
+from judge.auto_review.publication import (
     submit_publication,
     withdraw_publication,
     decide_publication,
@@ -53,7 +44,6 @@ from judge.review.publication import (
 )
 from judge.utils.community import can_use_community_features
 from judge.utils.diggpaginator import DiggPaginator
-from judge.utils.timefmt import format_mmss
 from judge.utils.views import QueryStringSortMixin, TitleMixin
 from judge.views.comment.forms import CommentForm
 from judge.views.comment.mixins import is_comment_locked
@@ -135,6 +125,9 @@ def contest_review_dashboard(request, contest):
         except ValueError:
             pass
 
+    if selected and not contest_report_readable(selected, request.user):
+        return HttpResponseForbidden()
+
     selected_run_index = run_indices.get(selected.id) if selected else None
     viewing_history = selected is not None and selected.id != (
         latest.id if latest else None
@@ -152,8 +145,6 @@ def contest_review_dashboard(request, contest):
         for r in reversed(all_runs)
     ]
 
-    check_display_names = {c.id: c.display_name for c in CONTEST_CHECKS}
-
     public_request = ContestPublicRequest.objects.filter(contest=contest_obj).first()
 
     context = {
@@ -164,22 +155,14 @@ def contest_review_dashboard(request, contest):
         "actual_latest_run": latest,
         "actual_latest_run_index": run_indices.get(latest.id) if latest else None,
         "viewing_history": viewing_history,
-        "check_results": list(selected.check_results.all()) if selected else [],
-        "check_display_names": check_display_names,
         "history_entries": history_entries,
         "public_request": public_request,
     }
     context.update(_contest_sidebar_context(request, contest_obj))
     context.update(coordinator_context(contest_obj, selected, request.user))
-    if public_request and public_request.review_run_id:
-        context["coordinator_enabled"] = True
-    if (
-        request.headers.get("X-Review-Live") == "1"
-        and selected
-        and selected.workflow_version == 2
-    ):
+    if request.headers.get("X-Review-Live") == "1" and selected:
         context["coordinator_live"] = True
-        return render(request, "review/coordinator_dashboard.html", context)
+        return render(request, "auto_review/coordinator_dashboard.html", context)
 
     # Anchor comments to the FIRST run so the discussion thread persists
     # across re-runs (same rationale as problem review).
@@ -239,51 +222,8 @@ def _attach_comment_context(request, context, target):
 
 @require_POST
 def contest_review_trigger(request, contest):
-    """Admin Rerun — force a fresh contest review, no guards.
-
-    Restricted to superusers because it bypasses ALL guards (dirty-check,
-    cooldown, in-flight). For non-admins, the "Request public contest"
-    flow on the contest edit page is the supported way to create a review,
-    and it enforces guards via `contest_request_public`.
-
-    Honors the `AUTO_REVIEW_CONTEST_ENABLED` ops kill switch — when False,
-    new reviews refuse to start; existing in-flight runs continue.
-    """
-    if enabled():
-        return run_review(request, "contest", contest)
-    if not request.user.is_authenticated or not request.user.is_superuser:
-        return HttpResponseForbidden()
-    if not getattr(settings, "AUTO_REVIEW_CONTEST_ENABLED", True):
-        return HttpResponseRedirect(reverse("contest_review_dashboard", args=[contest]))
-    contest_obj = get_object_or_404(Contest, key=contest)
-
-    # Imports kept local to the trigger path to avoid pulling the Celery
-    # task module into every dashboard render.
-    from judge.models.contest_review import ContestReviewRun
-    from judge.review.contest_hashing import compute_contest_input_hash
-    from judge.tasks.contest_review import review_contest
-
-    with transaction.atomic():
-        # Create the new run, then mark all prior non-superseded runs for
-        # this contest as superseded by it. The order matters: we need the
-        # new run's id before we can point superseded_by at it.
-        # `force_refresh_problems=True` — admin Rerun means "rebuild
-        # everything from scratch", including per-problem reviews even when
-        # their input_hash hasn't changed.
-        run = ContestReviewRun.objects.create(
-            contest=contest_obj,
-            triggered_by=request.profile,
-            input_hash=compute_contest_input_hash(contest_obj),
-            force_refresh_problems=True,
-        )
-        ContestReviewRun.objects.filter(
-            contest=contest_obj, superseded_by__isnull=True
-        ).exclude(id=run.id).update(superseded_by=run)
-
-    review_contest.delay(run.id)
-    return HttpResponseRedirect(
-        reverse("contest_review_dashboard", args=[contest_obj.key])
-    )
+    """Use the same admission checks for every review entry point."""
+    return run_review(request, "contest", contest)
 
 
 @never_cache
@@ -303,8 +243,10 @@ def contest_review_status(request, contest):
     )
     if not latest:
         return JsonResponse({"run": None})
+    if not contest_report_readable(latest, request.user):
+        return JsonResponse({"error": "permission denied"}, status=403)
 
-    if request.headers.get("X-Review-Progress") == "1" and latest.workflow_version == 2:
+    if request.headers.get("X-Review-Progress") == "1":
         return JsonResponse(
             {
                 "run": {
@@ -330,25 +272,13 @@ def contest_review_status(request, contest):
                 ),
                 "summary_report": latest.summary_report,
                 "readiness": latest.readiness,
-                "workflow_version": latest.workflow_version,
                 "coordinator_stages": (
                     list(
                         latest.coordinator_stages.order_by("id").values(
                             "stage_id", "status", "reason", "output_json"
                         )
                     )
-                    if latest.workflow_version == 2
-                    else []
                 ),
-                "check_results": [
-                    {
-                        "check_id": c.check_id,
-                        "status": c.status,
-                        "reason": c.reason,
-                        "details_json": c.details_json,
-                    }
-                    for c in latest.check_results.all()
-                ],
             }
         }
     )
@@ -356,251 +286,76 @@ def contest_review_status(request, contest):
 
 @require_POST
 def contest_request_public(request, contest):
-    """Author requests a private contest to be made public.
-
-    The coordinator path requests publication of an exact reviewed candidate;
-    it never starts another review. The legacy path below retains its original
-    review-triggering guards while the coordinator feature is disabled.
-    """
+    """Request publication of a completed assessment; never start AI work."""
     if not request.user.is_authenticated:
-        return HttpResponseForbidden()
-
+        return JsonResponse({"error": _("Authentication required.")}, status=401)
     contest_obj = get_object_or_404(Contest, key=contest)
-
-    # Guard 1: Permission.
-    if (
-        enabled()
-        or ContestPublicRequest.objects.filter(
-            contest=contest_obj, review_run__isnull=False
-        ).exists()
-    ):
-        try:
-            run_id = request.POST.get("run_id")
-            public_request = submit_publication(
-                contest_obj, request.user, int(run_id) if run_id else None
-            )
-        except (ValidationError, ValueError) as exc:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "error": (
-                        "; ".join(exc.messages)
-                        if isinstance(exc, ValidationError)
-                        else _("Invalid review run.")
-                    ),
-                },
-                status=400,
-            )
-        return JsonResponse(
-            {
-                "success": True,
-                "request_id": public_request.pk,
-                "redirect": reverse("contest_review_dashboard", args=[contest]),
-            }
+    try:
+        run_id = request.POST.get("run_id")
+        public_request = submit_publication(
+            contest_obj, request.user, int(run_id) if run_id else None
         )
-
-    if not contest_obj.can_request_public_by(request.user):
-        return JsonResponse({"success": False, "error": "Permission denied"})
-
-    # Ops kill switch — when False, new public requests refuse. Existing
-    # in-flight runs continue (we don't try to cancel them; the reaper will
-    # eventually time them out if they truly hang).
-    if not getattr(settings, "AUTO_REVIEW_CONTEST_ENABLED", True):
+    except (ValidationError, ValueError) as exc:
         return JsonResponse(
             {
                 "success": False,
-                "error": _("Contest auto-review is currently disabled."),
-            }
+                "error": (
+                    "; ".join(exc.messages)
+                    if isinstance(exc, ValidationError)
+                    else _("Invalid review run.")
+                ),
+            },
+            status=400,
         )
-
-    # Imports kept local — same rationale as contest_review_trigger.
-    from judge.tasks.contest_review import review_contest
-
-    new_hash = compute_contest_input_hash(contest_obj)
-
-    # SELECT … FOR UPDATE on the Contest row serializes concurrent POSTs.
-    # Same anti-double-create pattern problem review uses.
-    with transaction.atomic():
-        Contest.objects.select_for_update().filter(id=contest_obj.id).first()
-
-        # Guard 2: In-flight.
-        if ContestReviewRun.objects.filter(
-            contest=contest_obj, status=ContestReviewRun.RUNNING
-        ).exists():
-            return JsonResponse(
-                {
-                    "success": False,
-                    "error": _("Review currently running, please wait."),
-                }
-            )
-
-        latest_run = (
-            ContestReviewRun.objects.filter(contest=contest_obj)
-            .order_by("-started_at")
-            .first()
-        )
-
-        if latest_run is not None:
-            # Guard 3: Dirty-check — admins bypass so they can re-run a
-            # review without having to edit the contest first (useful for
-            # diagnosing flaky LLM checks or testing a config change).
-            if latest_run.input_hash == new_hash and not request.user.is_superuser:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": _(
-                            "No changes since your last review — edit "
-                            "something and try again."
-                        ),
-                    }
-                )
-            # Guard 4: Cooldown — only for the same non-admin user re-requesting.
-            same_user_recently = (
-                not request.user.is_superuser
-                and latest_run.triggered_by_id == request.profile.id
-            )
-            if same_user_recently:
-                cooldown_seconds = getattr(
-                    settings, "AUTO_REVIEW_CONTEST_REQUEST_COOLDOWN_SECONDS", 300
-                )
-                cooldown_end = latest_run.started_at + timedelta(
-                    seconds=cooldown_seconds
-                )
-                remaining = (cooldown_end - timezone.now()).total_seconds()
-                if remaining > 0:
-                    return JsonResponse(
-                        {
-                            "success": False,
-                            "error": _(
-                                "Please wait %(mmss)s before requesting review again."
-                            )
-                            % {"mmss": format_mmss(remaining)},
-                            "cooldown_seconds_remaining": int(remaining),
-                        }
-                    )
-
-        # All guards passed. Refresh or create the ContestPublicRequest row.
-        existing = ContestPublicRequest.objects.filter(contest=contest_obj).first()
-        if existing:
-            existing.status = ContestPublicRequest.PENDING
-            existing.requested_by = request.profile
-            existing.feedback = ""
-            existing.reviewed_by = None
-            existing.save(
-                update_fields=[
-                    "status",
-                    "requested_by",
-                    "feedback",
-                    "reviewed_by",
-                    "updated_at",
-                ]
-            )
-        else:
-            ContestPublicRequest.objects.create(
-                contest=contest_obj,
-                requested_by=request.profile,
-            )
-
-        new_run = ContestReviewRun.objects.create(
-            contest=contest_obj,
-            triggered_by=request.profile,
-            input_hash=new_hash,
-        )
-        # Bulk-supersede ALL prior non-superseded runs, not just `latest_run`.
-        # Defensive: if a previous bug or race ever left two parallel "head"
-        # runs, this collapses them under the new one rather than leaving an
-        # inconsistent dashboard. Same pattern as `contest_review_trigger`
-        # and `trigger_problem_review_for`.
-        ContestReviewRun.objects.filter(
-            contest=contest_obj, superseded_by__isnull=True
-        ).exclude(id=new_run.id).update(superseded_by=new_run)
-
-        # transaction.on_commit so the Celery dispatch only happens after
-        # the DB row is durably visible to the worker.
-        transaction.on_commit(lambda: review_contest.delay(new_run.id))
-
     return JsonResponse(
         {
             "success": True,
-            "run_id": new_run.id,
-            "redirect": reverse("contest_review_dashboard", args=[contest_obj.key]),
+            "request_id": public_request.pk,
+            "redirect": reverse("contest_review_dashboard", args=[contest]),
         }
     )
 
 
 @require_POST
 def contest_request_cancel(request, contest):
-    """Author withdraws their PENDING ContestPublicRequest.
-
-    Mirrors `cancel_request_public` for problems. Deletes the PENDING row
-    so admins stop seeing it in the queue. ContestReviewRun rows the
-    request triggered remain (review history, not publish-request state).
-    """
+    """Withdraw the pending request while preserving review history."""
     if not request.user.is_authenticated:
         return HttpResponseForbidden()
     contest_obj = get_object_or_404(Contest, key=contest)
-    if (
-        enabled()
-        or ContestPublicRequest.objects.filter(
-            contest=contest_obj, review_run__isnull=False
-        ).exists()
-    ):
-        withdraw_publication(contest_obj, request.user)
-        return JsonResponse({"success": True})
-    if not contest_obj.can_request_public_by(request.user):
-        return JsonResponse({"success": False, "error": "Permission denied"})
-    deleted, _ignored = ContestPublicRequest.objects.filter(
-        contest=contest_obj, status=ContestPublicRequest.PENDING
-    ).delete()
-    return JsonResponse({"success": True, "cancelled": deleted})
+    withdraw_publication(contest_obj, request.user)
+    return JsonResponse({"success": True})
 
 
 @require_POST
 def contest_review_accept(request, contest):
-    """Admin records an Accept verdict on the contest's public request.
-
-    Status-only — does NOT publish (is_visible untouched). Posts a system
-    comment + notifies the author via the shared decisions service.
-    """
+    """Publish the requested contest, subject to review or an override."""
     if not request.user.is_authenticated or not request.user.is_superuser:
         return HttpResponseForbidden()
     contest_obj = get_object_or_404(Contest, key=contest)
     feedback = request.POST.get("feedback", "").strip()
-    if (
-        enabled()
-        or ContestPublicRequest.objects.filter(
-            contest=contest_obj, review_run__isnull=False
-        ).exists()
-    ):
-        try:
-            with transaction.atomic():
-                contest_obj = Contest.objects.select_for_update().get(pk=contest_obj.pk)
-                pending = ContestPublicRequest.objects.filter(
-                    contest=contest_obj, status=ContestPublicRequest.PENDING
-                ).first()
-                if pending and pending.review_run_id:
-                    decide_publication(
-                        contest_obj,
-                        request.user,
-                        feedback=feedback,
-                        override_reason=request.POST.get("override_reason", ""),
-                        publish=True,
-                    )
-                else:
-                    publish_without_review(
-                        contest_obj,
-                        request.user,
-                        request.POST.get("override_reason", ""),
-                    )
-        except ValidationError as exc:
-            return JsonResponse(
-                {"success": False, "error": "; ".join(exc.messages)}, status=400
-            )
-        return JsonResponse({"success": True})
-    pr = accept_contest_public_request(contest_obj, request.profile, feedback)
-    if pr is None:
+    try:
+        with transaction.atomic():
+            contest_obj = Contest.objects.select_for_update().get(pk=contest_obj.pk)
+            pending = ContestPublicRequest.objects.filter(
+                contest=contest_obj, status=ContestPublicRequest.PENDING
+            ).first()
+            if pending and pending.review_run_id:
+                decide_publication(
+                    contest_obj,
+                    request.user,
+                    feedback=feedback,
+                    override_reason=request.POST.get("override_reason", ""),
+                    publish=True,
+                )
+            else:
+                publish_without_review(
+                    contest_obj,
+                    request.user,
+                    request.POST.get("override_reason", ""),
+                )
+    except ValidationError as exc:
         return JsonResponse(
-            {"success": False, "error": _("No public request to act on.")}
+            {"success": False, "error": "; ".join(exc.messages)}, status=400
         )
     return JsonResponse({"success": True})
 
@@ -624,37 +379,25 @@ def contest_review_reject(request, contest):
             },
             status=400,
         )
-    if (
-        enabled()
-        or ContestPublicRequest.objects.filter(
-            contest=contest_obj, review_run__isnull=False
-        ).exists()
-    ):
-        try:
-            decide_publication(
-                contest_obj,
-                request.user,
-                approve=False,
-                feedback=feedback,
-                expected_request_token=request.POST.get("request_token"),
-            )
-        except ValidationError as exc:
-            return JsonResponse(
-                {"success": False, "error": "; ".join(exc.messages)}, status=400
-            )
-        return JsonResponse(
-            {
-                "success": True,
-                "redirect": reverse("contest_review_dashboard", args=[contest_obj.key])
-                + "?tab=discussion",
-            }
+    try:
+        decide_publication(
+            contest_obj,
+            request.user,
+            approve=False,
+            feedback=feedback,
+            expected_request_token=request.POST.get("request_token"),
         )
-    pr = reject_contest_public_request(contest_obj, request.profile, feedback)
-    if pr is None:
+    except ValidationError as exc:
         return JsonResponse(
-            {"success": False, "error": _("No public request to act on.")}
+            {"success": False, "error": "; ".join(exc.messages)}, status=400
         )
-    return JsonResponse({"success": True})
+    return JsonResponse(
+        {
+            "success": True,
+            "redirect": reverse("contest_review_dashboard", args=[contest_obj.key])
+            + "?tab=discussion",
+        }
+    )
 
 
 # ----------------------------------------------------------------------------
@@ -717,14 +460,6 @@ class ContestReviewListView(
         qs = Contest.objects.filter(review_runs__isnull=False).prefetch_related(
             "authors__user"
         )
-        if not enabled():
-            qs = qs.filter(
-                Q(start_time__gt=timezone.now())
-                | Q(is_visible=False)
-                | Q(is_organization_private=True)
-                | Q(is_private=True)
-                | Q(is_in_course=True)
-            )
 
         if not (
             self.request.user.is_superuser
@@ -781,7 +516,6 @@ class ContestReviewListView(
             _latest, verdicts = batched_verdicts(
                 candidate_ids,
                 ContestReviewRun,
-                ContestReviewCheckResult,
                 "contest_id",
             )
             matching = [iid for iid, v in verdicts.items() if v == verdict]
@@ -820,7 +554,7 @@ class ContestReviewListView(
         item_ids = [c.id for c in items]
 
         latest_runs, verdicts = batched_verdicts(
-            item_ids, ContestReviewRun, ContestReviewCheckResult, "contest_id"
+            item_ids, ContestReviewRun, "contest_id"
         )
         public_requests = {
             pr.contest_id: pr

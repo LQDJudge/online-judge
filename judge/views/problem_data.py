@@ -1,4 +1,3 @@
-import hashlib
 import json
 import mimetypes
 import os
@@ -68,7 +67,12 @@ from judge.widgets.fine_uploader import (
 from judge.widgets.file_edit import FileEditWidget
 from judge.views.problem import ProblemMixin
 from judge.judgeapi import validate_testcases
-from judge.review.provenance import solution_binding, validator_binding
+from judge.auto_review.execution_freshness import (
+    solution_execution_hash,
+    solution_package_identity,
+    solution_result_current,
+    validation_execution_hash,
+)
 from judge.models.public_request import PublicRequest
 from judge.tasks.llm import generate_solution_codes_task
 from llm_service.config import CHATBOT_SUPPORTED_MODELS
@@ -384,18 +388,10 @@ class ProblemCaseFormSet(
 class ProblemManagerMixin(LoginRequiredMixin, ProblemMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["coordinator_review_enabled"] = getattr(
-            settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False
-        )
         pending = PublicRequest.objects.filter(
             problem=self.object, status=PublicRequest.PENDING
         ).first()
-        context["pending_publication"] = (
-            pending
-            if pending
-            and (context["coordinator_review_enabled"] or pending.review_run_id)
-            else None
-        )
+        context["pending_publication"] = pending
         context["publication_confirmation_token"] = publication_confirmation_token(
             context["pending_publication"]
         )
@@ -843,6 +839,9 @@ class ProblemValidatorView(TitleMixin, ProblemManagerMixin):
             ProblemValidation.objects.filter(problem=problem).order_by("-date").first()
         )
         context["latest_validation"] = latest
+        context["validation_stale"] = bool(
+            latest and latest.execution_hash != validation_execution_hash(problem)
+        )
         if latest:
             context["validation_results"] = list(
                 ProblemValidationResult.objects.filter(validation=latest).order_by(
@@ -893,7 +892,7 @@ class ProblemValidatorSaveView(ProblemManagerMixin, View):
         if confirmation is not None:
             return confirmation
 
-        data, _ = ProblemData.objects.get_or_create(problem=problem)
+        data, _created = ProblemData.objects.get_or_create(problem=problem)
 
         ext = "cpp" if language == "cpp" else "py"
         filename = "validator." + ext
@@ -965,7 +964,7 @@ class ValidateTestCasesView(ProblemManagerMixin, View):
             validate_id=validate_id,
             user=profile,
             status="P",
-            review_evidence=validator_binding(problem),
+            execution_hash=validation_execution_hash(problem),
         )
 
         success = validate_testcases(problem.code, validate_id)
@@ -999,6 +998,7 @@ class ValidateTestCasesStatusView(ProblemManagerMixin, View):
         )
 
         status_data = {
+            "is_stale": validation.execution_hash != validation_execution_hash(problem),
             "status": validation.get_status_display(),
             "total_cases": validation.total_cases,
             "passed": validation.passed,
@@ -1193,14 +1193,7 @@ class ProblemSolutionCodesSaveView(ProblemManagerMixin, View):
             for i, entry in enumerate(entries):
                 if i < len(existing):
                     sc = existing[i]
-                    # Clear last_submission if source/language/expected changed
-                    code_changed = (
-                        sc.source_code != entry["source_code"]
-                        or sc.language_id != entry["language_id"]
-                        or sc.expected_result != entry["expected_result"]
-                    )
-                    if code_changed:
-                        sc.last_submission = None
+                    # Keep historical execution; its fingerprint determines freshness.
                     sc.order = entry["order"]
                     sc.name = entry["name"]
                     sc.source_code = entry["source_code"]
@@ -1289,16 +1282,15 @@ class ProblemSolutionCodesRunView(ProblemManagerMixin, View):
             )
 
         submission_ids = []
-        binding = solution_binding(problem, "")
+        package = solution_package_identity(problem)
         for sc in codes_to_run:
             sub = Submission.objects.create(
                 user=request.profile,
                 problem=problem,
                 language=sc.language,
-                review_evidence={
-                    **binding,
-                    "source_hash": hashlib.sha256(sc.source_code.encode()).hexdigest(),
-                },
+                execution_hash=solution_execution_hash(
+                    problem, sc.source_code, sc.language_id, package=package
+                ),
             )
             SubmissionSource.objects.create(submission=sub, source=sc.source_code)
             sc.last_submission = sub
@@ -1393,7 +1385,9 @@ class ProblemSolutionCodesRunOneView(ProblemManagerMixin, View):
             user=request.profile,
             problem=problem,
             language=sc.language,
-            review_evidence=solution_binding(problem, sc.source_code),
+            execution_hash=solution_execution_hash(
+                problem, sc.source_code, sc.language_id
+            ),
         )
         SubmissionSource.objects.create(submission=sub, source=sc.source_code)
         sc.last_submission = sub
@@ -1414,6 +1408,7 @@ class ProblemSolutionCodesStatusView(ProblemManagerMixin, View):
 
         all_graded = True
         results = []
+        package = solution_package_identity(problem)
         for sc in codes:
             sub = sc.last_submission
             if sub is None:
@@ -1445,7 +1440,8 @@ class ProblemSolutionCodesStatusView(ProblemManagerMixin, View):
 
             # Determine match
             match = None
-            if is_graded and sub.result:
+            is_stale = not solution_result_current(problem, sc, sub, package=package)
+            if is_graded and sub.result and not is_stale:
                 match = sub.result == sc.expected_result
 
             results.append(
@@ -1457,6 +1453,7 @@ class ProblemSolutionCodesStatusView(ProblemManagerMixin, View):
                     "status": sub.status,
                     "result": sub.result,
                     "is_graded": is_graded,
+                    "is_stale": is_stale,
                     "match": match,
                     "submission_id": sub.id,
                     "case_points": sub.case_points,

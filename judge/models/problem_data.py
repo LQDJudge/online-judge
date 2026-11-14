@@ -70,6 +70,10 @@ CSV_CHECKER_KEYS = {
 
 
 class ProblemData(models.Model):
+    # Backend-maintained identities for overwriteable files; never author input.
+    test_revision = models.PositiveBigIntegerField(default=1, editable=False)
+    validator_revision = models.PositiveBigIntegerField(default=1, editable=False)
+    judging_revision = models.PositiveBigIntegerField(default=1, editable=False)
     problem = models.OneToOneField(
         "Problem",
         verbose_name=_("problem"),
@@ -405,6 +409,8 @@ class ProblemSignatureGrader(models.Model):
 
 
 class ProblemValidation(models.Model):
+    execution_hash = models.CharField(max_length=64, blank=True, editable=False)
+    # Retained for existing records; execution freshness uses execution_hash.
     review_evidence = models.JSONField(default=dict, blank=True)
     problem = models.ForeignKey(
         "Problem",

@@ -1,11 +1,9 @@
 """Coordinator actions; publication requests are intentionally separate."""
 
-import json
-
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db.models import Max
+from django.db.models import Max, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -17,19 +15,17 @@ from django.views.decorators.vary import vary_on_headers
 from judge.models import (
     Contest,
     ContestReviewRun,
+    AIUsageLog,
     Problem,
     ProblemData,
     ProblemReviewRun,
-    ReviewEvidenceJob,
-    ReviewStageAttempt,
 )
-from judge.review.workflow import (
+from judge.auto_review.workflow import (
     ACTIVE,
     _authorize,
     cancel_review,
     current_content_hash,
     reviewed_content_hash,
-    enabled,
     is_review_readable,
     publication_blockers,
     remaining_credits,
@@ -37,25 +33,34 @@ from judge.review.workflow import (
     start_contest_review,
     start_problem_review,
     review_change_reasons,
-    review_content_change_labels,
 )
-from judge.review.exposure import publication_access_details
-from judge.review.snapshots import build_contest_snapshot
-from judge.review.types import is_supported_problem, problem_profile_labels
-from judge.review.coordinator import profile_evidence_gaps
-from judge.review.publication import (
+from judge.auto_review.contest_exposure import publication_access_details
+from judge.auto_review.review_context import run_context
+from judge.auto_review.context_utils import ReviewInputError
+from judge.utils.public_visibility import is_site_public
+from judge.auto_review.problem_types import is_supported_problem, problem_profile_labels
+from judge.auto_review.phases import profile_evidence_gaps
+from judge.auto_review.publication import (
     publication_decision_blockers,
     publication_decision_token,
 )
-from judge.review.presentation import (
+from judge.auto_review.presentation import (
     publication_request_hint,
     review_author_feedback,
     review_finding_section,
+    review_findings,
     review_prose,
     review_section_groups,
     review_stage_badge,
     review_stage_notes,
 )
+
+
+def _safe_content_hash(obj, **kwargs):
+    try:
+        return current_content_hash(obj, **kwargs)
+    except (ReviewInputError, OSError, ValueError):
+        return ""
 
 
 def _object(kind, code):
@@ -82,10 +87,6 @@ def _readiness_labels():
 def run_review(request, kind, code):
     obj = _object(kind, code)
     _authorize(obj, request.profile)
-    if not enabled():
-        return JsonResponse(
-            {"error": _("The coordinator review is currently disabled.")}, status=503
-        )
     selected = request.POST.getlist("problems") if request.method == "POST" else []
     errors = []
     preparation_blocked = False
@@ -121,7 +122,8 @@ def run_review(request, kind, code):
         except ValidationError as exc:
             errors = exc.messages
             preparation_blocked = all(
-                item.code in ("preparation", "unsupported") for item in exc.error_list
+                item.code in ("preparation", "unsupported", "public")
+                for item in exc.error_list
             )
     elif request.method != "GET":
         return JsonResponse({"error": _("Invalid request method.")}, status=405)
@@ -141,34 +143,24 @@ def run_review(request, kind, code):
         problems = Problem.get_cached_instances(*ids)
         configs = {
             row["problem_id"]: row
-            for row in ProblemData.objects.filter(problem_id__in=ids).values(
-                "problem_id",
-                "output_only",
-                "use_ioi_signature",
-                "is_communication",
-                "checker",
-            )
+            for row in ProblemData.objects.filter(problem_id__in=ids).values()
         }
         # One batched read for runs; quota balances computed from the same rows.
-        runs = list(
-            ProblemReviewRun.objects.filter(
-                problem_id__in=ids, workflow_version=2
-            ).order_by("-id")
-        )
+        runs = list(ProblemReviewRun.objects.filter(problem_id__in=ids).order_by("-id"))
         latest, charges = {}, {}
         for run in runs:
             latest.setdefault(run.problem_id, run)
-            if (
-                run.workflow_version == 2
-                and run.credit_consumed
-                and not run.trigger_is_superuser
-            ):
+            if run.credit_consumed and not run.trigger_is_superuser:
                 charges[run.problem_id] = charges.get(run.problem_id, 0) + 1
         for problem in problems:
-            previous = latest.get(problem.pk)
-            fresh = previous and reviewed_content_hash(
-                previous
-            ) == current_content_hash(problem)
+            previous = (
+                latest.get(problem.pk)
+                if is_review_readable(problem, request.user)
+                else None
+            )
+            fresh = previous and reviewed_content_hash(previous) == _safe_content_hash(
+                problem
+            )
             credits = max(0, 3 - charges.get(problem.pk, 0))
             supported = is_supported_problem(configs.get(problem.pk))
             try:
@@ -198,21 +190,18 @@ def run_review(request, kind, code):
                     "selected": str(problem.pk) in selected if errors else not fresh,
                 }
             )
-    expected_hash = current_content_hash(obj)
+    expected_hash = _safe_content_hash(obj)
     model = ProblemReviewRun if kind == "problem" else ContestReviewRun
     previous = (
-        model.objects.filter(**{kind: obj})
-        .order_by("-id")
-        .only("snapshot", "content_hash")
-        .first()
+        model.objects.filter(**{kind: obj}).order_by("-id").only("input_hash").first()
     )
     previous_hash = reviewed_content_hash(previous) if previous else None
     return render(
         request,
         (
-            "review/coordinator_start_form.html"
+            "auto_review/coordinator_start_form.html"
             if request.headers.get("X-Review-Fragment") == "1"
-            else "review/coordinator_start.html"
+            else "auto_review/coordinator_start.html"
         ),
         {
             "title": _("Run review"),
@@ -228,7 +217,7 @@ def run_review(request, kind, code):
             "unchanged_since_last_review": previous_hash == expected_hash,
             "affects_contest_reviews": kind == "problem"
             and ContestReviewRun.objects.filter(
-                workflow_version=2, contest__contest_problems__problem=obj
+                contest__contest_problems__problem=obj
             ).exists(),
             "dashboard_url": reverse(kind + "_review_dashboard", args=[code]),
             "run_url": reverse("coordinator_run_review", args=[kind, code]),
@@ -243,7 +232,7 @@ def manage_review(request, kind, code, run_id, action):
         return JsonResponse({"error": _("Authentication required.")}, status=401)
     obj = _object(kind, code)
     model = ProblemReviewRun if kind == "problem" else ContestReviewRun
-    run = get_object_or_404(model, pk=run_id, **{kind: obj}, workflow_version=2)
+    run = get_object_or_404(model, pk=run_id, **{kind: obj})
     try:
         if request.POST.get("confirm") != "yes":
             raise ValidationError(_("Please confirm this action."))
@@ -265,126 +254,43 @@ def manage_review(request, kind, code, run_id, action):
     return redirect(kind + "_review_dashboard", code)
 
 
-@login_required
-def review_debug(request, kind, code, run_id):
-    if not request.user.is_superuser:
-        raise PermissionDenied()
-    obj = _object(kind, code)
-    model = ProblemReviewRun if kind == "problem" else ContestReviewRun
-    run = get_object_or_404(model, pk=run_id, **{kind: obj}, workflow_version=2)
-    stages = list(
-        run.coordinator_stages.prefetch_related("attempt_records").order_by("id")
-    )
-    jobs = []
-    if kind == "problem":
-        for job in (
-            ReviewEvidenceJob.objects.filter(problem_run=run)
-            .defer("payload")
-            .order_by("id")[:128]
-        ):
-            result = json.dumps(job.result, ensure_ascii=False, indent=2)
-            jobs.append(
-                {
-                    "id": job.job_id,
-                    "operation": job.operation,
-                    "status": job.status,
-                    "error": job.error,
-                    "attempt": job.attempt_number,
-                    "result_preview": result[:20000],
-                    "preview_truncated": len(result) > 20000,
-                }
-            )
-    response = render(
-        request,
-        "review/coordinator_debug.html",
-        {
-            "title": _("Review diagnostics"),
-            "review_run": run,
-            "stages": stages,
-            "evidence_jobs": jobs,
-        },
-    )
-    response["Cache-Control"] = "private, no-store"
-    response["X-Robots-Tag"] = "noindex, nofollow"
-    return response
-
-
-@login_required
-def review_snapshot(request, kind, code, run_id):
-    obj = _object(kind, code)
-    if not is_review_readable(obj, request.user):
-        raise PermissionDenied()
-    model = ProblemReviewRun if kind == "problem" else ContestReviewRun
-    run = get_object_or_404(model, pk=run_id, **{kind: obj}, workflow_version=2)
-    response = render(
-        request,
-        "review/coordinator_snapshot.html",
-        {
-            "title": _("Reviewed snapshot"),
-            "review_run": run,
-        },
-    )
-    response["Cache-Control"] = "private, no-store"
-    response["X-Robots-Tag"] = "noindex, nofollow"
-    return response
-
-
 def coordinator_context(obj, run, user):
-    if not enabled() and (not run or run.workflow_version != 2):
-        return {}
     can_run = False
     try:
         _authorize(obj, user.profile)
         can_run = True
     except PermissionDenied:
         pass
-    stages = (
-        list(run.coordinator_stages.all().order_by("id"))
-        if run and run.workflow_version == 2
-        else []
-    )
+    stages = list(run.coordinator_stages.all().order_by("id")) if run else []
+    try:
+        review_context = run_context(run, for_display=True) if run else {}
+    except (ReviewInputError, OSError, ValueError):
+        # Historical feedback remains readable when a current upload vanished.
+        review_context = {}
+    if run and isinstance(obj, Problem):
+        run._current_review_context = review_context
+    readiness = run.readiness if run else ""
     labels = {
-        "D": _("Structural and freshness preflight"),
-        "S": _("Semantic similarity retrieval"),
-        "E": (
-            _("Formal problem contract")
-            if isinstance(obj, Problem)
-            else _("Contest evidence package")
-        ),
-        "FG": _("Independent solver and test author"),
-        "H1": (
-            _("Statement and editorial")
-            if isinstance(obj, Problem)
-            else _("Difficulty and diversity")
-        ),
-        "H2_BLIND": _("Independent Solution Codes analysis"),
-        "H2": (
-            _("Solution Codes and observed results")
-            if isinstance(obj, Problem)
-            else _("Rules and consistency")
-        ),
-        "H3": _("Generator and test coverage"),
-        "H4_PLAN": _("Validator challenge preparation"),
-        "P_VALIDATOR": _("Validator challenge execution"),
-        "H4": _("Validator assessment"),
-        "H5_PLAN": _("Checker challenge preparation"),
-        "P_CHECKER": _("Checker challenge execution"),
-        "H5": _("Checker assessment"),
-        "H6": _("Limits and difficulty"),
-        "H7": _("Problem equivalence assessment"),
-        "P_EXTRACT": _("Test statistics extraction"),
-        "EXTRACT_REPAIR": _("Optional extractor repair"),
-        "P_EXTRACT_FINAL": _("Final test statistics extraction"),
-        "Q": _("Evidence dossier"),
-        "R": _("Coordinator synthesis"),
-        "P_FOLLOWUP": _("Optional targeted experiments"),
-        "H_FOLLOWUP": _("Follow-up evidence assessment"),
-        "R_FINAL": _("Final readiness decision"),
+        "similarity_search": _("Similarity search"),
+        "problem_contract": _("Formal problem contract"),
+        "contest_context": _("Contest evidence package"),
+        "independent_analysis": _("Independent solver and test author"),
+        "statement_review": _("Statement and editorial"),
+        "composition_review": _("Difficulty and diversity"),
+        "consistency_review": _("Rules and consistency"),
+        "solutions_review": _("Solution Codes and observed results"),
+        "test_review": _("Generator and test coverage"),
+        "validator_review": _("Validator assessment"),
+        "checker_review": _("Checker assessment"),
+        "limits_review": _("Limits and difficulty"),
+        "similarity_review": _("Problem equivalence assessment"),
+        "extract_stats": _("Test statistics extraction"),
+        "final_assessment": _("Final readiness decision"),
     }
     retrieval_rows = {}
     for stage in stages:
         output = stage.output_json if isinstance(stage.output_json, dict) else {}
-        if stage.stage_id == "S" and stage.status == stage.DONE:
+        if stage.stage_id == "similarity_search" and stage.status == stage.DONE:
             candidates = output.get("candidates")
             if isinstance(candidates, list):
                 retrieval_rows[stage.pk] = [
@@ -431,11 +337,7 @@ def coordinator_context(obj, run, user):
         stage.ui_retrieval_title = _("Retrieved problems (%(count)s)") % {
             "count": len(stage.ui_candidates)
         }
-        stage.ui_findings = (
-            [finding for finding in output["findings"] if isinstance(finding, dict)]
-            if isinstance(output.get("findings"), list)
-            else []
-        )
+        stage.ui_findings = review_findings(output)
         stage.ui_class, stage.ui_status = review_stage_badge(stage)
         stage.ui_reason = stage.reason
         raw_missing = output.get("_missing_evidence", [])
@@ -473,7 +375,7 @@ def coordinator_context(obj, run, user):
                 stage.ui_reason = _("Service unavailable; this check could not finish.")
         elif output.get("availability") == "unavailable":
             stage.ui_result_detail = _("Unavailable — missing required inputs")
-        elif stage.stage_id in ("R", "R_FINAL"):
+        elif stage.stage_id == "final_assessment":
             stage.ui_result_detail = {
                 "READY": _("Ready"),
                 "READY_WITH_WARNINGS": _("Ready with warnings"),
@@ -481,16 +383,7 @@ def coordinator_context(obj, run, user):
                 "MANUAL_REVIEW": _("Manual review"),
                 "INCOMPLETE": _("Incomplete"),
             }.get(output.get("readiness"), "")
-    public = (
-        (obj.is_public and not obj.is_organization_private)
-        if isinstance(obj, Problem)
-        else (
-            obj.is_visible
-            and not obj.is_private
-            and not obj.is_organization_private
-            and not obj.is_in_course
-        )
-    )
+    public = is_site_public(obj)
     publication_request = getattr(obj, "public_request", None)
     content_status = (
         _("Published")
@@ -513,33 +406,17 @@ def coordinator_context(obj, run, user):
     problem_hashes = {}
     current_digest = (
         (
-            current_content_hash(obj)
+            review_context.get("input_hash", "")
             if isinstance(obj, Problem)
-            else current_content_hash(obj, problem_hashes=problem_hashes)
+            else _safe_content_hash(obj, problem_hashes=problem_hashes)
         )
-        if run and run.workflow_version == 2
+        if run
         else None
     )
     change_reasons = (
         review_change_reasons(run, obj, content_hash=current_digest) if run else []
     )
     stale = bool(change_reasons)
-    if run and current_digest and reviewed_content_hash(run) != current_digest:
-        current_snapshot = (
-            getattr(run, "_current_review_snapshot", None)
-            if isinstance(obj, Problem)
-            else build_contest_snapshot(
-                obj,
-                [
-                    {"problem_id": identity, "content_hash": digest}
-                    for identity, digest in problem_hashes.items()
-                ],
-            )
-        )
-        if current_snapshot:
-            details = review_content_change_labels(run.snapshot, current_snapshot)
-            if details:
-                change_reasons = details + change_reasons[1:]
     model = ProblemReviewRun if isinstance(obj, Problem) else ContestReviewRun
     newest = (
         model.objects.filter(
@@ -551,7 +428,7 @@ def coordinator_context(obj, run, user):
     )
     current_blockers = (
         publication_blockers(
-            run, obj, current_snapshot=getattr(run, "_current_review_snapshot", None)
+            run, obj, current_context=getattr(run, "_current_review_context", None)
         )
         if run and not public
         else []
@@ -562,7 +439,6 @@ def coordinator_context(obj, run, user):
         and not (publication_request and publication_request.status == "P")
         and obj.can_request_public_by(user)
         and run
-        and run.workflow_version == 2
         and run.pk == newest
         and not stale
         and (user.is_superuser or eligible)
@@ -591,22 +467,20 @@ def coordinator_context(obj, run, user):
                     "Your account cannot request publication. Ask a qualified author or an administrator."
                 )
             )
-    usage = []
-    if stages:
-        usage = list(
-            run.coordinator_stages.values_list("attempt_records__usage_json", flat=True)
-        )
-    tokens = sum(
-        record.get("estimated_tokens", record.get("tokens", 0))
-        for record in usage
-        if isinstance(record, dict)
-        and isinstance(
-            record.get("estimated_tokens", record.get("tokens")), (int, float)
-        )
+    usage = (
+        AIUsageLog.objects.filter(
+            metadata__review_kind="problem" if isinstance(obj, Problem) else "contest",
+            metadata__review_run_id=run.pk,
+        ).aggregate(input=Sum("input_chars"), output=Sum("output_chars"))
+        if run
+        else {}
     )
+    tokens = AIUsageLog.estimate_tokens(
+        usage.get("input")
+    ) + AIUsageLog.estimate_tokens(usage.get("output"))
     cancel_targets = []
     child_reports = []
-    if isinstance(run, ContestReviewRun) and run.workflow_version == 2:
+    if isinstance(run, ContestReviewRun):
         dependencies = list(
             run.child_dependencies.select_related("problem_run").prefetch_related(
                 "problem_run__coordinator_stages"
@@ -620,17 +494,12 @@ def coordinator_context(obj, run, user):
             for dep in dependencies
             if dep.owned and dep.problem_run_id
         ]
-        child_usage = ReviewStageAttempt.objects.filter(
-            stage__problem_run_id__in=owned_ids
-        ).values_list("usage_json", flat=True)
-        tokens += sum(
-            record.get("estimated_tokens", record.get("tokens", 0))
-            for record in child_usage
-            if isinstance(record, dict)
-            and isinstance(
-                record.get("estimated_tokens", record.get("tokens")), (int, float)
-            )
-        )
+        child_usage = AIUsageLog.objects.filter(
+            metadata__review_kind="problem", metadata__review_run_id__in=owned_ids
+        ).aggregate(input=Sum("input_chars"), output=Sum("output_chars"))
+        tokens += AIUsageLog.estimate_tokens(
+            child_usage["input"]
+        ) + AIUsageLog.estimate_tokens(child_usage["output"])
         problems = {
             problem.pk: problem
             for problem in Problem.get_cached_instances(
@@ -664,7 +533,7 @@ def coordinator_context(obj, run, user):
                 ),
                 "unsupported": any(
                     item.get("problem_id") == dep.problem_id and item.get("unsupported")
-                    for item in run.snapshot.get("children", [])
+                    for item in review_context.get("children", [])
                 ),
             }
             for dep in dependencies
@@ -684,21 +553,28 @@ def coordinator_context(obj, run, user):
                 child["newer_review_url"]
                 and latest_child_statuses.get(latest_id) == "R"
             )
-            child["name"] = (
-                child_run.snapshot.get("name", child["problem"].name)
-                if child_run
-                else child["problem"].name
-            )
+            child["name"] = child["problem"].name
             child["difficulty"] = (
                 next(
                     (
-                        stage.output_json["difficulty"]
+                        stage.output_json.get("evidence", {}).get(
+                            "difficulty", stage.output_json.get("difficulty")
+                        )
                         for stage in child_run.coordinator_stages.all()
-                        if stage.stage_id == "H6"
+                        if stage.stage_id == "limits_review"
                         and stage.status == stage.DONE
                         and isinstance(stage.output_json, dict)
-                        and type(stage.output_json.get("difficulty")) is int
-                        and 100 <= stage.output_json["difficulty"] <= 3000
+                        and type(
+                            stage.output_json.get("evidence", {}).get(
+                                "difficulty", stage.output_json.get("difficulty")
+                            )
+                        )
+                        is int
+                        and 100
+                        <= stage.output_json.get("evidence", {}).get(
+                            "difficulty", stage.output_json.get("difficulty")
+                        )
+                        <= 3000
                     ),
                     None,
                 )
@@ -707,10 +583,10 @@ def coordinator_context(obj, run, user):
             )
         order = {
             item.get("problem_id"): index
-            for index, item in enumerate(run.snapshot.get("items", []))
+            for index, item in enumerate(review_context.get("items", []))
         }
         child_reports.sort(key=lambda child: order.get(child["problem"].pk, 0))
-    if run and run.workflow_version == 2 and run.status in ACTIVE:
+    if run and run.status in ACTIVE:
         child_infra = any(
             child["run"]
             and (
@@ -756,16 +632,13 @@ def coordinator_context(obj, run, user):
             )
     credits = remaining_credits(obj)
     can_start = bool(
-        enabled()
+        not public
         and can_run
-        and (
-            user.is_superuser
-            or credits > 0
-            and not model.objects.filter(
-                **{"problem" if isinstance(obj, Problem) else "contest": obj},
-                status__in=ACTIVE,
-            ).exists()
-        )
+        and (user.is_superuser or credits > 0)
+        and not model.objects.filter(
+            **{"problem" if isinstance(obj, Problem) else "contest": obj},
+            status__in=ACTIVE,
+        ).exists()
     )
     readiness_labels = _readiness_labels()
     readiness_tones = {
@@ -783,7 +656,7 @@ def coordinator_context(obj, run, user):
             != (
                 problem_hashes[child["problem"].pk]
                 if child["problem"].pk in problem_hashes
-                else current_content_hash(child["problem"])
+                else _safe_content_hash(child["problem"])
             )
         )
         child["readiness_display"] = (
@@ -814,14 +687,14 @@ def coordinator_context(obj, run, user):
         (
             stage
             for stage in reversed(stages)
-            if stage.stage_id in ("R", "R_FINAL") and stage.status == stage.DONE
+            if stage.stage_id == "final_assessment" and stage.status == stage.DONE
         ),
         None,
     )
     sections = review_section_groups(
         stages,
         "problem" if isinstance(obj, Problem) else "contest",
-        snapshot=run.snapshot if run else None,
+        context=review_context,
     )
     findings = []
     severity_labels = {
@@ -832,7 +705,7 @@ def coordinator_context(obj, run, user):
     finding_stages = [final_stage] if final_stage else stages
     for stage in finding_stages:
         output = stage.output_json if isinstance(stage.output_json, dict) else {}
-        stage_findings = output.get("findings", [])
+        stage_findings = review_findings(output)
         if not isinstance(stage_findings, list):
             continue
         for finding in stage_findings:
@@ -851,9 +724,7 @@ def coordinator_context(obj, run, user):
                         ),
                     }
                 )
-    title = (
-        readiness_labels.get(run.readiness, _("Pending")) if run else _("No review yet")
-    )
+    title = readiness_labels.get(readiness, _("Pending")) if run else _("No review yet")
     tone = "gray"
     if run:
         if run.status == "R":
@@ -865,28 +736,25 @@ def coordinator_context(obj, run, user):
         elif run.status == "C":
             title = _("Cancelled")
         elif run.status == "D":
-            tone = readiness_tones.get(run.readiness, "gray")
+            tone = readiness_tones.get(readiness, "gray")
         else:
             title = run.get_status_display()
-    reviewed_readiness = readiness_labels.get(
-        run.readiness if run else "", _("Pending")
-    )
+    reviewed_readiness = readiness_labels.get(readiness, _("Pending"))
     if stale:
         title, tone = _("Needs re-review"), "orange"
     unsupported_items = []
     if isinstance(run, ContestReviewRun):
         quizzes = {
             row.get("id"): row
-            for row in run.snapshot.get("quiz_content", {}).get("quizzes", [])
+            for row in review_context.get("quiz_content", {}).get("quizzes", [])
         }
-        for item in run.snapshot.get("items", []):
+        for item in review_context.get("items", []):
             if not item.get("problem_id"):
                 quiz = quizzes.get(item.get("quiz_id"), {})
                 unsupported_items.append(
                     quiz.get("name") or quiz.get("title") or _("Quiz")
                 )
     return {
-        "coordinator_enabled": enabled(),
         "coordinator_can_run": can_run,
         "coordinator_can_start": can_start,
         "coordinator_reviewed_readiness_display": reviewed_readiness,
@@ -894,9 +762,7 @@ def coordinator_context(obj, run, user):
             _("Needs re-review") if stale else reviewed_readiness
         ),
         "coordinator_readiness_class": (
-            "orange"
-            if stale
-            else readiness_tones.get(run.readiness if run else "", "gray")
+            "orange" if stale else readiness_tones.get(readiness, "gray")
         ),
         "coordinator_stages": stages,
         "coordinator_sections": sections,
@@ -910,7 +776,8 @@ def coordinator_context(obj, run, user):
         ],
         "coordinator_search_disabled": not getattr(settings, "USE_ML", False)
         and any(
-            stage.stage_id == "S" and stage.status == stage.ERROR for stage in stages
+            stage.stage_id == "similarity_search" and stage.status == stage.ERROR
+            for stage in stages
         ),
         "coordinator_credits": credits,
         "coordinator_stale": stale,
@@ -957,8 +824,8 @@ def coordinator_context(obj, run, user):
         "coordinator_content_class": content_tone,
         "coordinator_kind": "problem" if isinstance(obj, Problem) else "contest",
         "coordinator_problem_type_labels": (
-            problem_profile_labels(run.snapshot)
-            if isinstance(obj, Problem) and run and run.workflow_version == 2
+            problem_profile_labels(review_context)
+            if isinstance(obj, Problem) and run
             else []
         ),
         "coordinator_code": obj.code if isinstance(obj, Problem) else obj.key,
@@ -972,17 +839,14 @@ def coordinator_context(obj, run, user):
         "coordinator_findings": findings[:8],
         "coordinator_profile_gaps": (
             profile_evidence_gaps(
-                run.snapshot,
+                review_context,
                 {
                     stage.stage_id: stage.output_json
                     for stage in stages
                     if stage.status == stage.DONE
                 },
             )
-            if run
-            and run.workflow_version == 2
-            and run.status == "D"
-            and run.readiness == "MANUAL_REVIEW"
+            if run and run.status == "D" and readiness == "MANUAL_REVIEW"
             else []
         ),
         "coordinator_findings_count": len(findings),

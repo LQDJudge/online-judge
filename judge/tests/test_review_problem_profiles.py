@@ -8,22 +8,19 @@ from django.core.files.storage import FileSystemStorage
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from judge.models import Problem, ProblemGroup
-from judge.review.profile_config import (
+from judge.auto_review.profile_config import (
     MAX_PROFILE_CONFIG_BYTES,
     ProfileConfigError,
     parse_profile_config,
 )
-from judge.review.snapshots import (
-    build_problem_snapshot,
-    problem_review_content,
-    preparation_errors,
-    read_artifact,
-)
-from judge.review.types import (
-    is_supported_batch_problem,
+from judge.auto_review.problem_context import build_problem_context, read_artifact
+from judge.auto_review.review_hash import problem_review_content
+from judge.auto_review.preparation import preparation_errors
+from judge.auto_review.problem_types import (
+    is_supported_problem,
     problem_profile_labels,
     resolve_problem_profile,
-    snapshot_problem_profile,
+    problem_profile_from_context,
 )
 
 
@@ -54,7 +51,7 @@ class ProblemJudgingProfileTests(SimpleTestCase):
                 profile = resolve_problem_profile(settings)
                 self.assertEqual(profile.tags, tags)
                 self.assertTrue(profile.review_supported)
-                self.assertTrue(is_supported_batch_problem(settings))
+                self.assertTrue(is_supported_problem(settings))
 
     def test_manager_resolves_without_ui_flag(self):
         settings = {
@@ -128,7 +125,7 @@ class ProblemJudgingProfileTests(SimpleTestCase):
                 self.assertFalse(profile.review_supported)
 
     def test_incomplete_communication_flag_is_not_batch(self):
-        self.assertFalse(is_supported_batch_problem({"is_communication": True}))
+        self.assertFalse(is_supported_problem({"is_communication": True}))
 
     def test_effective_mode_cannot_be_hidden_by_authoring_flags(self):
         for effective, tag in (
@@ -204,7 +201,7 @@ class ProblemJudgingProfileTests(SimpleTestCase):
                 }
             )
         )
-        self.assertEqual(snapshot_problem_profile(snapshot), profile)
+        self.assertEqual(problem_profile_from_context(snapshot), profile)
         self.assertEqual(
             list(map(str, problem_profile_labels(snapshot))),
             ["Output-only", "Metric-scored"],
@@ -223,16 +220,16 @@ class ProblemJudgingProfileTests(SimpleTestCase):
             ["Function / IOI signature"],
         )
 
-    def test_unknown_or_incomplete_saved_profile_cannot_pass(self):
+    def test_invalid_or_incomplete_profile_cannot_pass(self):
         for profile in (
-            {"version": 2},
-            {"version": 1},
+            {},
+            {"execution": "unknown"},
             [],
-            {"version": 1, "issues": None},
+            {"issues": None},
         ):
             with self.subTest(profile=profile):
                 self.assertFalse(
-                    snapshot_problem_profile(
+                    problem_profile_from_context(
                         {"judging_profile": profile}
                     ).review_supported
                 )
@@ -288,7 +285,7 @@ class ProfileConfigSafetyTests(SimpleTestCase):
 
 
 @override_settings(LANGUAGE_CODE="en")
-class ProblemProfileSnapshotTests(TestCase):
+class ProblemProfileContextTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         group = ProblemGroup.objects.create(name="profile_tests", full_name="Profiles")
@@ -302,21 +299,23 @@ class ProblemProfileSnapshotTests(TestCase):
             points=1,
         )
 
-    def test_effective_configuration_is_bound_to_the_frozen_file(self):
+    def test_effective_configuration_is_read_from_existing_storage(self):
         raw = b"output_only: false\nchecker: standard\n"
         with tempfile.TemporaryDirectory() as directory:
             storage = FileSystemStorage(location=directory)
             storage.save("profilefreeze/init.yml", ContentFile(raw))
             with patch(
-                "judge.review.snapshots.problem_data_storage", storage
-            ), override_settings(REVIEW_ARTIFACT_ROOT=directory + "/private"):
-                snapshot = build_problem_snapshot(
+                "judge.auto_review.problem_context.problem_data_storage", storage
+            ):
+                snapshot = build_problem_context(
                     self.problem, include_statement_sources=False
                 )
                 self.assertEqual(read_artifact(snapshot["artifacts"]["init_yml"]), raw)
                 self.assertEqual(problem_profile_labels(snapshot), ["Output-only"])
-                self.assertFalse(snapshot_problem_profile(snapshot).review_supported)
-                # Editing a live file cannot rewrite the selected run's type.
+                self.assertFalse(
+                    problem_profile_from_context(snapshot).review_supported
+                )
+                # A context already loaded in memory retains its resolved type.
                 storage.delete("profilefreeze/init.yml")
                 storage.save(
                     "profilefreeze/init.yml", ContentFile(b"checker: standard\n")
@@ -328,14 +327,14 @@ class ProblemProfileSnapshotTests(TestCase):
             storage = FileSystemStorage(location=directory)
             storage.save("profilefreeze/init.yml", ContentFile(b"output_only: ["))
             with patch(
-                "judge.review.snapshots.problem_data_storage", storage
-            ), override_settings(REVIEW_ARTIFACT_ROOT=directory + "/private"):
-                snapshot = build_problem_snapshot(
+                "judge.auto_review.problem_context.problem_data_storage", storage
+            ):
+                snapshot = build_problem_context(
                     self.problem, include_statement_sources=False
                 )
                 self.assertIn(
                     "invalid_effective_config",
-                    snapshot_problem_profile(snapshot).issues,
+                    problem_profile_from_context(snapshot).issues,
                 )
                 self.assertTrue(
                     any(

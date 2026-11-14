@@ -39,7 +39,6 @@ from judge.models import (
     Problem,
     ProblemGroup,
     Profile,
-    PublicationRequestEvent,
     Submission,
 )
 from judge.models.course import CourseContest, CourseRole, RoleInCourse
@@ -93,6 +92,10 @@ class ContestEditTestBase(TestCase):
             end_time=kwargs.pop("end_time", now + timezone.timedelta(hours=2)),
             **kwargs,
         )
+        # These editor tests exercise unlocked contests, including public ones.
+        if contest.is_locked and not kwargs.get("is_locked", False):
+            contest.is_locked = False
+            contest.save(update_fields=["is_locked"])
         contest.authors.add(author.profile)
         contest._author_ids.dirty(contest)
         return contest
@@ -248,7 +251,7 @@ class ContestEditTestBase(TestCase):
         return ContestEditForm(data=post, instance=contest, user=user)
 
 
-@override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=True, LANGUAGE_CODE="en")
+@override_settings(LANGUAGE_CODE="en")
 class ContestEditCoordinatorControlsTests(ContestEditTestBase):
     def test_contest_locked_after_opening_editor_rejects_save(self):
         contest = self._make_contest("lockbeforesave", author=self.author)
@@ -460,14 +463,6 @@ class ContestEditCoordinatorControlsTests(ContestEditTestBase):
         self.assertTrue(contest.is_locked)
         self.assertFalse(problem.is_public)
         self.assertEqual(pending.status, ContestPublicRequest.APPROVED)
-        self.assertTrue(
-            PublicationRequestEvent.objects.filter(
-                contest=contest,
-                actor=self.superuser.profile,
-                status=ContestPublicRequest.APPROVED,
-                reason="Published directly by a superuser from Content.",
-            ).exists()
-        )
         # Deliberately unlocking an already-public contest must persist.
         data["is_locked"] = ""
         response = self.client.post(reverse("contest_edit", args=[contest.key]), data)

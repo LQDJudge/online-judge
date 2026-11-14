@@ -39,7 +39,7 @@ from judge.models.comment import (
     mute_comment_author,
 )
 from judge.models.profile import Profile, get_contribution_rank
-from judge.review.comment_notify import notify_review_comment
+from judge.auto_review.comment_notify import notify_review_comment
 from judge.utils.contribution import is_content_public
 from judge.utils.community import can_use_community_features
 from judge.utils.ratelimit import ratelimit

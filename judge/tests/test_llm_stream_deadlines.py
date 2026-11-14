@@ -2,16 +2,25 @@
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.test import SimpleTestCase, override_settings
 
 import httpx
 
-from judge.review.coordinator import CoordinatorInfrastructureError, _call
-from judge.tests.test_coordinator_pipeline import run_fixture
+from judge.auto_review.phases import CoordinatorInfrastructureError, _call
 from llm_service.llm_api import LLMRequestError, LLMRequestTimeout, LLMService
 from llm_service.errors import LLMRequestCancelled
+
+
+def run_fixture():
+    stage = SimpleNamespace(pk=1, lease_token="token", attempts=1, status="R")
+    return SimpleNamespace(
+        pk=1,
+        triggered_by_id=None,
+        coordinator_stages=Mock(get=Mock(return_value=stage)),
+        _review_context={},
+    )
 
 
 class StreamDeadlineTests(SimpleTestCase):
@@ -261,25 +270,30 @@ class StreamDeadlineTests(SimpleTestCase):
         self.assertEqual(caught.exception.raw_response, "partial")
         self.assertTrue(closed)
 
-    @patch("judge.review.coordinator.LLMService")
+    @patch("judge.auto_review.phases.LLMService")
     def test_coordinator_preserves_timeout_category_and_partial(self, provider):
         error = LLMRequestTimeout("idle", 120)
         error.raw_response = '{"unfinished":'
         provider.return_value.call_llm.side_effect = error
         with self.assertRaises(CoordinatorInfrastructureError) as caught:
-            _call(run_fixture(), "H1", {"kind": "problem", "available_refs": []})
+            _call(
+                run_fixture(),
+                "statement_review",
+                {"kind": "problem", "available_refs": []},
+            )
         self.assertEqual(caught.exception.error_category, "timeout_idle")
         self.assertEqual(caught.exception.raw_response, error.raw_response)
-        self.assertEqual(
-            caught.exception.usage_json["output_chars"], len(error.raw_response)
-        )
         self.assertTrue(provider.call_args.kwargs["raise_errors"])
         self.assertEqual(provider.call_args.kwargs["timeout"], 480)
 
     @override_settings(REVIEW_LLM_TIMEOUT=600)
-    @patch("judge.review.coordinator.LLMService")
+    @patch("judge.auto_review.phases.LLMService")
     def test_bad_lease_alignment_fails_before_any_provider_call(self, provider):
         with self.assertRaises(CoordinatorInfrastructureError) as caught:
-            _call(run_fixture(), "H1", {"kind": "problem", "available_refs": []})
+            _call(
+                run_fixture(),
+                "statement_review",
+                {"kind": "problem", "available_refs": []},
+            )
         self.assertEqual(caught.exception.error_category, "configuration")
         provider.assert_not_called()

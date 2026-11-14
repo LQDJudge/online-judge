@@ -51,7 +51,7 @@ from judge.models import (
     Course,
 )
 from judge import contest_format
-from judge.review.artifact_readers import output_source_filename
+from judge.auto_review.artifact_readers import output_source_filename
 
 from judge.widgets import (
     HeavyPreviewPageDownWidget,

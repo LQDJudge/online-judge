@@ -60,7 +60,6 @@ from judge.models import (
     CommentModerationLog,
     Organization,
     Problem,
-    PublicationRequestEvent,
     ProblemType,
     Profile,
     ProfileModerationCase,
@@ -73,18 +72,15 @@ from judge.models import (
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.problem import get_distinct_problem_points
 from judge.models.public_request import PublicRequest
-from judge.models.problem_review import ProblemReviewCheckResult, ProblemReviewRun
+from judge.models.problem_review import ProblemReviewRun
 from judge.models.profile import get_profile_public_identity
-from judge.review.hashing import compute_input_hash
-from judge.review.system_bot import post_system_comment_on_review
-from judge.review.triggers import trigger_problem_review_for
-from judge.review.verdict import batched_verdicts, verdict_for_run
-from judge.review.publication import (
+from judge.auto_review.verdict import batched_verdicts, verdict_for_run
+from judge.auto_review.publication import (
     decide_publication,
     submit_publication,
     withdraw_publication,
 )
-from judge.review import workflow
+from judge.auto_review import workflow
 from judge.tasks import rescore_problem
 from judge.tasks.llm import improve_markdown_task, tag_problem_task
 from judge.tasks.profile_moderation import queue_profile_moderation_case
@@ -95,7 +91,6 @@ from judge.utils.problem_equivalence import (
 )
 from judge.utils.problem_merge import ProblemMerge
 from judge.utils.strings import safe_float_or_none
-from judge.utils.timefmt import format_mmss
 from llm_service.config import CHATBOT_SUPPORTED_MODELS, DEFAULT_BOT_NAME
 
 logger = logging.getLogger(__name__)
@@ -956,17 +951,13 @@ class InternalProblemQueue(InternalView, ListView):
             _latest, verdicts = batched_verdicts(
                 candidate_ids,
                 ProblemReviewRun,
-                ProblemReviewCheckResult,
                 "problem_id",
             )
             for publication_request in PublicRequest.objects.filter(
                 problem_id__in=candidate_ids, review_run__isnull=False
             ).select_related("review_run"):
                 bound = publication_request.review_run
-                if bound.workflow_version == 2:
-                    verdicts[publication_request.problem_id] = verdict_for_run(
-                        bound, ProblemReviewRun, set()
-                    )
+                verdicts[publication_request.problem_id] = verdict_for_run(bound)
             matching = [pid for pid, v in verdicts.items() if v == self.verdict_filter]
             queryset = queryset.filter(id__in=matching)
 
@@ -1091,7 +1082,6 @@ class InternalProblemQueue(InternalView, ListView):
             latest_runs, verdicts = batched_verdicts(
                 problem_ids,
                 ProblemReviewRun,
-                ProblemReviewCheckResult,
                 "problem_id",
             )
             context["latest_review_runs"] = latest_runs
@@ -1099,11 +1089,9 @@ class InternalProblemQueue(InternalView, ListView):
             # subsequently started review. Keep its verdict and link together.
             for problem in problems_in_page:
                 bound = problem.public_request.review_run
-                if bound is not None and bound.workflow_version == 2:
+                if bound is not None:
                     latest_runs[problem.id] = bound
-                    verdicts[problem.id] = verdict_for_run(
-                        bound, ProblemReviewRun, set()
-                    )
+                    verdicts[problem.id] = verdict_for_run(bound)
             # Ensure every problem on the page has a key (even if no run).
             context["review_verdicts"] = {
                 p.id: verdicts.get(p.id) for p in problems_in_page
@@ -1240,108 +1228,56 @@ def publish_problem(request):
         problem = Problem.objects.get(id=problem_id)
     except Exception:
         return JsonResponse({"success": False, "error": "Problem not found"})
-
-    if (
-        getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
-        or PublicRequest.objects.filter(
-            problem=problem, review_run__isnull=False
-        ).exists()
-    ):
-        try:
-            with transaction.atomic():
-                problem = Problem.objects.select_for_update().get(pk=problem.pk)
-                pending = PublicRequest.objects.filter(
-                    problem=problem, status=PublicRequest.PENDING
-                ).first()
-                if pending:
-                    decide_publication(
-                        problem,
-                        request.user,
-                        publish=True,
-                        feedback=request.POST.get("feedback", ""),
-                        override_reason=request.POST.get("override_reason", ""),
+    try:
+        with transaction.atomic():
+            problem = Problem.objects.select_for_update().get(pk=problem.pk)
+            pending = PublicRequest.objects.filter(
+                problem=problem, status=PublicRequest.PENDING
+            ).first()
+            if pending:
+                decide_publication(
+                    problem,
+                    request.user,
+                    publish=True,
+                    feedback=request.POST.get("feedback", ""),
+                    override_reason=request.POST.get("override_reason", ""),
+                )
+            else:
+                reason = request.POST.get("override_reason", "").strip()
+                if not reason:
+                    raise ValidationError(
+                        _(
+                            "Direct publication without a pending reviewed candidate requires an override reason."
+                        ),
+                        code="publication_override_required",
                     )
-                else:
-                    reason = request.POST.get("override_reason", "").strip()
-                    if not reason:
-                        raise ValidationError(
-                            _(
-                                "Direct publication without a pending reviewed candidate requires an override reason."
-                            ),
-                            code="publication_override_required",
-                        )
-                    PublicationRequestEvent.objects.create(
-                        problem=problem,
-                        actor=request.profile,
-                        status=PublicRequest.APPROVED,
-                        candidate_hash=workflow.current_content_hash(problem),
-                        reason=reason,
-                    )
-                    problem.is_public = True
-                    problem.is_organization_private = False
-                    problem.is_locked = True
-                    problem._bypass_points_cap = True
-                    problem.save(
-                        update_fields=[
-                            "is_public",
-                            "is_organization_private",
-                            "is_locked",
-                        ]
-                    )
-                    problem.organizations.clear()
-                    transaction.on_commit(
-                        lambda: workflow.invalidate_readiness(problem)
-                    )
-                transaction.on_commit(lambda: rescore_problem.delay(problem.id))
-            return JsonResponse({"success": True})
-        except ValidationError as exc:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "error": " ".join(exc.messages),
-                    "requires_override": any(
-                        error.code == "publication_override_required"
-                        for error in exc.error_list
-                    ),
-                },
-                status=409,
-            )
-
-    with transaction.atomic():
-        problem.is_public = True
-        problem.is_organization_private = False
-        problem._bypass_points_cap = True
-        problem.save(update_fields=["is_public", "is_organization_private"])
-        problem.organizations.clear()
-
-        # Update the public request status
-        try:
-            pr = problem.public_request
-            pr.status = PublicRequest.APPROVED
-            pr.reviewed_by = request.profile
-            pr.save(update_fields=["status", "reviewed_by", "updated_at"])
-        except PublicRequest.DoesNotExist:
-            pass
-
-        # Rescore after publish
-        transaction.on_commit(lambda: rescore_problem.delay(problem.id))
-
-    # Notify the author (notification bell)
-    _notify_request_author(problem, request.profile, PublicRequest.APPROVED)
-
-    # Post a system message in the review thread so the conversation is
-    # complete — author sees "approved" inline with their iteration history
-    # instead of only via the notification bell. The reviewer name is wrapped
-    # in `[user:NAME]` (the project's reference-filter syntax) so it renders
-    # as a rank-colored link just like "Triggered by ..." in the run header.
-    reviewer_token = "[user:%s]" % request.user.username
-    post_system_comment_on_review(
-        problem,
-        _("**[System]** This problem was approved by %(name)s. It is now public.")
-        % {"name": reviewer_token},
-    )
-
-    return JsonResponse({"success": True})
+                problem.is_public = True
+                problem.is_organization_private = False
+                problem.is_locked = True
+                problem._bypass_points_cap = True
+                problem.save(
+                    update_fields=[
+                        "is_public",
+                        "is_organization_private",
+                        "is_locked",
+                    ]
+                )
+                problem.organizations.clear()
+                transaction.on_commit(lambda: workflow.invalidate_readiness(problem))
+            transaction.on_commit(lambda: rescore_problem.delay(problem.id))
+        return JsonResponse({"success": True})
+    except ValidationError as exc:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": " ".join(exc.messages),
+                "requires_override": any(
+                    error.code == "publication_override_required"
+                    for error in exc.error_list
+                ),
+            },
+            status=409,
+        )
 
 
 @require_POST
@@ -1365,62 +1301,25 @@ def reject_problem(request):
             },
             status=400,
         )
-
-    if (
-        getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
-        or PublicRequest.objects.filter(
-            problem=problem, review_run__isnull=False
-        ).exists()
-    ):
-        try:
-            decide_publication(
-                problem,
-                request.user,
-                approve=False,
-                feedback=feedback,
-                expected_request_token=request.POST.get("request_token"),
-            )
-        except ValidationError as exc:
-            return JsonResponse(
-                {"success": False, "error": " ".join(exc.messages)}, status=409
-            )
-        return JsonResponse(
-            {
-                "success": True,
-                "redirect": reverse("problem_review_dashboard", args=[problem.code])
-                + "?tab=discussion",
-            }
-        )
-
     try:
-        pr = problem.public_request
-        pr.status = PublicRequest.REJECTED
-        pr.feedback = feedback
-        pr.reviewed_by = request.profile
-        pr.save(update_fields=["status", "feedback", "reviewed_by", "updated_at"])
-    except PublicRequest.DoesNotExist:
-        return JsonResponse({"success": False, "error": "No public request found"})
-
-    # Notify the author (notification bell)
-    _notify_request_author(problem, request.profile, PublicRequest.REJECTED)
-
-    # Post a system message in the review thread so the author sees the
-    # rejection reason inline with their iteration history. Include the
-    # feedback verbatim (it's the actionable instruction they need). The
-    # reviewer name uses `[user:NAME]` so the reference filter renders it
-    # as a rank-colored link (matching the header style elsewhere).
-    reviewer_token = "[user:%s]" % request.user.username
-    if feedback:
-        body = _(
-            "**[System]** This problem was rejected by %(name)s.\n\n**Reason:** %(reason)s"
-        ) % {"name": reviewer_token, "reason": feedback}
-    else:
-        body = _(
-            "**[System]** This problem was rejected by %(name)s. No reason was provided."
-        ) % {"name": reviewer_token}
-    post_system_comment_on_review(problem, body)
-
-    return JsonResponse({"success": True})
+        decide_publication(
+            problem,
+            request.user,
+            approve=False,
+            feedback=feedback,
+            expected_request_token=request.POST.get("request_token"),
+        )
+    except ValidationError as exc:
+        return JsonResponse(
+            {"success": False, "error": " ".join(exc.messages)}, status=409
+        )
+    return JsonResponse(
+        {
+            "success": True,
+            "redirect": reverse("problem_review_dashboard", args=[problem.code])
+            + "?tab=discussion",
+        }
+    )
 
 
 def improve_markdown_queue(request):
@@ -1462,167 +1361,42 @@ def improve_markdown_queue(request):
 
 @require_POST
 def request_public(request):
-    """Author requests a problem to be made public.
-
-    With auto-review enabled, this creates a PublicRequest (or transitions
-    existing one to PENDING), creates a new ProblemReviewRun, supersedes any prior
-    run, and enqueues review_problem. Guards: permission, in-flight,
-    dirty-check, cooldown.
-    """
+    """Request publication of an existing review; this never starts AI work."""
     if not request.user.is_authenticated:
-        return HttpResponseForbidden()
-
+        return JsonResponse({"error": _("Authentication required.")}, status=401)
     try:
-        problem_id = int(request.POST.get("id"))
-        problem = Problem.objects.get(id=problem_id)
-    except Exception:
-        return JsonResponse({"success": False, "error": "Problem not found"})
-
-    # Guard 1: Permission
-    if not problem.can_request_public_by(request.user):
-        return JsonResponse({"success": False, "error": "Permission denied"})
-
-    if getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False):
-        try:
-            run_id = request.POST.get("run_id")
-            pr = submit_publication(
-                problem, request.user, int(run_id) if run_id else None
-            )
-            if pr.new_submission:
-                transaction.on_commit(
-                    lambda: _notify_superusers_new_request(problem, request.profile)
-                )
-        except (ValidationError, ValueError) as exc:
-            error = (
-                " ".join(exc.messages)
-                if isinstance(exc, ValidationError)
-                else str(_("Invalid review run."))
-            )
-            return JsonResponse({"success": False, "error": error}, status=409)
-        except PermissionDenied:
-            return JsonResponse(
-                {"success": False, "error": _("Permission denied.")}, status=403
-            )
+        problem_id = int(request.POST.get("id", ""))
+        problem = Problem.objects.get(pk=problem_id)
+    except (ValueError, TypeError, Problem.DoesNotExist):
         return JsonResponse(
-            {
-                "success": True,
-                "request_id": pr.pk,
-                "run_id": pr.review_run_id,
-                "status": "SUBMITTED",
-                "redirect": reverse("problem_review_dashboard", args=[problem.code]),
-            }
+            {"success": False, "error": _("Problem not found.")}, status=404
         )
-
-    # If auto-review is disabled, fall back to legacy behavior.
-    if not getattr(settings, "AUTO_REVIEW_ENABLED", True):
-        return _legacy_request_public(request, problem)
-
-    new_hash = compute_input_hash(problem)
-
-    # The in-flight + dirty-check + cooldown guards plus the run creation all
-    # happen inside a single atomic block, with a SELECT … FOR UPDATE on the
-    # Problem row serializing concurrent POSTs for the same problem. Without
-    # this, two near-simultaneous Request Public clicks could both pass the
-    # in-flight check, both pass dirty-check, and both create a new run —
-    # leaving two rows where `superseded_by IS NULL`, breaking the dashboard's
-    # "latest run" assumption.
-    with transaction.atomic():
-        Problem.objects.select_for_update().filter(id=problem.id).first()
-
-        # Guard 2: In-flight (inside the lock so a racing peer's run is visible)
-        if ProblemReviewRun.objects.filter(
-            problem=problem, status=ProblemReviewRun.RUNNING
-        ).exists():
-            return JsonResponse(
-                {
-                    "success": False,
-                    "error": _("Review currently running, please wait."),
-                }
-            )
-
-        latest_run = (
-            ProblemReviewRun.objects.filter(problem=problem)
-            .order_by("-started_at")
-            .first()
+    try:
+        run_id = request.POST.get("run_id")
+        publication_request = submit_publication(
+            problem, request.user, int(run_id) if run_id else None
         )
-
-        if latest_run is not None:
-            # Guard 3: Dirty-check — admins bypass so they can re-run a
-            # review without having to edit the problem first (useful for
-            # diagnosing flaky LLM checks or testing a config change).
-            if latest_run.input_hash == new_hash and not request.user.is_superuser:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": _(
-                            "No changes since your last review — edit "
-                            "something and try again."
-                        ),
-                    }
-                )
-            # Guard 4: Cooldown — only enforced when the *same* non-admin user
-            # is re-requesting. Cases that bypass:
-            #   - current user is superuser (admin diagnostic re-runs)
-            #   - previous run was triggered by a different user (e.g. admin
-            #     re-ran in between; clock shouldn't restart against the author)
-            # The rate-limit's purpose is preventing one author from hammering
-            # the button, not penalizing them for someone else's action.
-            same_user_recently = (
-                not request.user.is_superuser
-                and latest_run.triggered_by_id == request.profile.id
+        if publication_request.new_submission:
+            transaction.on_commit(
+                lambda: _notify_superusers_new_request(problem, request.profile)
             )
-            if same_user_recently:
-                cooldown_seconds = getattr(
-                    settings, "AUTO_REVIEW_REQUEST_COOLDOWN_SECONDS", 300
-                )
-                cooldown_end = latest_run.started_at + timedelta(
-                    seconds=cooldown_seconds
-                )
-                remaining = (cooldown_end - timezone.now()).total_seconds()
-                if remaining > 0:
-                    return JsonResponse(
-                        {
-                            "success": False,
-                            "error": _(
-                                "Please wait %(mmss)s before requesting review again."
-                            )
-                            % {"mmss": format_mmss(remaining)},
-                            "cooldown_seconds_remaining": int(remaining),
-                        }
-                    )
-
-        # All guards passed.
-        existing = PublicRequest.objects.filter(problem=problem).first()
-        if existing:
-            existing.status = PublicRequest.PENDING
-            existing.requested_by = request.profile
-            existing.feedback = ""
-            existing.reviewed_by = None
-            existing.save(
-                update_fields=[
-                    "status",
-                    "requested_by",
-                    "feedback",
-                    "reviewed_by",
-                    "updated_at",
-                ]
-            )
-        else:
-            PublicRequest.objects.create(
-                problem=problem,
-                requested_by=request.profile,
-            )
-
-        # Run creation + supersede + dispatch moved to a shared helper so the
-        # contest-review path can reuse it without creating a PublicRequest.
-        new_run = trigger_problem_review_for(
-            problem, request.profile, dispatch="celery"
+    except (ValidationError, ValueError) as exc:
+        error = (
+            " ".join(exc.messages)
+            if isinstance(exc, ValidationError)
+            else str(_("Invalid review run."))
         )
-
+        return JsonResponse({"success": False, "error": error}, status=409)
+    except PermissionDenied:
+        return JsonResponse(
+            {"success": False, "error": _("Permission denied.")}, status=403
+        )
     return JsonResponse(
         {
             "success": True,
-            "run_id": new_run.id,
+            "request_id": publication_request.pk,
+            "run_id": publication_request.review_run_id,
+            "status": "SUBMITTED",
             "redirect": reverse("problem_review_dashboard", args=[problem.code]),
         }
     )
@@ -1648,53 +1422,8 @@ def cancel_request_public(request):
         return JsonResponse({"success": False, "error": "Problem not found"})
     if not problem.can_request_public_by(request.user):
         return JsonResponse({"success": False, "error": "Permission denied"})
-    if (
-        getattr(settings, "AUTO_REVIEW_COORDINATOR_ENABLED", False)
-        or PublicRequest.objects.filter(
-            problem=problem, review_run__isnull=False
-        ).exists()
-    ):
-        pr = withdraw_publication(
-            problem, request.user, _("Withdrawn by the requester.")
-        )
-        return JsonResponse({"success": True, "cancelled": int(pr is not None)})
-    deleted, _ignored = PublicRequest.objects.filter(
-        problem=problem, status=PublicRequest.PENDING
-    ).delete()
-    return JsonResponse({"success": True, "cancelled": deleted})
-
-
-def _legacy_request_public(request, problem):
-    """Fallback when AUTO_REVIEW_ENABLED=False — pre-auto-review flow."""
-    existing = PublicRequest.objects.filter(problem=problem).first()
-    if existing:
-        if existing.status == PublicRequest.PENDING:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "error": _("A pending request already exists."),
-                }
-            )
-        existing.status = PublicRequest.PENDING
-        existing.requested_by = request.profile
-        existing.feedback = ""
-        existing.reviewed_by = None
-        existing.save(
-            update_fields=[
-                "status",
-                "requested_by",
-                "feedback",
-                "reviewed_by",
-                "updated_at",
-            ]
-        )
-    else:
-        PublicRequest.objects.create(
-            problem=problem,
-            requested_by=request.profile,
-        )
-    _notify_superusers_new_request(problem, request.profile)
-    return JsonResponse({"success": True})
+    pr = withdraw_publication(problem, request.user, _("Withdrawn by the requester."))
+    return JsonResponse({"success": True, "cancelled": int(pr is not None)})
 
 
 def _notify_superusers_new_request(problem, requester):
@@ -1722,38 +1451,6 @@ def _notify_superusers_new_request(problem, requester):
             html_link=html_link,
             author=requester,
         )
-
-
-def _notify_request_author(problem, reviewer, status):
-    """Notify the request author about approval/rejection."""
-    try:
-        pr = problem.public_request
-    except PublicRequest.DoesNotExist:
-        return
-
-    if status == PublicRequest.APPROVED:
-        category = NotificationCategory.PUBLIC_REQUEST_APPROVED
-    else:
-        category = NotificationCategory.PUBLIC_REQUEST_REJECTED
-
-    if pr.review_run_id:
-        edit_url = (
-            reverse("problem_review_dashboard", args=[problem.code])
-            + "?run_id=%s" % pr.review_run_id
-        )
-    else:
-        edit_url = reverse("problem_detail", args=[problem.code])
-    html_link = '<a href="%(url)s">%(name)s</a>' % {
-        "url": edit_url,
-        "name": problem.name,
-    }
-
-    Notification.objects.create_notification(
-        owner=pr.requested_by,
-        category=category,
-        html_link=html_link,
-        author=reviewer,
-    )
 
 
 def problem_tag(request):

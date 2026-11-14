@@ -2,7 +2,7 @@ import json
 
 from django.test import SimpleTestCase
 
-from judge.review.json_output import MARKER, decode_review_json
+from judge.auto_review.json_output import MARKER, decode_review_json
 
 
 class ReviewJsonOutputTests(SimpleTestCase):

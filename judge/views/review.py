@@ -4,11 +4,10 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.db import models, transaction
+from django.db import models
 from django.db.models import F, Q
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
-from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
@@ -20,15 +19,10 @@ from judge.models.comment import (
     get_visible_comment_count,
     get_visible_top_level_comment_count,
 )
-from judge.models.problem_review import (
-    ProblemReviewCheckResult,
-    ProblemReviewRun,
-)
+from judge.models.problem_review import ProblemReviewRun
 from judge.models.public_request import PublicRequest
-from judge.review.registry import CHECKS
-from judge.review.triggers import trigger_problem_review_for
-from judge.review.verdict import batched_verdicts
-from judge.review.workflow import enabled, is_review_readable
+from judge.auto_review.verdict import batched_verdicts
+from judge.auto_review.workflow import is_review_readable
 from judge.utils.community import can_use_community_features
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.views import QueryStringSortMixin, TitleMixin
@@ -105,7 +99,6 @@ def problem_review_dashboard(request, problem):
     # Map check_id ("solutions_rubric") → friendly display_name ("Solutions
     # rubric") sourced from the registry. The template renders display_name
     # for users; the machine id stays in the DB row for stable lookups.
-    check_display_names = {c.id: c.display_name for c in CHECKS}
 
     try:
         problem_public_request = problem_obj.public_request
@@ -114,25 +107,19 @@ def problem_review_dashboard(request, problem):
 
     context = {
         "problem": problem_obj,
-        "title": problem_obj.name + " — Review",
+        "title": problem_obj.name + " — " + _("Review"),
         "latest_run": selected,
         "latest_run_index": selected_run_index,
         "actual_latest_run": latest,
         "actual_latest_run_index": run_indices.get(latest.id) if latest else None,
         "viewing_history": viewing_history,
-        "check_results": list(selected.check_results.all()) if selected else [],
-        "check_display_names": check_display_names,
         "history_entries": history_entries,
         "problem_public_request": problem_public_request,
     }
     context.update(coordinator_context(problem_obj, selected, request.user))
-    if (
-        request.headers.get("X-Review-Live") == "1"
-        and selected
-        and selected.workflow_version == 2
-    ):
+    if request.headers.get("X-Review-Live") == "1" and selected:
         context["coordinator_live"] = True
-        return render(request, "review/coordinator_dashboard.html", context)
+        return render(request, "auto_review/coordinator_dashboard.html", context)
 
     # Comments are anchored to the FIRST run for this problem so the
     # discussion thread is continuous across re-runs. Authors and admins
@@ -212,7 +199,7 @@ def problem_review_status(request, problem):
     if not latest:
         return JsonResponse({"run": None})
 
-    if request.headers.get("X-Review-Progress") == "1" and latest.workflow_version == 2:
+    if request.headers.get("X-Review-Progress") == "1":
         return JsonResponse(
             {
                 "run": {
@@ -238,25 +225,13 @@ def problem_review_status(request, problem):
                 ),
                 "summary_report": latest.summary_report,
                 "readiness": latest.readiness,
-                "workflow_version": latest.workflow_version,
                 "coordinator_stages": (
                     list(
                         latest.coordinator_stages.order_by("id").values(
                             "stage_id", "status", "reason", "output_json"
                         )
                     )
-                    if latest.workflow_version == 2
-                    else []
                 ),
-                "check_results": [
-                    {
-                        "check_id": c.check_id,
-                        "status": c.status,
-                        "reason": c.reason,
-                        "details_json": c.details_json,
-                    }
-                    for c in latest.check_results.all()
-                ],
             }
         }
     )
@@ -275,18 +250,7 @@ def problem_review_rerun(request, problem):
     that's never had a public-request. The trigger_problem_review_for helper
     handles the supersede-prior-runs step inside an atomic block.
     """
-    if enabled():
-        return run_review(request, "problem", problem)
-    if not request.user.is_authenticated or not request.user.is_superuser:
-        return HttpResponseForbidden()
-    problem_obj = get_object_or_404(Problem, code=problem)
-
-    with transaction.atomic():
-        trigger_problem_review_for(problem_obj, request.profile, dispatch="celery")
-
-    return HttpResponseRedirect(
-        reverse("problem_review_dashboard", args=[problem_obj.code])
-    )
+    return run_review(request, "problem", problem)
 
 
 # ----------------------------------------------------------------------------
@@ -429,7 +393,6 @@ class ProblemReviewListView(
             _latest, verdicts = batched_verdicts(
                 candidate_ids,
                 ProblemReviewRun,
-                ProblemReviewCheckResult,
                 "problem_id",
             )
             matching = [iid for iid, v in verdicts.items() if v == verdict]
@@ -475,7 +438,7 @@ class ProblemReviewListView(
         item_ids = [p.id for p in items]
 
         latest_runs, verdicts = batched_verdicts(
-            item_ids, ProblemReviewRun, ProblemReviewCheckResult, "problem_id"
+            item_ids, ProblemReviewRun, "problem_id"
         )
         public_requests = {
             pr.problem_id: pr

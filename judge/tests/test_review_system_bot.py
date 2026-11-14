@@ -1,4 +1,4 @@
-"""Tests for judge.review.system_bot — the auto_review_bot user + comment posting."""
+"""Tests for judge.auto_review.system_bot — the auto_review_bot user + comment posting."""
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -6,7 +6,7 @@ from django.test import TestCase
 
 from judge.models import Comment, Language, Problem, ProblemGroup, Profile
 from judge.models.problem_review import ProblemReviewRun
-from judge.review.system_bot import (
+from judge.auto_review.system_bot import (
     SYSTEM_BOT_USERNAME,
     get_or_create_system_bot_profile,
     post_system_comment_on_review,

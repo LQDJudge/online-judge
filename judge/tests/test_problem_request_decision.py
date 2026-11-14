@@ -13,11 +13,14 @@ from judge.models import (
     PublicRequest,
 )
 from judge.models.notification import Notification, NotificationCategory
-from judge.review.publication import publication_decision_token, publish_without_review
-from judge.review.snapshots import build_problem_manifest
+from judge.auto_review.publication import (
+    publication_decision_token,
+    publish_without_review,
+)
+from judge.auto_review.problem_context import build_problem_context
 
 
-@override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=True, LANGUAGE_CODE="en")
+@override_settings(LANGUAGE_CODE="en")
 class ProblemRequestDecisionTest(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -53,22 +56,19 @@ class ProblemRequestDecisionTest(TestCase):
             description="Statement",
         )
         self.problem.authors.add(self.author.profile)
-        snapshot = build_problem_manifest(self.problem, include_execution=True)
+        snapshot = build_problem_context(self.problem, include_statement_sources=False)
         self.run = ProblemReviewRun.objects.create(
             problem=self.problem,
             triggered_by=self.author.profile,
-            workflow_version=2,
             status="D",
             readiness="READY",
-            snapshot=snapshot,
-            content_hash=snapshot["content_hash"],
             input_hash=snapshot["input_hash"],
         )
         self.row = PublicRequest.objects.create(
             problem=self.problem,
             requested_by=self.author.profile,
             review_run=self.run,
-            candidate_hash=self.run.content_hash,
+            candidate_hash=self.run.input_hash,
         )
         self.url = reverse("problem_review_dashboard", args=[self.problem.code])
         self.reject_url = reverse("internal_reject_problem")

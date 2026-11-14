@@ -45,6 +45,7 @@ SUBMISSION_RESULT = (
 
 
 class Submission(models.Model):
+    execution_hash = models.CharField(max_length=64, blank=True, editable=False)
     review_evidence = models.JSONField(default=dict, blank=True)
     STATUS = (
         ("QU", _("Queued")),

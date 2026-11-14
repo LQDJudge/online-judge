@@ -26,12 +26,11 @@ from judge.models import (
 )
 from judge.models.contest_review import (
     ContestPublicRequest,
-    ContestReviewCheckResult,
     ContestReviewRun,
 )
 from judge.models.problem_review import ProblemReviewRun
 from judge.models.public_request import PublicRequest
-from judge.review.verdict import batched_verdicts
+from judge.auto_review.verdict import batched_verdicts
 from judge.views.internal import InternalProblemQueue
 
 
@@ -350,7 +349,6 @@ class ReviewListViewTest(TestCase):
                     path=path, readiness=readiness, stale=stale, status=status
                 ):
                     run_class.objects.filter(**{item_field: item.pk}).update(
-                        workflow_version=2,
                         readiness=readiness,
                         current_stale=stale,
                         status=status,
@@ -396,7 +394,6 @@ class ReviewListViewTest(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.context["active_public"], "")
 
-    @override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=True)
     def test_pending_requests_note_earlier_review_with_contest_status_only(self):
         problem_run = ProblemReviewRun.objects.filter(problem=self.p_author).first()
         PublicRequest.objects.create(
@@ -523,7 +520,6 @@ class ReviewListViewTest(TestCase):
         self.assertSetEqual(ids, {self.c_author.id})
         self.assertContains(resp, f'id="contest-row-{self.c_author.id}"')
 
-    @override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=True)
     def test_public_contest_is_approved_regardless_of_request_history(self):
         Contest.objects.filter(pk=self.c_author.pk).update(
             is_visible=True,
@@ -574,7 +570,6 @@ class ReviewListViewTest(TestCase):
                     status,
                 )
 
-    @override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=True)
     def test_restricted_visible_contest_is_not_displayed_as_publicly_approved(self):
         self.client.force_login(self.admin_profile.user)
         for restriction in ("is_private", "is_organization_private", "is_in_course"):
@@ -596,7 +591,6 @@ class ReviewListViewTest(TestCase):
         ids = {c.id for c in resp.context["items"]}
         self.assertSetEqual(ids, {self.c_unrequested.id})
 
-    @override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=True)
     def test_contest_review_pagination_retains_search_and_result_filters(self):
         now = timezone.now()
         contests = Contest.objects.bulk_create(
@@ -612,9 +606,7 @@ class ReviewListViewTest(TestCase):
         )
         ContestReviewRun.objects.bulk_create(
             [
-                ContestReviewRun(
-                    contest=contest, workflow_version=2, status="D", readiness="READY"
-                )
+                ContestReviewRun(contest=contest, status="D", readiness="READY")
                 for contest in contests
             ]
         )
@@ -640,12 +632,12 @@ class ReviewListViewTest(TestCase):
         )
 
     def test_contest_review_latest_runs_include_template_fields(self):
-        latest_runs, _verdicts = batched_verdicts(
-            [self.c_author.id],
-            ContestReviewRun,
-            ContestReviewCheckResult,
-            "contest_id",
-        )
+        with self.assertNumQueries(1):
+            latest_runs, _verdicts = batched_verdicts(
+                [self.c_author.id],
+                ContestReviewRun,
+                fk_name="contest_id",
+            )
         run = latest_runs[self.c_author.id]
 
         with CaptureQueriesContext(connection) as ctx:
@@ -660,7 +652,7 @@ class ReviewListViewTest(TestCase):
         ids = {c.id for c in resp.context["items"]}
         self.assertSetEqual(ids, {self.c_author.id, self.c_unrequested.id})
 
-    def test_contest_list_hides_started_site_public_contests(self):
+    def test_contest_list_includes_started_site_public_contests(self):
         now = timezone.now()
         started_public = Contest.objects.create(
             key="startedpublic",
@@ -701,7 +693,7 @@ class ReviewListViewTest(TestCase):
         resp = self.client.get("/contests/review/", {"public": ""})
         self.assertEqual(resp.status_code, 200)
         ids = {c.id for c in resp.context["items"]}
-        self.assertNotIn(started_public.id, ids)
+        self.assertIn(started_public.id, ids)
         self.assertIn(future_public.id, ids)
         self.assertIn(self.c_author.id, ids)
 

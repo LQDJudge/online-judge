@@ -95,3 +95,54 @@ test('published-contest warning is retained without a pending request', () => {
     ui.submit();
     assert.equal(ui.confirmations[0], 'This changes a published contest.');
 });
+
+test('active-review save opens a modal and keeps the form until confirmed', async () => {
+    const listeners = {}, children = [], controls = {
+        '[data-save-message]': {}, '[data-save-close]': {}, '[data-save-confirm]': {},
+    };
+    let submitted = 0;
+    const dialog = {
+        open: false,
+        querySelector(selector) { return controls[selector]; },
+        showModal() { this.open = true; },
+        close() { this.open = false; if (this.onclose) this.onclose(); },
+    };
+    const form = {
+        dataset: {reviewSaveProbe: '1', pendingPublication: '0'},
+        action: '/problem/example/edit',
+        addEventListener(name, fn) { listeners[name] = fn; },
+        querySelector(selector) {
+            if (selector.includes('csrfmiddlewaretoken')) return {value: 'csrf'};
+            return children.find(child => child.name === 'confirm_withdraw_publication');
+        },
+        appendChild(child) { children.push(child); },
+        requestSubmit() { submitted++; listeners.submit({preventDefault() {}, stopImmediatePropagation() {}}); },
+    };
+    const document = {
+        readyState: 'complete', querySelectorAll() { return [form]; },
+        getElementById() { return dialog; }, createElement() { return {}; },
+    };
+    vm.runInNewContext(source, {
+        document, window: {location: {href: form.action}},
+        FormData: class { entries() { return []; } }, File: class {},
+        fetch: async () => ({json: async () => ({requires_review_confirmation: true, error: 'Running review will be cancelled.', publication_confirmation_token: 'bound-token'})}),
+    });
+    let prevented = false;
+    listeners.submit({preventDefault() { prevented = true; }, stopImmediatePropagation() {}});
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(prevented, true);
+    assert.equal(dialog.open, true);
+    assert.equal(submitted, 0);
+    assert.equal(controls['[data-save-message]'].textContent, 'Running review will be cancelled.');
+    controls['[data-save-close]'].onclick();
+    assert.equal(dialog.open, false);
+    assert.equal(submitted, 0);
+    assert.equal(children.length, 0);
+    listeners.submit({preventDefault() {}, stopImmediatePropagation() {}});
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(dialog.open, true);
+    controls['[data-save-confirm]'].onclick();
+    assert.equal(dialog.open, false);
+    assert.equal(submitted, 1);
+    assert.equal(children.find(child => child.name === 'publication_confirmation_token').value, 'bound-token');
+});

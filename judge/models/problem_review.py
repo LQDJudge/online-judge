@@ -87,52 +87,6 @@ class ProblemReviewRun(CoordinatorRunFields):
         )
 
 
-class ProblemReviewCheckResult(models.Model):
-    PENDING = "P"
-    SUCCESS = "S"
-    FAIL = "F"
-    SKIPPED = "K"
-    ERROR = "E"
-    STATUS_CHOICES = [
-        (PENDING, _("Pending")),
-        (SUCCESS, _("Pass")),
-        (FAIL, _("Fail")),
-        (SKIPPED, _("Skipped")),
-        (ERROR, _("Error")),
-    ]
-
-    run = models.ForeignKey(
-        ProblemReviewRun,
-        on_delete=models.CASCADE,
-        related_name="check_results",
-        verbose_name=_("review run"),
-    )
-    check_id = models.CharField(max_length=64, verbose_name=_("check id"))
-    status = models.CharField(
-        max_length=1,
-        choices=STATUS_CHOICES,
-        default=PENDING,
-        verbose_name=_("status"),
-    )
-    reason = models.TextField(blank=True, verbose_name=_("reason"))
-    details_json = models.JSONField(default=dict, blank=True, verbose_name=_("details"))
-    started_at = models.DateTimeField(
-        null=True, blank=True, verbose_name=_("started at")
-    )
-    finished_at = models.DateTimeField(
-        null=True, blank=True, verbose_name=_("finished at")
-    )
-
-    class Meta:
-        verbose_name = _("problem review check result")
-        verbose_name_plural = _("problem review check results")
-        unique_together = [("run", "check_id")]
-        ordering = ["run", "id"]
-
-    def __str__(self):
-        return f"{self.check_id}={self.get_status_display()} (run #{self.run_id})"
-
-
 class ProblemReviewSubmissionTag(models.Model):
     MAIN = "M"
     SUBTASK = "S"

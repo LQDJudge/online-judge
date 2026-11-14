@@ -7,37 +7,46 @@ from unittest.mock import Mock, patch
 from django.test import SimpleTestCase, override_settings
 
 from judge.models import Contest, Problem
-from judge.review.workflow import publication_blockers, publication_eligibility
+from judge.auto_review.workflow import publication_blockers, publication_eligibility
 
 
 @override_settings(LANGUAGE_CODE="en")
 class PublicationBlockerTests(SimpleTestCase):
     def setUp(self):
         self.problem = Problem(id=1, code="example")
-        self.stages = [SimpleNamespace(stage_id="D", status="D", DONE="D")]
+        self.stages = [
+            SimpleNamespace(
+                stage_id="statement_review", status="D", DONE="D", output_json={}
+            )
+        ]
         self.run = SimpleNamespace(
-            workflow_version=2,
             status="D",
             DONE="D",
             readiness="READY",
             problem_id=1,
             content_hash="a",
-            input_hash="input",
-            snapshot={},
+            input_hash="a",
             coordinator_stages=SimpleNamespace(all=lambda: self.stages),
         )
         self.patches = ExitStack()
+        self.patches.enter_context(
+            patch(
+                "judge.auto_review.workflow._runs",
+                return_value=Mock(
+                    filter=Mock(return_value=Mock(exists=Mock(return_value=False)))
+                ),
+            )
+        )
         self.addCleanup(self.patches.close)
         for name, value in (
             ("reviewed_content_hash", "a"),
             ("current_content_hash", "a"),
             ("publication_exposure_concern", False),
-            ("stage_definitions", ["D"]),
-            ("build_problem_snapshot", {"input_hash": "input"}),
+            ("definitions_for_run", {"statement_review": {}}),
             ("preparation_errors", []),
         ):
             self.patches.enter_context(
-                patch("judge.review.workflow." + name, return_value=value)
+                patch("judge.auto_review.workflow." + name, return_value=value)
             )
 
     def test_passing_review_has_no_blockers(self):
@@ -45,18 +54,15 @@ class PublicationBlockerTests(SimpleTestCase):
         self.assertTrue(publication_eligibility(self.run, self.problem))
 
     def test_presentation_snapshot_reuse_does_not_cache_publication_authority(self):
-        snapshot = {"content_hash": "a", "input_hash": "input"}
+        snapshot = {"input_hash": "a"}
         with patch(
-            "judge.review.workflow.current_content_hash", return_value="changed"
-        ) as current_hash, patch(
-            "judge.review.workflow.build_problem_snapshot"
-        ) as capture:
+            "judge.auto_review.workflow.current_content_hash", return_value="changed"
+        ) as current_hash:
             self.assertEqual(
-                publication_blockers(self.run, self.problem, current_snapshot=snapshot),
+                publication_blockers(self.run, self.problem, current_context=snapshot),
                 [],
             )
             current_hash.assert_not_called()
-            capture.assert_not_called()
             # The publication API never supplies a presentation snapshot: it
             # must discover a later edit instead of trusting the displayed pass.
             self.assertFalse(publication_eligibility(self.run, self.problem))
@@ -64,7 +70,7 @@ class PublicationBlockerTests(SimpleTestCase):
 
     def test_stale_content_explains_required_rerun(self):
         with patch(
-            "judge.review.workflow.current_content_hash", return_value="changed"
+            "judge.auto_review.workflow.current_content_hash", return_value="changed"
         ):
             self.assertIn(
                 "content has changed", publication_blockers(self.run, self.problem)[0]
@@ -79,7 +85,7 @@ class PublicationBlockerTests(SimpleTestCase):
     def test_execution_evidence_mismatch_is_explained(self):
         self.run.input_hash = "old-input"
         self.assertIn(
-            "Run Validation and Solution Codes",
+            "content has changed",
             publication_blockers(self.run, self.problem)[0],
         )
 
@@ -95,11 +101,11 @@ class PublicationBlockerTests(SimpleTestCase):
             SimpleNamespace(problem_id=1, problem_run=self.run, content_hash="a")
         ]
         parent = SimpleNamespace(
-            workflow_version=2,
             status="D",
             DONE="D",
             readiness="READY",
             contest_id=2,
+            input_hash="a",
             child_dependencies=dependencies,
             _review_dependency_rows=[],
             _latest_completed_problem_reviews={},
@@ -109,7 +115,9 @@ class PublicationBlockerTests(SimpleTestCase):
             with self.subTest(parent_exposed=parent_exposed), patch.object(
                 Problem, "get_cached_instances", return_value=[self.problem]
             ), patch(
-                "judge.review.workflow.publication_exposure_concern",
+                "judge.auto_review.workflow.contest_child_readiness", return_value=None
+            ), patch(
+                "judge.auto_review.workflow.publication_exposure_concern",
                 side_effect=lambda obj: isinstance(obj, Contest) and parent_exposed,
             ):
                 reasons = publication_blockers(parent, contest)

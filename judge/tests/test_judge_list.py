@@ -32,7 +32,7 @@ class FakeJudge:
         self.working = True
         self.submitted.append((id, problem, language))
 
-    def submit_validate(self, validate_id, problem_id, review=False):
+    def submit_validate(self, validate_id, problem_id, statistics_request=None):
         self.working = True
         self._validating = validate_id
 
@@ -74,14 +74,14 @@ class JudgeListFairnessTests(TestCase):
         self.jl.judges.add(j)
         return j
 
-    def test_advanced_review_waits_for_compatible_worker(self):
+    def test_statistics_waits_for_compatible_worker(self):
         old = self._make_judge("old")
-        old.review_protocol = 1
-        self.jl.validate("profile-job", "p1", review=True, protocol=2)
+        old.statistics_protocol = 0
+        self.jl.validate("profile-job", "p1", review=True, protocol=1, request={})
         self.assertIn("profile-job", self.jl.node_map)
         self.assertFalse(old.working)
         new = self._make_judge("new")
-        new.review_protocol = 2
+        new.statistics_protocol = 1
         self.jl._handle_free_judge(old)
         self.assertIn("profile-job", self.jl.node_map)
         self.jl._handle_free_judge(new)

@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 
 from judge.markdown import markdown as _markdown
-from judge.review.presentation import review_list_indentation
+from judge.auto_review.presentation import review_list_indentation
 
 from .. import registry
 

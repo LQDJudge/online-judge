@@ -35,7 +35,6 @@ from judge.models import (
     ProblemReviewRun,
     ProblemTranslation,
     Profile,
-    PublicationRequestEvent,
     PublicRequest,
     Quiz,
     QuizAttempt,
@@ -48,7 +47,7 @@ from judge.models import (
     ContestProblem,
     ContestReviewRun,
 )
-from judge.review.publication import (
+from judge.auto_review.publication import (
     decide_publication,
     submit_publication,
     withdraw_publication,
@@ -73,13 +72,13 @@ from judge.views.problem import (
 from judge.views.resolver import Resolver
 from judge.utils.hidden_results import hidden_result_problem_ids
 from judge.views.content_lock import toggle_content_lock
-from judge.review.exposure import (
+from judge.auto_review.contest_exposure import (
     contest_publication_exposure,
     publication_access_details,
     publication_exposure_concern,
 )
 from judge.models.notification import Notification, NotificationCategory
-from judge.review.snapshots import build_contest_snapshot, build_problem_manifest
+from judge.auto_review.contest_context import build_contest_context
 
 
 class ConfirmationInputs(HTMLParser):
@@ -94,7 +93,7 @@ class ConfirmationInputs(HTMLParser):
             self.fields.append((attrs.get("name"), attrs.get("value", "")))
 
 
-@override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=True, LANGUAGE_CODE="en")
+@override_settings(LANGUAGE_CODE="en")
 class PublicationLockTest(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -136,9 +135,7 @@ class PublicationLockTest(TestCase):
             problem=cls.problem,
             triggered_by=cls.profile,
             status=ProblemReviewRun.DONE,
-            workflow_version=2,
-            content_hash="a" * 64,
-            input_hash="b" * 64,
+            input_hash="a" * 64,
             readiness="READY",
         )
         # This is the previously completed review. Give it an explicit earlier
@@ -155,15 +152,16 @@ class PublicationLockTest(TestCase):
         cache.clear()
         self.addCleanup(cache.clear)
         self.hash_patch = patch(
-            "judge.review.publication.workflow.current_content_hash",
+            "judge.auto_review.publication.workflow.current_content_hash",
             return_value="a" * 64,
         )
         self.ready_patch = patch(
-            "judge.review.publication.workflow.publication_eligibility",
+            "judge.auto_review.publication.workflow.publication_eligibility",
             return_value=True,
         )
         self.blockers_patch = patch(
-            "judge.review.publication.workflow.publication_blockers", return_value=[]
+            "judge.auto_review.publication.workflow.publication_blockers",
+            return_value=[],
         )
         self.hash_patch.start()
         self.ready_patch.start()
@@ -242,14 +240,6 @@ class PublicationLockTest(TestCase):
             ).count(),
             1,
         )
-        self.assertTrue(
-            PublicationRequestEvent.objects.filter(
-                problem=self.problem,
-                actor=self.admin_profile,
-                status=PublicRequest.APPROVED,
-                reason="Published directly by a superuser from Content.",
-            ).exists()
-        )
         response = self.client.post(
             "/problem/locktest/edit", self.content_payload(is_locked="on")
         )
@@ -275,36 +265,11 @@ class PublicationLockTest(TestCase):
         self.assertEqual(first.pk, second.pk)
         self.assertEqual(first.review_run_id, self.review_run.pk)
         self.assertEqual(first.candidate_hash, "a" * 64)
-        self.assertEqual(PublicationRequestEvent.objects.count(), 1)
         self.assertEqual(ProblemReviewRun.objects.count(), 1)
-
-    def test_historical_candidate_survives_metadata_edit_but_not_statement_change(self):
-        self.hash_patch.stop()
-        self.review_run.snapshot = build_problem_manifest(self.problem)
-        self.review_run.save(update_fields=["snapshot"])
-        row = self.submit()
-        self.problem.name = "Renamed"
-        self.problem.date = timezone.now()
-        self.problem.save(update_fields=["name", "date"])
-        self.assertEqual(self.submit().pk, row.pk)
-        self.problem.description = "Different rule"
-        self.problem.save(update_fields=["description"])
-        with self.assertRaises(ValidationError):
-            decide_publication(
-                self.problem,
-                self.admin,
-                publish=True,
-                override_reason="Cannot override changed content",
-            )
-        self.problem.description = "Original\r\n"
-        self.problem.save(update_fields=["description"])
-        decide_publication(self.problem, self.admin, publish=True)
-        self.review_run.refresh_from_db()
-        self.assertEqual(self.review_run.content_hash, "a" * 64)
 
     def test_author_cannot_submit_non_ready_candidate(self):
         with patch(
-            "judge.review.publication.workflow.publication_eligibility",
+            "judge.auto_review.publication.workflow.publication_eligibility",
             return_value=False,
         ), self.assertRaises(ValidationError):
             self.submit()
@@ -324,19 +289,11 @@ class PublicationLockTest(TestCase):
         self.assertEqual(row.review_run_id, self.review_run.pk)
         with self.assertRaises(ValidationError):
             decide_publication(self.problem, self.admin, publish=True)
-        self.assertEqual(
-            list(
-                PublicationRequestEvent.objects.order_by("pk").values_list(
-                    "status", flat=True
-                )
-            ),
-            ["P", "W"],
-        )
 
     def test_override_requires_reason_without_rewriting_readiness(self):
         self.submit()
         with patch(
-            "judge.review.publication.workflow.publication_blockers",
+            "judge.auto_review.publication.workflow.publication_blockers",
             return_value=["Review requires manual assessment."],
         ):
             with self.assertRaises(ValidationError):
@@ -373,7 +330,7 @@ class PublicationLockTest(TestCase):
     def test_queue_publish_requests_override_only_for_overridable_gate(self):
         row = self.submit()
         with patch(
-            "judge.review.publication.workflow.publication_blockers",
+            "judge.auto_review.publication.workflow.publication_blockers",
             return_value=["Review requires manual assessment."],
         ):
             response = publish_problem(
@@ -399,7 +356,7 @@ class PublicationLockTest(TestCase):
     def test_queue_publish_stale_candidate_does_not_offer_override(self):
         row = self.submit()
         with patch(
-            "judge.review.publication.workflow.current_content_hash",
+            "judge.auto_review.publication.workflow.current_content_hash",
             return_value="c" * 64,
         ):
             for reason in ("", "Cannot bypass stale content"):
@@ -432,9 +389,6 @@ class PublicationLockTest(TestCase):
             )
             self.assertEqual(response.status_code, 409)
             self.assertTrue(json.loads(response.content)["requires_override"])
-        self.assertFalse(
-            PublicationRequestEvent.objects.filter(problem=self.problem).exists()
-        )
         response = publish_problem(
             self._request(
                 self.admin,
@@ -445,9 +399,6 @@ class PublicationLockTest(TestCase):
             )
         )
         self.assertEqual(response.status_code, 200)
-        event = PublicationRequestEvent.objects.get(problem=self.problem)
-        self.assertEqual(event.reason, "Reviewed manually")
-        self.assertIsNone(event.problem_run_id)
         self.assertEqual(
             publish_problem(
                 self._request(self.author, data={"id": self.problem.pk})
@@ -480,7 +431,7 @@ class PublicationLockTest(TestCase):
     def test_stale_candidate_cannot_be_approved_even_with_override(self):
         self.submit()
         with patch(
-            "judge.review.publication.workflow.current_content_hash",
+            "judge.auto_review.publication.workflow.current_content_hash",
             return_value="c" * 64,
         ), self.assertRaises(ValidationError):
             decide_publication(
@@ -927,9 +878,7 @@ class PublicationLockTest(TestCase):
         self.assertEqual(response.status_code, 409)
         self.assertIn("text/html", response["Content-Type"])
         self.assertEqual(response["Cache-Control"], "private, no-store")
-        self.assertContains(
-            response, "Save changes and withdraw request", status_code=409
-        )
+        self.assertContains(response, "Save changes", status_code=409)
         self.assertNotContains(response, '<script>alert("x")</script>', status_code=409)
         inputs = ConfirmationInputs(response.content.decode()).fields
         self.assertIn(("description", description), inputs)
@@ -974,9 +923,10 @@ class PublicationLockTest(TestCase):
             {
                 "success": False,
                 "requires_publication_confirmation": True,
+                "requires_review_confirmation": False,
                 "publication_request_id": row.pk,
                 "publication_confirmation_token": publication_confirmation_token(row),
-                "error": "Saving changes will withdraw the pending publication request. Confirm to save the changed draft.",
+                "error": "Saving changes will withdraw the pending publication request.",
             },
         )
 
@@ -1032,10 +982,9 @@ class PublicationLockTest(TestCase):
         old_token = publication_confirmation_token(row)
         withdraw_publication(self.problem, self.author)
         new_run = ProblemReviewRun.objects.create(
+            input_hash="a" * 64,
             problem=self.problem,
             triggered_by=self.profile,
-            workflow_version=2,
-            content_hash="a" * 64,
             status=ProblemReviewRun.DONE,
             readiness="READY",
         )
@@ -1191,19 +1140,12 @@ class PublicationLockTest(TestCase):
             mutation_target(request, match), (Problem, {"pk": str(self.problem.pk)})
         )
 
-    def test_history_cannot_be_rewritten(self):
-        self.submit()
-        event = PublicationRequestEvent.objects.get()
-        event.reason = "Changed historical record"
-        with self.assertRaises(ValidationError):
-            event.save()
-
     def test_candidate_hash_must_match_bound_run_even_with_override(self):
         row = self.submit()
         row.candidate_hash = "c" * 64
         row.save()
         with patch(
-            "judge.review.publication.workflow.current_content_hash",
+            "judge.auto_review.publication.workflow.current_content_hash",
             return_value="c" * 64,
         ), self.assertRaises(ValidationError):
             decide_publication(
@@ -1366,6 +1308,9 @@ class PublicationLockTest(TestCase):
         question.is_public = True
         question.save(update_fields=["is_public"])
         question.refresh_from_db()
+        self.assertFalse(question.is_locked)
+        question.is_locked = True
+        question.save(update_fields=["is_locked"])
         self.assertTrue(question.is_locked)
         self.assertFalse(question.is_editable_by(self.author))
         request = self._request(path="/quiz/questions/%s/edit/" % question.pk)
@@ -1384,10 +1329,9 @@ class PublicationLockTest(TestCase):
     def test_newer_same_candidate_review_requires_explicit_approval_override(self):
         self.submit()
         ProblemReviewRun.objects.create(
+            input_hash="a" * 64,
             problem=self.problem,
             triggered_by=self.profile,
-            workflow_version=2,
-            content_hash=self.review_run.content_hash,
             status=ProblemReviewRun.DONE,
             readiness="NEEDS_AUTHOR_FIX",
         )
@@ -1408,18 +1352,16 @@ class PublicationLockTest(TestCase):
             end_time=timezone.now() + timedelta(hours=3),
         )
         contest.authors.add(self.profile)
-        snapshot = build_contest_snapshot(contest, [])
+        snapshot = build_contest_context(contest, [])
         run = ContestReviewRun.objects.create(
+            input_hash=snapshot["input_hash"],
             contest=contest,
             triggered_by=self.profile,
-            workflow_version=2,
-            snapshot=snapshot,
-            content_hash="old immutable broad hash",
             status=ContestReviewRun.DONE,
             readiness="READY",
         )
         with patch(
-            "judge.review.publication.workflow.current_content_hash",
+            "judge.auto_review.publication.workflow.current_content_hash",
             return_value=snapshot["content_hash"],
         ):
             request_row = submit_publication(contest, self.author, run.pk)
@@ -1428,13 +1370,12 @@ class PublicationLockTest(TestCase):
             contest.testers.add(self.admin_profile)
             approved = decide_publication(contest, self.admin)
         self.assertEqual(approved.status, ContestPublicRequest.APPROVED)
-        self.assertEqual(approved.candidate_hash, "old immutable broad hash")
+        self.assertEqual(approved.candidate_hash, snapshot["input_hash"])
         self.assertEqual(approved.pk, request_row.pk)
         run.refresh_from_db()
-        self.assertEqual(run.snapshot, snapshot)
-        self.assertEqual(run.content_hash, "old immutable broad hash")
+        self.assertEqual(run.input_hash, snapshot["input_hash"])
 
-    def test_newer_equivalent_contest_review_across_hash_versions_blocks_approval(self):
+    def test_newer_equivalent_contest_review_blocks_approval(self):
         contest = Contest.objects.create(
             key="hashpolicyconflict",
             name="Original display title",
@@ -1442,13 +1383,11 @@ class PublicationLockTest(TestCase):
             end_time=timezone.now() + timedelta(hours=3),
         )
         contest.authors.add(self.profile)
-        snapshot = build_contest_snapshot(contest, [])
+        snapshot = build_contest_context(contest, [])
         run = ContestReviewRun.objects.create(
+            input_hash=snapshot["input_hash"],
             contest=contest,
             triggered_by=self.profile,
-            workflow_version=2,
-            snapshot=snapshot,
-            content_hash="old immutable broad hash",
             status=ContestReviewRun.DONE,
             readiness="READY",
         )
@@ -1456,20 +1395,18 @@ class PublicationLockTest(TestCase):
             started_at=timezone.now() - timedelta(days=1)
         )
         with patch(
-            "judge.review.publication.workflow.current_content_hash",
+            "judge.auto_review.publication.workflow.current_content_hash",
             return_value=snapshot["content_hash"],
         ):
             submit_publication(contest, self.author, run.pk)
             contest.name = "Updated display title"
             contest.save(update_fields=["name"])
-            newer_snapshot = build_contest_snapshot(contest, [])
+            newer_snapshot = build_contest_context(contest, [])
             self.assertEqual(newer_snapshot["content_hash"], snapshot["content_hash"])
             ContestReviewRun.objects.create(
+                input_hash=snapshot["input_hash"],
                 contest=contest,
                 triggered_by=self.profile,
-                workflow_version=2,
-                snapshot=newer_snapshot,
-                content_hash=newer_snapshot["content_hash"],
                 status=ContestReviewRun.DONE,
                 readiness="NEEDS_AUTHOR_FIX",
             )
@@ -1683,8 +1620,8 @@ class PublicationLockTest(TestCase):
         self.assertEqual(permission_only["access_labels"], ["Problem tester"])
         self.assertEqual(permission_only["record_count"], 0)
         self.assertEqual(permission_only["records"], [])
-        frozen = build_contest_snapshot(contest, [])["exposure"]
-        self.assertTrue(frozen["material_concern"])
+        frozen = build_contest_context(contest, [])["exposure"]
+        self.assertEqual(frozen, {})
         self.assertNotIn("submission_details", frozen)
         self.assertNotIn("quiz_attempt_details", frozen)
 
@@ -1730,10 +1667,9 @@ class PublicationLockTest(TestCase):
         Profile.dirty_cache(self.profile.pk)
         row = self.submit()
         newer = ProblemReviewRun.objects.create(
+            input_hash="a" * 64,
             problem=self.problem,
             triggered_by=self.profile,
-            workflow_version=2,
-            content_hash=self.review_run.content_hash,
             status=ProblemReviewRun.DONE,
             readiness="NEEDS_AUTHOR_FIX",
         )
@@ -1789,34 +1725,6 @@ class PublicationLockTest(TestCase):
         )
         self.assertFalse(publication_exposure_concern(self.problem))
 
-    @override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=False)
-    def test_disabled_rollout_does_not_auto_lock_but_explicit_lock_is_enforced(self):
-        quiz = Quiz.objects.create(
-            code="legacy-unlocked", title="Legacy", is_public=True
-        )
-        quiz.authors.add(self.profile)
-        self.assertFalse(quiz.is_locked)
-        self.assertTrue(quiz.is_editable_by(self.author))
-        quiz.is_locked = True
-        quiz.save(update_fields=["is_locked"])
-        self.assertFalse(quiz.is_editable_by(self.author))
-
-    @override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=False)
-    def test_legacy_bulk_publication_does_not_silently_enable_lock(self):
-        problem_admin = ProblemAdmin(Problem, admin.site)
-        with patch.object(problem_admin, "message_user"), patch.object(
-            problem_admin, "_rescore"
-        ):
-            problem_admin.make_public(
-                self._request(self.admin), Problem.objects.filter(pk=self.problem.pk)
-            )
-        self.assertEqual(
-            Problem.objects.filter(pk=self.problem.pk)
-            .values_list("is_public", "is_locked")
-            .get(),
-            (True, False),
-        )
-
     def test_admin_lock_option_is_superuser_only(self):
         for model, model_admin in (
             (Problem, ProblemAdmin),
@@ -1852,9 +1760,6 @@ class PublicationLockTest(TestCase):
         self.assertTrue(contest.is_visible)
         self.assertFalse(contest.is_private)
         self.assertTrue(contest.is_locked)
-        event = PublicationRequestEvent.objects.get(contest=contest)
-        self.assertIsNone(event.contest_run_id)
-        self.assertEqual(event.reason, "Checked package manually")
         self.assertFalse(ContestReviewRun.objects.filter(contest=contest).exists())
 
     def test_contest_request_and_decision_notifications_are_separate_from_running_review(
@@ -1868,11 +1773,10 @@ class PublicationLockTest(TestCase):
         )
         contest.authors.add(self.profile)
         run = ContestReviewRun.objects.create(
+            input_hash="a" * 64,
             contest=contest,
-            workflow_version=2,
             status="D",
             readiness="READY",
-            content_hash="a" * 64,
         )
         row = submit_publication(contest, self.author, run.pk)
         submit_publication(contest, self.author, run.pk)
@@ -1909,7 +1813,7 @@ class PublicationLockTest(TestCase):
             1,
         )
 
-    def test_bound_contest_request_remains_safe_when_feature_switch_is_disabled(self):
+    def test_bound_contest_request_stays_safe_when_content_changes(self):
         contest = Contest.objects.create(
             key="bounddisabled",
             name="Bound disabled",
@@ -1918,24 +1822,22 @@ class PublicationLockTest(TestCase):
         )
         contest.authors.add(self.profile)
         run = ContestReviewRun.objects.create(
+            input_hash="a" * 64,
             contest=contest,
             triggered_by=self.profile,
-            workflow_version=2,
-            content_hash="a" * 64,
             status=ContestReviewRun.DONE,
             readiness="READY",
         )
         row = submit_publication(contest, self.author, run.pk)
-        with override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=False), patch(
-            "judge.review.publication.workflow.current_content_hash",
+        with patch(
+            "judge.auto_review.publication.workflow.current_content_hash",
             return_value="c" * 64,
         ):
             response = contest_review_accept(self._request(self.admin), contest.key)
             self.assertEqual(response.status_code, 400)
         row.refresh_from_db()
         self.assertEqual(row.status, ContestPublicRequest.PENDING)
-        with override_settings(AUTO_REVIEW_COORDINATOR_ENABLED=False):
-            response = contest_request_cancel(self._request(), contest.key)
+        response = contest_request_cancel(self._request(), contest.key)
         self.assertEqual(response.status_code, 200)
         row.refresh_from_db()
         self.assertEqual(row.status, ContestPublicRequest.WITHDRAWN)
@@ -1957,16 +1859,15 @@ class PublicationLockTest(TestCase):
             contest=contest, problem=self.problem, points=1, order=0
         )
         review_run = ContestReviewRun.objects.create(
+            input_hash="a" * 64,
             contest=contest,
             triggered_by=self.profile,
             status=ContestReviewRun.DONE,
-            workflow_version=2,
-            content_hash="a" * 64,
             readiness="READY",
         )
         row = submit_publication(contest, self.admin, review_run.pk)
         with patch(
-            "judge.review.publication.workflow.invalidate_readiness"
+            "judge.auto_review.publication.workflow.invalidate_readiness"
         ) as invalidate:
             with self.captureOnCommitCallbacks(execute=True):
                 decide_publication(contest, self.admin, publish=True)

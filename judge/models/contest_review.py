@@ -1,27 +1,10 @@
-"""Auto-review models for the Contest publish flow.
-
-Parallel to `judge/models/problem_review.py`. Three models live here:
-
-  - ContestReviewRun           — one auto-review pass over a contest
-  - ContestReviewCheckResult   — per-check verdict within a run
-  - ContestPublicRequest       — author's request to make a private contest public
-
-The two review models intentionally mirror their problem-review counterparts so the
-existing dashboard / synthesis / reaper patterns can be ported with minimal change.
-The check-result enum adds `WARNING` (advisory checks like difficulty/variety) on
-top of the SUCCESS/FAIL/SKIPPED/ERROR set; the problem-review enum is left alone
-so this addition doesn't ripple into already-shipped problem code.
-
-ContestReviewRun also keeps an M2M to the ProblemReviewRun rows it consulted —
-that powers the dashboard's "this contest review used review #N for problem X"
-deep-links and lets us inspect why a problems_reviewed check passed/failed
-without re-running anything.
-"""
+"""Contest review runs and publication requests; phases/dependencies are shared."""
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from judge.models.review_coordinator import CoordinatorRunFields
+from judge.models.contest import Contest
 
 
 class ContestReviewRun(CoordinatorRunFields):
@@ -79,13 +62,7 @@ class ContestReviewRun(CoordinatorRunFields):
     # Which ProblemReviewRun rows this contest review consulted. Populated by
     # the problems_reviewed check. Lets the dashboard render "Problem X was
     # validated by review #N" links without re-querying.
-    problem_review_runs = models.ManyToManyField(
-        "judge.ProblemReviewRun",
-        related_name="consulted_by_contest_reviews",
-        blank=True,
-        verbose_name=_("consulted problem review runs"),
-    )
-    # When True, the problems_reviewed check ALWAYS triggers a fresh
+
     # per-problem review (no hash reuse). Set by the admin "Rerun review"
     # button; cleared by the author "Request public" flow so unchanged
     # problems are skipped to save LLM/judge cycles.
@@ -122,61 +99,11 @@ class ContestReviewRun(CoordinatorRunFields):
         user as "Tải bình luận bị lỗi" (Failed to load comments) in the
         dashboard's JS-rendered comment widget.
         """
-        from judge.models import Contest
-
         return list(
             Contest.authors.through.objects.filter(contest__review_runs__id=self.id)
             .values_list("profile_id", flat=True)
             .distinct()
         )
-
-
-class ContestReviewCheckResult(models.Model):
-    PENDING = "P"
-    SUCCESS = "S"
-    FAIL = "F"
-    WARNING = "W"
-    SKIPPED = "K"
-    ERROR = "E"
-    STATUS_CHOICES = [
-        (PENDING, _("Pending")),
-        (SUCCESS, _("Pass")),
-        (FAIL, _("Fail")),
-        (WARNING, _("Warning")),
-        (SKIPPED, _("Skipped")),
-        (ERROR, _("Error")),
-    ]
-
-    run = models.ForeignKey(
-        ContestReviewRun,
-        on_delete=models.CASCADE,
-        related_name="check_results",
-        verbose_name=_("review run"),
-    )
-    check_id = models.CharField(max_length=64, verbose_name=_("check id"))
-    status = models.CharField(
-        max_length=1,
-        choices=STATUS_CHOICES,
-        default=PENDING,
-        verbose_name=_("status"),
-    )
-    reason = models.TextField(blank=True, verbose_name=_("reason"))
-    details_json = models.JSONField(default=dict, blank=True, verbose_name=_("details"))
-    started_at = models.DateTimeField(
-        null=True, blank=True, verbose_name=_("started at")
-    )
-    finished_at = models.DateTimeField(
-        null=True, blank=True, verbose_name=_("finished at")
-    )
-
-    class Meta:
-        verbose_name = _("contest review check result")
-        verbose_name_plural = _("contest review check results")
-        unique_together = [("run", "check_id")]
-        ordering = ["run", "id"]
-
-    def __str__(self):
-        return f"{self.check_id}={self.get_status_display()} (run #{self.run_id})"
 
 
 class ContestPublicRequest(models.Model):

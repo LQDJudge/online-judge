@@ -1,6 +1,5 @@
 from unittest.mock import patch
 
-from django.template.loader import render_to_string
 from django.test import SimpleTestCase, override_settings
 from django.utils.translation import gettext, override
 
@@ -10,9 +9,8 @@ from judge.jinja2.markdown import review_inline_markdown, review_markdown
 from judge.markdown import markdown
 from judge.ml import semantic_search
 from judge.models import ContestReviewRun, ProblemReviewRun, ReviewStage
-from judge.review.presentation import (
+from judge.auto_review.presentation import (
     review_author_feedback,
-    review_finding_section,
     review_list_indentation,
     review_prose,
     review_section_groups,
@@ -127,297 +125,93 @@ class ReviewInlineMarkdownTests(SimpleTestCase):
 
 @override_settings(LANGUAGE_CODE="en")
 class ReviewSectionGroupsTests(SimpleTestCase):
-    def stage(self, identity, output=None, status="D"):
-        return ReviewStage(stage_id=identity, status=status, output_json=output or {})
+    def stage(self, key, output=None, status="D"):
+        return ReviewStage(stage_id=key, status=status, output_json=output or {})
 
-    def similarity(self, relationship="unrelated", **overrides):
-        search = self.stage(
-            "S", {"candidates": [{"ref": "candidate:1", "problem_id": 1}]}
+    def test_only_applicable_groups_are_shown(self):
+        self.assertEqual(review_section_groups([]), [])
+        groups = review_section_groups([self.stage("statement_review")])
+        self.assertEqual([g["title"] for g in groups], ["Statement and editorial"])
+
+    def test_required_supporting_failure_cannot_hide_behind_primary(self):
+        groups = review_section_groups(
+            [self.stage("problem_contract", status="E"), self.stage("statement_review")]
         )
-        search.ui_candidates = [
-            {
-                "ref": "candidate:1",
-                "url": "/problem/example",
-                "name": "Example",
-                "code": "example",
-            }
-        ]
-        output = {
-            "comparisons": [
-                {
-                    "candidate_ref": "candidate:1",
-                    "relationship": relationship,
-                    "core_comparison": "Compare $n$.",
-                    "substantive_differences": ["Different operation"],
-                    "algorithmic_significance": "Same complexity",
-                }
-            ]
-        }
-        output.update(overrides)
-        return search, self.stage("H7", output)
+        self.assertEqual(groups[0]["status"], "Error")
 
-    def test_eight_problem_groups_and_three_contest_groups(self):
-        groups = review_section_groups([])
-        self.assertEqual(
-            [g["title"] for g in groups],
+    def test_optional_unavailable_extraction_does_not_override_test_assessment(self):
+        groups = review_section_groups(
             [
-                "Preparation",
-                "Statement and editorial",
-                "Solutions and correctness",
-                "Generator and test coverage",
-                "Validator",
-                "Checker",
-                "Limits and difficulty",
-                "Problem similarity",
-            ],
+                self.stage("extract_stats", {"availability": "unavailable"}),
+                self.stage("test_review", {"assessment": "pass"}),
+            ]
         )
-        self.assertTrue(all(g["status"] == "Pending" for g in groups))
-        self.assertEqual(len(review_section_groups([], "contest")), 3)
+        self.assertEqual(groups[0]["status"], "Pass")
 
-    def test_supporting_failures_cannot_hide_behind_passing_primary(self):
-        for identity, failure in (
-            ("H4", "P_VALIDATOR"),
-            ("H3", "P_EXTRACT_FINAL"),
-            ("H7", "S"),
-            ("D", "R_FINAL"),
-        ):
-            with self.subTest(identity=identity):
-                primary, error = self.stage(identity), self.stage(failure, status="E")
-                group = next(
-                    g
-                    for g in review_section_groups([primary, error])
-                    if g["id"] == identity
-                )
-                self.assertEqual((group["tone"], group["status"]), ("red", "Error"))
-                self.assertEqual(group["errors"], [error])
-                self.assertIn(error, group["supporting"])
+    def test_final_failure_has_visible_recovery_section(self):
+        groups = review_section_groups([self.stage("final_assessment", status="E")])
+        self.assertEqual(groups[0]["id"], "final_assessment")
+        self.assertEqual(groups[0]["status"], "Error")
+        self.assertEqual(review_section_groups([self.stage("final_assessment")]), [])
 
-    def test_missing_supporting_evidence_is_not_pass(self):
-        group = next(
-            g for g in review_section_groups([self.stage("H4")]) if g["id"] == "H4"
+    def test_similarity_shows_comparison_and_relationship(self):
+        retrieval = self.stage(
+            "similarity_search",
+            {"candidates": [{"ref": "candidate:1", "problem_id": 1}]},
         )
-        self.assertNotEqual(group["status"], "Pass")
-
-    def test_completed_synthesis_does_not_leak_into_preparation(self):
-        stages = [self.stage(name) for name in ("D", "R", "R_FINAL")]
-        for stage in stages[1:]:
-            stage.ui_findings = [{"claim": "The tests are weak."}]
-            stage.ui_notes = [{"title": "Recommended action", "items": ["Add tests."]}]
-        preparation = review_section_groups(stages)[0]
-        self.assertEqual(preparation["status"], "Pass")
-        self.assertEqual(preparation["supporting"], [])
-        self.assertEqual(preparation["additional_findings"], [])
-        self.assertEqual(preparation["additional_notes"], [])
-        self.assertTrue(stages[-1].ui_findings)
-
-    def test_synthesis_links_use_supplied_evidence_not_default_preparation(self):
-        stages = [
-            self.stage(name)
-            for name in ("D", "E", "H2", "H3", "H4", "H5", "H6", "H7", "R_FINAL")
+        retrieval.ui_candidates = [
+            {"ref": "candidate:1", "url": "/problem/example", "name": "Example"}
         ]
-        groups = review_section_groups(stages)
-        for refs, expected in (
-            (["stage:E", "tests", "solution:3"], "H3"),
-            (["stage:E", "candidate:3976"], "H7"),
-            (["stage:E", "artifact:testcase_validator"], "H4"),
-            (["artifact:custom_checker_cpp"], "H5"),
-            (["stage:H6", "tests"], "H6"),
-            (["stage:D"], "D"),
-            (["solution:1"], "H2"),
-            (["stage:E"], "H1"),
-            (["stage:R_FINAL"], None),
-            (["unknown:ref"], None),
-            (None, None),
+        for relation in (
+            "essentially_equivalent",
+            "meaningful_variation",
+            "shared_technique_only",
+            "unrelated",
+            "uncertain",
         ):
-            with self.subTest(refs=refs):
-                group = review_finding_section(
-                    {"evidence_refs": refs}, stages[-1], groups
-                )
-                self.assertEqual(group["id"] if group else None, expected)
-        # Specialist findings retain their own section despite generic evidence.
-        self.assertEqual(
-            review_finding_section({"evidence_refs": ["tests"]}, stages[3], groups)[
-                "id"
-            ],
-            "H3",
-        )
-        contest_groups = review_section_groups([self.stage("H2")], "contest")
-        self.assertIsNone(
-            review_finding_section(
-                {"evidence_refs": ["solution:1"]}, stages[-1], contest_groups
+            output = {
+                "evidence": {
+                    "comparisons": [
+                        {
+                            "candidate_ref": "candidate:1",
+                            "relationship": relation,
+                            "confidence": "high",
+                            "core_comparison": "Compare $n$.",
+                            "substantive_differences": ["Different operation"],
+                            "algorithmic_significance": "Same complexity",
+                        }
+                    ]
+                }
+            }
+            result = review_similarity(
+                retrieval, self.stage("similarity_review", output)
             )
+            self.assertEqual(result["manual"], relation == "essentially_equivalent")
+            self.assertEqual(len(result["matches"]) + len(result["other"]), 1)
+
+    def test_search_success_alone_does_not_establish_equivalence(self):
+        retrieval = self.stage(
+            "similarity_search", {"candidates": [{"ref": "candidate:1"}]}
         )
+        result = review_similarity(
+            retrieval, self.stage("similarity_review", {}, status="E")
+        )
+        self.assertTrue(result["incomplete"])
 
-    def test_generic_execution_caveats_do_not_override_completed_assessment(self):
-        stages = [
-            self.stage(name)
-            for name in ("H3", "P_EXTRACT", "EXTRACT_REPAIR", "P_EXTRACT_FINAL")
-        ]
-        stages[1].output_json = {
-            "available": True,
-            "limitations": ["Statistics alone do not prove coverage."],
-        }
-        group = next(g for g in review_section_groups(stages) if g["id"] == "H3")
-        self.assertEqual(group["status"], "Pass")
-        stages[1].output_json["available"] = False
-        group = next(g for g in review_section_groups(stages) if g["id"] == "H3")
-        self.assertEqual(group["status"], "Pass")
-        self.assertFalse(group["evidence_limited"])
-
-    def test_optional_extraction_does_not_hide_real_missing_evidence(self):
-        stages = [
-            self.stage(name)
-            for name in ("H3", "P_EXTRACT", "EXTRACT_REPAIR", "P_EXTRACT_FINAL")
-        ]
-        stages[1].output_json = {
-            "available": False,
-            "_missing_evidence": [{"stage_id": "E"}],
-        }
-        stages[1].ui_notes = [
-            {
-                "title": "Uncertainties and limitations",
-                "items": ["Missing upstream results."],
-            }
-        ]
-        group = next(g for g in review_section_groups(stages) if g["id"] == "H3")
-        self.assertEqual(group["status"], "Partial")
-        self.assertTrue(group["evidence_limited"])
-        stages[1].output_json = {"available": False}
-        stages[0].output_json = {
-            "status": "uncertain",
-            "uncertainties": ["Cannot establish coverage."],
-        }
-        group = next(g for g in review_section_groups(stages) if g["id"] == "H3")
-        self.assertEqual(group["status"], "Partial")
-
-    def test_missing_required_checker_evidence_still_shows_notice(self):
-        stages = [self.stage(name) for name in ("H5", "H5_PLAN", "P_CHECKER")]
-        stages[2].output_json = {"available": False}
-        stages[2].ui_notes = [
-            {
-                "title": "Uncertainties and limitations",
-                "items": ["Challenges unavailable."],
-            }
-        ]
-        group = next(g for g in review_section_groups(stages) if g["id"] == "H5")
-        self.assertEqual(group["status"], "Partial")
-        self.assertTrue(group["evidence_limited"])
-
-    def test_similarity_displays_relationships_and_reasons_not_search_success(self):
-        for relationship, title in (
-            ("essentially_equivalent", "Potential duplicate — manual review"),
-            (
-                "meaningful_variation",
-                "No concerning match found in assessed candidates",
-            ),
-            (
-                "shared_technique_only",
-                "No concerning match found in assessed candidates",
-            ),
-            ("unrelated", "No concerning match found in assessed candidates"),
-            ("uncertain", "Assessment incomplete"),
-        ):
-            with self.subTest(relationship=relationship):
-                search, analysis = self.similarity(relationship)
-                result = review_similarity(search, analysis)
-                self.assertEqual(result["title"], title)
-                item = (result["matches"] or result["other"])[0]
-                self.assertEqual(item["candidate"]["url"], "/problem/example")
-                self.assertEqual(item["reason"], "Compare $n$.")
-                self.assertEqual(item["differences"], ["Different operation"])
-                group = next(
-                    g
-                    for g in review_section_groups([search, analysis])
-                    if g["id"] == "H7"
-                )
-                if relationship == "essentially_equivalent":
-                    self.assertEqual(group["status"], "Manual review")
-
-    def test_meaningful_variation_is_neutral_collapsed_reference(self):
-        search, analysis = self.similarity("meaningful_variation")
-        result = review_similarity(search, analysis)
-        self.assertEqual(result["matches"], [])
-        self.assertFalse(result["manual"])
+    def test_empty_retrieval_is_completed_but_never_guarantees_originality(self):
+        result = review_similarity(
+            self.stage("similarity_search", {"candidates": []}),
+            self.stage("similarity_review", {"evidence": {"comparisons": []}}),
+        )
         self.assertFalse(result["incomplete"])
-        self.assertEqual(result["other"][0]["tone"], "blue")
-        group = next(
-            g for g in review_section_groups([search, analysis]) if g["id"] == "H7"
-        )
-        self.assertEqual((group["tone"], group["status"]), ("green", "Pass"))
-        html = render_to_string("review/coordinator_similarity.html", {"group": group})
-        soup = BeautifulSoup(html, "html.parser")
-        details = soup.select_one("details.review-supporting")
-        self.assertFalse(details.has_attr("open"))
-        self.assertEqual(details.summary.get_text(strip=True), "Similar problems")
-        self.assertIn("Meaningful variation", details.get_text())
-        self.assertIn("Different operation", details.get_text())
-        self.assertEqual(len(soup.select(".review-similarity-match")), 1)
-        self.assertIn("No concerning match", soup.select_one("h4").get_text())
-        self.assertNotIn("Manual review", html)
-
-    def test_concerning_similarity_remains_prominent_beside_variation(self):
-        for relationship in ("essentially_equivalent", "uncertain"):
-            with self.subTest(relationship=relationship):
-                search, analysis = self.similarity(relationship)
-                search.output_json["candidates"].append({"ref": "candidate:2"})
-                search.ui_candidates.append(
-                    {"ref": "candidate:2", "name": "Variation", "code": "variation"}
-                )
-                analysis.output_json["comparisons"].append(
-                    {
-                        "candidate_ref": "candidate:2",
-                        "relationship": "meaningful_variation",
-                    }
-                )
-                result = review_similarity(search, analysis)
-                self.assertEqual(
-                    [item["relationship"] for item in result["matches"]], [relationship]
-                )
-                self.assertEqual(
-                    [item["relationship"] for item in result["other"]],
-                    ["meaningful_variation"],
-                )
-                self.assertTrue(result["manual"] or result["incomplete"])
-
-    def test_similarity_missing_empty_failed_or_invalid_evidence_never_claims_no_match(
-        self,
-    ):
-        search, analysis = self.similarity()
-        cases = [
-            (None, analysis),
-            (search, None),
-            (self.stage("S", {"candidates": []}), analysis),
-            (self.stage("S", status="E"), analysis),
-            (search, self.stage("H7", status="E")),
-            (search, self.stage("H7", {"comparisons": []})),
-            (
-                search,
-                self.stage(
-                    "H7",
-                    {
-                        "comparisons": [
-                            {"candidate_ref": [], "relationship": "unrelated"}
-                        ]
-                    },
-                ),
-            ),
-        ]
-        for retrieval, assessment in cases:
-            with self.subTest(retrieval=retrieval, assessment=assessment):
-                result = review_similarity(retrieval, assessment)
-                self.assertTrue(result["incomplete"])
-                self.assertEqual(result["title"], "Assessment incomplete")
-
-    def test_similarity_with_limited_retrieval_does_not_claim_complete(self):
-        search, analysis = self.similarity()
-        search.output_json["limitations"] = ["Only one eligible problem was indexed"]
-        self.assertTrue(review_similarity(search, analysis)["incomplete"])
+        self.assertEqual(result["title"], "No candidate problems were returned.")
 
 
+@override_settings(LANGUAGE_CODE="en")
 class ReviewStageNotesTests(SimpleTestCase):
     def test_contract_and_independent_analysis_have_readable_results(self):
         contract = ReviewStage(
-            stage_id="E",
+            stage_id="problem_contract",
             output_json={
                 "task": "Compute a sum.",
                 "input_structure": "An array.",
@@ -429,7 +223,7 @@ class ReviewStageNotesTests(SimpleTestCase):
             [note["items"] for note in notes], [["Compute a sum."], ["An array."]]
         )
         analysis = ReviewStage(
-            stage_id="FG",
+            stage_id="independent_analysis",
             output_json={
                 "F": {"complexity": ["O(n)"]},
                 "G": {"coverage_blueprint": ["Maximum array length"]},
@@ -521,7 +315,7 @@ class ReviewBadgeTests(SimpleTestCase):
         self.assertEqual(review_stage_badge(stage), ("red", "Error"))
 
     def test_synthesis_badges_use_readiness_not_only_completion(self):
-        for stage_id in ("R", "R_FINAL"):
+        for stage_id in ("final_assessment",):
             for readiness, tone, label in (
                 ("READY", "green", "Pass"),
                 ("READY_WITH_WARNINGS", "orange", "Warning"),
@@ -537,13 +331,13 @@ class ReviewBadgeTests(SimpleTestCase):
                     )
                     self.assertEqual(review_stage_badge(stage), (tone, label))
 
-    def test_unused_optional_steps_are_neutral(self):
-        for stage_id, output in (
-            ("EXTRACT_REPAIR", {"needed": False}),
-            ("P_FOLLOWUP", {"requested": False}),
-        ):
-            stage = ReviewStage(stage_id=stage_id, status="D", output_json=output)
-            self.assertEqual(review_stage_badge(stage), ("gray", "Skipped"))
+    def test_unavailable_statistics_are_not_presented_as_pass(self):
+        stage = ReviewStage(
+            stage_id="extract_stats",
+            status="D",
+            output_json={"availability": "unavailable"},
+        )
+        self.assertEqual(review_stage_badge(stage), ("orange", "Partial"))
 
     def test_malformed_optional_data_does_not_break_badges(self):
         for output in (None, [], {"findings": [None, {"severity": []}]}):
