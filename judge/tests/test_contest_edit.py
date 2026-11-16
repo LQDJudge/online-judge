@@ -566,6 +566,52 @@ class ContestEditFormVisibilityTests(ContestEditTestBase):
         form = self._form(self.org_contest, self.author)
         self.assertFalse(form.fields["is_visible"].disabled)
 
+    def test_author_can_toggle_organization_visibility_on_edit_page(self):
+        self.org_contest.is_visible = False
+        self.org_contest.save(update_fields=["is_visible"])
+        self.client.force_login(self.author)
+        url = reverse("contest_edit", args=[self.org_contest.key])
+        data = self._contest_edit_post_data(self.org_contest, [])
+        data["is_visible"] = "on"
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+        self.org_contest.refresh_from_db()
+        self.assertTrue(self.org_contest.is_visible)
+        self.assertTrue(self.org_contest.is_organization_private)
+        data["is_visible"] = ""
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+        self.org_contest.refresh_from_db()
+        self.assertFalse(self.org_contest.is_visible)
+
+    def test_replacing_private_contestant_keeps_contest_private_and_unlocked(self):
+        contest = self._make_contest(
+            "replacescoped", author=self.author, is_visible=True
+        )
+        contest.private_contestants.add(self.outsider.profile)
+        self.client.force_login(self.author)
+        data = self._contest_edit_post_data(contest, [])
+        data["private_contestants"] = [str(self.curator.profile.pk)]
+        response = self.client.post(reverse("contest_edit", args=[contest.key]), data)
+        self.assertEqual(response.status_code, 302)
+        contest.refresh_from_db()
+        self.assertTrue(contest.is_private)
+        self.assertFalse(contest.is_locked)
+        self.assertEqual(
+            list(contest.private_contestants.values_list("pk", flat=True)),
+            [self.curator.profile.pk],
+        )
+
+    def test_removing_last_private_contestant_cannot_publish_site_wide(self):
+        contest = self._make_contest(
+            "scopedprivate", author=self.author, is_visible=True
+        )
+        contest.private_contestants.add(self.outsider.profile)
+        contest.refresh_from_db()
+        self.assertTrue(contest.is_private)
+        form = self._form(contest, self.author, private_contestants=[])
+        self.assertFalse(form.is_valid())
+
     def test_visibility_always_editable_for_superuser(self):
         self.public_contest.is_visible = False
         self.public_contest.save()
