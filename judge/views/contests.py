@@ -2949,8 +2949,6 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        if not self.request.user.is_superuser and "is_visible" in form.fields:
-            form.fields["is_visible"].disabled = True
         if self.object.is_locked and not self.request.user.is_superuser:
             for field in form.fields.values():
                 field.disabled = True
@@ -3180,7 +3178,13 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
             delete_count,
         ) % {"count": delete_count}
 
+    @transaction.atomic
     def form_valid(self, form):
+        # Add replacements before ModelForm removes old private contestants.
+        if not self.request.user.is_superuser:
+            self.object.private_contestants.add(
+                *form.cleaned_data.get("private_contestants", ())
+            )
         # SingleObjectFormView inherits FormView (not ModelFormMixin), so
         # FormView.form_valid does NOT save — call form.save() directly.
         self.object = form.save()

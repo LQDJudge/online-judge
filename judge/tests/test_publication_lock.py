@@ -28,6 +28,7 @@ from judge.admin.interface import BlogPostAdmin
 from judge.admin.quiz import QuizAdmin, QuizQuestionAdmin
 from judge.models import (
     Language,
+    Organization,
     LanguageLimit,
     LanguageTemplate,
     Problem,
@@ -205,7 +206,7 @@ class PublicationLockTest(TestCase):
         self.client.force_login(self.author)
         response = self.client.get("/problem/locktest/edit")
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context["form"].fields["is_public"].disabled)
+        self.assertFalse(response.context["form"].fields["is_public"].disabled)
         self.assertNotIn("is_locked", response.context["form"].fields)
         self.assertNotContains(response, 'name="is_locked"')
 
@@ -254,10 +255,86 @@ class PublicationLockTest(TestCase):
             "/problem/locktest/edit",
             self.content_payload(is_public="on", is_locked="on"),
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         self.problem.refresh_from_db()
         self.assertFalse(self.problem.is_public)
         self.assertFalse(self.problem.is_locked)
+
+    def test_author_can_toggle_organization_visibility_but_not_remove_scope(self):
+        org = Organization.objects.create(
+            name="Visibility org",
+            slug="visibility-org",
+            short_name="VO",
+            about="",
+            registrant=self.profile,
+            is_open=True,
+        )
+        self.problem.organizations.add(org)
+        self.client.force_login(self.author)
+        response = self.client.post(
+            "/problem/locktest/edit",
+            self.content_payload(is_public="on", organizations=[org.pk]),
+        )
+        self.assertEqual(response.status_code, 302)
+        self.problem.refresh_from_db()
+        self.assertTrue(self.problem.is_public)
+        self.assertTrue(self.problem.is_organization_private)
+        replacement = Organization.objects.create(
+            name="Replacement org",
+            slug="replacement-org",
+            short_name="RO",
+            about="",
+            registrant=self.profile,
+            is_open=True,
+        )
+        response = self.client.post(
+            "/problem/locktest/edit",
+            self.content_payload(is_public="on", organizations=[replacement.pk]),
+        )
+        self.assertEqual(response.status_code, 302)
+        self.problem.refresh_from_db()
+        self.assertTrue(self.problem.is_organization_private)
+        self.assertFalse(self.problem.is_locked)
+        org = replacement
+        response = self.client.post(
+            "/problem/locktest/edit", self.content_payload(is_public="on")
+        )
+        self.assertEqual(response.status_code, 200)
+        self.problem.refresh_from_db()
+        self.assertTrue(self.problem.is_public)
+        self.assertTrue(self.problem.is_organization_private)
+        response = self.client.post(
+            "/problem/locktest/edit", self.content_payload(organizations=[org.pk])
+        )
+        self.assertEqual(response.status_code, 302)
+        self.problem.refresh_from_db()
+        self.assertFalse(self.problem.is_public)
+        self.assertTrue(self.problem.is_organization_private)
+
+    def test_author_can_create_visible_organization_problem_only(self):
+        org = Organization.objects.create(
+            name="Creation org",
+            slug="creation-org",
+            short_name="CO",
+            about="",
+            registrant=self.profile,
+            is_open=True,
+        )
+        self.client.force_login(self.author)
+        data = self.content_payload(
+            code="orgcreate", is_public="on", organizations=[org.pk]
+        )
+        response = self.client.post(reverse("problem_add"), data)
+        self.assertEqual(response.status_code, 302)
+        problem = Problem.objects.get(code="orgcreate")
+        self.assertTrue(problem.is_public)
+        self.assertTrue(problem.is_organization_private)
+        self.assertFalse(problem.is_locked)
+        data["code"] = "publiccreate"
+        data["organizations"] = []
+        response = self.client.post(reverse("problem_add"), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Problem.objects.filter(code="publiccreate").exists())
 
     def test_request_binds_exact_run_and_is_idempotent(self):
         first = self.submit()

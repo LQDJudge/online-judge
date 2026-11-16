@@ -1365,8 +1365,6 @@ class ProblemEdit(
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        if not self.request.user.is_superuser and "is_public" in form.fields:
-            form.fields["is_public"].disabled = True
         if self.object.is_locked and not self.request.user.is_superuser:
             for field in form.fields.values():
                 field.disabled = True
@@ -1421,6 +1419,10 @@ class ProblemEdit(
         with reversion.create_revision():
             # Save the main form
             problem = form.save(commit=False)
+            if not self.request.user.is_superuser:
+                problem.is_organization_private = bool(
+                    form.cleaned_data.get("organizations")
+                )
 
             # Handle memory unit conversion (already done in clean method)
             (
@@ -1431,6 +1433,9 @@ class ProblemEdit(
 
             problem._bypass_points_cap = self.request.user.is_superuser
             problem.save()
+            if not self.request.user.is_superuser and problem.is_public:
+                # Add replacements before ModelForm removes old organizations.
+                problem.organizations.add(*form.cleaned_data.get("organizations", ()))
             form.save_m2m()
 
             if (
@@ -2002,12 +2007,6 @@ class ProblemAdd(PermissionRequiredMixin, CreateView):
     form_class = ProblemAddForm
     model = Problem
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        if not self.request.user.is_superuser and "is_public" in form.fields:
-            form.fields["is_public"].disabled = True
-        return form
-
     def has_permission(self):
         if not self.request.user.is_authenticated:
             return False
@@ -2021,9 +2020,16 @@ class ProblemAdd(PermissionRequiredMixin, CreateView):
         kwargs["user"] = self.request.user
         return kwargs
 
+    @transaction.atomic
     def form_valid(self, form):
         """Handle valid form submission"""
-        problem = form.save()
+        problem = form.save(commit=False)
+        if not self.request.user.is_superuser:
+            problem.is_organization_private = bool(
+                form.cleaned_data.get("organizations")
+            )
+        problem.save()
+        form.save_m2m()
 
         # Set default values for new problem
         if not problem.date:

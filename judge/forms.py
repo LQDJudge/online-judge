@@ -584,28 +584,35 @@ class ContestEditForm(AuthorManagedRoleFieldsMixin, ModelForm):
             except Exception as e:
                 self.add_error("format_config", str(e))
 
-        # Server-side safety net for the `is_visible` promotion rule. The
-        # field's disabled flag already drops tampered values during form
-        # binding, but this catches edge cases — a programmatic caller that
-        # forgot to pass `user=`, a concurrent edit, or a bypassed disable.
+        # Validate the complete resulting scope, including contestant removals.
         if (
             self.user
             and not self.user.is_superuser
             and self.instance
             and self.instance.pk
             and cleaned_data.get("is_visible")
-            and not self.instance.is_visible
         ):
-            is_scoped = (
-                self.instance.is_in_course or self.instance.organizations.exists()
-            )
-            if not is_scoped:
-                raise ValidationError(
-                    _(
-                        "Only administrators can publish a public contest. "
-                        "Add it to an organization or course first."
-                    )
+            organizations = cleaned_data.get("organizations")
+            contestants = cleaned_data.get("private_contestants")
+            if organizations is not None and contestants is not None:
+                scoped = (
+                    bool(organizations)
+                    or bool(contestants)
+                    or self.instance.is_in_course
                 )
+                was_public = (
+                    self.instance.is_visible
+                    and not self.instance.is_private
+                    and not self.instance.is_organization_private
+                    and not self.instance.is_in_course
+                )
+                if not scoped and not was_public:
+                    raise ValidationError(
+                        _(
+                            "Only administrators can publish a public contest. "
+                            "Add it to an organization or course first."
+                        )
+                    )
 
         self._validate_role_field_changes()
 
