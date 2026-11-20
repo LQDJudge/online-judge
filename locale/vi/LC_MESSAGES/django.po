@@ -21293,3 +21293,33 @@ msgstr "Hãy tải lên và chấm ít nhất một bộ kết quả hợp lệ 
 
 msgid "The review task could not be delivered. Retry this section."
 msgstr "Không thể gửi tác vụ đánh giá. Hãy thử lại phần này."
+
+#: judge/moderation_status.py
+msgid "No Muse check needed"
+msgstr "Không cần Muse kiểm tra"
+
+#: judge/moderation_status.py
+msgid "Pending Muse, visible"
+msgstr "Đang chờ Muse kiểm tra, vẫn hiển thị"
+
+#: judge/moderation_status.py
+msgid "Pending Muse, hidden"
+msgstr "Đang chờ Muse kiểm tra, đã ẩn"
+
+#: judge/moderation_status.py
+msgid "Muse completed"
+msgstr "Muse đã kiểm tra"
+
+#: judge/moderation_status.py
+msgid "Pending OpenAI moderation"
+msgstr "Đang chờ OpenAI kiểm duyệt"
+
+#: judge/moderation_status.py
+msgid "Superseded by an edit"
+msgstr "Đã được thay thế bởi bản chỉnh sửa"
+
+msgid "Unable to check the image; manual review is needed."
+msgstr "Không thể kiểm tra hình ảnh; cần kiểm tra thủ công."
+
+msgid "Automated moderation failed; manual review is needed."
+msgstr "Không thể kiểm duyệt tự động; cần kiểm tra thủ công."

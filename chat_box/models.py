@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from judge.caching import CacheableModel, cache_wrapper
+from judge.moderation_status import MuseStatus
 from judge.models.profile import Organization, Profile
 from judge.utils.files import generate_secure_filename
 
@@ -878,6 +879,13 @@ class ChatModerationLog(models.Model):
     reason = models.TextField(blank=True)
     mute_until = models.DateTimeField(null=True, blank=True)
     mute_duration_days = models.PositiveIntegerField(null=True, blank=True)
+    muse_status = models.CharField(
+        max_length=20,
+        choices=MuseStatus.choices,
+        default=MuseStatus.NONE,
+        db_index=True,
+    )
+    muse_retry_after = models.DateTimeField(null=True, blank=True, db_index=True)
     is_automated = models.BooleanField(default=False)
     moderator = models.ForeignKey(
         Profile,
@@ -910,6 +918,7 @@ class ChatModerationLog(models.Model):
         moderator=None,
         mute_until=None,
         mute_duration_days=None,
+        muse_status=MuseStatus.NONE,
     ):
         return cls.objects.create(
             message=message,
@@ -919,6 +928,7 @@ class ChatModerationLog(models.Model):
             moderator=moderator,
             mute_until=mute_until,
             mute_duration_days=mute_duration_days,
+            muse_status=muse_status,
         )
 
 

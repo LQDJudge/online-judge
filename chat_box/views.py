@@ -26,6 +26,7 @@ from django.views.generic import ListView
 from reversion import revisions
 
 from judge import event_poster as event
+from judge.tasks.omni_moderation import enqueue_omni, record_omni_pending
 from judge.caching import cache_wrapper
 from judge.markdown import prefetch_markdown
 from judge.models.notification import Notification, NotificationCategory
@@ -905,6 +906,12 @@ def post_message(request):
                 room=room,
                 reply_to=reply_to,
             )
+            if room.singleton_key == "lobby" and record_omni_pending(
+                "chat", new_message
+            ):
+                transaction.on_commit(
+                    lambda: enqueue_omni("chat", new_message.pk, new_message.body)
+                )
             UserRoom.objects.filter(pk=membership.pk).update(
                 last_read_message_id=new_message.id,
                 last_seen=timezone.now(),

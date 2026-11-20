@@ -15,6 +15,7 @@ from mptt.models import MPTTModel
 from reversion.models import Version
 
 from judge.caching import CacheableModel, cache_wrapper
+from judge.moderation_status import MuseStatus
 from judge.models.contest import Contest
 from judge.models.interface import BlogPost
 from judge.models.problem import Problem, Solution
@@ -606,6 +607,13 @@ class CommentModerationLog(models.Model):
     action = models.CharField(max_length=20, choices=ACTIONS)
     reason = models.TextField(blank=True)
     content_hash = models.CharField(max_length=64, db_index=True)
+    muse_status = models.CharField(
+        max_length=20,
+        choices=MuseStatus.choices,
+        default=MuseStatus.NONE,
+        db_index=True,
+    )
+    muse_retry_after = models.DateTimeField(null=True, blank=True, db_index=True)
     is_automated = models.BooleanField(default=False)
     moderator = models.ForeignKey(
         Profile,
@@ -644,6 +652,7 @@ class CommentModerationLog(models.Model):
         moderator=None,
         mute_until=None,
         mute_duration_days=None,
+        muse_status=MuseStatus.NONE,
         content_hash=None,
     ):
         return cls.objects.create(
@@ -654,6 +663,7 @@ class CommentModerationLog(models.Model):
             moderator=moderator,
             mute_until=mute_until,
             mute_duration_days=mute_duration_days,
+            muse_status=muse_status,
             content_hash=content_hash or get_comment_moderation_hash(comment),
         )
 
@@ -662,20 +672,25 @@ def get_comment_moderation_hash(comment):
     return hashlib.sha256((comment.body or "").encode("utf-8")).hexdigest()
 
 
-def _notify_comment_hidden(comment, is_automated=False, moderator=None):
+def _notify_comment_hidden(comment, reason="", is_automated=False, moderator=None):
     from judge.models.notification import Notification, NotificationCategory
 
     if not comment.author_id:
         return
 
+    html_link = format_html(
+        '<a href="{}">{}</a>',
+        comment.get_absolute_url(),
+        comment.page_title or _("comment"),
+    )
+    if reason:
+        html_link = format_html(
+            "{}<br>{}", html_link, _("Reason: %(reason)s") % {"reason": reason}
+        )
     Notification.objects.create_notification(
         owner=comment.author,
         category=NotificationCategory.HIDE_COMMENT,
-        html_link=format_html(
-            '<a href="{}">{}</a>',
-            comment.get_absolute_url(),
-            comment.page_title or _("comment"),
-        ),
+        html_link=html_link,
         author=None if is_automated else moderator,
         deduplicate=False,
     )
@@ -741,7 +756,9 @@ def hide_comment_for_moderation(
             moderator=moderator,
         )
 
-    _notify_comment_hidden(comment, is_automated=is_automated, moderator=moderator)
+    _notify_comment_hidden(
+        comment, reason=reason, is_automated=is_automated, moderator=moderator
+    )
 
 
 def get_temporary_comment_mute_duration_days(profile):

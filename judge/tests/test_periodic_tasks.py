@@ -49,60 +49,38 @@ class PeriodicCommandLockTest(SimpleTestCase):
 
 
 class PeriodicModerationTaskTest(SimpleTestCase):
-    @override_settings(
-        AUTO_MODERATE_CHAT_ENABLED=True,
-        AUTO_MODERATE_CHAT_BATCH_SIZE=7,
-        AUTO_MODERATE_CHAT_WINDOW_MINUTES=33,
-        AUTO_MODERATE_CHAT_LOCK_TIMEOUT=44,
-    )
     @patch("judge.tasks.chat_moderation.run_locked_command")
-    def test_chat_moderation_task_passes_expected_command(self, run_locked_command):
-        run_locked_command.return_value = {"success": True}
-
-        result = moderate_recent_chat()
-
-        self.assertEqual(result, {"success": True})
-        run_locked_command.assert_called_once_with(
+    @patch("judge.tasks.chat_moderation.recover_omni_items")
+    def test_chat_recovery_and_muse_batch(self, recover, muse):
+        recover.return_value = {"queued": 2}
+        muse.return_value = {"success": True}
+        self.assertEqual(
+            moderate_recent_chat(),
+            {"recovery": {"queued": 2}, "muse": {"success": True}},
+        )
+        recover.assert_called_once_with("chat")
+        muse.assert_called_once_with(
             "periodic:auto_moderate_chat",
             "auto_moderate",
             "--chat-only",
-            "--batch-size",
-            "7",
-            "--chat-window-minutes",
-            "33",
-            lock_timeout=44,
+            lock_timeout=900,
         )
 
-    @override_settings(AUTO_MODERATE_CHAT_ENABLED=False)
-    @patch("judge.tasks.chat_moderation.run_locked_command")
-    def test_disabled_chat_moderation_task_does_not_dispatch(self, run_locked_command):
-        result = moderate_recent_chat()
-
-        self.assertEqual(result, {"skipped": True, "reason": "disabled"})
-        run_locked_command.assert_not_called()
-
-    @override_settings(
-        AUTO_MODERATE_COMMENTS_ENABLED=True,
-        AUTO_MODERATE_COMMENTS_BATCH_SIZE=8,
-        AUTO_MODERATE_COMMENTS_WINDOW_MINUTES=55,
-        AUTO_MODERATE_COMMENTS_LOCK_TIMEOUT=66,
-    )
     @patch("judge.tasks.comment_moderation.run_locked_command")
-    def test_comment_moderation_task_passes_expected_command(self, run_locked_command):
-        run_locked_command.return_value = {"success": True}
-
-        result = moderate_recent_comments()
-
-        self.assertEqual(result, {"success": True})
-        run_locked_command.assert_called_once_with(
+    @patch("judge.tasks.comment_moderation.recover_omni_items")
+    def test_comment_recovery_and_muse_batch(self, recover, muse):
+        recover.return_value = {"queued": 3}
+        muse.return_value = {"success": True}
+        self.assertEqual(
+            moderate_recent_comments(),
+            {"recovery": {"queued": 3}, "muse": {"success": True}},
+        )
+        recover.assert_called_once_with("comment")
+        muse.assert_called_once_with(
             "periodic:auto_moderate_comments",
             "auto_moderate",
             "--comments-only",
-            "--batch-size",
-            "8",
-            "--comment-window-minutes",
-            "55",
-            lock_timeout=66,
+            lock_timeout=900,
         )
 
     @override_settings(

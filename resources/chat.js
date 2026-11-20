@@ -3405,6 +3405,13 @@
         return;
       }
 
+      if (message.type === 'message_restored') {
+        if (String(message.room) === ChatState.roomId) {
+          ChatMessages.loadNextPage(null, true);
+        }
+        return;
+      }
+
       if (message.type === 'message_hidden') {
         $('#message-' + message.message).remove();
         ChatUtils.mergeConsecutiveMessages();
