@@ -54,6 +54,8 @@ from judge.ml.problem_duplicates import (
 from judge.ml.semantic_search import (
     SemanticSearchUnavailable,
 )
+from judge.moderation_status import MuseStatus
+from judge.moderation_visibility import set_moderated_visibility
 from judge.models import (
     AIUsageLog,
     BlogPost,
@@ -2131,6 +2133,14 @@ class InternalChatModeration(InternalView, ListView):
 
         queryset = (
             ChatModerationLog.objects.exclude(action="keep")
+            .exclude(
+                muse_status__in=[
+                    MuseStatus.PENDING_OMNI,
+                    MuseStatus.PENDING_VISIBLE,
+                    MuseStatus.PENDING_HIDDEN,
+                    MuseStatus.SUPERSEDED,
+                ]
+            )
             .select_related("message__author__user", "moderator__user")
             .filter(message__room_id__in=accessible_room_ids)
         )
@@ -2157,6 +2167,13 @@ class InternalChatModeration(InternalView, ListView):
         mute_until=None,
         mute_duration_days=None,
     ):
+        if log.muse_status in (
+            MuseStatus.PENDING_OMNI,
+            MuseStatus.PENDING_VISIBLE,
+            MuseStatus.PENDING_HIDDEN,
+        ):
+            log.muse_status = MuseStatus.NONE
+            log.muse_retry_after = None
         log.action = action
         log.reason = reason
         log.is_automated = False
@@ -2166,6 +2183,8 @@ class InternalChatModeration(InternalView, ListView):
         log.save(
             update_fields=[
                 "action",
+                "muse_status",
+                "muse_retry_after",
                 "reason",
                 "is_automated",
                 "moderator",
@@ -2174,22 +2193,47 @@ class InternalChatModeration(InternalView, ListView):
             ]
         )
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         accessible_room_ids = UserRoom.objects.filter(
             user=request.profile,
             state=UserRoom.State.ACTIVE,
         ).values("room_id")
         log = get_object_or_404(
-            ChatModerationLog.objects.select_related(
-                "message", "message__author", "message__room"
-            ).filter(message__room_id__in=accessible_room_ids),
+            ChatModerationLog.objects.select_for_update()
+            .select_related("message", "message__author", "message__room")
+            .filter(message__room_id__in=accessible_room_ids),
             id=request.POST.get("log"),
         )
         action = request.POST.get("action")
         reason = (request.POST.get("reason") or log.reason or "").strip()
         moderator = request.profile
+        pending_hidden = log.muse_status == MuseStatus.PENDING_HIDDEN
+        if action in ("keep", "hide", "mute_temp", "mute_perm"):
+            pending = (
+                ChatModerationLog.objects.select_for_update()
+                .filter(
+                    message_id=log.message_id,
+                    is_automated=True,
+                    muse_status__in=[
+                        MuseStatus.PENDING_OMNI,
+                        MuseStatus.PENDING_VISIBLE,
+                        MuseStatus.PENDING_HIDDEN,
+                    ],
+                )
+                .exclude(pk=log.pk)
+            )
+            pending_hidden = (
+                pending_hidden
+                or pending.filter(muse_status=MuseStatus.PENDING_HIDDEN).exists()
+            )
+            pending.update(
+                muse_status=MuseStatus.NONE, muse_retry_after=None, action="keep"
+            )
 
         if action == "keep":
+            if pending_hidden and log.message.hidden:
+                set_moderated_visibility(log.message, "chat", False)
             self._resolve_log(log, "keep", reason, moderator)
             messages.success(request, _("Chat moderation case kept."))
         elif action == "hide":
@@ -2299,13 +2343,24 @@ class InternalCommentModeration(InternalView, ListView):
         )
 
     def get_queryset(self):
-        queryset = CommentModerationLog.objects.exclude(
-            action=CommentModerationLog.ACTION_KEEP
-        ).select_related(
-            "comment",
-            "comment__author__user",
-            "comment__content_type",
-            "moderator__user",
+        queryset = (
+            CommentModerationLog.objects.exclude(
+                action=CommentModerationLog.ACTION_KEEP
+            )
+            .exclude(
+                muse_status__in=[
+                    MuseStatus.PENDING_OMNI,
+                    MuseStatus.PENDING_VISIBLE,
+                    MuseStatus.PENDING_HIDDEN,
+                    MuseStatus.SUPERSEDED,
+                ]
+            )
+            .select_related(
+                "comment",
+                "comment__author__user",
+                "comment__content_type",
+                "moderator__user",
+            )
         )
 
         action_filter = self.request.GET.get("action", "")
@@ -2337,6 +2392,13 @@ class InternalCommentModeration(InternalView, ListView):
         mute_until=None,
         mute_duration_days=None,
     ):
+        if log.muse_status in (
+            MuseStatus.PENDING_OMNI,
+            MuseStatus.PENDING_VISIBLE,
+            MuseStatus.PENDING_HIDDEN,
+        ):
+            log.muse_status = MuseStatus.NONE
+            log.muse_retry_after = None
         log.action = action
         log.reason = reason
         log.is_automated = False
@@ -2346,6 +2408,8 @@ class InternalCommentModeration(InternalView, ListView):
         log.save(
             update_fields=[
                 "action",
+                "muse_status",
+                "muse_retry_after",
                 "reason",
                 "is_automated",
                 "moderator",
@@ -2354,16 +2418,43 @@ class InternalCommentModeration(InternalView, ListView):
             ]
         )
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         log = get_object_or_404(
-            CommentModerationLog.objects.select_related("comment", "comment__author"),
+            CommentModerationLog.objects.select_for_update().select_related(
+                "comment", "comment__author"
+            ),
             id=request.POST.get("log"),
         )
         action = request.POST.get("action")
         reason = (request.POST.get("reason") or log.reason or "").strip()
         moderator = request.profile
+        pending_hidden = log.muse_status == MuseStatus.PENDING_HIDDEN
+        if action in ("keep", "hide", "mute_temp", "mute_perm"):
+            pending = (
+                CommentModerationLog.objects.select_for_update()
+                .filter(
+                    comment_id=log.comment_id,
+                    is_automated=True,
+                    muse_status__in=[
+                        MuseStatus.PENDING_OMNI,
+                        MuseStatus.PENDING_VISIBLE,
+                        MuseStatus.PENDING_HIDDEN,
+                    ],
+                )
+                .exclude(pk=log.pk)
+            )
+            pending_hidden = (
+                pending_hidden
+                or pending.filter(muse_status=MuseStatus.PENDING_HIDDEN).exists()
+            )
+            pending.update(
+                muse_status=MuseStatus.NONE, muse_retry_after=None, action="keep"
+            )
 
         if action == "keep":
+            if pending_hidden and log.comment.hidden:
+                set_moderated_visibility(log.comment, "comment", False)
             self._resolve_log(
                 log,
                 CommentModerationLog.ACTION_KEEP,

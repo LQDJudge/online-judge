@@ -627,14 +627,6 @@ PROFILE_MODERATION_BATCH_SIZE = 50
 PROFILE_MODERATION_BATCH_MAX_CHARS = 24000
 PROFILE_MODERATION_BATCH_TIMEOUT = 180
 
-AUTO_MODERATE_CHAT_ENABLED = True
-AUTO_MODERATE_CHAT_BATCH_SIZE = 100
-AUTO_MODERATE_CHAT_WINDOW_MINUTES = 120
-AUTO_MODERATE_CHAT_LOCK_TIMEOUT = 900
-AUTO_MODERATE_COMMENTS_ENABLED = True
-AUTO_MODERATE_COMMENTS_BATCH_SIZE = 50
-AUTO_MODERATE_COMMENTS_WINDOW_MINUTES = 120
-AUTO_MODERATE_COMMENTS_LOCK_TIMEOUT = 900
 AUTO_MODERATE_POSTS_ENABLED = True
 AUTO_MODERATE_POSTS_BATCH_SIZE = 50
 AUTO_MODERATE_POSTS_LOCK_TIMEOUT = 1800
@@ -704,7 +696,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "auto-moderate-comments": {
         "task": "judge.tasks.comment_moderation.moderate_recent_comments",
-        "schedule": 600.0,  # every 10 minutes
+        "schedule": 300.0,  # every 5 minutes
     },
     "auto-moderate-chat": {
         "task": "judge.tasks.chat_moderation.moderate_recent_chat",

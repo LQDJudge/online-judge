@@ -5,7 +5,7 @@ from django.contrib.auth.context_processors import PermWrapper
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.http import (
     Http404,
@@ -39,6 +39,7 @@ from judge.models.comment import (
     mute_comment_author,
 )
 from judge.models.profile import Profile, get_contribution_rank
+from judge.tasks.omni_moderation import enqueue_omni, record_omni_pending
 from judge.auto_review.comment_notify import notify_review_comment
 from judge.utils.contribution import is_content_public
 from judge.utils.community import can_use_community_features
@@ -399,6 +400,10 @@ def post_comment(request):
         revisions.set_user(request.user)
         revisions.set_comment(_("Posted comment"))
         comment.save()
+        pending_omni = record_omni_pending("comment", comment)
+
+    if pending_omni:
+        transaction.on_commit(lambda: enqueue_omni("comment", comment.pk, comment.body))
 
     comment_notif_link = get_html_link_notification(comment)
 
