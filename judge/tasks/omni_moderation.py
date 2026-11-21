@@ -1,12 +1,15 @@
 """OpenAI moderation for public lobby messages and comments."""
 
+import base64
 import hashlib
 import logging
 import math
 import time
+import uuid
 from urllib.parse import urljoin, urlsplit
 
 from django.contrib.sites.models import Site
+from django.core.cache import caches
 from django.db import transaction
 from django.db.models import Exists, F, OuterRef, Q
 from django.db.models.functions import SHA256
@@ -24,7 +27,11 @@ from judge.models import (
     Problem,
     Solution,
 )
-from judge.moderation_images import IMAGE_PATTERN
+from judge.moderation_images import (
+    IMAGE_PATTERN,
+    ModerationImageError,
+    read_uploaded_moderation_image,
+)
 from judge.moderation_status import MuseStatus
 from judge.moderation_visibility import set_moderated_visibility
 from judge.utils.contribution import is_content_public
@@ -148,20 +155,53 @@ def record_omni_pending(kind, obj):
 def image_urls(body):
     paths = IMAGE_PATTERN.findall(body or "")
     if len(paths) > 4:
-        raise OmniModerationError("Too many images")
+        return [], "too_many_images"
     if not paths:
-        return []
+        return [], None
     domain = Site.objects.get_current().domain
-    urls = [urljoin("https://%s/" % domain, path) for path in paths]
-    if any(
-        urlsplit(url).scheme != "https" or not urlsplit(url).hostname for url in urls
-    ):
-        raise OmniModerationError("Unsupported image URL")
-    return urls
+    urls = []
+    image_error = None
+    for path in paths:
+        try:
+            url = urljoin("https://%s/" % domain, path)
+            parsed = urlsplit(url)
+        except ValueError:
+            image_error = "invalid_image_url"
+            continue
+        if parsed.scheme != "https" or not parsed.hostname:
+            image_error = "invalid_image_url"
+            continue
+        try:
+            uploaded = read_uploaded_moderation_image(path)
+        except ModerationImageError:
+            image_error = "image_storage_unavailable"
+            continue
+        if uploaded:
+            data, mime = uploaded
+            url = "data:%s;base64,%s" % (mime, base64.b64encode(data).decode("ascii"))
+        urls.append(url)
+    return urls, image_error
 
 
-@shared_task(bind=True, max_retries=4)
+@shared_task(bind=True)
 def moderate_omni_item(self, kind, object_id, expected_hash):
+    # Recovery and old Celery retries can deliver the same case concurrently.
+    # A short-lived shared lock avoids duplicate provider calls; the durable
+    # pending record remains recoverable if a worker dies.
+    key = "omni-moderation:%s:%s:%s" % (kind, object_id, expected_hash)
+    token = uuid.uuid4().hex
+    # Bypass the request-local L0 cache for this cross-worker lock.
+    cache = caches["primary"]
+    if not cache.add(key, token, timeout=300):
+        return {"skipped": "already processing"}
+    try:
+        return _moderate_omni_item(kind, object_id, expected_hash)
+    finally:
+        if cache.get(key) == token:
+            cache.delete(key)
+
+
+def _moderate_omni_item(kind, object_id, expected_hash):
     if kind == "chat":
         queryset = Message.objects.select_related("room")
     elif kind == "comment":
@@ -177,9 +217,23 @@ def moderate_omni_item(self, kind, object_id, expected_hash):
     status = AIUsageLog.STATUS_ERROR
     scores = {}
     result = None
+    image_incomplete = False
+    error_category = None
+    error_status_code = None
     try:
-        images = image_urls(obj.body)
-        result = moderate_content(obj.body or "", images)
+        images, error_category = image_urls(obj.body)
+        image_incomplete = bool(error_category)
+        try:
+            result = moderate_content(obj.body or "", images)
+        except OmniModerationError as exc:
+            if not images or exc.status_code != 400:
+                raise
+            # A rejected image must not prevent the text being moderated.
+            # Muse will check the image separately.
+            error_category = "image_rejected"
+            error_status_code = exc.status_code
+            image_incomplete = True
+            result = moderate_content(obj.body or "", [])
         raw_scores = result.get("category_scores", {})
         if isinstance(raw_scores, dict):
             scores = {
@@ -191,13 +245,18 @@ def moderate_omni_item(self, kind, object_id, expected_hash):
                 and math.isfinite(value)
             }
         status = AIUsageLog.STATUS_SUCCESS
-    except Exception:
-        logger.warning("Omni moderation failed for %s %s", kind, object_id)
-        if self.request.retries < self.max_retries:
-            raise self.retry(
-                exc=OmniModerationError("OpenAI moderation failed"),
-                countdown=60 * 2**self.request.retries,
-            )
+    except Exception as exc:
+        error_category = (
+            exc.category if isinstance(exc, OmniModerationError) else "unexpected_error"
+        )
+        error_status_code = (
+            exc.status_code if isinstance(exc, OmniModerationError) else None
+        )
+        logger.warning(
+            "Omni moderation failed for %s %s (%s)", kind, object_id, error_category
+        )
+        # Muse is already the durable second layer; do not create overlapping
+        # Celery retries and periodic recovery attempts for a failing item.
         result = {"flagged": True, "categories": {}}
     finally:
         try:
@@ -211,6 +270,9 @@ def moderate_omni_item(self, kind, object_id, expected_hash):
                 metadata={
                     "kind": kind,
                     "object_id": object_id,
+                    "image_incomplete": image_incomplete,
+                    "error_category": error_category,
+                    "error_status_code": error_status_code,
                     "category_scores": scores,
                     "flagged": (
                         result.get("flagged") if isinstance(result, dict) else None
@@ -251,6 +313,7 @@ def moderate_omni_item(self, kind, object_id, expected_hash):
         )
         needs_muse = (
             status != AIUsageLog.STATUS_SUCCESS
+            or image_incomplete
             or flagged
             or any(value >= REVIEW_SCORE for value in scores.values())
         )
@@ -327,6 +390,11 @@ def public_comment_filter(prefix=""):
 def recover_omni_items(kind):
     model = ChatModerationLog if kind == "chat" else CommentModerationLog
     field = "message" if kind == "chat" else "comment"
+    # Hidden content cannot be sent to Omni. Retire old pending records without
+    # changing visibility; restored content can be rediscovered below.
+    model.objects.filter(
+        muse_status=MuseStatus.PENDING_OMNI, **{field + "__hidden": True}
+    ).update(muse_status=MuseStatus.SUPERSEDED)
     pending = model.objects.filter(
         muse_status=MuseStatus.PENDING_OMNI, **{field + "__hidden": False}
     )
@@ -348,6 +416,43 @@ def recover_omni_items(kind):
         count += 1
     if count >= 200:
         return {"queued": count}
+
+    # Superseded checks can become relevant again if an item is restored or an
+    # edit is reverted. Unlike the legacy backfill below, these are durable
+    # records and must remain recoverable even after the 120-minute window.
+    lookup = {field + "_id": OuterRef(field + "_id")}
+    if kind == "comment":
+        lookup["content_hash"] = OuterRef("content_hash")
+    current = model.objects.filter(**lookup).exclude(muse_status=MuseStatus.SUPERSEDED)
+    newer_superseded = model.objects.filter(
+        **lookup, muse_status=MuseStatus.SUPERSEDED, pk__gt=OuterRef("pk")
+    )
+    restored = (
+        model.objects.filter(
+            muse_status=MuseStatus.SUPERSEDED, **{field + "__hidden": False}
+        )
+        .annotate(has_current=Exists(current), has_newer=Exists(newer_superseded))
+        .filter(has_current=False, has_newer=False)
+    )
+    if kind == "chat":
+        restored = restored.filter(
+            message__room__singleton_key="lobby", message__kind=Message.Kind.USER
+        )
+    else:
+        restored = (
+            restored.filter(public_comment_filter("comment__"))
+            .annotate(current_hash=SHA256("comment__body"))
+            .filter(content_hash=F("current_hash"))
+        )
+    for log in restored.select_related(field).order_by("created_at", "pk")[
+        : 200 - count
+    ]:
+        obj = getattr(log, field)
+        enqueue_omni(kind, obj.pk, obj.body)
+        count += 1
+    if count >= 200:
+        return {"queued": count}
+
     cutoff = timezone.now() - timezone.timedelta(minutes=120)
     if kind == "chat":
         prior = ChatModerationLog.objects.filter(message_id=OuterRef("pk"))

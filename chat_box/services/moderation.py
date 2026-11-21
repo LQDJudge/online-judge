@@ -154,12 +154,20 @@ def revoke_room_mute(room, user, profile, mute_id):
     actor_membership = UserRoom.objects.filter(room=room, user=profile).first()
     if not RoomPolicy(user, profile, room, actor_membership).can_view_moderation():
         raise RoomPermissionDenied(_("You cannot manage mutes in this room."))
-    mute = RoomMute.objects.select_for_update().get(
-        pk=mute_id,
-        room=room,
-        revoked_at__isnull=True,
-        expires_at__gt=timezone.now(),
+    mute = (
+        RoomMute.objects.select_for_update()
+        .filter(
+            pk=mute_id,
+            room=room,
+            revoked_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        )
+        .first()
     )
+    if mute is None:
+        raise RoomError(
+            _("This mute is no longer active."), code="room_mute_not_active", status=404
+        )
     mute.revoked_at = timezone.now()
     mute.revoked_by = profile
     mute.save(update_fields=["revoked_at", "revoked_by"])

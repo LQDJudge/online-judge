@@ -1,11 +1,64 @@
+from io import BytesIO
 from unittest.mock import Mock, patch
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
-from judge.moderation_images import ModerationImageError, _upload_public_image
+from judge.moderation_images import (
+    ModerationImageError,
+    _upload_public_image,
+    read_uploaded_moderation_image,
+)
 
 
 class ModerationImageSafetyTests(SimpleTestCase):
+    @override_settings(MEDIA_URL="https://cdn.example.com/media/")
+    @patch("judge.moderation_images.default_storage.size", return_value=11)
+    @patch("judge.moderation_images.default_storage.open")
+    def test_site_upload_is_read_from_storage_and_sent_to_poe(self, open_file, size):
+        open_file.return_value = BytesIO(b"image-bytes")
+        service = Mock()
+        _upload_public_image(
+            "https://cdn.example.com/media/pagedown-uploads/a.png", service
+        )
+        open_file.assert_called_once_with("pagedown-uploads/a.png", "rb")
+        self.assertEqual(service._upload_bytes_to_poe.call_args.args[0], b"image-bytes")
+
+    @override_settings(MEDIA_URL="https://cdn.example.com/media/")
+    @patch("judge.moderation_images.default_storage.open")
+    def test_storage_access_rejects_other_hosts_private_paths_and_traversal(
+        self, open_file
+    ):
+        for url in (
+            "https://evil.example/media/pagedown-uploads/a.png",
+            "https://cdn.example.com/media/private/a.png",
+            "https://cdn.example.com/media/pagedown-uploads/%2e%2e/a.png",
+            "https://cdn.example.com/media/pagedown-uploads/%252e%252e/a.png",
+        ):
+            self.assertIsNone(read_uploaded_moderation_image(url))
+        open_file.assert_not_called()
+
+    @override_settings(MEDIA_URL="https://cdn.example.com/media/")
+    @patch(
+        "judge.moderation_images.default_storage.size", return_value=5 * 1024 * 1024 + 1
+    )
+    @patch("judge.moderation_images.default_storage.open")
+    def test_site_upload_size_is_bounded(self, open_file, size):
+        with self.assertRaises(ModerationImageError):
+            read_uploaded_moderation_image(
+                "https://cdn.example.com/media/pagedown-uploads/a.png"
+            )
+        open_file.assert_not_called()
+
+    @override_settings(MEDIA_URL="https://cdn.example.com/media/")
+    @patch("judge.moderation_images.default_storage.size", return_value=1)
+    @patch("judge.moderation_images.default_storage.open")
+    def test_site_upload_checks_actual_bytes_as_well_as_size(self, open_file, size):
+        open_file.return_value = BytesIO(b"x" * (5 * 1024 * 1024 + 1))
+        with self.assertRaises(ModerationImageError):
+            read_uploaded_moderation_image(
+                "https://cdn.example.com/media/pagedown-uploads/a.png"
+            )
+
     @patch("judge.moderation_images.Site.objects.get_current")
     @patch("judge.moderation_images.socket.getaddrinfo")
     @patch("judge.moderation_images.urllib3.HTTPSConnectionPool")

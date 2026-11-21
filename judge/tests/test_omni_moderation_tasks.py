@@ -1,11 +1,12 @@
+from threading import Event, Thread
 from unittest.mock import Mock, patch
 
-from celery.exceptions import Retry
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
+from django.core.cache import caches
+from django.db import connection, connections, transaction
 from django.http import Http404
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -21,6 +22,7 @@ from judge.models import (
     Solution,
 )
 from judge.moderation_status import MuseStatus
+from judge.moderation_images import ModerationImageError
 from judge.tasks.omni_moderation import (
     content_hash,
     enqueue_omni,
@@ -317,26 +319,72 @@ class OmniModerationTaskTests(TestCase):
         "judge.tasks.omni_moderation.moderate_content",
         side_effect=OmniModerationError("unavailable"),
     )
-    @patch.object(moderate_omni_item, "retry", side_effect=Retry())
-    def test_api_failure_retries_without_marking_content_reviewed(self, retry, call):
-        with self.assertRaises(Retry):
-            moderate_omni_item("chat", self.message.pk, content_hash("hello"))
-        self.assertFalse(
-            ChatModerationLog.objects.filter(message=self.message).exists()
-        )
-
-    @patch(
-        "judge.tasks.omni_moderation.moderate_content",
-        side_effect=OmniModerationError("unavailable"),
-    )
-    def test_exhausted_retries_queue_muse(self, call):
-        result = moderate_omni_item.apply(
-            args=("chat", self.message.pk, content_hash("hello")), retries=4, throw=True
-        ).get()
+    def test_api_failure_queues_muse_without_repeated_retries(self, call):
+        result = moderate_omni_item("chat", self.message.pk, content_hash("hello"))
         self.assertTrue(result["flagged"])
+        call.assert_called_once()
         log = ChatModerationLog.objects.get(message=self.message)
         self.assertEqual(log.action, "review")
         self.assertEqual(log.muse_status, MuseStatus.PENDING_VISIBLE)
+
+    @patch("judge.tasks.omni_moderation.moderate_content")
+    def test_concurrent_duplicate_does_not_call_provider(self, call):
+        digest = content_hash(self.message.body)
+        key = "omni-moderation:chat:%s:%s" % (self.message.pk, digest)
+        caches["primary"].set(key, "another-worker", 300)
+        self.addCleanup(caches["primary"].delete, key)
+        result = moderate_omni_item("chat", self.message.pk, digest)
+        self.assertEqual(result["skipped"], "already processing")
+        call.assert_not_called()
+
+    @patch("judge.tasks.omni_moderation.moderate_content")
+    def test_rejected_image_still_moderates_text_and_queues_muse(self, call):
+        self.message.body = "hello ![](https://example.com/image.png)"
+        self.message.save(update_fields=["body"])
+        call.side_effect = [
+            OmniModerationError("image", category="http_error", status_code=400),
+            {"flagged": False, "categories": {}, "category_scores": {}},
+        ]
+        moderate_omni_item("chat", self.message.pk, content_hash(self.message.body))
+        self.assertEqual(call.call_count, 2)
+        self.assertEqual(call.call_args.args[1], [])
+        log = ChatModerationLog.objects.get(message=self.message)
+        self.assertEqual(log.muse_status, MuseStatus.PENDING_VISIBLE)
+        usage = AIUsageLog.objects.filter(feature="chat_moderation").latest("pk")
+        self.assertTrue(usage.metadata["image_incomplete"])
+        self.assertEqual(usage.metadata["error_category"], "image_rejected")
+
+    @patch("judge.tasks.omni_moderation.moderate_content")
+    @patch("judge.tasks.omni_moderation.read_uploaded_moderation_image")
+    def test_site_upload_is_sent_to_omni_as_image_data(self, read_image, call):
+        self.message.body = "![](/media/pagedown-uploads/image.png)"
+        self.message.save(update_fields=["body"])
+        read_image.return_value = (b"image-bytes", "image/png")
+        call.return_value = {"flagged": False, "categories": {}, "category_scores": {}}
+        moderate_omni_item("chat", self.message.pk, content_hash(self.message.body))
+        self.assertEqual(
+            call.call_args.args[1], ["data:image/png;base64,aW1hZ2UtYnl0ZXM="]
+        )
+        self.assertEqual(
+            ChatModerationLog.objects.get(message=self.message).muse_status,
+            MuseStatus.NONE,
+        )
+
+    @patch("judge.tasks.omni_moderation.moderate_content")
+    @patch("judge.tasks.omni_moderation.read_uploaded_moderation_image")
+    def test_unavailable_site_image_routes_to_muse(self, read_image, call):
+        self.message.body = "hello ![](/media/pagedown-uploads/image.png)"
+        self.message.save(update_fields=["body"])
+        read_image.side_effect = ModerationImageError("unavailable")
+        call.return_value = {"flagged": False, "categories": {}, "category_scores": {}}
+        moderate_omni_item("chat", self.message.pk, content_hash(self.message.body))
+        self.assertEqual(call.call_args.args[1], [])
+        self.assertEqual(
+            ChatModerationLog.objects.get(message=self.message).muse_status,
+            MuseStatus.PENDING_VISIBLE,
+        )
+        usage = AIUsageLog.objects.filter(feature="chat_moderation").latest("pk")
+        self.assertEqual(usage.metadata["error_category"], "image_storage_unavailable")
 
     def test_durable_case_rolls_back_with_content_transaction(self):
         with transaction.atomic():
@@ -357,6 +405,55 @@ class OmniModerationTaskTests(TestCase):
         )
         self.assertEqual(recover_omni_items("chat"), {"queued": 1})
         enqueue.assert_called_once_with("chat", self.message.pk, self.message.body)
+
+    @patch("judge.tasks.omni_moderation.enqueue_omni")
+    def test_recovery_retires_hidden_pending_case_and_recovers_if_restored(
+        self, enqueue
+    ):
+        self.assertTrue(record_omni_pending("chat", self.message))
+        Message.objects.filter(pk=self.message.pk).update(
+            hidden=True, time=timezone.now() - timezone.timedelta(days=4)
+        )
+        ChatModerationLog.objects.filter(message=self.message).update(
+            created_at=timezone.now() - timezone.timedelta(days=4)
+        )
+        recover_omni_items("chat")
+        log = ChatModerationLog.objects.get(message=self.message)
+        self.assertEqual(log.muse_status, MuseStatus.SUPERSEDED)
+        self.message.refresh_from_db()
+        self.assertTrue(self.message.hidden)
+        enqueue.assert_not_called()
+        Message.objects.filter(pk=self.message.pk).update(hidden=False)
+        recover_omni_items("chat")
+        enqueue.assert_called_once_with("chat", self.message.pk, self.message.body)
+
+    @patch("judge.tasks.omni_moderation.enqueue_omni")
+    def test_restored_superseded_case_does_not_override_human_review(self, enqueue):
+        self.assertTrue(record_omni_pending("chat", self.message))
+        Message.objects.filter(pk=self.message.pk).update(hidden=True)
+        recover_omni_items("chat")
+        ChatModerationLog.log_action(
+            message=self.message, action="keep", is_automated=False
+        )
+        Message.objects.filter(pk=self.message.pk).update(hidden=False)
+        recover_omni_items("chat")
+        enqueue.assert_not_called()
+
+    @patch("judge.tasks.omni_moderation.enqueue_omni")
+    def test_superseded_comment_is_recovered_only_for_current_text(self, enqueue):
+        self.assertTrue(record_omni_pending("comment", self.comment))
+        CommentModerationLog.objects.filter(comment=self.comment).update(
+            created_at=timezone.now() - timezone.timedelta(days=4),
+            muse_status=MuseStatus.SUPERSEDED,
+        )
+        Comment.objects.filter(pk=self.comment.pk).update(
+            body="changed", time=timezone.now() - timezone.timedelta(days=4)
+        )
+        recover_omni_items("comment")
+        enqueue.assert_not_called()
+        Comment.objects.filter(pk=self.comment.pk).update(body="hello")
+        recover_omni_items("comment")
+        enqueue.assert_called_once_with("comment", self.comment.pk, "hello")
 
     @patch("judge.tasks.omni_moderation.moderate_content")
     def test_durable_record_is_resolved_without_duplicate_log(self, call):
@@ -478,3 +575,55 @@ class OmniModerationTaskTests(TestCase):
             )
         self.assertEqual(response.status_code, 302, response.content)
         enqueue.assert_called_once_with("comment", self.comment.pk, "updated comment")
+
+
+class OmniModerationConcurrencyTests(TransactionTestCase):
+    def test_duplicate_delivery_does_not_overlap_provider_calls(self):
+        if connection.vendor != "mysql":
+            self.skipTest("Requires a database with row locking")
+        language, _ = Language.objects.get_or_create(
+            key="PY3", defaults={"name": "Python 3", "common_name": "Python"}
+        )
+        user = User.objects.create_user(username="omni_concurrent_test")
+        profile = Profile.objects.create(user=user, language=language)
+        message = Message.objects.create(
+            room=Room.objects.get(singleton_key="lobby"), author=profile, body="test"
+        )
+        record_omni_pending("chat", message)
+        started, resume = Event(), Event()
+        failures = []
+
+        def call(*args):
+            started.set()
+            if not resume.wait(10):
+                raise RuntimeError("test timed out")
+            return {"flagged": False, "categories": {}, "category_scores": {}}
+
+        def run_task():
+            try:
+                moderate_omni_item("chat", message.pk, content_hash(message.body))
+            except Exception as exc:
+                failures.append(exc)
+            finally:
+                connections.close_all()
+
+        with patch(
+            "judge.tasks.omni_moderation.moderate_content", side_effect=call
+        ) as api:
+            thread = Thread(target=run_task)
+            thread.start()
+            try:
+                self.assertTrue(started.wait(10))
+                duplicate = moderate_omni_item(
+                    "chat", message.pk, content_hash(message.body)
+                )
+                self.assertEqual(duplicate["skipped"], "already processing")
+            finally:
+                resume.set()
+                thread.join(15)
+            self.assertFalse(thread.is_alive())
+            self.assertFalse(failures)
+            self.assertEqual(api.call_count, 1)
+        self.assertEqual(
+            ChatModerationLog.objects.get(message=message).muse_status, MuseStatus.NONE
+        )

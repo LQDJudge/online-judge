@@ -21323,3 +21323,6 @@ msgstr "Không thể kiểm tra hình ảnh; cần kiểm tra thủ công."
 
 msgid "Automated moderation failed; manual review is needed."
 msgstr "Không thể kiểm duyệt tự động; cần kiểm tra thủ công."
+
+msgid "This mute is no longer active."
+msgstr "Lệnh tắt tiếng này không còn hiệu lực."

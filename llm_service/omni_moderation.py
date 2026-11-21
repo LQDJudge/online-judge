@@ -13,6 +13,11 @@ from django.conf import settings
 class OmniModerationError(Exception):
     """A moderation request failed or returned an invalid result."""
 
+    def __init__(self, message, *, category="unknown", status_code=None):
+        super().__init__(message)
+        self.category = category
+        self.status_code = status_code
+
 
 def moderate_content(text, image_urls=()):
     key = getattr(settings, "OPENAI_API_KEY", None) or os.environ.get("OPENAI_API_KEY")
@@ -50,12 +55,17 @@ def moderate_content(text, image_urls=()):
         ):
             raise ValueError("Invalid moderation response")
         return result
-    except (
-        requests.RequestException,
-        ValueError,
-        KeyError,
-        IndexError,
-        TypeError,
-    ) as exc:
+    except requests.RequestException as exc:
+        response = getattr(exc, "response", None)
+        status_code = response.status_code if response is not None else None
+        category = "http_error" if status_code else "transport_error"
+        raise OmniModerationError(
+            "OpenAI moderation request failed",
+            category=category,
+            status_code=status_code,
+        ) from exc
+    except (ValueError, KeyError, IndexError, TypeError) as exc:
         # Avoid recording response bodies, credentials, or user-provided content.
-        raise OmniModerationError("OpenAI moderation request failed") from exc
+        raise OmniModerationError(
+            "OpenAI moderation request failed", category="invalid_response"
+        ) from exc

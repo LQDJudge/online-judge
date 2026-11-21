@@ -2,13 +2,16 @@
 
 import ipaddress
 import mimetypes
+import posixpath
 import re
 import socket
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import unquote, urljoin, urlsplit
 
 import certifi
 import urllib3
+from django.conf import settings
 from django.contrib.sites.models import Site
+from django.core.files.storage import default_storage
 
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 IMAGE_PATTERN = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
@@ -19,8 +22,68 @@ class ModerationImageError(Exception):
     pass
 
 
+def read_uploaded_moderation_image(url):
+    """Read only the site's pagedown uploads, never arbitrary storage objects.
+
+    Return None for URLs outside the configured media location so callers can
+    handle public external images separately.
+    """
+    try:
+        media = urlsplit(settings.MEDIA_URL)
+        parsed = urlsplit(url)
+        if parsed.username or parsed.password:
+            return None
+        if parsed.netloc:
+            if (
+                parsed.scheme != "https"
+                or not media.hostname
+                or parsed.hostname != media.hostname
+                or parsed.port not in (None, 443)
+            ):
+                return None
+        elif parsed.scheme or not parsed.path.startswith("/"):
+            return None
+        base = media.path.rstrip("/") + "/"
+        if not parsed.path.startswith(base):
+            return None
+        name = unquote(parsed.path[len(base) :])
+        prefix = getattr(
+            settings, "PAGEDOWN_IMAGE_UPLOAD_PATH", "pagedown-uploads"
+        ).strip("/")
+        parts = name.split("/")
+        if (
+            not name.startswith(prefix + "/")
+            or any(part in ("", ".", "..") for part in parts)
+            or "\\" in name
+            or "%" in name
+            or posixpath.normpath(name) != name
+        ):
+            return None
+        content_type, _encoding = mimetypes.guess_type(name)
+        if content_type not in IMAGE_TYPES:
+            raise ModerationImageError("Unsupported uploaded image type")
+        if default_storage.size(name) > MAX_IMAGE_BYTES:
+            raise ModerationImageError("Image is empty or too large")
+        with default_storage.open(name, "rb") as file:
+            data = file.read(MAX_IMAGE_BYTES + 1)
+        if not data or len(data) > MAX_IMAGE_BYTES:
+            raise ModerationImageError("Image is empty or too large")
+        return data, content_type
+    except ModerationImageError:
+        raise
+    except Exception as exc:
+        raise ModerationImageError("Unable to read uploaded moderation image") from exc
+
+
 def _upload_public_image(url, service):
     try:
+        uploaded = read_uploaded_moderation_image(url)
+        if uploaded is not None:
+            data, content_type = uploaded
+            extension = mimetypes.guess_extension(content_type) or ".jpg"
+            return service._upload_bytes_to_poe(
+                data, "moderation-image" + extension, "public moderation image"
+            )
         domain = Site.objects.get_current().domain
         parsed = urlsplit(urljoin("https://%s/" % domain, url))
         if (

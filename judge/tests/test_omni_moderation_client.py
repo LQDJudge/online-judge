@@ -50,3 +50,14 @@ class OmniModerationClientTest(SimpleTestCase):
         }
         with self.assertRaises(OmniModerationError):
             moderate_content("test")
+
+    @patch("llm_service.omni_moderation.requests.post")
+    def test_http_failure_exposes_status_without_sensitive_response(self, post):
+        post.return_value.raise_for_status.side_effect = requests.HTTPError(
+            "sensitive response body", response=Mock(status_code=400)
+        )
+        with self.assertRaises(OmniModerationError) as caught:
+            moderate_content("test")
+        self.assertEqual(caught.exception.status_code, 400)
+        self.assertEqual(caught.exception.category, "http_error")
+        self.assertNotIn("sensitive", str(caught.exception))

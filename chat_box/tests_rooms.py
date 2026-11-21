@@ -781,6 +781,42 @@ class RoomModerationTests(GeneralizedRoomTestCase):
         )
         self.assertEqual(independent.duration_days, 1)
 
+    def test_unmuting_an_inactive_or_foreign_mute_returns_not_found(self):
+        mute = mute_member(
+            self.group, self.creator.user, self.creator, self.other, "Slow down"
+        )
+        self.client.force_login(self.creator.user)
+        url = reverse("chat_room_moderation", args=[self.group.id])
+        self.assertEqual(self.client.post(url, {"mute_id": mute.pk}).status_code, 200)
+        response = self.client.post(url, {"mute_id": mute.pk})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["code"], "room_mute_not_active")
+        self.assertEqual(
+            RoomModerationLog.objects.filter(
+                room=self.group, action=RoomModerationLog.Action.UNMUTE
+            ).count(),
+            1,
+        )
+        other_room = self.create_group("Another group")
+        activate_membership(other_room, self.other, self.creator)
+        other_mute = mute_member(
+            other_room, self.creator.user, self.creator, self.other, "Other room"
+        )
+        self.assertEqual(
+            self.client.post(url, {"mute_id": other_mute.pk}).status_code, 404
+        )
+        other_mute.refresh_from_db()
+        self.assertIsNone(other_mute.revoked_at)
+        expired = mute_member(
+            self.group, self.creator.user, self.creator, self.other, "Expired"
+        )
+        RoomMute.objects.filter(pk=expired.pk).update(
+            expires_at=timezone.now() - timedelta(seconds=1)
+        )
+        self.assertEqual(
+            self.client.post(url, {"mute_id": expired.pk}).status_code, 404
+        )
+
     def test_moderation_api_returns_actionable_state_without_audit_history(self):
         mute_member(
             self.group,
