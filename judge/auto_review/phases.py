@@ -193,7 +193,7 @@ def build_stage_input(run, stage_id):
         }
         base.update(
             config=contest_review_content(context)["config"],
-            items=context["items"],
+            items=contest_review_content(context)["items"],
             children=[
                 {
                     "problem_id": d.problem_id,
@@ -248,7 +248,10 @@ def build_stage_input(run, stage_id):
         )
         return base
     base.update(
-        tests=context.get("tests", []),
+        tests=[
+            {key: value for key, value in row.items() if key != "is_pretest"}
+            for row in context.get("tests", [])
+        ],
         inventory=context.get("inventory", {}),
         language_limits=context.get("language_limits", []),
         allowed_languages=context.get("allowed_language_keys", []),
@@ -257,7 +260,7 @@ def build_stage_input(run, stage_id):
         base.update(
             zip_inputs=bool(context.get("artifacts", {}).get("zipfile")),
             translations=context.get("translations", []),
-            judging_configuration=context.get("data_config", {}),
+            judging_configuration=problem_review_content(context)["data_config"],
             public_interfaces={
                 key: _source(context, key)
                 for key in context.get("artifacts", {})
@@ -285,9 +288,29 @@ def build_stage_input(run, stage_id):
         "test_review",
         "limits_review",
     ):
-        base["solutions"] = context.get("solutions", [])
+        base["solutions"] = [
+            {
+                **solution,
+                "evidence": {
+                    key: value
+                    for key, value in (solution.get("evidence") or {}).items()
+                    if key != "points"
+                },
+            }
+            for solution in context.get("solutions", [])
+        ]
         base["language_templates"] = context.get("language_templates", [])
-        base["output_examples"] = context.get("output_examples", [])
+        base["output_examples"] = [
+            {
+                **example,
+                "evidence": {
+                    key: value
+                    for key, value in (example.get("evidence") or {}).items()
+                    if key != "points"
+                },
+            }
+            for example in context.get("output_examples", [])
+        ]
     if stage_id in (
         "validator_review",
         "checker_review",
@@ -311,7 +334,7 @@ def build_stage_input(run, stage_id):
             if name in names or name.startswith(("signature:", "aux:"))
         }
         base.update(
-            data_config=context.get("data_config", {}),
+            data_config=problem_review_content(context)["data_config"],
             validation=context.get("validation"),
             test_data_instructions=context.get("test_data_instructions", {}),
         )

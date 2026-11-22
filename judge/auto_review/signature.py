@@ -43,13 +43,15 @@ def enabled_signature_families(runtime_keys):
     return {family for key in runtime_keys if (family := signature_family(key))}
 
 
-def relevant_signature_config(config, runtime_keys):
+def relevant_signature_config(config, runtime_keys, *, include_pretests=False):
     """Unused interface families do not change effective judging semantics.
 
     Raw init.yml is still frozen/attested. This projection is only the review
     and execution identity for a signature-enabled package.
     """
     result = deepcopy(config)
+    if not include_pretests:
+        result.pop("pretest_test_cases", None)
     families = enabled_signature_families(runtime_keys)
     groups = [result.get("signature_grader")]
     communication = result.get("communication")

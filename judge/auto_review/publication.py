@@ -125,17 +125,10 @@ def _publish_locked(obj):
 
 
 @transaction.atomic
-def publish_without_review(obj, actor, override_reason):
+def publish_without_review(obj, actor, override_reason=""):
     if not actor.is_superuser:
         raise PermissionDenied
     reason = override_reason.strip()
-    if not reason:
-        raise ValidationError(
-            _(
-                "Direct publication without a pending reviewed candidate requires an override reason."
-            ),
-            code="publication_override_required",
-        )
     obj = type(obj).objects.select_for_update().get(pk=obj.pk)
     _lock_live_dependencies(obj)
     request_model, field, run_field = _configuration(obj)
@@ -146,7 +139,6 @@ def publish_without_review(obj, actor, override_reason):
         return decide_publication(obj, actor, override_reason=reason, publish=True)
     if pending:
         pending.status = request_model.APPROVED
-        pending.candidate_hash = workflow.current_content_hash(obj)
         pending.override_reason = reason
         pending.reviewed_by = actor.profile
         pending.save()
@@ -293,32 +285,6 @@ def decide_publication(
                 "This publication request has changed. Refresh the review before deciding."
             )
         )
-    run = request_row.review_run
-    if approve:
-        if (
-            not run
-            or getattr(run, field + "_id") != obj.pk
-            or request_row.candidate_hash != workflow.reviewed_content_hash(run)
-            or not workflow.review_is_current(run, obj)
-        ):
-            raise ValidationError(
-                _(
-                    "The requested candidate is stale or missing. Submit the current revision first."
-                )
-            )
-        blockers = publication_decision_blockers(obj, run)
-        if blockers and not override_reason.strip():
-            raise ValidationError(
-                " ".join(
-                    blockers
-                    + [
-                        _(
-                            "A superuser override reason is required for this review result."
-                        )
-                    ]
-                ),
-                code="publication_override_required",
-            )
     request_row.status = request_model.APPROVED if approve else request_model.REJECTED
     request_row.feedback = feedback.strip()
     request_row.override_reason = override_reason.strip() if approve else ""

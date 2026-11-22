@@ -1,0 +1,10 @@
+<dialog id="publish-confirmation-dialog" class="review-dialog" aria-labelledby="publish-confirmation-heading">
+  <div class="review-dialog-heading">
+    <h3 id="publish-confirmation-heading">{{ _('Publish this content?') }}</h3>
+    <button type="button" class="review-text-button" data-publish-close aria-label="{{ _('Close') }}">×</button>
+  </div>
+  <p>{{ _('Check the current content and review before publishing; the review may be outdated, incomplete, or have findings.') }}</p>
+  <div class="review-dialog-actions">
+    <button type="button" class="action-btn" data-publish-confirm>{{ _('Publish anyway') }}</button>
+  </div>
+</dialog>

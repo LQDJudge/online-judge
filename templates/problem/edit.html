@@ -315,6 +315,7 @@
 {% block edit_content %}
   <div class="problem-edit-form">
     <form method="post" enctype="multipart/form-data"
+          {% if request.user.is_superuser %}data-publication-visibility-field="is_public" data-publish-warning="{{ _('Check the current content and review before publishing; the review may be outdated, incomplete, or have findings.') }}"{% endif %}
           data-review-save-probe="1"
           data-pending-publication="{{ '1' if public_request and public_request.status == 'P' else '0' }}"
           data-publication-confirmation-token="{{ publication_confirmation_token }}"
@@ -684,4 +685,5 @@
   </div>
 
   {% include "auto_review/save_confirmation_dialog.html" %}
+  {% if request.user.is_superuser %}{% include "auto_review/publish_confirmation_dialog.html" %}{% endif %}
 {% endblock %}

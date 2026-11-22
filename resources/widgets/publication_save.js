@@ -29,8 +29,30 @@
   function initializePublicationSave() {
     document.querySelectorAll("form[data-pending-publication], form[data-live-contest-warning]").forEach(function (form) {
       var initial = values(form);
+      var visibility = form.dataset.publicationVisibilityField && form.querySelector("[name='" + form.dataset.publicationVisibilityField + "']");
+      var initiallyVisible = visibility && visibility.checked;
       var probing = false;
       form.addEventListener("submit", function (event) {
+        if (visibility && visibility.checked && !initiallyVisible && !form.dataset.publishConfirmed) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          var submitter = event.submitter;
+          var publishDialog = document.getElementById("publish-confirmation-dialog");
+          function confirmPublication() {
+            form.dataset.publishConfirmed = "1";
+            if (form.requestSubmit) form.requestSubmit(submitter || undefined);
+            else form.submit();
+          }
+          if (!publishDialog || !publishDialog.showModal) {
+            if (window.confirm(form.dataset.publishWarning)) confirmPublication();
+            return;
+          }
+          publishDialog.querySelector("[data-publish-close]").onclick = function () { publishDialog.close(); };
+          publishDialog.querySelector("[data-publish-confirm]").onclick = function () { publishDialog.close(); confirmPublication(); };
+          publishDialog.onclick = function (click) { if (click.target === publishDialog) publishDialog.close(); };
+          publishDialog.showModal();
+          return;
+        }
         if (form.dataset.reviewSaveProbe === "1" && !form.dataset.reviewSaveProbePassed) {
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -57,7 +79,7 @@
             }
             var dialog = document.getElementById("review-save-dialog");
             if (!dialog || !dialog.showModal) {
-              if (!window.confirm(result.error)) { probing = false; return; }
+              if (!window.confirm(result.error)) { probing = false; delete form.dataset.publishConfirmed; return; }
               return confirmSave();
             }
             function confirmSave() {
@@ -74,10 +96,10 @@
               resume();
             }
             dialog.querySelector("[data-save-message]").textContent = result.error;
-            dialog.querySelector("[data-save-close]").onclick = function () { dialog.close(); };
+            dialog.querySelector("[data-save-close]").onclick = function () { delete form.dataset.publishConfirmed; dialog.close(); };
             dialog.querySelector("[data-save-confirm]").onclick = function () { dialog.close(); confirmSave(); };
             dialog.onclose = function () { probing = false; };
-            dialog.onclick = function (click) { if (click.target === dialog) dialog.close(); };
+            dialog.onclick = function (click) { if (click.target === dialog) { delete form.dataset.publishConfirmed; dialog.close(); } };
             dialog.showModal();
           }).catch(resume);
           return;
@@ -88,6 +110,7 @@
         if (form.dataset.liveContestWarning) warning += (warning ? "\n\n" : "") + form.dataset.liveContestWarning;
         if (!warning) return;
         if (!window.confirm(warning)) {
+          delete form.dataset.publishConfirmed;
           event.preventDefault();
           event.stopImmediatePropagation();
           return;

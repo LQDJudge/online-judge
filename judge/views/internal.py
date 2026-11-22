@@ -1245,14 +1245,6 @@ def publish_problem(request):
                     override_reason=request.POST.get("override_reason", ""),
                 )
             else:
-                reason = request.POST.get("override_reason", "").strip()
-                if not reason:
-                    raise ValidationError(
-                        _(
-                            "Direct publication without a pending reviewed candidate requires an override reason."
-                        ),
-                        code="publication_override_required",
-                    )
                 problem.is_public = True
                 problem.is_organization_private = False
                 problem.is_locked = True

@@ -10,12 +10,13 @@ from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from judge.admin.contest import ContestAdmin
+from judge.admin.contest import ContestAdmin, ContestTagAdmin
 from judge.models import (
     Comment,
     Contest,
     ContestPublicRequest,
     ContestReviewRun,
+    ContestTag,
     Language,
     Profile,
 )
@@ -101,6 +102,29 @@ class ContestRequestDecisionTest(TestCase):
         self.client.force_login(self.author)
         self.assertNotContains(
             self.client.get(self.url), 'id="contest-request-decision-dialog"'
+        )
+
+    def test_superuser_can_publish_stale_contest_without_reason(self):
+        self.contest.description = "Changed since the review"
+        self.contest.save(update_fields=["description"])
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse("contest_review_accept", args=[self.contest.key])
+        )
+        self.assertTrue(response.json()["success"])
+        self.contest.refresh_from_db()
+        self.request_row.refresh_from_db()
+        self.run.refresh_from_db()
+        self.assertTrue(self.contest.is_visible)
+        self.assertEqual(self.request_row.status, ContestPublicRequest.APPROVED)
+        self.assertEqual(self.run.readiness, "READY")
+        self.assertEqual(self.request_row.candidate_hash, self.run.input_hash)
+
+    def test_superuser_editor_shows_publication_confirmation(self):
+        self.client.force_login(self.admin_user)
+        self.assertContains(
+            self.client.get(reverse("contest_edit", args=[self.contest.key])),
+            'id="publish-confirmation-dialog"',
         )
 
     def test_reject_requires_reason_and_preserves_quality_visibility_and_lock(self):
@@ -298,6 +322,58 @@ class ContestRequestDecisionTest(TestCase):
                 category=NotificationCategory.CONTEST_PUBLIC_REQUEST_APPROVED
             ).count(),
             1,
+        )
+
+    def test_admin_removing_contest_restriction_approves_pending_request(self):
+        self.contest.is_visible = True
+        self.contest.is_private = True
+        self.contest.save(update_fields=["is_visible", "is_private"])
+        request = RequestFactory().post("/admin/")
+        request.user = self.admin_user
+        request.profile = self.admin_user.profile
+        self.contest.is_private = False
+        form = Mock(
+            instance=self.contest,
+            changed_data=["is_private"],
+            cleaned_data={"is_visible": True},
+        )
+        instance = ContestAdmin(Contest, admin.site)
+        with patch("judge.admin.contest.maybe_trigger_contest_rescore"):
+            instance.save_model(request, self.contest, form, True)
+            instance.save_related(request, form, [], True)
+        self.request_row.refresh_from_db()
+        self.contest.refresh_from_db()
+        self.assertEqual(self.request_row.status, ContestPublicRequest.APPROVED)
+        self.assertTrue(self.contest.is_locked)
+
+    def test_admin_edit_of_public_contest_does_not_publish_again(self):
+        self.contest.is_visible = True
+        self.contest.save(update_fields=["is_visible"])
+        request = RequestFactory().post("/admin/")
+        request.user = self.admin_user
+        form = Mock(
+            instance=self.contest,
+            changed_data=["description"],
+            cleaned_data={"is_visible": True},
+        )
+        instance = ContestAdmin(Contest, admin.site)
+        with patch("judge.admin.contest.publish_without_review") as publish, patch(
+            "judge.admin.contest.maybe_trigger_contest_rescore"
+        ):
+            instance.save_model(request, self.contest, form, True)
+            instance.save_related(request, form, [], True)
+        publish.assert_not_called()
+
+    def test_contest_tag_edit_does_not_depend_on_contest_identity(self):
+        tag = ContestTag.objects.create(
+            name="publicationtag", color="#ffffff", description=""
+        )
+        request = RequestFactory().post("/admin/")
+        request.user = self.admin_user
+        form = Mock(cleaned_data={"contests": [self.contest]})
+        ContestTagAdmin(ContestTag, admin.site).save_model(request, tag, form, True)
+        self.assertEqual(
+            list(tag.contests.values_list("pk", flat=True)), [self.contest.pk]
         )
 
     def test_content_publication_approves_reviewed_request_instead_of_withdrawing(self):

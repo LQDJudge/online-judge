@@ -76,6 +76,7 @@ from judge.auto_review.workflow import publication_blockers
 from judge.auto_review.presentation import publication_request_hint
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
+from judge.utils.public_visibility import is_site_public
 from judge.utils.hidden_results import (
     hidden_result_best_submission_problem_ids,
     is_problem_result_hidden,
@@ -1416,6 +1417,7 @@ class ProblemEdit(
         return kwargs
 
     def form_valid(self, form):
+        was_site_public = is_site_public(Problem.objects.get(pk=self.object.pk))
         with reversion.create_revision():
             # Save the main form
             problem = form.save(commit=False)
@@ -1440,9 +1442,8 @@ class ProblemEdit(
 
             if (
                 self.request.user.is_superuser
-                and "is_public" in form.changed_data
-                and problem.is_public
-                and not problem.is_organization_private
+                and not was_site_public
+                and is_site_public(problem)
             ):
                 reason = _("Published directly by a superuser from Content.")
                 publish_without_review(problem, self.request.user, reason)

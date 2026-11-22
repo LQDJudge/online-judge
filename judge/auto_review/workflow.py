@@ -152,7 +152,12 @@ def warm_contest_review_evidence(runs):
 
 def invalidate_readiness(obj):
     runs = list(_runs(obj).filter(status="D").prefetch_related("coordinator_stages"))
-    current_hash = current_content_hash(obj) if runs else None
+    try:
+        current_hash = current_content_hash(obj) if runs else None
+    except (ReviewInputError, OSError, ValueError):
+        # Unreadable inputs cannot establish freshness. Do not fail a content
+        # save or a manual publication after its transaction has committed.
+        current_hash = ""
     if isinstance(obj, Contest):
         warm_contest_review_evidence(runs)
     changed = []

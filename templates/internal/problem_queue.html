@@ -202,8 +202,7 @@
           });
         });
 
-    // Ask for an override reason only when the server requires one.
-        function publishProblem(button, reason) {
+        function publishProblem(button) {
           const problemDiv = button.closest(".problem-container");
           const problemId = button.data("problem-id");
           const modal = $('#publication-override-modal');
@@ -211,15 +210,7 @@
           $('#submit-publication-override').prop('disabled', true);
 
           function handleFailure(response) {
-            if (response.requires_override) {
-              modal.data('publish-button', button);
-              $('#publication-override-explanation').text(response.error);
-              $('#publication-override-reason').val(reason || '');
-              $('#publication-override-error').empty();
-              $('body').css('overflow', 'hidden');
-              modal.addClass('show');
-              $('#publication-override-reason').trigger('focus');
-            } else if (modal.hasClass('show')) {
+            if (modal.hasClass('show')) {
               $('#publication-override-error').text(response.error || '{{_("An error occurred.")}}');
             } else {
               alert(response.error || '{{_("An error occurred.")}}');
@@ -229,7 +220,7 @@
           $.ajax({
             url: "{{url('internal_publish_problem')}}",
             type: "POST",
-            data: { id: problemId, override_reason: reason || '' },
+            data: { id: problemId },
             success: function (response) {
               if (response.success) {
                 problemDiv.hide();
@@ -250,18 +241,18 @@
         }
 
         $(".publish-button").on("click", function () {
-          if (confirm('{{_("Are you sure you want to publish this problem? This will make it public and remove organization restrictions.")}}')) {
-            publishProblem($(this), '');
-          }
+          const modal = $('#publication-override-modal');
+          modal.data('publish-button', $(this));
+          $('#publication-override-error').empty();
+          $('body').css('overflow', 'hidden');
+          modal.addClass('show');
+          $('#submit-publication-override').trigger('focus');
         });
 
         $('#publication-override-form').on('submit', function (event) {
           event.preventDefault();
-          const input = $('#publication-override-reason')[0];
-          input.value = input.value.trim();
-          if (!input.reportValidity()) return;
           $('#publication-override-error').empty();
-          publishProblem($('#publication-override-modal').data('publish-button'), input.value);
+          publishProblem($('#publication-override-modal').data('publish-button'));
         });
 
         $(document).on('keydown', function (event) {
@@ -918,16 +909,14 @@
 <div id="publication-override-modal" class="suggestion-modal" role="dialog" aria-modal="true" aria-labelledby="publication-override-title" aria-describedby="publication-override-explanation">
   <div class="suggestion-modal-content">
     <div class="suggestion-modal-header">
-      <h3 id="publication-override-title">{{ _('Publish with override') }}</h3>
+      <h3 id="publication-override-title">{{ _('Publish problem?') }}</h3>
       <button type="button" class="close" aria-label="{{ _('Close') }}">&times;</button>
     </div>
     <form id="publication-override-form">
-      <p id="publication-override-explanation"></p>
-      <label for="publication-override-reason">{{ _('Reason for publishing') }}</label>
-      <textarea id="publication-override-reason" rows="3" required></textarea>
+      <p id="publication-override-explanation">{{ _('This makes the problem public and removes organization restrictions. Check the current content and review before publishing; the review may be outdated, incomplete, or have findings.') }}</p>
       <p id="publication-override-error" class="red" role="alert"></p>
       <div class="suggestion-actions">
-        <button type="submit" class="action-btn" id="submit-publication-override">{{ _('Publish') }}</button>
+        <button type="submit" class="action-btn" id="submit-publication-override">{{ _('Publish anyway') }}</button>
       </div>
     </form>
   </div>

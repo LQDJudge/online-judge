@@ -199,6 +199,32 @@ class ProblemRequestDecisionTest(TestCase):
             1,
         )
 
+    def test_superuser_can_publish_stale_review_without_reason(self):
+        self.problem.description = "Changed since the review"
+        self.problem.save(update_fields=["description"])
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("internal_publish_problem"), {"id": self.problem.pk}
+        )
+        self.assertTrue(response.json()["success"])
+        self.problem.refresh_from_db()
+        self.row.refresh_from_db()
+        self.run.refresh_from_db()
+        self.assertTrue(self.problem.is_public)
+        self.assertEqual(self.row.status, PublicRequest.APPROVED)
+        self.assertEqual(self.run.readiness, "READY")
+        self.assertEqual(self.row.candidate_hash, self.run.input_hash)
+
+    def test_editor_and_queue_show_publication_confirmation(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("problem_edit", args=[self.problem.code]))
+        self.assertContains(response, 'id="publish-confirmation-dialog"')
+        response = self.client.get(
+            reverse("internal_problem_queue"), {"tab": "request_public"}
+        )
+        self.assertContains(response, 'id="publication-override-modal"')
+        self.assertNotContains(response, 'id="publication-override-reason"')
+
     def test_shared_publication_helper_notifies_once(self):
         publish_without_review(self.problem, self.admin, "Explicit fixture publication")
         publish_without_review(self.problem, self.admin, "Already public")

@@ -14,6 +14,7 @@ from judge.auto_review.phases import (
 )
 from judge.auto_review.pdf_statement import extract_pdf_statement, review_statement_text
 from judge.auto_review.review_hash import (
+    contest_review_content,
     problem_review_content,
     problem_review_input_hash,
 )
@@ -88,11 +89,54 @@ class ReviewFreshnessPolicyTests(SimpleTestCase):
             problem_review_input_hash(before), problem_review_input_hash(after)
         )
 
+    def test_difficulty_and_scaled_submission_points_do_not_change_review_hash(self):
+        before = self.snapshot()
+        before["config"]["points"] = 1000
+        after = copy.deepcopy(before)
+        after["config"]["points"] = 1500
+        after["solutions"][0]["evidence"]["points"] = 15
+        self.assertEqual(
+            problem_review_input_hash(before), problem_review_input_hash(after)
+        )
+
+    def test_pretest_marker_does_not_change_review_hash(self):
+        before = self.snapshot()
+        before["tests"] = [{"type": "C", "input_file": "1.in", "is_pretest": False}]
+        after = copy.deepcopy(before)
+        after["tests"][0]["is_pretest"] = True
+        self.assertEqual(
+            problem_review_input_hash(before), problem_review_input_hash(after)
+        )
+        after["tests"][0]["input_file"] = "2.in"
+        self.assertNotEqual(
+            problem_review_input_hash(before), problem_review_input_hash(after)
+        )
+
+    def test_contest_operational_settings_do_not_affect_review(self):
+        before = {
+            "config": {
+                "description": "rules",
+                "start_time": "2026-01-01T10:00:00",
+                "end_time": "2026-01-01T12:00:00",
+                "freeze_after": 60,
+                "format_name": "ioi",
+            },
+            "items": [{"problem_id": 1, "points": 100, "max_submissions": 5}],
+        }
+        after = copy.deepcopy(before)
+        after["config"]["freeze_after"] = 120
+        after["items"][0]["max_submissions"] = 10
+        self.assertEqual(contest_review_content(before), contest_review_content(after))
+        after["items"][0]["points"] = 50
+        self.assertNotEqual(
+            contest_review_content(before), contest_review_content(after)
+        )
+
     def test_meaningful_result_changes_are_evidence_not_content_changes(self):
         before = self.snapshot()
         for mutate in (
             lambda s: s["solutions"][0]["evidence"].update(result="WA"),
-            lambda s: s["solutions"][0]["evidence"].update(points=5),
+            lambda s: s["solutions"][0]["evidence"].update(case_points=5),
             lambda s: s["solutions"][0]["evidence"]["cases"][0].update(status="WA"),
             lambda s: s["validation"].update(passed=False, failed_count=1),
         ):

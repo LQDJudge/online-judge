@@ -26,6 +26,7 @@ from judge.models import (
     QuizQuestion,
 )
 from judge.auto_review import workflow
+from judge.auto_review.context_utils import ReviewInputError
 from judge.auto_review.publication import withdraw_pending_locked
 from judge.auto_review.execution_freshness import (
     bump_package_revisions,
@@ -248,6 +249,8 @@ def _save_succeeded(response):
 def _bump_editor_revisions(obj, name, request):
     if not isinstance(obj, Problem):
         return
+    if name == "problem_data" and getattr(request, "_review_pretest_only", False):
+        return
     groups = {
         "problem_data": {"test", "validator", "judging"},
         "problem_data_init": {"test", "validator", "judging"},
@@ -272,6 +275,15 @@ def _bump_editor_revisions(obj, name, request):
         "problem_edit_translations",
     } or request.FILES.get("pdf_description"):
         bump_review_files(obj.pk)
+
+
+def _read_content_hash(obj):
+    try:
+        return workflow.current_content_hash(obj)
+    except (ReviewInputError, OSError, ValueError):
+        # An unavailable identity requires consent; it must not prevent an
+        # editor from repairing the files that made the identity unreadable.
+        return None
 
 
 class ContentMutationMiddleware:
@@ -403,7 +415,7 @@ class ContentMutationMiddleware:
                     if not can_confirm:
                         return self.get_response(request)
                     return self._confirmation(pending, request, impact)
-            before = workflow.current_content_hash(obj) if binding_enabled else None
+            before = _read_content_hash(obj) if binding_enabled else None
             response = self.get_response(request)
             if _save_succeeded(response):
                 if not model.objects.filter(pk=obj.pk).exists():
@@ -415,7 +427,9 @@ class ContentMutationMiddleware:
                         workflow.cancel_for_save(obj, request.user)
                     _bump_editor_revisions(obj, match.url_name, request)
                 obj.refresh_from_db()
-                if binding_enabled and workflow.current_content_hash(obj) != before:
+                if binding_enabled and (
+                    before is None or _read_content_hash(obj) != before
+                ):
                     if binding_enabled and not confirmed:
                         transaction.set_rollback(True)
                         return self._confirmation(pending, request, impact)
