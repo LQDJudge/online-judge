@@ -3,6 +3,8 @@ import json
 import tempfile
 from unittest.mock import patch
 
+import yaml
+
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.test import SimpleTestCase, TestCase, override_settings
@@ -270,7 +272,7 @@ class ProfileConfigSafetyTests(SimpleTestCase):
         for raw in (
             b"!!python/object/apply:os.system ['false']",
             b"checker: standard\nchecker: private.py",
-            b"a: &x [1]\nb: *x",
+            b"a: &x [*x]",
             b"[1, 2]",
             b"a: [",
             b"? [1, 2]\n: value",
@@ -282,6 +284,31 @@ class ProfileConfigSafetyTests(SimpleTestCase):
             with self.subTest(prefix=raw[:45]):
                 with self.assertRaises(ProfileConfigError):
                     parse_profile_config(raw)
+
+    def test_accepts_site_generated_pretest_aliases(self):
+        cases = [{"in": f"{i}.in", "out": f"{i}.out", "points": 1} for i in range(100)]
+        config = {
+            "checker": "standard",
+            "pretest_test_cases": cases[:10],
+            "test_cases": cases,
+        }
+        raw = yaml.safe_dump(config).encode()
+        self.assertIn(b"*id", raw)
+        self.assertEqual(parse_profile_config(raw), config)
+
+    def test_rejects_exponential_alias_expansion(self):
+        raw = "a: &a [0, 0]\n"
+        previous = "a"
+        for name in "bcdefgh":
+            raw += f"{name}: &{name} [" + ", ".join([f"*{previous}"] * 10) + "]\n"
+            previous = name
+        with self.assertRaises(ProfileConfigError):
+            parse_profile_config(raw.encode())
+
+    def test_rejects_large_scalar_alias_expansion(self):
+        raw = "a: &a " + "x" * 100000 + "\nb: [" + ", ".join(["*a"] * 100) + "]\n"
+        with self.assertRaises(ProfileConfigError):
+            parse_profile_config(raw.encode())
 
 
 @override_settings(LANGUAGE_CODE="en")

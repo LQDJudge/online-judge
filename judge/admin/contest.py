@@ -41,6 +41,7 @@ from judge.widgets import (
 )
 from judge.views.contests import recalculate_contest_summary_result
 from judge.utils.contest import maybe_trigger_contest_rescore
+from judge.utils.public_visibility import is_site_public
 from judge.services.contest_summary import validate_scores
 
 MAX_CONTEST_PROBLEMS = 100
@@ -353,6 +354,9 @@ class ContestAdmin(CompareVersionAdmin):
         return readonly
 
     def save_model(self, request, obj, form, change):
+        request._contest_was_site_public = bool(
+            change and is_site_public(Contest.objects.get(pk=obj.pk))
+        )
         # `is_visible` will not appear in `cleaned_data` if user cannot edit it
         if form.cleaned_data.get("is_visible") and not request.user.has_perm(
             "judge.change_contest_visibility"
@@ -374,7 +378,9 @@ class ContestAdmin(CompareVersionAdmin):
         form.instance.banned_users.filter(
             current_contest__contest_id=form.instance.pk
         ).update(current_contest=None)
-        if request.user.is_superuser and "is_visible" in form.changed_data:
+        if request.user.is_superuser and not getattr(
+            request, "_contest_was_site_public", False
+        ):
             obj = form.instance
             obj.refresh_from_db()
             if obj.is_visible and not (

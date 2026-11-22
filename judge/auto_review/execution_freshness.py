@@ -56,7 +56,7 @@ def _test_configuration(problem, *, validation=False):
         else [
             field.attname
             for field in ProblemTestCase._meta.concrete_fields
-            if field.name not in {"id", "dataset"}
+            if field.name not in {"id", "dataset", "is_pretest"}
         ]
     )
     return list(
@@ -101,13 +101,19 @@ def solution_package_identity(
     }
     return {
         "data": {key: value for key, value in data.items() if key not in excluded},
-        "tests": _test_configuration(problem) if tests is None else tests,
+        "tests": (
+            _test_configuration(problem)
+            if tests is None
+            else [
+                {key: value for key, value in row.items() if key != "is_pretest"}
+                for row in tests
+            ]
+        ),
         "limits": {
             name: getattr(problem, name)
             for name in (
                 "time_limit",
                 "memory_limit",
-                "points",
                 "partial",
                 "short_circuit",
             )

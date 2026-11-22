@@ -22,6 +22,8 @@ from judge.models import (
     Solution,
 )
 from judge.models.notification import Notification, NotificationCategory
+from judge.auto_review.publication import publish_without_review
+from judge.utils.public_visibility import is_site_public
 
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
@@ -361,6 +363,9 @@ class ProblemAdmin(CompareVersionAdmin):
         return form
 
     def save_model(self, request, obj, form, change):
+        request._problem_was_site_public = bool(
+            change and is_site_public(Problem.objects.get(pk=obj.pk))
+        )
         form.changed_data.remove("memory_unit")
         # Allow superusers to bypass points cap for non-public problems
         obj._bypass_points_cap = request.user.is_superuser
@@ -373,6 +378,17 @@ class ProblemAdmin(CompareVersionAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         obj = form.instance
+        if request.user.is_superuser and not getattr(
+            request, "_problem_was_site_public", False
+        ):
+            obj.refresh_from_db()
+            if is_site_public(obj):
+                publish_without_review(
+                    obj,
+                    request.user,
+                    _("Published directly by a superuser from Admin."),
+                )
+                obj.refresh_from_db()
         obj.curators.add(request.profile)
 
         # Cache invalidation for user_editable_ids and user_tester_ids

@@ -280,6 +280,7 @@
     <h2>{{ title }}</h2>
     {% if readonly_editor %}<p class="red" role="status">{{ _('This content is locked. Contact a superuser to request an edit.') }}</p>{% endif %}
     <form action="" method="post"
+          {% if request.user.is_superuser %}data-publication-visibility-field="is_visible" data-publish-warning="{{ _('Check the current content and review before publishing; the review may be outdated, incomplete, or have findings.') }}"{% endif %}
           data-review-save-probe="1"
           data-pending-publication="{{ '1' if contest_public_request else '0' }}"
           data-publication-confirmation-token="{{ publication_confirmation_token }}"
@@ -457,4 +458,5 @@
     {% endif %}
   </div>
   {% include "auto_review/save_confirmation_dialog.html" %}
+  {% if request.user.is_superuser %}{% include "auto_review/publish_confirmation_dialog.html" %}{% endif %}
 {% endblock %}

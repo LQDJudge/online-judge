@@ -600,6 +600,15 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
                 or cases_formset.has_changed()
                 or signature_grader_formset.has_changed()
             )
+            request._review_pretest_only = (
+                not data_form.has_changed()
+                and not signature_grader_formset.has_changed()
+                and cases_formset.has_changed()
+                and all(
+                    not form.has_changed() or set(form.changed_data) <= {"is_pretest"}
+                    for form in cases_formset.forms
+                )
+            )
             confirmation = publication_change_confirmation(request, problem, changed)
             if confirmation is not None:
                 return confirmation

@@ -9,6 +9,23 @@ from judge.auto_review.context_utils import (
     digest_json,
 )
 
+PROBLEM_DATA_FIELDS = (
+    "generator_script",
+    "output_prefix",
+    "output_limit",
+    "checker",
+    "checker_args",
+    "fileio_input",
+    "fileio_output",
+    "output_only",
+    "binary_data",
+    "output_zip_size_mb",
+    "use_ioi_signature",
+    "is_communication",
+    "communication_num_processes",
+    "testcase_validator_language",
+)
+
 
 def _review_solutions(snapshot, include_evidence=False):
     fields = ("source", "language", "expected_result")
@@ -41,26 +58,27 @@ def problem_review_content(snapshot):
             for key in (
                 "time_limit",
                 "memory_limit",
-                "points",
                 "partial",
                 "short_circuit",
             )
         },
         "file_revisions": snapshot.get("file_revisions", {}),
-        "data_config": snapshot.get("data_config", {}),
+        "data_config": {
+            key: snapshot.get("data_config", {}).get(key) for key in PROBLEM_DATA_FIELDS
+        },
         # List order and batch markers are meaningful; database row IDs are not.
         "tests": [
             {
                 key: value
                 for key, value in row.items()
-                if key not in ("id", "dataset_id")
+                if key not in ("id", "dataset_id", "is_pretest")
             }
             for row in snapshot.get("tests", [])
         ],
         "artifacts": {
             key: _review_artifact_identity(value)
             for key, value in snapshot.get("artifacts", {}).items()
-            if not key.startswith("aux:")
+            if not key.startswith("aux:") and key != "init_yml"
         },
         "solutions": _review_solutions(snapshot),
         "editorial": _normalized_text(editorial.get("content")),
@@ -153,7 +171,6 @@ def contest_review_content(snapshot):
         }
     except (KeyError, TypeError, ValueError):
         duration = {key: config.get(key) for key in ("start_time", "end_time")}
-    quiz_content = snapshot.get("quiz_content", {})
     return {
         "config": {
             "description": _normalized_text(config.get("description")),
@@ -162,17 +179,9 @@ def contest_review_content(snapshot):
                 key: config.get(key)
                 for key in (
                     "time_limit",
-                    "freeze_after",
                     "format_name",
                     "format_config",
                     "points_precision",
-                    "run_pretests_only",
-                    "scoreboard_visibility",
-                    "public_scoreboard",
-                    "use_clarifications",
-                    "hide_problem_tags",
-                    "problem_label_script",
-                    "rate_limit",
                 )
             },
         },
@@ -185,63 +194,11 @@ def contest_review_content(snapshot):
                     "points",
                     "initial_ac_score",
                     "partial",
-                    "is_pretested",
-                    "show_testcases",
-                    "max_submissions",
-                    "hidden_subtasks",
-                    "is_result_hidden",
                 )
             }
             for item in snapshot.get("items", [])
         ],
         "children": canonical_child_content(snapshot.get("children", [])),
-        # Unsupported quizzes remain manual, but substantive edits must still
-        # invalidate the contest candidate. Do not bind their display/admin data.
-        "quiz_content": {
-            "quizzes": sorted(
-                [
-                    {
-                        **{
-                            key: quiz.get(key)
-                            for key in (
-                                "id",
-                                "time_limit",
-                                "shuffle_questions",
-                                "is_shown_correctness",
-                                "is_shown_answer",
-                            )
-                        },
-                        "description": _normalized_text(quiz.get("description")),
-                    }
-                    for quiz in quiz_content.get("quizzes", [])
-                ],
-                key=canonical_json,
-            ),
-            "assignments": [
-                {key: row.get(key) for key in ("quiz_id", "question_id", "points")}
-                for row in quiz_content.get("assignments", [])
-            ],
-            "questions": sorted(
-                [
-                    {
-                        key: question.get(key)
-                        for key in (
-                            "id",
-                            "question_type",
-                            "content",
-                            "choices",
-                            "correct_answers",
-                            "explanation",
-                            "shuffle_choices",
-                            "grading_strategy",
-                            "multiple_true_false_score_table",
-                        )
-                    }
-                    for question in quiz_content.get("questions", [])
-                ],
-                key=canonical_json,
-            ),
-        },
     }
 
 
@@ -269,7 +226,7 @@ def review_execution_evidence(snapshot):
         keys = (
             ("passed", "total_cases", "failed_count")
             if validation
-            else ("result", "points", "case_points", "case_total", "is_pretested")
+            else ("result", "case_points", "case_total", "is_pretested")
         )
         return {
             **{key: evidence.get(key) for key in keys},

@@ -21326,3 +21326,18 @@ msgstr "Không thể kiểm duyệt tự động; cần kiểm tra thủ công."
 
 msgid "This mute is no longer active."
 msgstr "Lệnh tắt tiếng này không còn hiệu lực."
+
+msgid "Publish this content?"
+msgstr "Công khai nội dung này?"
+
+msgid "Check the current content and review before publishing; the review may be outdated, incomplete, or have findings."
+msgstr "Hãy kiểm tra nội dung và kết quả đánh giá trước khi công khai; kết quả có thể đã cũ, chưa hoàn tất hoặc có vấn đề cần xem xét."
+
+msgid "Publish anyway"
+msgstr "Vẫn công khai"
+
+msgid "Publish problem?"
+msgstr "Công khai bài toán?"
+
+msgid "This makes the problem public and removes organization restrictions. Check the current content and review before publishing; the review may be outdated, incomplete, or have findings."
+msgstr "Bài toán sẽ được công khai trên toàn hệ thống và không còn giới hạn theo tổ chức. Hãy kiểm tra nội dung và kết quả đánh giá trước khi công khai; kết quả có thể đã cũ, chưa hoàn tất hoặc có vấn đề cần xem xét."

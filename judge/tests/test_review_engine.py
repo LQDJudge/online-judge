@@ -151,6 +151,18 @@ class ReviewEngineTests(TestCase):
             "statement": "Statement",
         }
 
+    def test_unreadable_inputs_mark_review_stale_without_failing_save(self):
+        run = self.run_record()
+        run.status = "D"
+        run.save(update_fields=["status"])
+        with patch(
+            "judge.auto_review.workflow.current_content_hash",
+            side_effect=OSError("storage unavailable"),
+        ):
+            workflow.invalidate_readiness(self.problem)
+        run.refresh_from_db()
+        self.assertTrue(run.current_stale)
+
     def run_record(self, *, kind="problem", author=False):
         model = ProblemReviewRun if kind == "problem" else ContestReviewRun
         obj = self.problem if kind == "problem" else self.contest

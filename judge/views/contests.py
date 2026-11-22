@@ -69,6 +69,7 @@ from judge.forms import (
     CONTEST_EDIT_FIELD_SECTIONS,
 )
 from judge.utils.contest import maybe_trigger_contest_rescore
+from judge.utils.public_visibility import is_site_public
 from judge.services.contest_summary import calculate_summary, read_summary
 from judge.services.official_school import school_map, school_for_profile
 from judge.models.profile import get_profile_public_identity
@@ -3180,6 +3181,7 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
 
     @transaction.atomic
     def form_valid(self, form):
+        was_site_public = is_site_public(Contest.objects.get(pk=self.object.pk))
         # Add replacements before ModelForm removes old private contestants.
         if not self.request.user.is_superuser:
             self.object.private_contestants.add(
@@ -3190,11 +3192,8 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         self.object = form.save()
         if (
             self.request.user.is_superuser
-            and "is_visible" in form.changed_data
-            and self.object.is_visible
-            and not self.object.is_private
-            and not self.object.is_organization_private
-            and not self.object.is_in_course
+            and not was_site_public
+            and is_site_public(self.object)
         ):
             reason = _("Published directly by a superuser from Content.")
             publish_without_review(self.object, self.request.user, reason)

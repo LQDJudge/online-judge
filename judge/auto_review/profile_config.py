@@ -3,7 +3,8 @@
 import json
 
 import yaml
-from yaml.events import AliasEvent, CollectionEndEvent, CollectionStartEvent
+from yaml.events import CollectionEndEvent, CollectionStartEvent
+from yaml.nodes import MappingNode, ScalarNode, SequenceNode
 
 MAX_PROFILE_CONFIG_BYTES = 1024 * 1024
 
@@ -134,8 +135,44 @@ class _ProfileLoader(yaml.SafeLoader):
         return result
 
 
+def _check_expanded_structure(root):
+    """Bound downstream traversal of aliases before constructing Python values."""
+    active = set()
+    nodes = 0
+    characters = 0
+
+    def visit(node, depth):
+        nonlocal nodes, characters
+        nodes += 1
+        if nodes > 100000 or depth > 64:
+            raise ProfileConfigError("Configuration exceeds review structure limits")
+        if id(node) in active:
+            raise ProfileConfigError(
+                "Recursive configuration references are not supported"
+            )
+        if isinstance(node, ScalarNode):
+            characters += len(node.value)
+            if characters > 8 * MAX_PROFILE_CONFIG_BYTES:
+                raise ProfileConfigError(
+                    "Expanded configuration exceeds review parsing limit"
+                )
+            return
+        active.add(id(node))
+        if isinstance(node, MappingNode):
+            for key, value in node.value:
+                visit(key, depth + 1)
+                visit(value, depth + 1)
+        elif isinstance(node, SequenceNode):
+            for value in node.value:
+                visit(value, depth + 1)
+        active.remove(id(node))
+
+    if root is not None:
+        visit(root, 0)
+
+
 def parse_profile_config(raw):
-    """Reject aliases, duplicate keys and excessive nesting before construction.
+    """Accept bounded shared references, rejecting cycles and duplicate keys.
 
     This reads configuration only. It never imports a configured grader or runs
     YAML constructors outside SafeLoader's built-in data types.
@@ -145,7 +182,7 @@ def parse_profile_config(raw):
     try:
         depth = 0
         for count, event in enumerate(yaml.parse(raw)):
-            if count >= 100000 or isinstance(event, AliasEvent):
+            if count >= 100000:
                 raise ProfileConfigError(
                     "Configuration exceeds review structure limits"
                 )
@@ -157,7 +194,10 @@ def parse_profile_config(raw):
                     )
             elif isinstance(event, CollectionEndEvent):
                 depth -= 1
+        _check_expanded_structure(yaml.compose(raw, Loader=_ProfileLoader))
         value = yaml.load(raw, Loader=_ProfileLoader)
+    except ProfileConfigError:
+        raise
     except (
         yaml.YAMLError,
         UnicodeError,

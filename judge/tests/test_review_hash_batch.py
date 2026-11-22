@@ -1,12 +1,14 @@
 """Contest hash batching preserves per-problem identity and bounds DB queries."""
 
 from datetime import timedelta
+import io
 import tempfile
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
+from django.core.management import call_command
 from django.db import connection
 from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
@@ -26,6 +28,11 @@ from judge.models import (
     Submission,
     SubmissionSource,
     SubmissionTestCase,
+    ProblemReviewRun,
+    PublicRequest,
+    ContestReviewRun,
+    ContestReviewDependency,
+    ContestPublicRequest,
 )
 from judge.models.problem_data import ProblemSignatureGrader, ProblemValidationResult
 from judge.models.problem import LanguageLimit, LanguageTemplate
@@ -36,6 +43,12 @@ from judge.auto_review.problem_context import (
 )
 from judge.auto_review.contest_context import build_contest_context
 from judge.auto_review.review_context import current_content_hash
+from judge.auto_review.signature import relevant_signature_config
+from judge.auto_review.execution_freshness import (
+    solution_execution_hash,
+    solution_result_current,
+)
+from judge.management.commands import transition_review_hashes as hash_transition
 
 
 @override_settings(USE_ML=False)
@@ -125,6 +138,87 @@ class ContestHashBatchTests(TestCase):
         )
         return problem
 
+    def test_hash_transition_preserves_only_provably_current_evidence(self):
+        problem = self.make_problem("hashtransition")
+        problem.refresh_from_db()
+        code = problem.solution_codes.select_related("last_submission").get()
+        submission = code.last_submission
+        submission.execution_hash = hash_transition._old_solution_execution_hash(
+            problem, code.source_code, code.language_id
+        )
+        submission.save(update_fields=["execution_hash"])
+        context = _capture_problem(problem, extract_pdf=False, identity_only=True)
+        old_hash = hash_transition._old_problem_review_input_hash(context)
+        current = ProblemReviewRun.objects.create(
+            problem=problem, status="D", input_hash=old_hash
+        )
+        stale = ProblemReviewRun.objects.create(
+            problem=problem, status="D", input_hash="stale"
+        )
+        request = PublicRequest.objects.create(
+            problem=problem,
+            requested_by=self.author,
+            review_run=current,
+            candidate_hash=old_hash,
+        )
+        call_command("transition_review_hashes", stdout=io.StringIO())
+        current.refresh_from_db()
+        self.assertEqual(current.input_hash, old_hash)
+        output = io.StringIO()
+        call_command("transition_review_hashes", apply=True, stdout=output)
+        current.refresh_from_db()
+        stale.refresh_from_db()
+        submission.refresh_from_db()
+        request.refresh_from_db()
+        self.assertEqual(current.input_hash, hash_current_problem(problem))
+        self.assertEqual(request.candidate_hash, current.input_hash)
+        self.assertEqual(stale.input_hash, "stale")
+        self.assertTrue(
+            solution_result_current(problem, code, submission), output.getvalue()
+        )
+
+    def test_transition_updates_current_contest_dependency_and_pending_request(self):
+        problem = self.make_problem("contesttransition")
+        problem.refresh_from_db()
+        ContestProblem.objects.create(
+            contest=self.contest, problem=problem, order=1, points=100
+        )
+        context = _capture_problem(problem, extract_pdf=False, identity_only=True)
+        old_problem = hash_transition._old_problem_review_input_hash(context)
+        child = ProblemReviewRun.objects.create(
+            problem=problem, status="D", input_hash=old_problem
+        )
+        contest_context = build_contest_context(
+            self.contest,
+            [{"problem_id": problem.pk, "content_hash": old_problem}],
+            identity_only=True,
+        )
+        old_contest = hash_transition.digest_json(
+            hash_transition._old_contest_review_content(contest_context)
+        )
+        run = ContestReviewRun.objects.create(
+            contest=self.contest, status="D", input_hash=old_contest
+        )
+        dependency = ContestReviewDependency.objects.create(
+            contest_run=run,
+            problem=problem,
+            problem_run=child,
+            content_hash=old_problem,
+        )
+        request = ContestPublicRequest.objects.create(
+            contest=self.contest,
+            requested_by=self.author,
+            review_run=run,
+            candidate_hash=old_contest,
+        )
+        call_command("transition_review_hashes", apply=True, stdout=io.StringIO())
+        run.refresh_from_db()
+        dependency.refresh_from_db()
+        request.refresh_from_db()
+        self.assertEqual(run.input_hash, current_content_hash(self.contest))
+        self.assertEqual(dependency.content_hash, hash_current_problem(problem))
+        self.assertEqual(request.candidate_hash, run.input_hash)
+
     def test_batched_hash_matches_individual_for_execution_and_modes(self):
         problems = [
             self.make_problem("batchnormal"),
@@ -155,6 +249,23 @@ class ContestHashBatchTests(TestCase):
                 )
                 self.assertEqual(batched["solutions"], individual["solutions"])
                 self.assertEqual(batched["validation"], individual["validation"])
+
+    def test_difficulty_and_pretest_selection_do_not_invalidate_full_execution(self):
+        problem = self.make_problem("irrelevantchanges")
+        problem.refresh_from_db()
+        code = problem.solution_codes.get()
+        before_review = hash_current_problem(problem)
+        before_execution = solution_execution_hash(
+            problem, code.source_code, code.language_id
+        )
+        Problem.objects.filter(pk=problem.pk).update(points=1500)
+        ProblemTestCase.objects.filter(dataset=problem).update(is_pretest=True)
+        problem.refresh_from_db()
+        self.assertEqual(before_review, hash_current_problem(problem))
+        self.assertEqual(
+            before_execution,
+            solution_execution_hash(problem, code.source_code, code.language_id),
+        )
 
     def test_contest_hash_query_count_does_not_grow_per_problem(self):
         first = self.make_problem("batchfirst")
@@ -242,3 +353,114 @@ class ContestHashBatchTests(TestCase):
         self.assertEqual(len(batched["output_examples"]), 12)
         self.assertEqual(batched["output_examples"], individual["output_examples"])
         self.assertEqual(batched["input_hash"], individual["input_hash"])
+
+    def test_transition_converts_only_current_output_portfolio_results(self):
+        problem = self.make_problem("outputtransition")
+        problem.refresh_from_db()
+        language, _ = Language.objects.get_or_create(
+            key="OUTPUT",
+            defaults={
+                "name": "Output",
+                "short_name": "OUT",
+                "ace": "text",
+                "pygments": "text",
+            },
+        )
+        submissions = []
+        for execution_hash in ("current", "stale"):
+            submission = Submission.objects.create(
+                problem=problem,
+                user=self.author,
+                language=language,
+                status="D",
+                result="AC",
+                review_evidence={"output_portfolio": True},
+            )
+            source = "/submission_source_file/example.zip"
+            SubmissionSource.objects.create(submission=submission, source=source)
+            submission.execution_hash = (
+                hash_transition._old_solution_execution_hash(
+                    problem, source, language.pk
+                )
+                if execution_hash == "current"
+                else "stale"
+            )
+            submission.save(update_fields=["execution_hash"])
+            submissions.append(submission)
+        call_command("transition_review_hashes", apply=True, stdout=io.StringIO())
+        for submission in submissions:
+            submission.refresh_from_db()
+        self.assertEqual(
+            submissions[0].execution_hash,
+            solution_execution_hash(problem, source, language.pk),
+        )
+        self.assertEqual(submissions[1].execution_hash, "stale")
+
+    def test_signature_pretest_configuration_does_not_change_review_hash(self):
+        problem = self.make_problem("signaturepretest")
+        data = ProblemData.objects.get(problem=problem)
+        data.use_ioi_signature = True
+        data.save()
+        with tempfile.TemporaryDirectory() as root:
+            storage = FileSystemStorage(location=root)
+            name = "signaturepretest/init.yml"
+            storage.save(name, ContentFile(b"signature_grader: {}\ntest_cases: []\n"))
+            with patch(
+                "judge.auto_review.problem_context.problem_data_storage", storage
+            ):
+                before = hash_current_problem(problem)
+                storage.delete(name)
+                storage.save(
+                    name,
+                    ContentFile(
+                        b"signature_grader: {}\ntest_cases: []\npretest_test_cases:\n  - in: a.in\n"
+                    ),
+                )
+                self.assertEqual(before, hash_current_problem(problem))
+
+    def test_transition_preserves_current_signature_review_with_pretests(self):
+        problem = self.make_problem("signaturemigration")
+        problem.refresh_from_db()
+        data = ProblemData.objects.get(problem=problem)
+        data.use_ioi_signature = True
+        data.save()
+        config = {
+            "signature_grader": {},
+            "test_cases": [],
+            "pretest_test_cases": [{"in": "a.in"}],
+        }
+        with tempfile.TemporaryDirectory() as root:
+            storage = FileSystemStorage(location=root)
+            storage.save(
+                "signaturemigration/init.yml",
+                ContentFile(
+                    b"signature_grader: {}\ntest_cases: []\npretest_test_cases:\n  - in: a.in\n"
+                ),
+            )
+            with patch(
+                "judge.auto_review.problem_context.problem_data_storage", storage
+            ), patch(
+                "judge.management.commands.transition_review_hashes.problem_data_storage",
+                storage,
+            ):
+                context = _capture_problem(
+                    problem, extract_pdf=False, identity_only=True
+                )
+                context["signature_init_identity"] = {
+                    "configuration_sha256": hash_transition.digest_json(
+                        relevant_signature_config(
+                            config,
+                            context["allowed_language_keys"],
+                            include_pretests=True,
+                        )
+                    )
+                }
+                old = hash_transition._old_problem_review_input_hash(context)
+                run = ProblemReviewRun.objects.create(
+                    problem=problem, status="D", input_hash=old
+                )
+                call_command(
+                    "transition_review_hashes", apply=True, stdout=io.StringIO()
+                )
+                run.refresh_from_db()
+                self.assertEqual(run.input_hash, hash_current_problem(problem))
