@@ -419,9 +419,10 @@ class UnlockAlgorithmTest(TestCase):
         )
 
         # Mock calculate_user_lesson_grades to return 75% for lesson 1
-        def mock_grades(user_profile, lessons):
+        def mock_grades(user_profile, lessons, *, by_id=False):
             return {
-                lesson.order: 75.0 if lesson.order == 1 else 0 for lesson in lessons
+                (lesson.pk if by_id else lesson.order): 75.0 if lesson.order == 1 else 0
+                for lesson in lessons
             }
 
         with patch(
@@ -449,9 +450,10 @@ class UnlockAlgorithmTest(TestCase):
         )
 
         # Mock calculate_user_lesson_grades to return 60% for lesson 1
-        def mock_grades(user_profile, lessons):
+        def mock_grades(user_profile, lessons, *, by_id=False):
             return {
-                lesson.order: 60.0 if lesson.order == 1 else 0 for lesson in lessons
+                (lesson.pk if by_id else lesson.order): 60.0 if lesson.order == 1 else 0
+                for lesson in lessons
             }
 
         with patch(
@@ -1583,9 +1585,11 @@ class QuizIntegrationTest(TestCase):
         self.assertFalse(progress2.is_unlocked)
 
         # Mock calculate_user_lesson_grades to return 80% for lesson 1
-        def mock_grades(user_profile, lessons):
+        def mock_grades(user_profile, lessons, *, by_id=False):
             return {
-                lesson.order: 80.0 if lesson.order == self.lesson1.order else 0
+                (lesson.pk if by_id else lesson.order): (
+                    80.0 if lesson.order == self.lesson1.order else 0
+                )
                 for lesson in lessons
             }
 
@@ -1633,9 +1637,11 @@ class QuizIntegrationTest(TestCase):
         from unittest.mock import patch
 
         # Mock calculate_user_lesson_grades to return 50% for lesson 1 (insufficient)
-        def mock_grades_50(user_profile, lessons):
+        def mock_grades_50(user_profile, lessons, *, by_id=False):
             return {
-                lesson.order: 50.0 if lesson.order == self.lesson1.order else 0
+                (lesson.pk if by_id else lesson.order): (
+                    50.0 if lesson.order == self.lesson1.order else 0
+                )
                 for lesson in lessons
             }
 
@@ -1653,9 +1659,11 @@ class QuizIntegrationTest(TestCase):
         self.assertFalse(progress2.is_unlocked)
 
         # Mock calculate_user_lesson_grades to return 75% for lesson 1 (sufficient)
-        def mock_grades_75(user_profile, lessons):
+        def mock_grades_75(user_profile, lessons, *, by_id=False):
             return {
-                lesson.order: 75.0 if lesson.order == self.lesson1.order else 0
+                (lesson.pk if by_id else lesson.order): (
+                    75.0 if lesson.order == self.lesson1.order else 0
+                )
                 for lesson in lessons
             }
 

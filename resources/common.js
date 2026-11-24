@@ -786,6 +786,14 @@ function navigateTo(url, reload_container, force_new_page=false) {
             }
 
             if (reload_content.length) {
+                // Partial navigation must also drop the previous page's layout
+                // classes, just as a full document load would.
+                const nextDocument = new DOMParser().parseFromString(data, 'text/html');
+                const nextPage = nextDocument.getElementById('page-container');
+                const currentPage = document.getElementById('page-container');
+                if (nextPage && currentPage) {
+                    currentPage.className = nextPage.className;
+                }
                 window.history.pushState("", "", url);
                 $(window).scrollTop(0);
                 $("#loading-bar").stop(true, true);

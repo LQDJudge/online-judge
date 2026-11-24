@@ -70,8 +70,8 @@
               if (isNaN(source) || isNaN(target) || isNaN(pct)) {
                 throw new Error('{{ _("Invalid numbers in item") }} ' + (i + 1));
               }
-              if (source >= target) {
-                throw new Error('{{ _("Source must be less than target in item") }} ' + (i + 1));
+              if (source === target) {
+                throw new Error({{ _("Source and target must be different lessons.")|tojson }});
               }
               if (pct < 0 || pct > 100) {
                 throw new Error('{{ _("Percentage must be 0-100 in item") }} ' + (i + 1));
@@ -108,8 +108,8 @@
               alert(response.error);
               $('#apply-json-btn').prop('disabled', false).html('<i class="fa fa-check"></i> {{ _("Apply") }}');
             }
-          }).fail(function() {
-            alert('{{ _("An error occurred. Please try again.") }}');
+          }).fail(function(xhr) {
+            alert((xhr.responseJSON && xhr.responseJSON.error) || {{ _("An error occurred. Please try again.")|tojson }});
             $('#apply-json-btn').prop('disabled', false).html('<i class="fa fa-check"></i> {{ _("Apply") }}');
           });
         });
@@ -139,8 +139,8 @@
             } else {
               alert(response.error);
             }
-          }).fail(function() {
-            alert('{{ _("An error occurred. Please try again.") }}');
+          }).fail(function(xhr) {
+            alert((xhr.responseJSON && xhr.responseJSON.error) || {{ _("An error occurred. Please try again.")|tojson }});
           });
         });
 
@@ -192,8 +192,8 @@
               $input.val(originalValue);
             }
             $input.prop('disabled', false);
-          }).fail(function() {
-            alert('{{ _("An error occurred. Please try again.") }}');
+          }).fail(function(xhr) {
+            alert((xhr.responseJSON && xhr.responseJSON.error) || {{ _("An error occurred. Please try again.")|tojson }});
             $input.val(originalValue);
             $input.prop('disabled', false);
           });
@@ -227,7 +227,7 @@
           $('.new-prereq-row').each(function() {
             var source = parseInt($(this).find('.new-source-order').val());
             var target = parseInt($(this).find('.new-target-order').val());
-            if (source >= target) {
+            if (source === target) {
               hasError = true;
             }
           });
@@ -254,7 +254,7 @@
             var target = parseInt($(this).find('.new-target-order').val());
             var pct = parseFloat($(this).find('.new-percentage').val());
 
-            if (source >= target) {
+            if (source === target) {
               hasError = true;
               return;
             }
@@ -262,7 +262,7 @@
           });
 
           if (hasError) {
-            alert('{{ _("Source lesson order must be less than target lesson order.") }}');
+            alert('{{ _("Source and target must be different lessons.") }}');
             return;
           }
 
@@ -290,8 +290,8 @@
               alert(response.error);
               $('#save-all-btn').prop('disabled', false).html('<i class="fa fa-save"></i> {{ _("Save All") }}');
             }
-          }).fail(function() {
-            alert('{{ _("An error occurred. Please try again.") }}');
+          }).fail(function(xhr) {
+            alert((xhr.responseJSON && xhr.responseJSON.error) || {{ _("An error occurred. Please try again.")|tojson }});
             $('#save-all-btn').prop('disabled', false).html('<i class="fa fa-save"></i> {{ _("Save All") }}');
           });
         });
@@ -334,8 +334,8 @@
               } else {
                 $status.html('<i class="fa fa-exclamation-triangle"></i> ' + response.error).addClass('error');
               }
-            }).fail(function() {
-              $status.html('<i class="fa fa-exclamation-triangle"></i> {{ _("Error saving") }}').addClass('error');
+            }).fail(function(xhr) {
+              $status.text((xhr.responseJSON && xhr.responseJSON.error) || {{ _("Error saving")|tojson }}).addClass('error');
             });
           }
         });
@@ -369,48 +369,50 @@
       </p>
 
       {% if lessons %}
-        <table class="prereq-table" id="prereq-table">
-          <thead>
-            <tr>
-              <th>{{ _("Source Lesson") }}</th>
-              <th></th>
-              <th>{{ _("Target Lesson") }}</th>
-              <th>{{ _("Required %%") }}</th>
-              <th>{{ _("Actions") }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for prereq in prerequisites %}
+        <div class="prereq-table-container" tabindex="0" role="region" aria-label="{{ _('PREREQUISITES') }}">
+          <table class="table striped prereq-table" id="prereq-table">
+            <thead>
               <tr>
-                <td>
-                  {% if prereq.source_order in lessons_by_order %}
-                    <strong>{{ prereq.source_order }}.</strong> {{ lessons_by_order[prereq.source_order].title }}
-                  {% else %}
-                    <em class="gray">{{ _("Order") }} {{ prereq.source_order }} ({{ _("not found") }})</em>
-                  {% endif %}
-                </td>
-                <td class="prereq-arrow"><i class="fa fa-arrow-right"></i></td>
-                <td>
-                  {% if prereq.target_order in lessons_by_order %}
-                    <strong>{{ prereq.target_order }}.</strong> {{ lessons_by_order[prereq.target_order].title }}
-                  {% else %}
-                    <em class="gray">{{ _("Order") }} {{ prereq.target_order }} ({{ _("not found") }})</em>
-                  {% endif %}
-                </td>
-                <td class="prereq-percentage-cell">
-                  <input type="number" class="edit-percentage" data-prereq-id="{{ prereq.id }}"
-                         data-original="{{ prereq.required_percentage|floatformat(0) }}"
-                         min="0" max="100" step="1" value="{{ prereq.required_percentage|floatformat(0) }}">%
-                </td>
-                <td>
-                  <button type="button" class="delete-btn delete-prereq" data-prereq-id="{{ prereq.id }}" title="{{ _('Delete') }}">
-                    <i class="fa fa-trash"></i>
-                  </button>
-                </td>
+                <th>{{ _("Source Lesson") }}</th>
+                <th></th>
+                <th>{{ _("Target Lesson") }}</th>
+                <th>{{ _("Required %%") }}</th>
+                <th>{{ _("Actions") }}</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for prereq in prerequisites %}
+                <tr>
+                  <td>
+                    {% if prereq.source_order in lessons_by_order %}
+                      <strong>{{ prereq.source_order }}.</strong> {{ lessons_by_order[prereq.source_order].title }}
+                    {% else %}
+                      <em class="gray">{{ _("Order") }} {{ prereq.source_order }} ({{ _("not found") }})</em>
+                    {% endif %}
+                  </td>
+                  <td class="prereq-arrow"><i class="fa fa-arrow-right"></i></td>
+                  <td>
+                    {% if prereq.target_order in lessons_by_order %}
+                      <strong>{{ prereq.target_order }}.</strong> {{ lessons_by_order[prereq.target_order].title }}
+                    {% else %}
+                      <em class="gray">{{ _("Order") }} {{ prereq.target_order }} ({{ _("not found") }})</em>
+                    {% endif %}
+                  </td>
+                  <td class="prereq-percentage-cell">
+                    <input type="number" class="edit-percentage" data-prereq-id="{{ prereq.id }}"
+                           data-original="{{ prereq.required_percentage|floatformat(0) }}"
+                           min="0" max="100" step="1" value="{{ prereq.required_percentage|floatformat(0) }}">%
+                  </td>
+                  <td>
+                    <button type="button" class="delete-btn delete-prereq" data-prereq-id="{{ prereq.id }}" title="{{ _('Delete') }}">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
 
         <div class="prereq-add-section">
           <button type="button" id="add-row-btn" class="action-btn">
@@ -423,7 +425,7 @@
 
         <div id="order-error" class="prereq-error" style="display: none;">
           <i class="fa fa-exclamation-triangle"></i>
-          {{ _("Source lesson order must be less than target lesson order.") }}
+          {{ _("Source and target must be different lessons.") }}
         </div>
 
         {# Template for new row - hidden, used by JavaScript #}

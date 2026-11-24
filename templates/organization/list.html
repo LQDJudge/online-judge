@@ -1,4 +1,6 @@
 {% extends "three-column-content.html" %}
+
+{% block page_container_class %}{{ super() }} soft-listing-page{% endblock %}
 {% set middle_right_class = 'organizations-list-layout' %}
 
 {% block js_media %}
@@ -60,7 +62,7 @@
           {% endif %}
           <div class="org-details">
             <span class="organization-card-name">
-              {{ org.name }}
+              <a href="{{ org.get_absolute_url() }}">{{ org.name }}</a>
               {% if tab == 'mine' and org.is_official_school %}
                 <span class="official-school-badge">
                   <i class="fa fa-university" aria-hidden="true"></i>

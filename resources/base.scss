@@ -2006,3 +2006,46 @@ input::placeholder {
         padding: $space-sm $space-xs;
     }
 }
+
+
+// Shared navigation treatment and full-height background for listing pages.
+body:has(.soft-listing-page) {
+    height: auto;
+    min-height: 100vh;
+
+    > #page-container.soft-listing-page {
+        background: inherit;
+    }
+
+    #dynamic-effects-container, #lantern-effects-container,
+    #sparkle-effects-container, .poinciana-effects {
+        opacity: 0.12;
+    }
+}
+
+.soft-listing-page {
+    .course-list-page .course-name,
+    .contest-list-page .contest-card-main .contest-list-title,
+    .organization-card .organization-card-name > a,
+    #problem-table tbody .problem > a {
+        color: $link_color;
+        text-decoration: none;
+
+        &:hover {
+            color: $link_hover_color;
+            text-decoration: underline;
+        }
+
+        &:focus-visible {
+            outline: 2px solid $link_color;
+            outline-offset: 3px;
+            border-radius: $radius-sm;
+        }
+    }
+
+    .course-grades-page #users-table {
+        .partial-score, .partial-score a, .full-score, .full-score a {
+            color: $color-message-success-text;
+        }
+    }
+}

@@ -181,7 +181,12 @@ class GradesMyRankIntegrationTest(TestCase):
         self.assertEqual(resp.context["grade_total"][student], detailed_total)
         self.assertEqual(
             resp.context["grade_total"][student],
-            {"achieved_points": 40, "total_points": 200, "percentage": 20},
+            {
+                "is_result_hidden": False,
+                "achieved_points": 40,
+                "total_points": 200,
+                "percentage": 20,
+            },
         )
         self.assertEqual(resp.context["global_rank"][self.sb.id], 1)
 

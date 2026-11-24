@@ -106,10 +106,10 @@ class LessonQuizPopupTest(TestCase):
             ],
         )
 
-    def test_anonymous_redirects_to_login(self):
+    def test_anonymous_popup_returns_authentication_error(self):
         resp = self.client.get(self._url())
-        self.assertEqual(resp.status_code, 302)
-        self.assertIn("/accounts/login/", resp.url)
+        self.assertEqual(resp.status_code, 401)
+        self.assertIn("error", resp.json())
 
     def test_enrolled_member_sees_attempts(self):
         # Assert on stable markers, not the score text (numbers are locale-formatted,

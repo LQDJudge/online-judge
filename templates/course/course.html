@@ -11,12 +11,14 @@
 {% endblock %}
 
 {% block middle_content %}
+  {% include "course/student-preview.html" %}
   <div class="course-detail-page">
     <center>
       <h2>{{title}}</h2>
     </center>
 
-    {% if user_role == 'ST' %}
+    {% if not lessons and not course_contests %}<p class="course-empty-state">{{ _('No lessons have been published yet.') }}</p>{% endif %}
+    {% if user_role == 'ST' and not preview_profile %}
       <div class="course-leave-form">
         <form method="post" action="{{ url('course_leave', course.slug) }}">
           {% csrf_token %}
@@ -29,7 +31,7 @@
     {% endif %}
 
     <h3 class="course-content-title">{{_("About")}}</h3>
-    <div>
+    <div class="course-rich-content">
       {{ course.about|markdown|reference|str|safe }}
     </div>
     {% if lessons %}
@@ -42,8 +44,7 @@
           {% if is_locked %}
             <li class="lesson-locked">
               <div class="lesson-title">
-                <i class="fa fa-lock lesson-lock-icon"></i>
-                {{ lesson.title }}
+                <span class="lesson-name"><i class="fa fa-lock lesson-lock-icon"></i> {{ lesson.title }}</span>
                 <div class="lesson-points">
                   <span class="locked-text">{{ _('Locked') }}</span>
                 </div>
@@ -64,12 +65,13 @@
               </div>
             </li>
           {% else %}
-            <a href="{{url('course_lesson_detail', course.slug, lesson.id)}}">
+            <a href="{{url('course_lesson_detail', course.slug, lesson.id)}}{{ preview_suffix }}">
               <li>
                 <div class="lesson-title">
-                  {{ lesson.title }}
+                  <span class="lesson-name">{{ lesson.title }}</span>
                   <div class="lesson-points">
-                    {% if progress['total_points'] %}
+                    {% if progress.get('is_result_hidden') %}{{ _('Results hidden') }}
+                    {% elif progress['total_points'] %}
                       {{(progress['achieved_points'] / progress['total_points'] * lesson.points) | floatformat(1)}} /
                       {{lesson.points}}
                     {% else %}
@@ -77,7 +79,7 @@
                     {% endif %}
                   </div>
                 </div>
-                <div class="progress-container">
+                <div class="progress-container"{% if progress.get('is_result_hidden') %} hidden{% endif %}>
                   <div class="progress-bar" style="width: {{progress['percentage']}}%;">
                     {{progress['percentage']|floatformat(0)}}%</div>
                 </div>
@@ -91,7 +93,7 @@
       <br>
       <h3 class="course-content-title">{{_("Contests")}}</h3>
       <br>
-      <table class="table striped">
+      <div class="table-container"><table class="table striped">
         <thead>
           <tr>
             <th>{{_("Name")}}</th>
@@ -133,7 +135,8 @@
                 {% endif %}
               </td>
               <td>
-                {% if progress['total_points'] %}
+                {% if progress.get('is_result_hidden') %}{{ _('Results hidden') }}
+                {% elif progress['total_points'] %}
                   {{ (progress['achieved_points'] / progress['total_points'] * course_contest.points) | floatformat(1) }} / {{
                   course_contest.points }}
                 {% else %}
@@ -143,7 +146,7 @@
             </tr>
           {% endfor %}
         </tbody>
-      </table>
+      </table></div>
     {% endif %}
     <br>
     <h3 class="course-content-title">
@@ -152,7 +155,7 @@
       {% set percentage = total_progress['percentage'] %}
       {{_("Total achieved points")}}:
       <span class="course-total-points">
-        {{ achieved_points | floatformat(2) }} / {{ total_points }} ({{percentage|floatformat(1)}}%)
+        {% if total_progress.get("is_result_hidden") %}{{ _("Results hidden") }}{% else %}{{ achieved_points | floatformat(2) }} / {{ total_points }} ({{percentage|floatformat(1)}}%){% endif %}
       </span>
     </h3>
   </div>

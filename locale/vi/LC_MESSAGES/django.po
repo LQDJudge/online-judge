@@ -21341,3 +21341,317 @@ msgstr "Công khai bài toán?"
 
 msgid "This makes the problem public and removes organization restrictions. Check the current content and review before publishing; the review may be outdated, incomplete, or have findings."
 msgstr "Bài toán sẽ được công khai trên toàn hệ thống và không còn giới hạn theo tổ chức. Hãy kiểm tra nội dung và kết quả đánh giá trước khi công khai; kết quả có thể đã cũ, chưa hoàn tất hoặc có vấn đề cần xem xét."
+
+#: judge/forms.py:713 judge/views/course.py:2467
+msgid "Select users"
+msgstr "Chọn người dùng"
+
+#: judge/forms.py:720 judge/views/course.py:2475
+msgid ""
+"Separate usernames with spaces, commas, or new lines. Maximum 200 users per "
+"batch."
+msgstr ""
+"Ngăn cách tên đăng nhập bằng dấu cách, dấu phẩy hoặc xuống dòng. Tối đa 200 "
+"người mỗi lần."
+
+#: judge/forms.py:722 judge/views/course.py:2473
+msgid "Paste usernames"
+msgstr "Dán tên đăng nhập"
+
+#: judge/forms.py:741 judge/views/course.py:2501
+msgid "Add at most 200 users at a time."
+msgstr "Chỉ thêm tối đa 200 người mỗi lần."
+
+#: judge/forms.py:743 judge/views/course.py:2517
+msgid "Select users or paste usernames to add."
+msgstr "Chọn người dùng hoặc dán tên đăng nhập cần thêm."
+
+#: judge/models/course.py:82
+msgid "Teachers and assistants can always review all course grades."
+msgstr "Giáo viên và trợ giảng luôn có thể xem toàn bộ điểm của khóa học."
+
+#: judge/models/course.py:460
+msgid "prerequisite lesson"
+msgstr "bài học tiên quyết"
+
+#: judge/models/course.py:468
+msgid "lesson to unlock"
+msgstr "bài học cần mở khóa"
+
+#: judge/models/course.py:510
+msgid "Choose two distinct lessons from this course."
+msgstr "Chọn hai bài học khác nhau trong khóa học này."
+
+#: judge/models/course.py:520 judge/views/course.py:1547
+msgid "Prerequisites cannot form a cycle."
+msgstr "Các điều kiện tiên quyết không được tạo thành chu trình."
+
+#: judge/services/official_school.py:317 judge/views/organization.py:1595
+msgid ""
+"The member list changed or the preview expired. Preview additions again."
+msgstr ""
+"Danh sách thành viên đã thay đổi hoặc bản xem trước đã hết hạn. Vui lòng xem"
+" trước lại."
+
+#: judge/utils/course_prerequisites.py:433
+msgid "Resolve ambiguous or missing prerequisite lessons before reordering."
+msgstr ""
+"Sửa các bài học tiên quyết bị thiếu hoặc không xác định trước khi sắp xếp "
+"lại."
+
+#: judge/utils/course_prerequisites.py:446
+msgid "Invalid item order."
+msgstr "Thứ tự không hợp lệ."
+
+#: judge/utils/course_prerequisites.py:451
+msgid "Include every course item exactly once."
+msgstr "Mỗi mục của khóa học phải xuất hiện đúng một lần."
+
+#: judge/views/course.py:431
+msgid "Only your own grades are available."
+msgstr "Bạn chỉ có thể xem điểm của mình."
+
+#: judge/views/course.py:444
+msgid "Percentage"
+msgstr "Tỷ lệ phần trăm"
+
+#: judge/views/course.py:466 templates/course/course.html:73
+#: templates/course/course.html:138 templates/course/course.html:158
+#: templates/course/grades.html:88 templates/course/grades_lesson.html:96
+#: templates/course/lesson.html:51
+#: templates/course/lesson_user_quiz_attempts_ajax.html:5
+msgid "Results hidden"
+msgstr "Kết quả được ẩn"
+
+#: judge/views/course.py:580
+msgid "Enrollment is closed. Contact the instructor for access."
+msgstr "Đã đóng đăng ký. Hãy liên hệ giáo viên để được tham gia."
+
+#: judge/views/course.py:582
+msgid "Membership in a course organization is required to enroll."
+msgstr "Bạn cần là thành viên của tổ chức thuộc khóa học để đăng ký."
+
+#: judge/views/course.py:1324 templates/course/edit_lesson.html:74
+#: templates/course/edit_lesson.html:265 templates/course/edit_lesson.html:428
+msgid "Source and target must be different lessons."
+msgstr "Bài học nguồn và bài học đích phải khác nhau."
+
+#: judge/views/course.py:1348 judge/views/course.py:1470
+#: judge/views/course.py:1533
+msgid "Choose two distinct existing lesson orders."
+msgstr "Chọn thứ tự của hai bài học khác nhau đang tồn tại."
+
+#: judge/views/course.py:1484
+#, python-format
+msgid "Source and target must differ in item %(num)s"
+msgstr "Bài học nguồn và bài học đích phải khác nhau ở mục %(num)s"
+
+#: judge/views/course.py:2513
+#, python-format
+msgid "Unknown usernames: %(users)s"
+msgstr "Tên đăng nhập không tồn tại: %(users)s"
+
+#: judge/views/course.py:2617
+msgid "The selection or permissions changed. Preview the batch again."
+msgstr "Danh sách hoặc quyền đã thay đổi. Vui lòng xem trước lại."
+
+#: judge/views/course.py:2635
+msgid "Added course members"
+msgstr "Đã thêm thành viên khóa học"
+
+#: judge/views/course.py:2646
+#, python-format
+msgid "Added %(added)d members; skipped %(existing)d existing members."
+msgstr "Đã thêm %(added)d thành viên; bỏ qua %(existing)d người đã tham gia."
+
+#: judge/views/organization.py:1534
+msgid "Ready to add"
+msgstr "Sẵn sàng thêm"
+
+#: judge/views/organization.py:1535
+msgid "Already a member; skipped"
+msgstr "Đã là thành viên; bỏ qua"
+
+#: judge/views/organization.py:1536
+msgid "Username not found; skipped"
+msgstr "Không tìm thấy tài khoản; bỏ qua"
+
+#: judge/views/organization.py:1537
+msgid "Blocked this organization; skipped"
+msgstr "Đã chặn tổ chức này; bỏ qua"
+
+#: judge/views/organization.py:1538
+msgid "In another official school; skipped"
+msgstr "Đang ở trường chính thức khác; bỏ qua"
+
+#: judge/views/organization.py:1539
+msgid "Member limit reached; skipped"
+msgstr "Đã đạt giới hạn thành viên; bỏ qua"
+
+#: judge/views/organization.py:1660
+#, python-format
+msgid "Added %(added)d members; skipped %(skipped)d."
+msgstr "Đã thêm %(added)d thành viên; bỏ qua %(skipped)d người."
+
+#: templates/course/cards.html:20
+#, python-format
+msgid "%(count)s student"
+msgid_plural "%(count)s students"
+msgstr[0] "%(count)s học viên"
+
+#: templates/course/cards.html:21
+#, python-format
+msgid "%(count)s lesson"
+msgid_plural "%(count)s lessons"
+msgstr[0] "%(count)s bài học"
+
+#: templates/course/cards.html:45
+msgid "Continue learning"
+msgstr "Tiếp tục học"
+
+#: templates/course/cards.html:47
+msgid "View course"
+msgstr "Xem khóa học"
+
+#: templates/course/course.html:20
+msgid "No lessons have been published yet."
+msgstr "Chưa có bài học nào được xuất bản."
+
+#: templates/course/enrollment_required.html:28
+msgid "Log in to join"
+msgstr "Đăng nhập để tham gia"
+
+#: templates/course/grades-filter.html:8 templates/course/members.html:66
+msgid "Username or name"
+msgstr "Tên đăng nhập hoặc họ tên"
+
+#: templates/course/grades-filter.html:33
+msgid "My progress"
+msgstr "Tiến độ của tôi"
+
+#: templates/course/grades-filter.html:36
+msgid "Export this page (CSV)"
+msgstr "Xuất trang này (CSV)"
+
+#: templates/course/grades.html:43 templates/course/grades_lesson.html:55
+msgid "No students match these filters."
+msgstr "Không có học viên phù hợp với bộ lọc."
+
+#: templates/course/lesson.html:62
+msgid "Resume attempt"
+msgstr "Tiếp tục làm bài"
+
+#: templates/course/lesson.html:102
+msgid "No problems added yet."
+msgstr "Chưa có bài tập nào."
+
+#: templates/course/lesson.html:114
+msgid "Lesson navigation"
+msgstr "Điều hướng bài học"
+
+#: templates/course/lesson.html:115
+msgid "Previous lesson"
+msgstr "Bài học trước"
+
+#: templates/course/lesson.html:116
+msgid "Next lesson"
+msgstr "Bài học tiếp theo"
+
+#: templates/course/list.html:16 templates/organization/course_list.html:19
+#, python-format
+msgid "%(count)s course found"
+msgid_plural "%(count)s courses found"
+msgstr[0] "Tìm thấy %(count)s khóa học"
+
+#: templates/course/list.html:28 templates/organization/course_list.html:23
+msgid "No courses match your filters"
+msgstr "Không có khóa học phù hợp với bộ lọc"
+
+#: templates/course/list.html:29 templates/organization/course_list.html:24
+msgid "Try a different search or clear the filters."
+msgstr "Thử tìm kiếm khác hoặc xóa bộ lọc."
+
+#: templates/course/members.html:40 templates/course/members.html:101
+msgid ""
+"After promotion to your role, you can no longer edit or remove this member."
+msgstr ""
+"Sau khi nâng lên cùng vai trò với bạn, bạn không thể sửa hoặc xóa thành viên"
+" này nữa."
+
+#: templates/course/members.html:58
+#, python-format
+msgid "Members: %(count)d"
+msgstr "Thành viên: %(count)d"
+
+#: templates/course/members.html:95
+msgid ""
+"After adding or promoting an assistant, you cannot edit or remove that "
+"assistant. A teacher can manage them."
+msgstr ""
+"Sau khi thêm hoặc nâng quyền trợ giảng, bạn không thể sửa hoặc xóa trợ giảng"
+" đó. Giáo viên có thể quản lý họ."
+
+#: templates/course/members.html:98 templates/organization/add-member.html:45
+msgid "Review additions"
+msgstr "Xem lại danh sách cần thêm"
+
+#: templates/course/members.html:99
+msgid "Already enrolled; skipped"
+msgstr "Đã tham gia; sẽ bỏ qua"
+
+#: templates/course/members.html:99
+msgid "Will be added"
+msgstr "Sẽ được thêm"
+
+#: templates/course/members.html:103 templates/organization/add-member.html:67
+msgid "Confirm additions"
+msgstr "Xác nhận thêm"
+
+#: templates/course/members.html:105 templates/organization/add-member.html:69
+msgid "Preview additions"
+msgstr "Xem trước danh sách"
+
+#: templates/course/members.html:188
+msgid "Remove from course"
+msgstr "Xóa khỏi khóa học"
+
+#: templates/course/search-form.html:12
+msgid "Course, instructor, or organization"
+msgstr "Khóa học, giáo viên hoặc tổ chức"
+
+#: templates/course/search-form.html:26
+msgid "Sort by"
+msgstr "Sắp xếp theo"
+
+#: templates/course/search-form.html:28
+msgid "Most students"
+msgstr "Nhiều học viên nhất"
+
+#: templates/organization/add-member.html:46
+msgid ""
+"Only users listed as ready will be added. Other accounts will be skipped."
+msgstr ""
+"Chỉ những tài khoản sẵn sàng mới được thêm. Các tài khoản khác sẽ được bỏ "
+"qua."
+
+#: templates/course/grade-student.html:8 templates/course/members.html:182
+#: templates/course/members.html:183 templates/course/student-preview.html:3
+#| msgid "View on site"
+msgid "View as student"
+msgstr "Xem với vai trò học viên"
+
+#: templates/course/student-preview.html:4
+#| msgid ""
+#| "Course progress preview. Quiz actions are unavailable in this view."
+msgid "Read-only student view. Quiz actions are unavailable."
+msgstr ""
+"Chế độ xem học viên chỉ đọc. Không thể làm bài kiểm tra trong chế độ này."
+
+#: templates/course/student-preview.html:5
+#| msgid "Exit preview"
+msgid "Exit student view"
+msgstr "Thoát chế độ xem học viên"
+
+#: judge/models/course.py:79
+msgid "Students can see classmates' grades"
+msgstr "Học viên có thể xem điểm của các bạn cùng lớp"

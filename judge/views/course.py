@@ -1,10 +1,31 @@
+import csv
+import json
+import math
+import re
+from types import SimpleNamespace
+from collections import Counter
 from copy import deepcopy
+from functools import partial
+from urllib.parse import urlencode
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
 from django.contrib.auth.views import redirect_to_login
+from django.core import signing
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
-from django.db.models import Count, Max, Sum, Q
+from django.db import transaction
+from django.db.models import (
+    Case,
+    When,
+    Value,
+    IntegerField,
+    Count,
+    Max,
+    Q,
+    OuterRef,
+    Subquery,
+)
 from django.forms import (
     inlineformset_factory,
     ModelForm,
@@ -12,11 +33,12 @@ from django.forms import (
 )
 from django.forms.models import BaseInlineFormSet
 from django.core.files.uploadedfile import UploadedFile
-from django.http import Http404, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import floatformat
 from django.urls import reverse_lazy, reverse
-from django.utils.html import escape, mark_safe
+from django.utils.encoding import smart_str
+from django.utils.html import escape, mark_safe, format_html
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView, DetailView, View, CreateView
 from django.views.generic.edit import FormView
@@ -30,30 +52,47 @@ from judge.models import (
     Course,
     Contest,
     CourseLesson,
+    CourseLessonPrerequisite,
     Profile,
     CourseLessonProblem,
     CourseContest,
     ContestProblem,
-    ContestParticipation,
     CourseRole,
     Organization,
     CourseLessonQuiz,
     QuizAttempt,
-    BestSubmission,
     BestQuizAttempt,
-    QuizQuestionAssignment,
     Problem,
     Submission,
 )
-from judge.models.course import RoleInCourse, EDITABLE_ROLES
+from judge.models.course import (
+    RoleInCourse,
+    EDITABLE_ROLES,
+    get_course_role_profile_ids,
+)
+from judge.services.member_batches import resolve_member_usernames
+from judge.utils.course_grades import (
+    hidden_lesson_quiz_ids,
+    bulk_max_case_points_per_problem,
+    _bulk_quiz_total_points,
+    _prepare_lesson_progress_data,
+    _calculate_lesson_summary,
+    _build_lesson_grade_details,
+    bulk_calculate_lessons_progress,
+    _prepare_contest_progress_data,
+    bulk_calculate_contests_progress,
+    calculate_total_progress,
+)
 from judge.utils.course_prerequisites import (
+    get_lesson_prerequisites_graph,
     get_lesson_lock_status,
     get_lesson_prerequisites_info,
+    require_lesson_access,
+    mark_course_for_recalculation,
+    reorder_course_items,
 )
 from judge.utils.formsets import validate_max_active_forms
 from judge.utils.hidden_results import (
-    exclude_hidden_result_submissions,
-    hidden_result_submission_ids,
     mark_hidden_result_submissions,
 )
 from judge.utils.identity import SemanticIdentityModelFormSet, save_semantic_formset
@@ -62,7 +101,6 @@ from judge.widgets import (
     HeavySelect2MultipleWidget,
     HeavySelect2Widget,
     DateTimePickerWidget,
-    Select2Widget,
 )
 from judge.widgets.direct_upload import DirectUploadImageWidget, DirectUploadFormMixin
 from judge.forms import HTMLDisplayWidget
@@ -72,393 +110,12 @@ from judge.utils.views import (
     SingleObjectFormView,
     TitleMixin,
     DiggPaginatorMixin,
-    generic_message,
     paginate_query_context,
 )
 
 MAX_COURSE_LESSONS = 100
 MAX_COURSE_LESSON_PROBLEMS = 100
 MAX_COURSE_LESSON_QUIZZES = 100
-
-
-def _set_problem_points(
-    result, user_id, problem_id, case_points, case_total, is_result_hidden=False
-):
-    case_total = case_total or 0
-    case_points = case_points or 0
-    if case_total > 0:
-        case_points = min(max(case_points, 0), case_total)
-    else:
-        case_points = 0
-    result.setdefault(user_id, {})[problem_id] = {
-        "case_points": case_points,
-        "case_total": case_total,
-        "is_result_hidden": is_result_hidden,
-    }
-
-
-def bulk_max_case_points_per_problem(students, all_problems, viewer=None):
-    """
-    Fetch max case points for all students and problems using BestSubmission cache.
-    Returns nested dict for O(1) lookups: {user_id: {problem_id: {case_points, case_total}}}
-
-    This uses the BestSubmission table which caches the best submission per user/problem.
-    When viewer is provided, hidden contest-result best submissions are excluded from
-    the displayed score and replaced with the best visible submission for that pair.
-    """
-    if not students or not all_problems:
-        return {}
-
-    student_ids = [
-        student.id if hasattr(student, "id") else student for student in students
-    ]
-    problem_ids = [
-        problem.id if hasattr(problem, "id") else problem for problem in all_problems
-    ]
-    result = {}
-
-    # Try to use BestSubmission cache first
-    best_subs_qs = BestSubmission.objects.filter(
-        user_id__in=student_ids, problem_id__in=problem_ids, case_total__gt=0
-    )
-
-    best_subs = list(
-        best_subs_qs.values(
-            "user_id", "problem_id", "points", "case_total", "submission_id"
-        )
-    )
-
-    hidden_pairs = set()
-    if viewer is not None:
-        hidden_pairs = set(
-            best_subs_qs.filter(
-                submission_id__in=hidden_result_submission_ids(viewer)
-            ).values_list("user_id", "problem_id")
-        )
-
-    for best_sub in best_subs:
-        user_id = best_sub["user_id"]
-        problem_id = best_sub["problem_id"]
-        if viewer is not None and (user_id, problem_id) in hidden_pairs:
-            continue
-
-        _set_problem_points(
-            result,
-            user_id,
-            problem_id,
-            best_sub["points"],
-            best_sub["case_total"],
-        )
-
-    if not hidden_pairs:
-        return result
-
-    hidden_user_ids = {user_id for user_id, _problem_id in hidden_pairs}
-    hidden_problem_ids = {problem_id for _user_id, problem_id in hidden_pairs}
-
-    fallback_submissions = exclude_hidden_result_submissions(
-        Submission.objects.filter(
-            user_id__in=hidden_user_ids,
-            problem_id__in=hidden_problem_ids,
-            status="D",
-            case_total__gt=0,
-        ),
-        viewer,
-    ).order_by("user_id", "problem_id", "-points", "-date")
-
-    for submission in fallback_submissions.values(
-        "user_id", "problem_id", "case_points", "case_total"
-    ):
-        pair = (submission["user_id"], submission["problem_id"])
-        if pair not in hidden_pairs:
-            continue
-        user_id, problem_id = pair
-        if problem_id in result.get(user_id, {}):
-            continue
-        _set_problem_points(
-            result,
-            user_id,
-            problem_id,
-            submission["case_points"],
-            submission["case_total"],
-        )
-
-    for user_id, problem_id in hidden_pairs:
-        if problem_id not in result.get(user_id, {}):
-            _set_problem_points(
-                result, user_id, problem_id, 0, 0, is_result_hidden=True
-            )
-
-    return result
-
-
-def _bulk_quiz_total_points(quiz_ids):
-    if not quiz_ids:
-        return {}
-    return {
-        row["quiz_id"]: row["total"] or 0
-        for row in QuizQuestionAssignment.objects.filter(quiz_id__in=set(quiz_ids))
-        .values("quiz_id")
-        .annotate(total=Sum("points"))
-    }
-
-
-def _prepare_lesson_progress_data(students, lessons):
-    lessons = list(lessons)
-    lesson_problems = {
-        lesson.id: [
-            {"problem_id": row["problem_id"], "score": row["score"]}
-            for row in lesson.get_problems_and_scores()
-        ]
-        for lesson in lessons
-    }
-    lesson_quizzes = {lesson.id: [] for lesson in lessons}
-    lesson_ids = [lesson.id for lesson in lessons]
-    all_lesson_quizzes = (
-        CourseLessonQuiz.objects.filter(lesson_id__in=lesson_ids, is_visible=True)
-        .order_by("lesson_id", "order", "id")
-        .values("id", "lesson_id", "quiz_id", "points")
-    )
-    quiz_totals = _bulk_quiz_total_points(
-        {item["quiz_id"] for item in all_lesson_quizzes}
-    )
-    for item in all_lesson_quizzes:
-        lesson_quizzes[item["lesson_id"]].append(
-            {
-                "id": item["id"],
-                "quiz_id": item["quiz_id"],
-                "points": item["points"],
-                "max_score": quiz_totals.get(item["quiz_id"], 0),
-            }
-        )
-
-    lesson_quiz_ids = [
-        quiz["id"] for quizzes in lesson_quizzes.values() for quiz in quizzes
-    ]
-    student_ids = [student.id for student in students]
-    best_quiz_scores = {}
-    if lesson_quiz_ids and student_ids:
-        attempts = BestQuizAttempt.objects.filter(
-            user_id__in=student_ids,
-            lesson_quiz_id__in=lesson_quiz_ids,
-        ).values("user_id", "lesson_quiz_id", "score", "max_score")
-        for attempt in attempts:
-            score = float(attempt["score"] or 0)
-            max_score = float(attempt["max_score"] or 0)
-            best_quiz_scores[(attempt["user_id"], attempt["lesson_quiz_id"])] = {
-                "score": score,
-                "max_score": max_score,
-                "ratio": (min(max(score / float(max_score), 0), 1) if max_score else 0),
-            }
-
-    return {
-        "lesson_problems": lesson_problems,
-        "lesson_quizzes": lesson_quizzes,
-        "best_quiz_scores": best_quiz_scores,
-    }
-
-
-def _calculate_lesson_summary(
-    student_id, lesson_id, bulk_problem_points, progress_data
-):
-    achieved_points = total_points = 0
-    student_points = bulk_problem_points.get(student_id, {})
-
-    for problem in progress_data["lesson_problems"][lesson_id]:
-        problem_data = student_points.get(problem["problem_id"])
-        if problem_data and problem_data["case_total"]:
-            achieved_points += (
-                problem_data["case_points"]
-                / problem_data["case_total"]
-                * problem["score"]
-            )
-        total_points += problem["score"]
-
-    for quiz in progress_data["lesson_quizzes"][lesson_id]:
-        quiz_points = quiz["points"] or 0
-        total_points += quiz_points
-        attempt = progress_data["best_quiz_scores"].get((student_id, quiz["id"]))
-        achieved_points += (attempt["ratio"] if attempt else 0) * quiz_points
-
-    return {
-        "achieved_points": achieved_points,
-        "total_points": total_points,
-        "percentage": achieved_points / total_points * 100 if total_points else 0,
-    }
-
-
-def _build_lesson_grade_details(students, lesson, bulk_problem_points, progress_data):
-    grades = {}
-    lesson_id = lesson.id
-    for student in students:
-        student_points = bulk_problem_points.get(student.id, {})
-        student_grade = dict(student_points)
-        student_grade["total"] = _calculate_lesson_summary(
-            student.id, lesson_id, bulk_problem_points, progress_data
-        )
-
-        for quiz in progress_data["lesson_quizzes"][lesson_id]:
-            attempt = progress_data["best_quiz_scores"].get((student.id, quiz["id"]))
-            ratio = attempt["ratio"] if attempt else 0
-            student_grade[f"quiz_{quiz['id']}"] = {
-                "score": attempt["score"] if attempt else 0,
-                "max_score": attempt["max_score"] if attempt else quiz["max_score"],
-                "achieved": ratio * (quiz["points"] or 0),
-            }
-
-        grades[student] = student_grade
-    return grades
-
-
-def bulk_calculate_lessons_progress(
-    students,
-    lessons,
-    bulk_problem_points,
-    *,
-    progress_data=None,
-    include_details=True,
-):
-    """
-    Calculate progress for all students and lessons using pre-fetched data.
-    Includes both problem scores and quiz scores.
-
-    Args:
-        students: List of Profile objects
-        lessons: QuerySet of CourseLesson objects (should be prefetched)
-        bulk_problem_points: Dict from bulk_max_case_points_per_problem()
-        progress_data: Optional prepared lookup from _prepare_lesson_progress_data()
-        include_details: Include per-lesson rows instead of totals only
-
-    Returns:
-        Dict: {student: lesson_progress_dict}
-    """
-    lessons = list(lessons)
-    if progress_data is None:
-        progress_data = _prepare_lesson_progress_data(students, lessons)
-
-    results = {}
-    for student in students:
-        student_results = {}
-        total_achieved_points = total_lesson_points = 0
-
-        for lesson in lessons:
-            summary = _calculate_lesson_summary(
-                student.id, lesson.id, bulk_problem_points, progress_data
-            )
-            if include_details:
-                student_results[lesson.id] = summary
-
-            if summary["total_points"]:
-                total_achieved_points += (
-                    summary["achieved_points"] / summary["total_points"] * lesson.points
-                )
-            total_lesson_points += lesson.points
-
-        student_results["total"] = {
-            "achieved_points": total_achieved_points,
-            "total_points": total_lesson_points,
-            "percentage": (
-                total_achieved_points / total_lesson_points * 100
-                if total_lesson_points
-                else 0
-            ),
-        }
-        results[student] = student_results
-
-    return results
-
-
-def _prepare_contest_progress_data(students, course_contests):
-    contests = [course_contest.contest for course_contest in course_contests]
-    participations = ContestParticipation.objects.filter(
-        contest__in=contests, user__in=students, virtual=0
-    ).values("contest", "user", "score")
-    participation_scores = {
-        (row["contest"], row["user"]): row["score"] for row in participations
-    }
-    contest_totals = (
-        ContestProblem.objects.filter(contest__in=contests)
-        .values("contest")
-        .annotate(total_points=Sum("points"))
-    )
-    contest_points = {
-        row["contest"]: row["total_points"] or 0 for row in contest_totals
-    }
-    return {
-        "participation_scores": participation_scores,
-        "contest_points": contest_points,
-    }
-
-
-def bulk_calculate_contests_progress(
-    students, course_contests, *, progress_data=None, include_details=True
-):
-    """
-    Calculate contest progress for all students using bulk queries.
-    Returns nested dict: {student: contest_progress_dict}
-    """
-    course_contests = list(course_contests)
-    if progress_data is None:
-        progress_data = _prepare_contest_progress_data(students, course_contests)
-
-    results = {}
-    for student in students:
-        student_results = {}
-        total_achieved_points = total_contest_points = 0
-
-        for course_contest in course_contests:
-            contest = course_contest.contest
-            achieved_points = progress_data["participation_scores"].get(
-                (contest.id, student.id), 0
-            )
-            total_points = progress_data["contest_points"].get(contest.id, 0)
-
-            if include_details:
-                student_results[course_contest.id] = {
-                    "achieved_points": achieved_points,
-                    "total_points": total_points,
-                    "percentage": (
-                        min(max(achieved_points / total_points, 0), 1) * 100
-                        if total_points
-                        else 0
-                    ),
-                }
-
-            if total_points:
-                total_achieved_points += (
-                    min(max(achieved_points / total_points, 0), 1)
-                    * course_contest.points
-                )
-            total_contest_points += course_contest.points
-
-        student_results["total"] = {
-            "achieved_points": total_achieved_points,
-            "total_points": total_contest_points,
-            "percentage": (
-                total_achieved_points / total_contest_points * 100
-                if total_contest_points
-                else 0
-            ),
-        }
-        results[student] = student_results
-
-    return results
-
-
-def calculate_total_progress(lesson_progress, contest_progress):
-    lesson_total = lesson_progress["total"]
-    contest_total = contest_progress["total"]
-    total_achieved_points = (
-        lesson_total["achieved_points"] + contest_total["achieved_points"]
-    )
-    total_points = lesson_total["total_points"] + contest_total["total_points"]
-
-    res = {
-        "achieved_points": total_achieved_points,
-        "total_points": total_points,
-        "percentage": total_achieved_points / total_points * 100 if total_points else 0,
-    }
-    return res
 
 
 class CoursePermissionMixin:
@@ -468,6 +125,9 @@ class CoursePermissionMixin:
         """Check if user can create courses"""
         if not self.request.user.is_authenticated:
             return False
+
+        if self.request.user.is_superuser:
+            return True
 
         # Check if user is admin of any organization
         admin_org_ids = self.request.profile.get_admin_organization_ids()
@@ -479,6 +139,35 @@ class CoursePermissionMixin:
         return context
 
 
+def annotate_course_discovery(queryset, sort_order):
+    student_count = (
+        CourseRole.objects.filter(course_id=OuterRef("pk"), role=RoleInCourse.STUDENT)
+        .values("course_id")
+        .annotate(n=Count("pk"))
+        .values("n")
+    )
+    lesson_count = (
+        CourseLesson.objects.filter(course_id=OuterRef("pk"), is_visible=True)
+        .values("course_id")
+        .annotate(n=Count("pk"))
+        .values("n")
+    )
+    order = {
+        "name": ("name", "pk"),
+        "students": ("-student_count", "name", "pk"),
+        "newest": ("-pk",),
+    }[sort_order]
+    return (
+        queryset.annotate(
+            student_count=Subquery(student_count),
+            visible_lesson_count=Subquery(lesson_count),
+        )
+        .order_by(*order)
+        .prefetch_related("organizations")
+        .distinct()
+    )
+
+
 class CourseList(CoursePermissionMixin, DiggPaginatorMixin, ListView):
     model = Course
     template_name = "course/list.html"
@@ -487,80 +176,98 @@ class CourseList(CoursePermissionMixin, DiggPaginatorMixin, ListView):
 
     def get(self, request, *args, **kwargs):
         default_tab = "my" if request.user.is_authenticated else "joinable"
+        allowed = ["my", "joinable"]
         self.current_tab = request.GET.get("tab", default_tab)
-        self.search_query = request.GET.get("search", "")
+        if self.current_tab not in allowed:
+            self.current_tab = default_tab
+        self.search_query = request.GET.get("search", "").strip()
         self.role_filter = request.GET.get("role_filter", "")
+        self.sort_order = request.GET.get("sort", "newest")
+        if self.sort_order not in ("newest", "name", "students"):
+            self.sort_order = "newest"
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
         profile = self.request.profile if self.request.user.is_authenticated else None
-
         if self.current_tab == "my":
-            if not profile:
-                return Course.objects.none()
             queryset = Course.get_user_courses(profile)
-
-            # Apply role filter only for "my" courses tab
-            if self.role_filter:
-                if self.role_filter == "teaching":
-                    # Filter for Teaching + Assistant roles
-                    queryset = queryset.filter(
-                        courserole__user=profile,
-                        courserole__role__in=[
-                            RoleInCourse.TEACHER,
-                            RoleInCourse.ASSISTANT,
-                        ],
-                    )
-                elif self.role_filter == "student":
-                    # Filter for Student role
-                    queryset = queryset.filter(
-                        courserole__user=profile, courserole__role=RoleInCourse.STUDENT
-                    )
-        else:  # Default to "joinable" tab
+            if self.role_filter in ("teaching", "student"):
+                roles = (
+                    EDITABLE_ROLES
+                    if self.role_filter == "teaching"
+                    else [RoleInCourse.STUDENT]
+                )
+                queryset = queryset.filter(
+                    courserole__user=profile, courserole__role__in=roles
+                )
+        else:
             queryset = Course.get_joinable_courses(profile)
-
+        if hasattr(self, "organization"):
+            queryset = queryset.filter(organizations=self.organization)
         if self.search_query:
-            queryset = queryset.filter(
-                Q(name__icontains=self.search_query)
-                | Q(slug__icontains=self.search_query)
+            text = self.search_query
+            teacher_courses = (
+                CourseRole.objects.filter(
+                    role=RoleInCourse.TEACHER,
+                )
+                .filter(
+                    Q(user__user__username__icontains=text)
+                    | Q(user__user__first_name__icontains=text)
+                )
+                .values("course_id")
             )
-
-        return queryset.order_by("-id").prefetch_related("organizations")
+            queryset = queryset.filter(
+                Q(name__icontains=text)
+                | Q(slug__icontains=text)
+                | Q(about__icontains=text)
+                | Q(organizations__name__icontains=text)
+                | Q(pk__in=teacher_courses)
+            )
+        # Correlated count subqueries keep membership filters out of the counts.
+        return annotate_course_discovery(queryset, self.sort_order)
 
     def get_context_data(self, **kwargs):
-        context = super(CourseList, self).get_context_data(**kwargs)
-        context["title"] = _("Courses")
-        context["page_type"] = (
-            self.current_tab
-        )  # Set page_type to current tab for active styling
-        context["current_tab"] = self.current_tab
-        context["search_query"] = self.search_query
-        context["role_filter"] = self.role_filter
-
-        # Build URL parameters for pagination
-        url_params = []
-        if self.current_tab:
-            url_params.append(f"tab={self.current_tab}")
-        if self.search_query:
-            url_params.append(f"search={self.search_query}")
-        if self.role_filter:
-            url_params.append(f"role_filter={self.role_filter}")
-
-        # Set pagination URLs that preserve tab and search parameters
-        if url_params:
-            param_string = "&".join(url_params)
-            context["first_page_href"] = f"?{param_string}"
-            context["page_prefix"] = f"?{param_string}&page="
-            context["page_suffix"] = ""
-        else:
-            context["first_page_href"] = "."
-            context["page_prefix"] = "?page="
-            context["page_suffix"] = ""
-
-        # Add course permission context using mixin
-        context = self.get_course_context_data(context)
-
-        return context
+        context = super().get_context_data(**kwargs)
+        courses = list(context["courses"])
+        course_ids = [course.pk for course in courses]
+        teacher_rows = list(
+            CourseRole.objects.filter(
+                course_id__in=course_ids, role=RoleInCourse.TEACHER
+            ).values_list("course_id", "user_id")
+        )
+        profiles = {
+            profile.pk: profile
+            for profile in Profile.get_cached_instances(*{pk for _, pk in teacher_rows})
+        }
+        teachers = {}
+        for course_id, profile_id in teacher_rows:
+            teachers.setdefault(course_id, []).append(profiles[profile_id])
+        viewer_roles = (
+            dict(
+                CourseRole.objects.filter(
+                    course_id__in=course_ids, user=self.request.profile
+                ).values_list("course_id", "role")
+            )
+            if self.request.profile
+            else {}
+        )
+        for course in courses:
+            course.card_teachers = teachers.get(course.pk, [])
+            course.viewer_role_code = viewer_roles.get(course.pk)
+            course.viewer_role = dict(RoleInCourse.choices).get(
+                course.viewer_role_code, ""
+            )
+        context.update(
+            courses=courses,
+            title=_("Courses"),
+            page_type=self.current_tab,
+            current_tab=self.current_tab,
+            search_query=self.search_query,
+            role_filter=self.role_filter,
+            sort_order=self.sort_order,
+        )
+        context.update(paginate_query_context(self.request))
+        return self.get_course_context_data(context)
 
 
 class CourseAdd(CoursePermissionMixin, LoginRequiredMixin, TitleMixin, CreateView):
@@ -653,101 +360,149 @@ class CourseAdd(CoursePermissionMixin, LoginRequiredMixin, TitleMixin, CreateVie
 
 
 class CourseDetailMixin(object):
+    required_course_capability = None
+
+    @transaction.atomic
     def dispatch(self, request, *args, **kwargs):
-        self.course = get_object_or_404(Course, slug=self.kwargs["slug"])
-        if request.profile and request.profile.user.is_superuser:
-            self.is_accessible = True
-            self.is_editable = True
-        elif request.profile:
-            role = (
+        if self.required_course_capability and not request.user.is_authenticated:
+            if getattr(self, "json_endpoint", False):
+                return JsonResponse(
+                    {"error": str(_("Authentication required."))}, status=401
+                )
+            return redirect_to_login(request.get_full_path())
+        queryset = (
+            Course.objects.select_for_update()
+            if request.method == "POST"
+            else Course.objects.all()
+        )
+        self.course = get_object_or_404(queryset, slug=self.kwargs["slug"])
+        self.course_role = None
+        if request.user.is_authenticated:
+            self.course_role = (
                 CourseRole.objects.filter(course=self.course, user=request.profile)
                 .values_list("role", flat=True)
                 .first()
             )
-            self.is_accessible = role is not None
-            self.is_editable = role in EDITABLE_ROLES if role else False
-        else:
-            self.is_accessible = False
-            self.is_editable = False
-        return super(CourseDetailMixin, self).dispatch(request, *args, **kwargs)
+        self.is_accessible = request.user.is_superuser or self.course_role is not None
+        self.is_editable = (
+            request.user.is_superuser or self.course_role in EDITABLE_ROLES
+        )
+        if self.required_course_capability == "edit" and not self.is_editable:
+            raise Http404()
+        if self.required_course_capability == "access" and not self.is_accessible:
+            raise PermissionDenied(_("You are not enrolled in this course."))
+        self.preview_profile = None
+        self.viewer_profile = request.profile
+        self.viewer_user = request.user
+        preview = request.GET.get("preview", "")
+        if preview and getattr(self, "allow_student_preview", False):
+            if not request.user.is_authenticated:
+                return redirect_to_login(request.get_full_path())
+            if not self.is_editable or request.method != "GET":
+                raise PermissionDenied()
+            target_id = get_object_or_404(
+                CourseRole,
+                course=self.course,
+                role=RoleInCourse.STUDENT,
+                user__user__username=preview,
+            ).user_id
+            self.preview_profile = Profile.get_cached_instances(target_id)[0]
+            self.viewer_profile = self.preview_profile
+            self.viewer_user = User.objects.get(profile__pk=target_id)
+            self.preview_profile.user = self.viewer_user
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_user_role_in_course(self):
+        return "ADMIN" if self.request.user.is_superuser else self.course_role
+
+    def get_grade_students(self):
+        if not self.course.show_classmates_grades and not self.is_editable:
+            return (
+                [self.request.profile]
+                if self.course_role == RoleInCourse.STUDENT
+                else []
+            )
+        return self.course.get_students()
+
+    def check_grade_target(self, student):
+        if (
+            not self.course.show_classmates_grades
+            and not self.is_editable
+            and student.pk != self.request.profile.pk
+        ):
+            raise PermissionDenied(_("Only your own grades are available."))
+
+    def render_to_response(self, context, **kwargs):
+        if (
+            getattr(self, "allow_grade_export", False)
+            and self.request.GET.get("export") == "csv"
+        ):
+            response = HttpResponse(content_type="text/csv; charset=utf-8")
+            response["Content-Disposition"] = (
+                'attachment; filename="%s-grades-page.csv"' % self.course.slug
+            )
+            response.write("\ufeff")
+            writer = csv.writer(response)
+            writer.writerow([_("Username"), _("Name"), _("Percentage")])
+            rows = (
+                context.get("grade_total")
+                if "grade_total" in context
+                else {
+                    profile: grade["total"]
+                    for profile, grade in context.get("grades", {}).items()
+                }
+            )
+            for profile, total in rows.items():
+                name = profile.first_name or ""
+                # Keep spreadsheet formulas as text when opening the CSV.
+                safe = lambda value: (
+                    "'" + value
+                    if value.startswith(("=", "+", "-", "@", "\t", "\r", "\n"))
+                    else value
+                )
+                writer.writerow(
+                    [
+                        safe(profile.username),
+                        safe(name),
+                        (
+                            _("Results hidden")
+                            if total.get("is_result_hidden")
+                            else round(total["percentage"], 2)
+                        ),
+                    ]
+                )
+            return response
+        return super().render_to_response(context, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(CourseDetailMixin, self).get_context_data(**kwargs)
         context["course"] = self.course
-        context["is_editable"] = self.is_editable
+        context["is_editable"] = self.is_editable and not self.preview_profile
+        context["preview_profile"] = self.preview_profile
+        context["preview_suffix"] = (
+            "?" + urlencode({"preview": self.preview_profile.username})
+            if self.preview_profile
+            else ""
+        )
         context["is_accessible"] = self.is_accessible
+        context["own_grades_only"] = (
+            not self.course.show_classmates_grades and not self.is_editable
+        )
         return context
 
 
 class CourseAccessibleMixin(CourseDetailMixin):
     """Requires the user to be enrolled in the course (any role)."""
 
-    def dispatch(self, request, *args, **kwargs):
-        # Auth-required route: anonymous users go to login (project convention).
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-        res = super(CourseAccessibleMixin, self).dispatch(request, *args, **kwargs)
-        if not self.is_accessible:
-            return generic_message(
-                request,
-                _("Access denied"),
-                _('You don\'t have permission to access "%s".') % request.path,
-                status=403,
-            )
-        return res
+    required_course_capability = "access"
 
 
 class CourseEditableMixin(CourseDetailMixin):
-    def dispatch(self, request, *args, **kwargs):
-        # Auth-required route: anonymous users go to login (project convention).
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-        res = super(CourseEditableMixin, self).dispatch(request, *args, **kwargs)
-        if not self.is_editable:
-            raise Http404()
-        return res
-
-    def get_user_role_in_course(self):
-        """Get the current user's role in the course"""
-        if self.request.user.is_superuser:
-            return "ADMIN"
-        try:
-            course_role = CourseRole.objects.get(
-                course=self.course, user=self.request.profile
-            )
-            return course_role.role
-        except CourseRole.DoesNotExist:
-            return None
+    required_course_capability = "edit"
 
 
 class CourseAdminMixin(CourseDetailMixin):
-    def dispatch(self, request, *args, **kwargs):
-        # Auth-required route: anonymous users go to login (project convention).
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-        res = super(CourseAdminMixin, self).dispatch(request, *args, **kwargs)
-        # Allow admins, teachers, and assistants only
-        if not (request.user.is_superuser or self.is_editable):
-            raise Http404()
-
-        # Double-check: ensure the user has an appropriate role
-        current_role = self.get_user_role_in_course()
-        if current_role not in ["ADMIN", RoleInCourse.TEACHER, RoleInCourse.ASSISTANT]:
-            raise Http404()
-
-        return res
-
-    def get_user_role_in_course(self):
-        """Get the current user's role in the course"""
-        if self.request.user.is_superuser:
-            return "ADMIN"
-        try:
-            course_role = CourseRole.objects.get(
-                course=self.course, user=self.request.profile
-            )
-            return course_role.role
-        except CourseRole.DoesNotExist:
-            return None
+    required_course_capability = "edit"
 
     def user_can_manage_user(self, target_user_current_role):
         """Check if current user can manage users with the target_user_current_role"""
@@ -792,10 +547,22 @@ class CourseAdminMixin(CourseDetailMixin):
 
 
 class CourseDetail(CourseDetailMixin, DetailView):
+    allow_student_preview = True
     model = Course
     template_name = "course/course.html"
 
     def get_object(self):
+        if not self.is_accessible:
+            if not self.course.is_public:
+                raise Http404()
+            org_ids = set(self.course.organizations.values_list("pk", flat=True))
+            viewer_orgs = (
+                set(self.request.profile.get_organization_ids())
+                if self.request.profile
+                else set()
+            )
+            if org_ids and not org_ids.intersection(viewer_orgs):
+                raise Http404()
         return self.course
 
     def get_template_names(self):
@@ -813,6 +580,11 @@ class CourseDetail(CourseDetailMixin, DetailView):
 
             # Check if user can join this course
             context["can_join"] = Course.is_joinable(self.course, self.request.profile)
+            context["enrollment_reason"] = (
+                _("Enrollment is closed. Contact the instructor for access.")
+                if not self.course.is_open
+                else _("Membership in a course organization is required to enroll.")
+            )
 
             return context
 
@@ -820,18 +592,24 @@ class CourseDetail(CourseDetailMixin, DetailView):
         contests = self.course.get_contests()
 
         # Use bulk functions for single user (still more efficient due to better queries)
-        students = [self.request.profile]
-        all_problems = []
-        for lesson in lessons:
-            all_problems.extend(lesson.get_problems())
-
+        students = [self.viewer_profile]
+        progress_data = _prepare_lesson_progress_data(
+            students, lessons, viewer=self.viewer_user
+        )
+        all_problem_ids = {
+            row["problem_id"]
+            for rows in progress_data["lesson_problems"].values()
+            for row in rows
+        }
         bulk_problem_points = bulk_max_case_points_per_problem(
-            students, all_problems, viewer=self.request.user
+            students, all_problem_ids, viewer=self.viewer_user
         )
         lesson_progress_bulk = bulk_calculate_lessons_progress(
-            students, lessons, bulk_problem_points
+            students, lessons, bulk_problem_points, progress_data=progress_data
         )
-        contest_progress_bulk = bulk_calculate_contests_progress(students, contests)
+        contest_progress_bulk = bulk_calculate_contests_progress(
+            students, contests, viewer=self.viewer_user
+        )
 
         # Get user's role in the course
         user_role = None
@@ -848,9 +626,9 @@ class CourseDetail(CourseDetailMixin, DetailView):
         context["title"] = self.course.name
         context["page_type"] = "home"
         context["lessons"] = lessons
-        context["lesson_progress"] = lesson_progress_bulk[self.request.profile]
+        context["lesson_progress"] = lesson_progress_bulk[self.viewer_profile]
         context["course_contests"] = contests
-        context["contest_progress"] = contest_progress_bulk[self.request.profile]
+        context["contest_progress"] = contest_progress_bulk[self.viewer_profile]
         context["user_role"] = user_role
 
         context["total_progress"] = calculate_total_progress(
@@ -860,12 +638,12 @@ class CourseDetail(CourseDetailMixin, DetailView):
 
         # Add lesson lock status for prerequisites feature
         # Teachers/Assistants bypass lock
-        if Course.is_editable_by(self.course, self.request.profile):
+        if Course.is_editable_by(self.course, self.viewer_profile):
             context["lesson_lock_status"] = {lesson.id: False for lesson in lessons}
             context["lesson_prerequisites_info"] = {}
         else:
             context["lesson_lock_status"] = get_lesson_lock_status(
-                self.request.profile, self.course
+                self.viewer_profile, self.course
             )
             # Get prerequisites info for displaying what's needed
             prereq_info_by_order = get_lesson_prerequisites_info(self.course)
@@ -882,7 +660,8 @@ class CourseDetail(CourseDetailMixin, DetailView):
         return context
 
 
-class CourseLessonDetail(CourseDetailMixin, DetailView):
+class CourseLessonDetail(CourseAccessibleMixin, DetailView):
+    allow_student_preview = True
     model = CourseLesson
     template_name = "course/lesson.html"
 
@@ -892,14 +671,7 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
                 course=self.course, id=self.kwargs["id"]
             )
 
-            if not Course.is_accessible_by(self.course, self.request.profile):
-                raise Http404()
-
-            # Check if lesson is locked for this user (unless they're a teacher/assistant)
-            if not self.is_lesson_unlocked_for_user(self.lesson, self.request.profile):
-                raise PermissionDenied(
-                    _("This lesson is locked. Complete prerequisites first.")
-                )
+            require_lesson_access(self.lesson, self.viewer_user)
 
             return self.lesson
         except ObjectDoesNotExist:
@@ -916,7 +688,7 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
         return not is_locked
 
     def get_profile(self):
-        return self.request.profile
+        return self.viewer_profile
 
     def get_context_data(self, **kwargs):
         context = super(CourseLessonDetail, self).get_context_data(**kwargs)
@@ -925,7 +697,7 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
 
         # Use bulk function even for single user for consistency
         bulk_problem_points = bulk_max_case_points_per_problem(
-            [profile], problems, viewer=self.request.user
+            [profile], problems, viewer=self.viewer_user
         )
         problem_points = bulk_problem_points.get(profile.id, {})
 
@@ -976,6 +748,18 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
             )
         }
 
+        hidden_quiz_ids = hidden_lesson_quiz_ids(
+            [
+                {
+                    "id": link.pk,
+                    "quiz_id": link.quiz_id,
+                    "is_result_hidden": link.is_result_hidden,
+                }
+                for link in lesson_quizzes
+            ],
+            self.course,
+            self.viewer_user,
+        )
         # Get quiz data with user's lesson-linked best scores and attempt info.
         quiz_data = []
         for lesson_quiz in lesson_quizzes:
@@ -992,9 +776,12 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
                 {
                     "lesson_quiz": lesson_quiz,
                     "quiz": quiz,
+                    "is_result_hidden": lesson_quiz.pk in hidden_quiz_ids,
+                    "has_active_attempt": attempts_count > submitted_attempts_count,
                     "best_score": (
                         best_quiz_attempts[lesson_quiz.id]["score"]
                         if lesson_quiz.id in best_quiz_attempts
+                        and lesson_quiz.pk not in hidden_quiz_ids
                         else None
                     ),
                     "max_score": (
@@ -1012,7 +799,21 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
         context["lesson_quizzes"] = quiz_data
 
         context["sidebar_lessons"] = _get_unlocked_lessons(
-            self.course, self.request.profile, self.is_editable
+            self.course,
+            self.viewer_profile,
+            self.is_editable and not self.preview_profile,
+        )
+        sidebar = list(context["sidebar_lessons"])
+        index = next(
+            (i for i, row in enumerate(sidebar) if row.pk == self.lesson.pk), None
+        )
+        context["previous_lesson"] = (
+            sidebar[index - 1] if index is not None and index > 0 else None
+        )
+        context["next_lesson"] = (
+            sidebar[index + 1]
+            if index is not None and index + 1 < len(sidebar)
+            else None
         )
         return context
 
@@ -1093,7 +894,15 @@ CourseLessonProblemFormSet = modelformset_factory(
 class CourseLessonQuizForm(ModelForm):
     class Meta:
         model = CourseLessonQuiz
-        fields = ["order", "quiz", "points", "max_attempts", "is_visible", "lesson"]
+        fields = [
+            "order",
+            "quiz",
+            "points",
+            "max_attempts",
+            "is_visible",
+            "is_result_hidden",
+            "lesson",
+        ]
         widgets = {
             "quiz": HeavySelect2Widget(
                 data_view="quiz_select2", attrs={"style": "width: 100%"}
@@ -1148,32 +957,18 @@ class CreateCourseLesson(CourseEditableMixin, FormView):
             }
         )
         context["page_type"] = "edit_lesson_new"
-        context["lesson_field"] = CourseLessonForm()
+        context["lesson_field"] = kwargs.get("form") or CourseLessonForm()
 
         return context
 
     def post(self, request, *args, **kwargs):
         form = self.get_form(form_class=CourseLessonForm)  # Get the CourseLessonForm
+        form.instance.course = self.course
 
         if form.is_valid():
             with revisions.create_revision():
                 form.instance.course_id = self.course.id
                 self.lesson = form.save()
-                formset = CourseLessonProblemFormSet(
-                    data=self.request.POST,
-                    prefix=f"problems_{self.lesson.id}" if self.lesson else "problems",
-                    queryset=CourseLessonProblem.objects.filter(
-                        lesson=self.lesson
-                    ).order_by("order"),
-                )
-                if formset.is_valid():
-                    save_semantic_formset(
-                        formset,
-                        parent_field="lesson",
-                        parent=self.lesson,
-                        identity_fields=("problem",),
-                    )
-
                 # Add revision tracking details
                 revisions.set_comment(
                     _("Created lesson '{}' in course {}").format(
@@ -1205,70 +1000,15 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
     other_form = CourseLessonForm
     model = CourseLesson
 
-    def dispatch(self, request, *args, **kwargs):
-        # Auth-required route: anonymous users go to login (project convention).
-        # This view bypasses CourseEditableMixin.dispatch (see super() call below),
-        # so the anonymous redirect must be repeated here.
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-        # First, set up the course from CourseDetailMixin without calling FormView dispatch
-        self.course = get_object_or_404(Course, slug=kwargs["slug"])
-        if not Course.is_accessible_by(self.course, request.profile):
-            raise Http404()
-        self.is_editable = Course.is_editable_by(self.course, request.profile)
-
-        # Check if user can edit (from CourseEditableMixin)
-        if not self.is_editable:
-            raise Http404()
-
-        # Now fetch and validate the lesson belongs to this course
-        try:
-            lesson_id = kwargs.get("id")
-            if not lesson_id:
-                raise Http404("No lesson ID provided in URL")
-
-            # Security: Ensure lesson belongs to the current course
-            self.lesson = CourseLesson.objects.get(id=lesson_id, course=self.course)
-
-        except CourseLesson.DoesNotExist:
-            # More detailed error for debugging
-            lesson_exists = CourseLesson.objects.filter(id=lesson_id).exists()
-            if lesson_exists:
-                actual_lesson = CourseLesson.objects.get(id=lesson_id)
-                raise Http404(
-                    f"Lesson {lesson_id} exists but belongs to course '{actual_lesson.course.slug}', not '{self.course.slug}'"
-                )
-            else:
-                raise Http404(f"Lesson {lesson_id} does not exist")
-        except Exception as e:
-            raise Http404(f"Error accessing lesson: {e}")
-
-        # Redirect if lesson doesn't have an ID (shouldn't happen but keeping original logic)
-        if not self.lesson or not self.lesson.id:
-            return HttpResponseRedirect(
-                reverse(
-                    "edit_course_lessons",
-                    args=[self.course.slug],
-                )
+    def get_lesson(self):
+        if not hasattr(self, "lesson"):
+            self.lesson = get_object_or_404(
+                CourseLesson, pk=self.kwargs["id"], course=self.course
             )
-
-        # Now that everything is set up, call the FormView dispatch
-        return super(CourseEditableMixin, self).dispatch(request, *args, **kwargs)
-
-    def get_user_role_in_course(self):
-        """Get the current user's role in the course"""
-        if self.request.user.is_superuser:
-            return "ADMIN"
-        try:
-            course_role = CourseRole.objects.get(
-                course=self.course, user=self.request.profile
-            )
-            return course_role.role
-        except CourseRole.DoesNotExist:
-            return None
+        return self.lesson
 
     def get(self, request, *args, **kwargs):
-        # Lesson is already validated and fetched in dispatch method
+        self.get_lesson()
         return super().get(request, *args, **kwargs)
 
     def get_problem_formset(self, post=False, lesson=None):
@@ -1316,6 +1056,7 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         return formset
 
     def get_context_data(self, **kwargs):
+        self.get_lesson()
         context = super(EditCourseLessonsViewNewWindow, self).get_context_data(**kwargs)
 
         # Always provide formset for the template (needed for both GET and form_invalid)
@@ -1356,6 +1097,7 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         return context
 
     def post(self, request, *args, **kwargs):
+        self.get_lesson()
         form = self.get_form(form_class=CourseLessonForm)  # Get the CourseLessonForm
         # Set course_id and pk BEFORE validation so clean() can check for duplicates
         form.instance.course_id = self.course.id
@@ -1445,13 +1187,10 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
             return super().form_valid(form)
 
     def form_invalid(self, form, *, problem_formset=None, quiz_formset=None):
-        # Create a fresh form from the original instance with original values
-        # but carry over the errors from the invalid form
-        fresh_form = CourseLessonForm(instance=self.lesson)
-        fresh_form._errors = form._errors
+        # Preserve bound values and validation errors after a failed save.
         return self.render_to_response(
             self.get_context_data(
-                form=fresh_form,
+                form=form,
                 problem_formset=problem_formset,
                 quiz_formset=quiz_formset,
             )
@@ -1462,6 +1201,41 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
             "edit_course_lessons",
             args=[self.course.slug],
         )
+
+
+def prerequisite_edges_are_acyclic(edges):
+    adjacency = {}
+    incoming = Counter()
+    for source, target, _percentage in edges:
+        adjacency.setdefault(source, []).append(target)
+        incoming.setdefault(source, 0)
+        incoming[target] += 1
+    pending = [node for node, count in incoming.items() if count == 0]
+    visited = 0
+    while pending:
+        node = pending.pop()
+        visited += 1
+        for target in adjacency.get(node, []):
+            incoming[target] -= 1
+            if incoming[target] == 0:
+                pending.append(target)
+    return visited == len(incoming)
+
+
+def valid_prerequisite_orders(course, source, target):
+    orders = list(course.lessons.values_list("order", flat=True))
+    if source == target or orders.count(source) != 1 or orders.count(target) != 1:
+        return False
+    adjacency, _ = get_lesson_prerequisites_graph(course)
+    pending, seen = [target], set()
+    while pending:
+        node = pending.pop()
+        if node == source:
+            return False
+        if node not in seen:
+            seen.add(node)
+            pending.extend(next_node for next_node, _ in adjacency.get(node, []))
+    return True
 
 
 class EditCourseLessonsView(CourseEditableMixin, FormView):
@@ -1509,7 +1283,6 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
 
         # Add prerequisites data for the prerequisites tab
         if tab == "prerequisites":
-            from judge.models import CourseLessonPrerequisite
 
             prerequisites = CourseLessonPrerequisite.objects.filter(
                 course=self.course
@@ -1522,7 +1295,6 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
 
         # Add contests data for the order tab
         if tab == "order":
-            from judge.models import CourseContest
 
             contests = (
                 CourseContest.objects.filter(course=self.course)
@@ -1534,7 +1306,6 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
         return context
 
     def post(self, request, *args, **kwargs):
-        from judge.models import CourseLessonPrerequisite
 
         action = request.POST.get("action")
 
@@ -1549,19 +1320,21 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                 target_order = int(target_order)
                 required_percentage = float(required_percentage)
 
-                if source_order >= target_order:
+                if source_order == target_order:
                     return JsonResponse(
                         {
                             "success": False,
                             "error": str(
-                                _(
-                                    "Source lesson order must be less than target lesson order."
-                                )
+                                _("Source and target must be different lessons.")
                             ),
                         }
                     )
 
-                if required_percentage < 0 or required_percentage > 100:
+                if (
+                    not math.isfinite(required_percentage)
+                    or required_percentage < 0
+                    or required_percentage > 100
+                ):
                     return JsonResponse(
                         {
                             "success": False,
@@ -1569,6 +1342,18 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                         }
                     )
 
+                if not valid_prerequisite_orders(
+                    self.course, source_order, target_order
+                ):
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": str(
+                                _("Choose two distinct existing lesson orders.")
+                            ),
+                        },
+                        status=400,
+                    )
                 prereq, created = CourseLessonPrerequisite.objects.get_or_create(
                     course=self.course,
                     source_order=source_order,
@@ -1581,9 +1366,6 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                     prereq.save()
 
                 # Mark course for lazy recalculation for all enrolled users
-                from judge.utils.course_prerequisites import (
-                    mark_course_for_recalculation,
-                )
 
                 mark_course_for_recalculation(self.course)
 
@@ -1604,7 +1386,11 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                 )
                 new_percentage = float(request.POST.get("required_percentage", 0))
 
-                if new_percentage < 0 or new_percentage > 100:
+                if (
+                    not math.isfinite(new_percentage)
+                    or new_percentage < 0
+                    or new_percentage > 100
+                ):
                     return JsonResponse(
                         {
                             "success": False,
@@ -1616,9 +1402,6 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                 prereq.save()
 
                 # Mark course for lazy recalculation for all enrolled users
-                from judge.utils.course_prerequisites import (
-                    mark_course_for_recalculation,
-                )
 
                 mark_course_for_recalculation(self.course)
 
@@ -1641,9 +1424,6 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                 prereq.delete()
 
                 # Mark course for lazy recalculation for all enrolled users
-                from judge.utils.course_prerequisites import (
-                    mark_course_for_recalculation,
-                )
 
                 mark_course_for_recalculation(self.course)
 
@@ -1654,7 +1434,6 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                 )
 
         elif action == "bulk_update_prereqs":
-            import json
 
             prerequisites_json = request.POST.get("prerequisites_json", "[]")
             try:
@@ -1665,6 +1444,9 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                     )
 
                 # Validate all entries first
+                lesson_rows = list(self.course.lessons.values_list("order", "pk"))
+                counts = Counter(order for order, _ in lesson_rows)
+                lesson_ids = dict(lesson_rows)
                 validated_prereqs = []
                 for i, item in enumerate(prereqs_data):
                     if not isinstance(item, list) or len(item) != 3:
@@ -1677,22 +1459,43 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                             }
                         )
 
-                    source_order = int(item[0])
-                    target_order = int(item[1])
-                    required_percentage = float(item[2])
-
-                    if source_order >= target_order:
+                    if any(
+                        isinstance(value, bool)
+                        or (
+                            isinstance(value, float)
+                            and (not math.isfinite(value) or not value.is_integer())
+                        )
+                        for value in item[:2]
+                    ):
                         return JsonResponse(
                             {
                                 "success": False,
                                 "error": str(
-                                    _("Source must be less than target in item %(num)s")
+                                    _("Choose two distinct existing lesson orders.")
+                                ),
+                            },
+                            status=400,
+                        )
+                    source_order = int(item[0])
+                    target_order = int(item[1])
+                    required_percentage = float(item[2])
+
+                    if source_order == target_order:
+                        return JsonResponse(
+                            {
+                                "success": False,
+                                "error": str(
+                                    _("Source and target must differ in item %(num)s")
                                     % {"num": i + 1}
                                 ),
                             }
                         )
 
-                    if required_percentage < 0 or required_percentage > 100:
+                    if (
+                        not math.isfinite(required_percentage)
+                        or required_percentage < 0
+                        or required_percentage > 100
+                    ):
                         return JsonResponse(
                             {
                                 "success": False,
@@ -1726,36 +1529,53 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                                 }
                             )
 
+                    if counts[source_order] != 1 or counts[target_order] != 1:
+                        return JsonResponse(
+                            {
+                                "success": False,
+                                "error": str(
+                                    _("Choose two distinct existing lesson orders.")
+                                ),
+                            },
+                            status=400,
+                        )
+
                     validated_prereqs.append(
                         (source_order, target_order, required_percentage)
                     )
 
+                if not prerequisite_edges_are_acyclic(validated_prereqs):
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": str(_("Prerequisites cannot form a cycle.")),
+                        },
+                        status=400,
+                    )
                 # Delete all existing prerequisites for this course
                 CourseLessonPrerequisite.objects.filter(course=self.course).delete()
 
-                # Create new prerequisites
-                for (
-                    source_order,
-                    target_order,
-                    required_percentage,
-                ) in validated_prereqs:
-                    CourseLessonPrerequisite.objects.create(
-                        course=self.course,
-                        source_order=source_order,
-                        target_order=target_order,
-                        required_percentage=required_percentage,
-                    )
+                CourseLessonPrerequisite.objects.bulk_create(
+                    [
+                        CourseLessonPrerequisite(
+                            course=self.course,
+                            source_order=source,
+                            target_order=target,
+                            source_lesson_id=lesson_ids[source],
+                            target_lesson_id=lesson_ids[target],
+                            required_percentage=percentage,
+                        )
+                        for source, target, percentage in validated_prereqs
+                    ]
+                )
 
                 # Mark course for lazy recalculation for all enrolled users
-                from judge.utils.course_prerequisites import (
-                    mark_course_for_recalculation,
-                )
 
                 mark_course_for_recalculation(self.course)
 
                 return JsonResponse({"success": True, "count": len(validated_prereqs)})
 
-            except (ValueError, TypeError, json.JSONDecodeError) as e:
+            except (ValueError, TypeError, OverflowError, json.JSONDecodeError) as e:
                 return JsonResponse(
                     {
                         "success": False,
@@ -1763,58 +1583,16 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                     }
                 )
 
-        elif action == "reorder_lessons":
-            import json
-
+        elif action in ("reorder_lessons", "reorder_contests"):
             try:
-                order_data = json.loads(request.POST.get("order_data", "[]"))
-                if not isinstance(order_data, list):
-                    return JsonResponse(
-                        {"success": False, "error": str(_("Invalid data format."))}
-                    )
-
-                # order_data is a list of lesson IDs in the new order
-                for new_order, lesson_id in enumerate(order_data, start=1):
-                    CourseLesson.objects.filter(
-                        id=lesson_id, course=self.course
-                    ).update(order=new_order)
-
-                return JsonResponse({"success": True})
-
-            except (ValueError, TypeError, json.JSONDecodeError) as e:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": str(_("Invalid data: %(error)s") % {"error": str(e)}),
-                    }
+                reorder_course_items(
+                    self.course,
+                    CourseLesson if action == "reorder_lessons" else CourseContest,
+                    request.POST.get("order_data", "[]"),
                 )
-
-        elif action == "reorder_contests":
-            import json
-            from judge.models import CourseContest
-
-            try:
-                order_data = json.loads(request.POST.get("order_data", "[]"))
-                if not isinstance(order_data, list):
-                    return JsonResponse(
-                        {"success": False, "error": str(_("Invalid data format."))}
-                    )
-
-                # order_data is a list of CourseContest IDs in the new order
-                for new_order, contest_id in enumerate(order_data, start=1):
-                    CourseContest.objects.filter(
-                        id=contest_id, course=self.course
-                    ).update(order=new_order)
-
                 return JsonResponse({"success": True})
-
-            except (ValueError, TypeError, json.JSONDecodeError) as e:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": str(_("Invalid data: %(error)s") % {"error": str(e)}),
-                    }
-                )
+            except (ValueError, TypeError, ValidationError) as exc:
+                return JsonResponse({"success": False, "error": str(exc)}, status=400)
 
         # Handle regular form submission for lessons
         formset = self.form_class(request.POST, instance=self.course)
@@ -1920,6 +1698,12 @@ def _paginate_students(students, request, page_override=None):
     return page_students, page_obj
 
 
+def _grade_pagination_context(request):
+    query = request.GET.copy()
+    query.pop("focus", None)
+    return paginate_query_context(SimpleNamespace(GET=query, path=request.path))
+
+
 def _locate_student(students, username):
     """Return (1-based page, profile.id) of `username` in the already filtered+sorted
     `students` list, or (None, None) if absent."""
@@ -1949,6 +1733,7 @@ def _get_unlocked_lessons(course, profile, is_editable):
 
 
 class CourseStudentResults(CourseAccessibleMixin, DetailView):
+    allow_grade_export = True
     model = Course
     template_name = "course/grades.html"
 
@@ -1964,14 +1749,16 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
         self.friend_only = (
             self.request.GET.get("friend") == "1" and self.request.profile
         )
-        all_students = self.course.get_students()
+        all_students = self.get_grade_students()
 
         if not all_students:
             return {}, {}, {}, None, {}
 
         # Keep only compact total rows for the full student set. Detailed grade
         # cells are materialized after filtering and pagination.
-        lesson_progress_data = _prepare_lesson_progress_data(all_students, self.lessons)
+        lesson_progress_data = _prepare_lesson_progress_data(
+            all_students, self.lessons, viewer=self.request.user
+        )
         all_problem_ids = {
             problem["problem_id"]
             for problems in lesson_progress_data["lesson_problems"].values()
@@ -1989,7 +1776,7 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
             include_details=False,
         )
         contest_progress_data = _prepare_contest_progress_data(
-            all_students, self.contests
+            all_students, self.contests, viewer=self.request.user
         )
         grade_contests = bulk_calculate_contests_progress(
             all_students,
@@ -2014,6 +1801,11 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
         ):
             global_rank[student.id] = rank
 
+        if (not self.course.show_classmates_grades and not self.is_editable) or any(
+            value.get("is_result_hidden", False) for value in grade_total.values()
+        ):
+            global_rank = {}
+
         # Filter and paginate
         students = _apply_student_filters(
             all_students, self.request, self.org_query, self.friend_only
@@ -2023,6 +1815,8 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
 
         focus_username = self.request.GET.get("focus", "").strip() or None
         focus_page, self.focus_id = _locate_student(students, focus_username)
+        if "page" in self.request.GET:
+            focus_page = None
         self.my_page, _ = _locate_student(
             students, self.request.profile.username if self.request.profile else None
         )
@@ -2074,18 +1868,40 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
         context["focus_id"] = self.focus_id
         context["my_page"] = self.my_page
         if context["page_obj"]:
-            context.update(paginate_query_context(self.request))
+            context.update(_grade_pagination_context(self.request))
         context["search_query"] = self.request.GET.get("search", "").strip()
         context["org_query"] = self.org_query
         context["friend_only"] = self.friend_only
         if self.request.profile:
             context["organizations"] = self.request.profile.get_organizations()
+        context["lesson_grade_urls"] = {
+            lesson.id: reverse(
+                "course_grades_lesson", args=[self.course.slug, lesson.id]
+            )
+            for lesson in self.lessons
+        }
+        context["contest_ranking_urls"] = {
+            item.id: reverse("contest_ranking", args=[item.contest.key])
+            for item in self.contests
+        }
         context["lessons"] = self.lessons
+        context["locked_lesson_ids"] = (
+            set()
+            if self.is_editable
+            else {
+                lesson_id
+                for lesson_id, locked in get_lesson_lock_status(
+                    self.request.profile, self.course
+                ).items()
+                if locked
+            }
+        )
         context["course_contests"] = self.contests
         return context
 
 
 class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
+    allow_grade_export = True
     model = CourseLesson
     template_name = "course/grades_lesson.html"
 
@@ -2094,9 +1910,7 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
             self.lesson = CourseLesson.objects.get(
                 course=self.course, id=self.kwargs["id"]
             )
-            # Security: Only allow access to visible lessons or if user can edit course
-            if not self.lesson.is_visible and not self.is_editable:
-                raise Http404()
+            require_lesson_access(self.lesson, self.request.user)
 
             self.problems = self.lesson.get_problems()
             self.lesson_quizzes = list(
@@ -2115,13 +1929,13 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
         self.friend_only = (
             self.request.GET.get("friend") == "1" and self.request.profile
         )
-        all_students = self.course.get_students()
+        all_students = self.get_grade_students()
 
         if not all_students:
             return {}, None, {}
 
         lesson_progress_data = _prepare_lesson_progress_data(
-            all_students, [self.lesson]
+            all_students, [self.lesson], viewer=self.request.user
         )
         bulk_problem_points = bulk_max_case_points_per_problem(
             all_students, self.problems, viewer=self.request.user
@@ -2146,6 +1960,11 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
         ):
             global_rank[student.id] = rank
 
+        if (not self.course.show_classmates_grades and not self.is_editable) or any(
+            value.get("is_result_hidden", False) for value in grade_summaries.values()
+        ):
+            global_rank = {}
+
         # Filter and paginate
         students = _apply_student_filters(
             all_students, self.request, self.org_query, self.friend_only
@@ -2155,6 +1974,8 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
 
         focus_username = self.request.GET.get("focus", "").strip() or None
         focus_page, self.focus_id = _locate_student(students, focus_username)
+        if "page" in self.request.GET:
+            focus_page = None
         self.my_page, _ = _locate_student(
             students, self.request.profile.username if self.request.profile else None
         )
@@ -2203,7 +2024,7 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
         context["focus_id"] = self.focus_id
         context["my_page"] = self.my_page
         if context["page_obj"]:
-            context.update(paginate_query_context(self.request))
+            context.update(_grade_pagination_context(self.request))
         context["search_query"] = self.request.GET.get("search", "").strip()
         context["org_query"] = self.org_query
         context["friend_only"] = self.friend_only
@@ -2226,9 +2047,11 @@ class CourseLessonUserSubmissionsAjax(CourseAccessibleMixin, View):
 
     Rendered into the featherlight popup opened from a problem score cell on the
     lesson grades page. Permission is course-level (CourseAccessibleMixin):
-    anonymous -> login, non-member -> 403. The link to a submission's source only
+    anonymous -> 401, non-member -> 403. The link to a submission's source only
     shows if the *viewer* can access it (gated in the template).
     """
+
+    json_endpoint = True
 
     POPUP_LIMIT = 50
 
@@ -2236,10 +2059,10 @@ class CourseLessonUserSubmissionsAjax(CourseAccessibleMixin, View):
         lesson = get_object_or_404(
             CourseLesson, course=self.course, id=self.kwargs["id"]
         )
-        if not lesson.is_visible and not self.is_editable:
-            raise Http404()
+        require_lesson_access(lesson, request.user)
 
         student = get_object_or_404(Profile, user__username=self.kwargs["user"])
+        self.check_grade_target(student)
         problem = get_object_or_404(Problem, code=self.kwargs["problem"])
 
         # problem must belong to this lesson (get_problems_and_scores -> dicts)
@@ -2286,10 +2109,12 @@ class CourseLessonUserQuizAttemptsAjax(CourseAccessibleMixin, View):
 
     Rendered into the featherlight popup opened from a quiz score cell on the lesson
     grades page (mirrors the contest quiz-attempts popup). Permission is course-level
-    (CourseAccessibleMixin): anonymous -> login, non-member -> 403. The link to a
+    (CourseAccessibleMixin): anonymous -> 401, non-member -> 403. The link to a
     quiz result only shows if the viewer is the attempt owner or a quiz editor (the
     same gate as LessonQuizResult), so it never points at a page that would 403.
     """
+
+    json_endpoint = True
 
     POPUP_LIMIT = 50
 
@@ -2297,12 +2122,15 @@ class CourseLessonUserQuizAttemptsAjax(CourseAccessibleMixin, View):
         lesson = get_object_or_404(
             CourseLesson, course=self.course, id=self.kwargs["id"]
         )
-        if not lesson.is_visible and not self.is_editable:
-            raise Http404()
+        require_lesson_access(lesson, request.user)
 
         student = get_object_or_404(Profile, user__username=self.kwargs["user"])
+        self.check_grade_target(student)
         lesson_quiz = get_object_or_404(
-            CourseLessonQuiz, id=self.kwargs["lesson_quiz_id"], lesson=lesson
+            CourseLessonQuiz,
+            id=self.kwargs["lesson_quiz_id"],
+            lesson=lesson,
+            is_visible=True,
         )
 
         # target student must be enrolled (get_students() returns a LIST, use CourseRole)
@@ -2449,28 +2277,13 @@ class CourseContestList(CourseEditableMixin, ListView):
         action = request.POST.get("action")
 
         if action == "reorder_contests":
-            import json
-
             try:
-                order_data = json.loads(request.POST.get("order_data", "[]"))
-                if not isinstance(order_data, list):
-                    return JsonResponse(
-                        {"success": False, "error": str(_("Invalid data format."))}
-                    )
-
-                for new_order, cc_id in enumerate(order_data, start=1):
-                    CourseContest.objects.filter(id=cc_id, course=self.course).update(
-                        order=new_order
-                    )
-
-                return JsonResponse({"success": True})
-            except (ValueError, TypeError, json.JSONDecodeError) as e:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": str(_("Invalid data: %(error)s") % {"error": str(e)}),
-                    }
+                reorder_course_items(
+                    self.course, CourseContest, request.POST.get("order_data", "[]")
                 )
+                return JsonResponse({"success": True})
+            except (ValueError, TypeError, ValidationError) as exc:
+                return JsonResponse({"success": False, "error": str(exc)}, status=400)
 
         if action == "update_points":
             cc_id = request.POST.get("cc_id")
@@ -2523,7 +2336,6 @@ def is_lesson_clonable(request, lesson):
 
 class CourseSelect2View(View):
     def get(self, request, *args, **kwargs):
-        from django.utils.encoding import smart_str
 
         term = request.GET.get("term", "")
 
@@ -2609,6 +2421,20 @@ class LessonClone(CourseEditableMixin, TitleMixin, SingleObjectFormView):
             if cloned_problems:
                 CourseLessonProblem.objects.bulk_create(cloned_problems)
 
+            CourseLessonQuiz.objects.bulk_create(
+                [
+                    CourseLessonQuiz(
+                        lesson=cloned_lesson,
+                        quiz_id=link.quiz_id,
+                        order=link.order,
+                        points=link.points,
+                        max_attempts=link.max_attempts,
+                        is_visible=link.is_visible,
+                        is_result_hidden=link.is_result_hidden,
+                    )
+                    for link in self.object.lesson_quizzes.all()
+                ]
+            )
             # Add revision tracking details
             revisions.set_comment(
                 _("Cloned lesson '{}' to course {}").format(
@@ -2626,61 +2452,57 @@ class LessonClone(CourseEditableMixin, TitleMixin, SingleObjectFormView):
 
 
 class CourseMemberForm(forms.Form):
-    user = forms.CharField(
-        max_length=150,
-        widget=HeavySelect2Widget(
-            data_view="profile_select2", attrs={"style": "width: 100%"}
+    users = forms.ModelMultipleChoiceField(
+        queryset=Profile.objects.select_related("user"),
+        required=False,
+        widget=HeavySelect2MultipleWidget(data_view="profile_select2"),
+        label=_("Select users"),
+    )
+    usernames = forms.CharField(
+        required=False,
+        max_length=32000,
+        widget=forms.Textarea(attrs={"rows": 3}),
+        label=_("Paste usernames"),
+        help_text=_(
+            "Separate usernames with spaces, commas, or new lines. Maximum 200 users per batch."
         ),
-        label=_("User"),
     )
     role = forms.ChoiceField(
-        choices=RoleInCourse.choices, widget=Select2Widget(), label=_("Role")
+        choices=RoleInCourse.choices, initial=RoleInCourse.STUDENT, label=_("Role")
     )
+    confirmation = forms.CharField(required=False, widget=forms.HiddenInput())
 
     def __init__(self, *args, course=None, current_user_role=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.course = course
         self.current_user_role = current_user_role
-
-        # Restrict role choices based on current user's role
         if current_user_role == RoleInCourse.ASSISTANT:
-            # Assistants can only assign assistant and student roles
             self.fields["role"].choices = [
-                (RoleInCourse.ASSISTANT, _("Assistant")),
                 (RoleInCourse.STUDENT, _("Student")),
+                (RoleInCourse.ASSISTANT, _("Assistant")),
             ]
-        # Teachers and Admins get all choices by default
-
-    def clean_user(self):
-        user_id = self.cleaned_data["user"]
-        try:
-            # The HeavySelect2Widget returns the profile ID, not username
-            profile = Profile.objects.get(id=user_id)
-            return profile
-        except (Profile.DoesNotExist, ValueError):
-            raise ValidationError(_("User does not exist."))
 
     def clean(self):
-        cleaned_data = super().clean()
-        profile = cleaned_data.get("user")
-        role = cleaned_data.get("role")
-
-        if profile and self.course:
-            # Check if user is already in the course
-            if CourseRole.objects.filter(course=self.course, user=profile).exists():
-                raise ValidationError(_("User is already a member of this course."))
-
-        # Validate role assignment permissions
-        if role and self.current_user_role:
-            if self.current_user_role == RoleInCourse.ASSISTANT and role not in [
-                RoleInCourse.ASSISTANT,
-                RoleInCourse.STUDENT,
-            ]:
-                raise ValidationError(
-                    _("Assistants can only assign assistant and student roles.")
-                )
-
-        return cleaned_data
+        cleaned = super().clean()
+        profiles = {profile.pk: profile for profile in cleaned.get("users", [])}
+        names = {}
+        for profile in profiles.values():
+            names.setdefault(profile.user.username.casefold(), profile.user.username)
+        for name in re.split(r"[\s,]+", cleaned.get("usernames", "").strip()):
+            if name:
+                names.setdefault(name.casefold(), name)
+        if len(names) > 200:
+            raise ValidationError(_("Add at most 200 users at a time."))
+        found, unknown = resolve_member_usernames(list(names.values()))
+        if unknown:
+            raise ValidationError(
+                _("Unknown usernames: %(users)s") % {"users": ", ".join(unknown)}
+            )
+        profiles.update({profile.pk: profile for profile in found})
+        if not profiles:
+            raise ValidationError(_("Select users or paste usernames to add."))
+        cleaned["profiles"] = list(Profile.get_cached_instances(*sorted(profiles)))
+        return cleaned
 
 
 class CourseMembers(CourseAdminMixin, FormView):
@@ -2689,75 +2511,145 @@ class CourseMembers(CourseAdminMixin, FormView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["course"] = self.course
-        kwargs["current_user_role"] = self.get_user_role_in_course()
+        kwargs.update(
+            course=self.course, current_user_role=self.get_user_role_in_course()
+        )
         return kwargs
 
     def get_context_data(self, **kwargs):
-        context = super(CourseMembers, self).get_context_data(**kwargs)
-
-        # Get all course members with their roles, ordered by role priority (Teacher, Assistant, Student)
-        from django.db.models import Case, When, Value, IntegerField
-
-        members = (
-            CourseRole.objects.filter(course=self.course)
-            .select_related("user")
-            .annotate(
-                role_priority=Case(
-                    When(role=RoleInCourse.TEACHER, then=Value(1)),
-                    When(role=RoleInCourse.ASSISTANT, then=Value(2)),
-                    When(role=RoleInCourse.STUDENT, then=Value(3)),
-                    default=Value(4),
-                    output_field=IntegerField(),
-                )
+        context = super().get_context_data(**kwargs)
+        members = CourseRole.objects.filter(course=self.course)
+        context["member_count"] = members.count()
+        search = self.request.GET.get("search", "").strip()
+        role_filter = self.request.GET.get("role", "")
+        if search:
+            members = members.filter(
+                Q(user__user__username__icontains=search)
+                | Q(user__user__first_name__icontains=search)
             )
-            .order_by("role_priority", "user__user__username")
+        if role_filter in RoleInCourse.values:
+            members = members.filter(role=role_filter)
+        members = members.annotate(
+            role_priority=Case(
+                When(role=RoleInCourse.TEACHER, then=Value(1)),
+                When(role=RoleInCourse.ASSISTANT, then=Value(2)),
+                default=Value(3),
+                output_field=IntegerField(),
+            )
+        ).order_by("role_priority", "user__user__username", "pk")
+        page = DiggPaginator(members, 50, body=3, tail=1, padding=1).get_page(
+            self.request.GET.get("page", 1)
         )
-
-        context["members"] = members
-        context["title"] = _("Manage members for %(course_name)s") % {
-            "course_name": self.course.name
+        rows = list(page.object_list)
+        profiles = {
+            profile.pk: profile
+            for profile in Profile.get_cached_instances(*[row.user_id for row in rows])
         }
-        context["content_title"] = mark_safe(
-            _("Manage members for <a href='%(url)s'>%(course_name)s</a>")
-            % {
-                "course_name": escape(self.course.name),
-                "url": self.course.get_absolute_url(),
-            }
+        for row in rows:
+            row.user = profiles[row.user_id]
+        context.update(
+            members=rows,
+            page_obj=page,
+            search_query=search,
+            member_role_filter=role_filter,
+            title=_("Members"),
+            content_title=_("Members"),
+            page_type="members",
+            role_choices=RoleInCourse.choices,
+            current_user_role=self.get_user_role_in_course(),
         )
-        context["page_type"] = "members"
-        context["role_choices"] = RoleInCourse.choices
-        context["current_user_role"] = self.get_user_role_in_course()
-
+        context.update(paginate_query_context(self.request))
         return context
 
+    def preview_payload(self, form):
+        ids = sorted(profile.pk for profile in form.cleaned_data["profiles"])
+        existing = list(
+            CourseRole.objects.filter(course=self.course, user_id__in=ids)
+            .order_by("user_id")
+            .values_list("user_id", "role")
+        )
+        return {
+            "course": self.course.pk,
+            "actor": self.request.profile.pk,
+            "actor_role": self.get_user_role_in_course(),
+            "ids": ids,
+            "role": form.cleaned_data["role"],
+            "existing": [list(row) for row in existing],
+        }
+
     def form_valid(self, form):
-        with revisions.create_revision():
-            profile = form.cleaned_data[
-                "user"
-            ]  # This is now a Profile object from clean_user
-            role = form.cleaned_data["role"]
-
-            # Create the course role (form validation ensures user is not already in course)
-            course_role = CourseRole.objects.create(
-                course=self.course, user=profile, role=role
+        with transaction.atomic():
+            Course.objects.select_for_update().get(pk=self.course.pk)
+            self.course_role = (
+                CourseRole.objects.filter(course=self.course, user=self.request.profile)
+                .values_list("role", flat=True)
+                .first()
             )
-
-            # Add revision tracking details
-            revisions.set_comment(
-                _("Added member '{}' with role {} to course {}").format(
-                    profile.user.username,
-                    course_role.get_role_display(),
-                    self.course.name,
+            if not self.user_can_assign_role(form.cleaned_data["role"]):
+                raise PermissionDenied()
+            payload = self.preview_payload(form)
+            token = form.cleaned_data.get("confirmation")
+            if self.request.POST.get("action") == "confirm":
+                try:
+                    if (
+                        signing.loads(token, salt="course-members", max_age=900)
+                        != payload
+                    ):
+                        raise signing.BadSignature()
+                except signing.BadSignature:
+                    form.add_error(
+                        None,
+                        _(
+                            "The selection or permissions changed. Preview the batch again."
+                        ),
+                    )
+                    return self.form_invalid(form)
+                existing = {row[0] for row in payload["existing"]}
+                new = [
+                    CourseRole(course=self.course, user_id=pk, role=payload["role"])
+                    for pk in payload["ids"]
+                    if pk not in existing
+                ]
+                with revisions.create_revision():
+                    CourseRole.objects.bulk_create(new)
+                    created_rows = CourseRole.objects.filter(
+                        course=self.course, user_id__in=[row.user_id for row in new]
+                    )
+                    for row in created_rows:
+                        revisions.add_to_revision(row)
+                    revisions.set_user(self.request.user)
+                    revisions.set_comment(_("Added course members"))
+                get_course_role_profile_ids.dirty(self.course.pk, payload["role"])
+                transaction.on_commit(
+                    partial(
+                        get_course_role_profile_ids.dirty,
+                        self.course.pk,
+                        payload["role"],
+                    )
+                )
+                messages.success(
+                    self.request,
+                    _("Added %(added)d members; skipped %(existing)d existing members.")
+                    % {"added": len(new), "existing": len(existing)},
+                )
+                return redirect(self.get_success_url())
+            existing = {row[0] for row in payload["existing"]}
+            preview = [
+                {"profile": profile, "existing": profile.pk in existing}
+                for profile in form.cleaned_data["profiles"]
+            ]
+            return self.render_to_response(
+                self.get_context_data(
+                    form=form,
+                    batch_preview=preview,
+                    batch_confirmation=signing.dumps(payload, salt="course-members"),
                 )
             )
-            revisions.set_user(self.request.user)
-
-            messages.success(self.request, _("User added successfully."))
-            return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("course_members", args=[self.course.slug])
+        return reverse("course_members", args=[self.course.slug]) + (
+            "?" + self.request.GET.urlencode() if self.request.GET else ""
+        )
 
 
 class CourseRemoveMember(CourseAdminMixin, View):
@@ -2775,6 +2667,7 @@ class CourseRemoveMember(CourseAdminMixin, View):
                 )
                 return HttpResponseRedirect(
                     reverse("course_members", args=[self.course.slug])
+                    + ("?" + request.GET.urlencode() if request.GET else "")
                 )
 
             with revisions.create_revision():
@@ -2791,10 +2684,13 @@ class CourseRemoveMember(CourseAdminMixin, View):
                 course_role.delete()
 
             messages.success(request, _("Member removed successfully."))
-        except CourseRole.DoesNotExist:
+        except (CourseRole.DoesNotExist, ValueError, TypeError):
             messages.error(request, _("Member not found."))
 
-        return HttpResponseRedirect(reverse("course_members", args=[self.course.slug]))
+        return HttpResponseRedirect(
+            reverse("course_members", args=[self.course.slug])
+            + ("?" + request.GET.urlencode() if request.GET else "")
+        )
 
 
 class CourseUpdateMemberRole(CourseAdminMixin, View):
@@ -2806,6 +2702,7 @@ class CourseUpdateMemberRole(CourseAdminMixin, View):
             messages.error(request, _("Invalid role selected."))
             return HttpResponseRedirect(
                 reverse("course_members", args=[self.course.slug])
+                + ("?" + request.GET.urlencode() if request.GET else "")
             )
 
         try:
@@ -2820,6 +2717,7 @@ class CourseUpdateMemberRole(CourseAdminMixin, View):
                 )
                 return HttpResponseRedirect(
                     reverse("course_members", args=[self.course.slug])
+                    + ("?" + request.GET.urlencode() if request.GET else "")
                 )
 
             # Then check if user can assign the new role
@@ -2829,6 +2727,7 @@ class CourseUpdateMemberRole(CourseAdminMixin, View):
                 )
                 return HttpResponseRedirect(
                     reverse("course_members", args=[self.course.slug])
+                    + ("?" + request.GET.urlencode() if request.GET else "")
                 )
 
             with revisions.create_revision():
@@ -2857,10 +2756,13 @@ class CourseUpdateMemberRole(CourseAdminMixin, View):
                     "new_role": new_role_display,
                 },
             )
-        except CourseRole.DoesNotExist:
+        except (CourseRole.DoesNotExist, ValueError, TypeError):
             messages.error(request, _("Member not found."))
 
-        return HttpResponseRedirect(reverse("course_members", args=[self.course.slug]))
+        return HttpResponseRedirect(
+            reverse("course_members", args=[self.course.slug])
+            + ("?" + request.GET.urlencode() if request.GET else "")
+        )
 
 
 class CourseEditForm(DirectUploadFormMixin, forms.ModelForm):
@@ -2915,6 +2817,7 @@ class CourseEditForm(DirectUploadFormMixin, forms.ModelForm):
             "about",
             "is_public",
             "is_open",
+            "show_classmates_grades",
             "slug",
             "course_image",
             "organizations",
@@ -2957,10 +2860,14 @@ class CourseEditForm(DirectUploadFormMixin, forms.ModelForm):
         self.request = kwargs.pop("request", None)
         self.user_role = kwargs.pop("user_role", None)
         super().__init__(*args, **kwargs)
+        self.fields["about"].required = False
 
         # Check if user is superuser to determine field visibility
         is_superuser = self.request and self.request.user.is_superuser
         is_assistant = self.user_role == RoleInCourse.ASSISTANT
+
+        if is_assistant and not is_superuser:
+            self.fields["show_classmates_grades"].disabled = True
 
         # Handle organizations field (superuser only)
         if is_superuser:
@@ -2975,8 +2882,6 @@ class CourseEditForm(DirectUploadFormMixin, forms.ModelForm):
 
             # Set up the read-only display field with clickable links
             if self.instance and self.instance.pk:
-                from django.utils.html import format_html
-                from django.urls import reverse
 
                 organizations = self.instance.organizations.all()
                 if organizations:
@@ -3141,24 +3046,23 @@ class CourseEdit(CourseEditableMixin, SingleObjectFormView):
 class CourseJoin(LoginRequiredMixin, View):
     """View to handle joining a course"""
 
+    @transaction.atomic
     def post(self, request, slug):
-        course = get_object_or_404(Course, slug=slug)
+        course = get_object_or_404(Course.objects.select_for_update(), slug=slug)
         profile = request.profile
+
+        if CourseRole.objects.filter(course=course, user=profile).exists():
+            return redirect("course_detail", slug=course.slug)
 
         # Check if user can join this course
         if not Course.is_joinable(course, profile):
             messages.error(request, _("You cannot join this course."))
             return redirect("course_list")
 
-        # Check if user is already enrolled
-        if CourseRole.objects.filter(course=course, user=profile).exists():
-            messages.warning(request, _("You are already enrolled in this course."))
-            return redirect("course_detail", slug=course.slug)
-
         # Join the course as a student
         with revisions.create_revision():
-            CourseRole.objects.create(
-                course=course, user=profile, role=RoleInCourse.STUDENT
+            CourseRole.objects.get_or_create(
+                course=course, user=profile, defaults={"role": RoleInCourse.STUDENT}
             )
 
             revisions.set_comment(
@@ -3181,8 +3085,9 @@ class CourseJoin(LoginRequiredMixin, View):
 class CourseLeave(LoginRequiredMixin, View):
     """View to handle leaving a course"""
 
+    @transaction.atomic
     def post(self, request, slug):
-        course = get_object_or_404(Course, slug=slug)
+        course = get_object_or_404(Course.objects.select_for_update(), slug=slug)
         profile = request.profile
 
         # Check if user is enrolled in this course
@@ -3234,7 +3139,6 @@ class CourseRefreshProgress(CourseEditableMixin, View):
     """
 
     def post(self, request, slug):
-        from judge.utils.course_prerequisites import mark_course_for_recalculation
 
         mark_course_for_recalculation(self.course)
         messages.success(

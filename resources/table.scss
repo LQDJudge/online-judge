@@ -1,12 +1,14 @@
 @use "vars" as *;
 
 .table {
+    // Collapsed cell borders ignore corner radii and leave a square frame.
+    border-collapse: separate;
     border-spacing: 0;
     width: 100%;
     margin-left: auto;
     margin-right: auto;
     margin-bottom: 0.5em;
-    background: rgba(0, 0, 0, 0.01);
+    background: transparent;
 
     // Paint standard stripes on cells so rounded corner cells can shape
     // the surface without clipping the table's shadow or descendants.

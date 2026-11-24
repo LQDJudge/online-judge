@@ -67,6 +67,7 @@ from judge.utils.views import (
     paginate_query_context,
 )
 from judge.utils.history import RevisionDiffMixin
+from judge.utils.course_prerequisites import require_lesson_access
 from judge.utils.quiz_attempts import (
     finalize_locked_attempt,
     serialize_multiple_true_false_answer as _serialize_multiple_true_false_answer,
@@ -278,7 +279,7 @@ class QuestionBankList(
 
     Access control similar to Problem list:
     - Public questions are visible to all authenticated users
-    - Private questions are only visible to authors, curators, or superusers
+    - Private questions are listed only for their authors and curators
 
     In contest mode: Shows only questions from quizzes in the current contest.
     """
@@ -317,19 +318,12 @@ class QuestionBankList(
             ).values_list("question_id", flat=True)
             queryset = queryset.filter(id__in=contest_question_ids)
 
-            # Still apply permission checks: public questions OR user's own questions
-            if not self.request.user.is_superuser:
-                profile = self.request.profile
-                queryset = queryset.filter(
-                    Q(is_public=True) | Q(authors=profile) | Q(curators=profile)
-                ).distinct()
-        else:
-            # Access control: public questions OR user's own questions
-            if not self.request.user.is_superuser:
-                profile = self.request.profile
-                queryset = queryset.filter(
-                    Q(is_public=True) | Q(authors=profile) | Q(curators=profile)
-                ).distinct()
+        # Discovery uses the same scope for every account. Superusers retain
+        # direct access to private questions without listing unrelated ones.
+        profile = self.request.profile
+        queryset = queryset.filter(
+            Q(is_public=True) | Q(authors=profile) | Q(curators=profile)
+        ).distinct()
 
         # Filter by search term
         search = self.request.GET.get("search", "").strip()
@@ -773,8 +767,8 @@ class QuizList(
             if not self.request.user.is_authenticated:
                 # Anonymous users can only see public quizzes
                 queryset = queryset.filter(is_public=True)
-            elif not self.request.user.is_superuser:
-                # Non-superusers see public quizzes + own quizzes + quizzes they can test
+            else:
+                # Public quizzes plus explicit author, curator, or tester access
                 profile = self.request.profile
                 queryset = queryset.filter(
                     Q(is_public=True)
@@ -3671,7 +3665,12 @@ class LessonQuizMixin:
                 CourseLessonQuiz,
                 lesson=self.get_lesson(),
                 quiz__code=self.kwargs["code"],
-                is_visible=True,
+                **(
+                    {}
+                    if getattr(self, "_recovering_attempt", False)
+                    or Course.is_editable_by(self.get_course(), self.request.profile)
+                    else {"is_visible": True}
+                ),
             )
         return self._lesson_quiz
 
@@ -3684,9 +3683,31 @@ class LessonQuizMixin:
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
+            if getattr(self, "json_endpoint", False):
+                return JsonResponse(
+                    {"error": str(_("Authentication required."))}, status=401
+                )
             return redirect_to_login(request.get_full_path())
         if not self.check_enrollment(request.user):
             raise Http404()
+        attempt_id = kwargs.get("attempt_id")
+        self._recovering_attempt = (
+            bool(attempt_id)
+            and QuizAttempt.objects.filter(
+                pk=attempt_id,
+                user=request.profile,
+                is_submitted=False,
+                lesson_quiz__lesson=self.get_lesson(),
+                quiz__code=kwargs["code"],
+            ).exists()
+        )
+        try:
+            require_lesson_access(self.get_lesson(), request.user)
+        except (PermissionDenied, Http404):
+            # Preserve recoverable work if a teacher unpublishes or locks a lesson.
+            if not self._recovering_attempt:
+                raise
+        self.get_lesson_quiz()
         return super().dispatch(request, *args, **kwargs)
 
     def get_lesson_url_kwargs(self, **extra):
@@ -3978,6 +3999,8 @@ class LessonQuizTake(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailView
 class LessonQuizSaveAnswer(LessonQuizMixin, LoginRequiredMixin, View):
     """AJAX save answer in lesson context."""
 
+    json_endpoint = True
+
     def post(self, request, *args, **kwargs):
         # Validate the attempt belongs to this lesson
         try:
@@ -4001,6 +4024,8 @@ class LessonQuizSaveAnswer(LessonQuizMixin, LoginRequiredMixin, View):
 
 class LessonQuizUploadFile(LessonQuizMixin, LoginRequiredMixin, View):
     """AJAX file upload in lesson context."""
+
+    json_endpoint = True
 
     def post(self, request, *args, **kwargs):
         try:
@@ -4100,6 +4125,7 @@ class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailVi
         attempt = self.object
         quiz = attempt.quiz
         is_editor = self._is_editor
+        is_reviewer = Course.is_editable_by(self.get_course(), self.request.profile)
 
         context.update(self.get_lesson_quiz_urls(attempt_id=attempt.id))
 
@@ -4120,8 +4146,10 @@ class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailVi
             answer._max_points = max_points_map.get(answer.question_id, 1.0)
 
         context["answers"] = answers
-        context["show_answers"] = is_editor or quiz.is_shown_answer
-        context["show_correctness"] = is_editor or quiz.is_shown_correctness
+        context["show_answers"] = is_editor or is_reviewer or quiz.is_shown_answer
+        context["show_correctness"] = (
+            is_editor or is_reviewer or quiz.is_shown_correctness
+        )
         context["can_edit"] = is_editor
 
         # Check if results should be hidden in lesson context

@@ -1,4 +1,5 @@
 import os
+import math
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
@@ -17,6 +18,21 @@ from judge.utils.identity import ImmutableIdentityMixin
 def course_image_path(course, filename):
     new_filename = generate_secure_filename(filename, f"course_{course.id}")
     return os.path.join(settings.DMOJ_COURSE_IMAGE_ROOT, new_filename)
+
+
+def _batch_lesson_problems_and_scores(args_list):
+    lesson_ids = [lesson.id for (lesson,) in args_list]
+    grouped = {lesson_id: [] for lesson_id in lesson_ids}
+    rows = (
+        CourseLessonProblem.objects.filter(lesson_id__in=lesson_ids)
+        .order_by("lesson_id", "order")
+        .values("lesson_id", "problem_id", "score")
+    )
+    for row in rows:
+        grouped[row["lesson_id"]].append(
+            {"problem_id": row["problem_id"], "score": row["score"]}
+        )
+    return [grouped[lesson_id] for lesson_id in lesson_ids]
 
 
 class RoleInCourse(models.TextChoices):
@@ -57,6 +73,11 @@ class Course(models.Model):
     is_open = models.BooleanField(
         verbose_name=_("public registration"),
         default=False,
+    )
+    show_classmates_grades = models.BooleanField(
+        default=True,
+        verbose_name=_("Students can see classmates' grades"),
+        help_text=_("Teachers and assistants can always review all course grades."),
     )
     course_image = models.ImageField(
         verbose_name=_("course image"),
@@ -236,16 +257,12 @@ class CourseRole(models.Model):
     )
 
     @classmethod
-    def make_role(self, course, user, role):
-        userqueryset = CourseRole.objects.filter(course=course, user=user)
-        if userqueryset.exists():
-            userqueryset[0].role = role
-        else:
-            couresrole = CourseRole()
-            couresrole.course = course
-            couresrole.user = user
-            couresrole.role = role
-            couresrole.save()
+    def make_role(cls, course, user, role):
+        return cls.objects.update_or_create(
+            course=course,
+            user=user,
+            defaults={"role": role, "needs_progress_recalculation": True},
+        )[0]
 
     class Meta:
         unique_together = ("course", "user")
@@ -302,7 +319,12 @@ class CourseLesson(models.Model):
             *[p["problem_id"] for p in self.get_problems_and_scores()]
         )
 
-    @cache_wrapper(prefix="CLgps", expected_type=list)
+    @cache_wrapper(
+        prefix="CLgps",
+        expected_type=list,
+        batch_fn=_batch_lesson_problems_and_scores,
+        transaction_sensitive=True,
+    )
     def get_problems_and_scores(self):
         """
         Get all problems with their scores for this lesson in order.
@@ -405,7 +427,7 @@ class CourseContest(models.Model):
         return course
 
 
-@cache_wrapper(prefix="CRubr", expected_type=list)
+@cache_wrapper(prefix="CRubr", expected_type=list, transaction_sensitive=True)
 def get_course_role_profile_ids(course_id, role):
     """
     Get profile IDs for users with a specific role in a course.
@@ -420,9 +442,8 @@ def get_course_role_profile_ids(course_id, role):
 
 class CourseLessonPrerequisite(models.Model):
     """
-    Prerequisite edge: user needs required_percentage% in lesson at source_order
-    to unlock lesson at target_order.
-    Uses order (integer) instead of ForeignKey for simplicity.
+    Stable lesson dependency with legacy order fields retained for compatibility.
+    Ambiguous legacy mappings require an explicit audit instead of guessing IDs.
     """
 
     course = models.ForeignKey(
@@ -430,6 +451,22 @@ class CourseLessonPrerequisite(models.Model):
         on_delete=models.CASCADE,
         related_name="lesson_prerequisites",
         verbose_name=_("course"),
+    )
+    source_lesson = models.ForeignKey(
+        CourseLesson,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="prerequisite_targets",
+        verbose_name=_("prerequisite lesson"),
+    )
+    target_lesson = models.ForeignKey(
+        CourseLesson,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="prerequisite_sources",
+        verbose_name=_("lesson to unlock"),
     )
     source_order = models.IntegerField(
         verbose_name=_("source lesson order"),
@@ -453,12 +490,49 @@ class CourseLessonPrerequisite(models.Model):
 
     def clean(self):
         super().clean()
-        if self.source_order >= self.target_order:
-            raise ValidationError(
-                _("Source lesson order must be less than target lesson order.")
-            )
+        if (
+            not math.isfinite(self.required_percentage)
+            or not 0 <= self.required_percentage <= 100
+        ):
+            raise ValidationError(_("Percentage must be between 0 and 100."))
+        if not self.source_lesson_id or not self.target_lesson_id:
+            if self.source_order >= self.target_order:
+                raise ValidationError(
+                    _("Source lesson order must be less than target lesson order.")
+                )
+            return
+        if (
+            CourseLesson.objects.filter(
+                course_id=self.course_id,
+                pk__in=[self.source_lesson_id, self.target_lesson_id],
+            ).count()
+            != 2
+        ):
+            raise ValidationError(_("Choose two distinct lessons from this course."))
+        adjacency = {}
+        for source, target in self.course.lesson_prerequisites.exclude(
+            pk=self.pk
+        ).values_list("source_lesson_id", "target_lesson_id"):
+            adjacency.setdefault(source, []).append(target)
+        pending, seen = [self.target_lesson_id], set()
+        while pending:
+            pk = pending.pop()
+            if pk == self.source_lesson_id:
+                raise ValidationError(_("Prerequisites cannot form a cycle."))
+            if pk not in seen:
+                seen.add(pk)
+                pending.extend(adjacency.get(pk, []))
 
     def save(self, *args, **kwargs):
+        if not self.source_lesson_id or not self.target_lesson_id:
+            by_order = {}
+            for lesson in self.course.lessons.all():
+                by_order.setdefault(lesson.order, []).append(lesson.pk)
+            for side in ("source", "target"):
+                if not getattr(self, side + "_lesson_id"):
+                    matches = by_order.get(getattr(self, side + "_order"), [])
+                    if len(matches) == 1:
+                        setattr(self, side + "_lesson_id", matches[0])
         super().save(*args, **kwargs)
         # Mark all users for recalculation when prerequisites change
         from judge.utils.course_prerequisites import mark_course_for_recalculation

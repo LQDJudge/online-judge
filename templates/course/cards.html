@@ -1,0 +1,55 @@
+<div class="course-list">
+  {% for course in courses %}
+    <article class="course-item">
+      <div class="course-image" aria-hidden="true">
+        <span class="course-image-initial">{{ course.name|first|upper }}</span>
+        {% if course.course_image %}
+          <img src="{{ course.course_image.url }}" alt="" loading="lazy" onerror="this.remove();">
+        {% endif %}
+      </div>
+      <div class="course-content">
+        <div class="course-header">
+          <h3 class="course-title"><a href="{{ url('course_detail', course.slug) }}" class="course-name">{{ course.name }}</a></h3>
+          {% if course.viewer_role %}<span class="course-role course-role-{{ course.viewer_role_code|lower }}">{{ course.viewer_role }}</span>{% endif %}
+          <span class="course-status {{ 'course-status-open' if course.is_open else 'course-status-closed' }}">
+            <i class="fa {{ 'fa-unlock-alt' if course.is_open else 'fa-lock' }}" aria-hidden="true"></i>
+            {{ _('Open') if course.is_open else _('Closed') }}
+          </span>
+        </div>
+        {% if course.about %}
+          <p class="course-description">{{ course.about|markdown|striptags|truncatewords(25) }}</p>
+        {% endif %}
+        <div class="course-details">
+          <div class="course-meta">
+            <span class="course-meta-item"><i class="fa fa-users" aria-hidden="true"></i> {% trans count=course.student_count or 0 %}{{ count }} student{% pluralize %}{{ count }} students{% endtrans %}</span>
+            <span class="course-meta-item"><i class="fa fa-book" aria-hidden="true"></i> {% trans count=course.visible_lesson_count or 0 %}{{ count }} lesson{% pluralize %}{{ count }} lessons{% endtrans %}</span>
+            {% set teachers = course.card_teachers %}
+            {% if teachers %}
+              <span class="course-meta-item"><i class="fa fa-user-tie" aria-hidden="true"></i><span>
+                {{ link_users(teachers[:2]) }}
+                {% if teachers|length > 2 %}{{ _('and %(count)d more', count=teachers|length - 2) }}{% endif %}
+              </span></span>
+            {% endif %}
+            {% if course.organizations.all() %}
+              <span class="course-meta-item"><i class="fa fa-building" aria-hidden="true"></i><span class="course-organizations">
+                {% for org in course.organizations.all() %}<a class="course-org-link" href="{{ org.get_absolute_url() }}">{{ org.name }}</a>{% endfor %}
+              </span></span>
+            {% endif %}
+          </div>
+          {% if current_tab == 'joinable' and request.user.is_authenticated %}
+            <form method="post" action="{{ url('course_join', course.slug) }}" class="course-join-form">
+              {% csrf_token %}
+              <button type="submit" class="action-btn">{{ _('Join') }}</button>
+            </form>
+          {% else %}
+            <a class="course-view-link" href="{{ course.get_absolute_url() }}">{% if course.viewer_role_code == 'ST' %}
+              {{ _('Continue learning') }}
+            {% else %}
+              {{ _('View course') }}
+            {% endif %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+  {% endfor %}
+</div>

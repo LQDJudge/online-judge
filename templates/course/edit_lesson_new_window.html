@@ -3,6 +3,8 @@
 
 {% block two_col_media %}
   {{ form.media.css }}
+  {% for problem_formset in problem_formsets.values() %}{{ problem_formset.media.css }}{% endfor %}
+  {{ quiz_formset.media.css }}
   <style type="text/css">
     .field-order, .field-title, .field-points {
       display: inline-flex;
@@ -15,7 +17,7 @@
 
 {% block js_media %}
   {{ form.media.js }}
-  {% if problem_formset %}{{ problem_formset.media.js }}{% endif %}
+  {% for problem_formset in problem_formsets.values() %}{{ problem_formset.media.js }}{% endfor %}
   {% if quiz_formset %}{{ quiz_formset.media.js }}{% endif %}
   <script src="{{ static('jquery-ui.min.js') }}"></script>
   <script src="{{ static('widgets/sortable_formset.js') }}"></script>
@@ -36,7 +38,7 @@
   {% if lesson.id %}
     <center><h2>{{lesson.title}} </h2></center>
   {% endif %}
-  <form method="post">
+  <form method="post" class="course-lesson-editor">
     {% csrf_token %}
     {{ formset.management_form }}
     {% set ns = namespace(problem_formset_has_error=false) %}
@@ -52,14 +54,18 @@
     {% endif %}
 
     <div class="" style=" margin-bottom: 1em">
-      {% if lesson.errors %}
+      {% if lesson_field.errors %}
         <div class="alert alert-danger alert-dismissable">
           <a href="#" class="close">x</a>
           {{_("Please fix below errors")}}
+          {{ lesson_field.non_field_errors() }}
         </div>
       {% endif %}
       {% for field in lesson_field %}
-        {% if field %}
+        {% if field.is_hidden %}
+          {{ field.errors }}
+          {{ field }}
+        {% else %}
           <div style="margin-bottom: 1em;">
             {{ field.errors }}
             <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>

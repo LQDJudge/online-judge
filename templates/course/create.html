@@ -4,16 +4,20 @@
   {{ form.media.js }}
   <script>
     $(document).ready(function() {
-      // Auto-generate slug from name only if slug is empty
+      var generatedSlug = $('#id_slug').val();
+      var slugEdited = false;
+      $('#id_slug').on('input', function() { slugEdited = $(this).val() !== generatedSlug; });
+      // Continue generating until the user explicitly edits the slug.
       $('#id_name').on('input', function() {
         var slugField = $('#id_slug');
-        if (!slugField.val()) {
+        if (!slugEdited) {
           var name = $(this).val();
           var slug = name.toLowerCase()
             .replace(/[^\w\s-]/g, '') // Remove special characters
             .replace(/\s+/g, '-')      // Replace spaces with -
             .replace(/--+/g, '-')      // Replace multiple - with single -
             .trim();
+          generatedSlug = slug;
           slugField.val(slug);
         }
       });
@@ -41,6 +45,7 @@
           <div class="alert alert-danger alert-dismissable">
             <a href="#" class="close">x</a>
             {{ _("Please fix below errors") }}
+            {{ form.non_field_errors() }}
           </div>
         {% endif %}
 

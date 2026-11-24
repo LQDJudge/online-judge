@@ -669,7 +669,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         ][:3]
 
     def get_normal_queryset(self):
-        queryset = Problem.get_visible_problems(self.request.user)
+        queryset = Problem.get_visible_problems(self.request.user, for_listing=True)
         if self.profile is not None and self.hide_solved:
             solved_problems = self.get_completed_problems()
             queryset = queryset.exclude(id__in=solved_problems)

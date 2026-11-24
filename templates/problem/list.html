@@ -1,4 +1,6 @@
 {% extends "problem/list-base.html" %}
+
+{% block page_container_class %}{{ super() }} soft-listing-page{% endblock %}
 {% block left_sidebar %}
   {% include "problem/left-sidebar.html" %}
 {% endblock %}

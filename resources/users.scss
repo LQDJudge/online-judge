@@ -65,9 +65,9 @@ th.header.rank {
 
 // Leaderboard table - matching contest ranking style
 #users-table {
-    border-collapse: collapse;
+    border-collapse: separate;
     border-spacing: 0;
-    background: $surface-primary;
+    background: transparent;
 
     // Header styling - theme color
     thead th {
@@ -90,7 +90,7 @@ th.header.rank {
     // Cell styling
     td {
         padding: 0.5rem 0.5rem;
-        border-bottom: 1px solid $border_gray;
+        border-bottom-width: 0;
         vertical-align: middle;
     }
 
@@ -114,6 +114,11 @@ th.header.rank {
         &.highlight, &:target {
             background: #fffbeb !important;
         }
+    }
+
+    // Keep the shared cell color so dark mode also colors the closing edge.
+    tbody tr:last-child td {
+        border-bottom-width: 1px;
     }
 
     // Only remove bottom border when using no-border class (user ranking page)
