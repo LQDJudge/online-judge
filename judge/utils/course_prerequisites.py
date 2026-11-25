@@ -11,13 +11,11 @@ from collections import defaultdict, deque
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import F
 from django.http import Http404
 from django.utils.translation import gettext as _
 
 from judge.models import (
     Course,
-    CourseLesson,
     CourseLessonProgress,
     CourseLessonPrerequisite,
     CourseRole,
@@ -28,7 +26,7 @@ from judge.utils.course_grades import (
 )
 
 
-def get_lesson_prerequisites_graph(course, valid_orders=None, *, by_id=False):
+def get_lesson_prerequisites_graph(course, valid_orders=None):
     """
     Build the prerequisites graph for a course.
 
@@ -42,41 +40,25 @@ def get_lesson_prerequisites_graph(course, valid_orders=None, *, by_id=False):
             - adj_list: {source_order: [(target_order, required_percentage), ...]}
             - in_degree: {target_order: number_of_prerequisites}
     """
+    prerequisites = CourseLessonPrerequisite.objects.filter(course=course)
 
-    lessons = list(course.lessons.all())
-    by_order = defaultdict(list)
-    for lesson in lessons:
-        by_order[lesson.order].append(lesson.pk)
-    ids = {lesson.pk for lesson in lessons}
-    adj_list, in_degree = defaultdict(list), defaultdict(int)
-    for edge in course.lesson_prerequisites.all():
-        source = edge.source_lesson_id
-        target = edge.target_lesson_id
-        if not source and len(by_order[edge.source_order]) == 1:
-            source = by_order[edge.source_order][0]
-        if not target and len(by_order[edge.target_order]) == 1:
-            target = by_order[edge.target_order][0]
-        if source in ids and target in ids:
-            adj_list[source].append((target, edge.required_percentage))
-            in_degree[target] += 1
-        else:
-            # An unresolved legacy edge never silently unlocks a lesson.
-            for candidate in (
-                [target] if target in ids else (by_order[edge.target_order] or ids)
-            ):
-                in_degree[candidate] += 1
-    if by_id:
-        return adj_list, in_degree
-    orders = {lesson.pk: lesson.order for lesson in lessons}
-    order_adj, order_degree = defaultdict(list), defaultdict(int)
-    for source, edges in adj_list.items():
-        for target, percentage in edges:
-            if valid_orders is None or (
-                orders[source] in valid_orders and orders[target] in valid_orders
-            ):
-                order_adj[orders[source]].append((orders[target], percentage))
-                order_degree[orders[target]] += 1
-    return order_adj, order_degree
+    adj_list = defaultdict(list)
+    in_degree = defaultdict(int)
+
+    for prereq in prerequisites:
+        # Skip prerequisites where source or target lesson doesn't exist
+        if valid_orders is not None:
+            if prereq.source_order not in valid_orders:
+                continue
+            if prereq.target_order not in valid_orders:
+                continue
+
+        adj_list[prereq.source_order].append(
+            (prereq.target_order, prereq.required_percentage)
+        )
+        in_degree[prereq.target_order] += 1
+
+    return adj_list, in_degree
 
 
 def get_lessons_by_order(course):
@@ -90,7 +72,7 @@ def get_lessons_by_order(course):
     return {lesson.order: lesson for lesson in lessons}
 
 
-def calculate_user_lesson_grades(user_profile, lessons, *, by_id=False):
+def calculate_user_lesson_grades(user_profile, lessons):
     """
     Calculate the grade percentage for a user across all lessons.
 
@@ -124,9 +106,7 @@ def calculate_user_lesson_grades(user_profile, lessons, *, by_id=False):
 
     for lesson in lessons:
         lesson_data = user_grades.get(lesson.id, {})
-        grades_by_order[lesson.pk if by_id else lesson.order] = lesson_data.get(
-            "percentage", 0
-        )
+        grades_by_order[lesson.order] = lesson_data.get("percentage", 0)
 
     return grades_by_order
 
@@ -158,14 +138,16 @@ def update_lesson_unlock_states(user_profile, course):
         )
         return []
 
-    lessons_by_order = {lesson.id: lesson for lesson in lessons}
+    lessons_by_order = {lesson.order: lesson for lesson in lessons}
     lesson_orders = set(lessons_by_order.keys())
 
     # Get prerequisites graph (only include prerequisites for existing lessons)
-    adj_list, in_degree = get_lesson_prerequisites_graph(course, by_id=True)
+    adj_list, in_degree = get_lesson_prerequisites_graph(
+        course, valid_orders=lesson_orders
+    )
 
     # Always calculate fresh grades for all lessons to ensure accuracy
-    grades = calculate_user_lesson_grades(user_profile, lessons, by_id=True)
+    grades = calculate_user_lesson_grades(user_profile, lessons)
 
     # Track which lessons are unlocked
     unlocked_orders = set()
@@ -207,8 +189,8 @@ def update_lesson_unlock_states(user_profile, course):
     }
     created_rows, updated_rows = [], []
     for lesson in lessons:
-        unlocked = lesson.id in unlocked_orders
-        grade = grades.get(lesson.pk, 0)
+        unlocked = lesson.order in unlocked_orders
+        grade = grades.get(lesson.order, 0)
         row = existing.get(lesson.id)
         if row is None:
             created_rows.append(
@@ -333,17 +315,24 @@ def get_lesson_prerequisites_info(course):
     Returns:
         dict: {target_order: [(source_order, source_lesson_title, required_percentage), ...]}
     """
+    prerequisites = CourseLessonPrerequisite.objects.filter(course=course)
+    lessons_by_order = get_lessons_by_order(course)
+    valid_orders = set(lessons_by_order.keys())
 
-    lessons = {lesson.pk: lesson for lesson in course.lessons.all()}
-    adjacency, _ = get_lesson_prerequisites_graph(course, by_id=True)
-    info = defaultdict(list)
-    for source, targets in adjacency.items():
-        for target, percentage in targets:
-            if source in lessons and target in lessons:
-                info[lessons[target].order].append(
-                    (lessons[source].order, lessons[source].title, percentage)
-                )
-    return info
+    prereq_info = defaultdict(list)
+    for prereq in prerequisites:
+        # Skip prerequisites where source or target lesson doesn't exist
+        if prereq.source_order not in valid_orders:
+            continue
+        if prereq.target_order not in valid_orders:
+            continue
+
+        source_lesson = lessons_by_order.get(prereq.source_order)
+        prereq_info[prereq.target_order].append(
+            (prereq.source_order, source_lesson.title, prereq.required_percentage)
+        )
+
+    return prereq_info
 
 
 def update_lesson_grade(user_profile, lesson):
@@ -417,29 +406,6 @@ def require_lesson_access(lesson, user):
         )
 
 
-def bind_course_prerequisites(course):
-    """Resolve provable legacy edges before order changes. Never guess ambiguous IDs."""
-    by_order = defaultdict(list)
-    for lesson in course.lessons.all():
-        by_order[lesson.order].append(lesson.pk)
-    rows = list(course.lesson_prerequisites.all())
-    for row in rows:
-        for side in ("source", "target"):
-            if not getattr(row, side + "_lesson_id"):
-                matches = by_order[getattr(row, side + "_order")]
-                if len(matches) != 1:
-                    raise ValidationError(
-                        _(
-                            "Resolve ambiguous or missing prerequisite lessons before reordering."
-                        )
-                    )
-                setattr(row, side + "_lesson_id", matches[0])
-    CourseLessonPrerequisite.objects.bulk_update(
-        rows, ["source_lesson", "target_lesson"]
-    )
-    return rows
-
-
 def reorder_course_items(course, model, raw_ids):
     ids = json.loads(raw_ids)
     if not isinstance(ids, list) or any(type(pk) is not int for pk in ids):
@@ -449,23 +415,9 @@ def reorder_course_items(course, model, raw_ids):
         items = list(model.objects.select_for_update().filter(course=course))
         if len(ids) != len(items) or set(ids) != {item.pk for item in items}:
             raise ValidationError(_("Include every course item exactly once."))
-        edges = bind_course_prerequisites(course) if model is CourseLesson else []
         positions = {pk: order for order, pk in enumerate(ids, 1)}
         for item in items:
             item.order = positions[item.pk]
         model.objects.bulk_update(items, ["order"])
-        if edges:
-            # Temporarily move legacy keys clear of unique pairs before swapping.
-            CourseLessonPrerequisite.objects.filter(course=course).update(
-                source_order=F("source_order") + 1000000,
-                target_order=F("target_order") + 1000000,
-            )
-            for edge in edges:
-                edge.source_order, edge.target_order = (
-                    positions[edge.source_lesson_id],
-                    positions[edge.target_lesson_id],
-                )
-            CourseLessonPrerequisite.objects.bulk_update(
-                edges, ["source_order", "target_order"]
-            )
+        # Prerequisites belong to positions, so their order pairs stay unchanged.
         mark_course_for_recalculation(course)

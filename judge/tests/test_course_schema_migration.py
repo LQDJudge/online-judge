@@ -10,9 +10,7 @@ class CourseGradeSchemaMigrationTests(TransactionTestCase):
     def test_legacy_courses_default_to_shared_and_prerequisites_are_preserved(self):
         loader = MigrationLoader(connection)
         before = loader.project_state([("judge", "0282_moderation_queue_state")])
-        migration = loader.disk_migrations[
-            ("judge", "0283_course_grade_privacy_and_prerequisite_identity")
-        ]
+        migration = loader.disk_migrations[("judge", "0283_course_grade_privacy")]
         old_course = before.apps.get_model("judge", "Course")
         old_lesson = before.apps.get_model("judge", "CourseLesson")
         old_edge = before.apps.get_model("judge", "CourseLessonPrerequisite")
@@ -41,8 +39,6 @@ class CourseGradeSchemaMigrationTests(TransactionTestCase):
             self.assertEqual(
                 (current_edge.source_order, current_edge.target_order), (1, 2)
             )
-            self.assertIsNone(current_edge.source_lesson_id)
-            self.assertIsNone(current_edge.target_lesson_id)
             default = Course.objects.create(
                 name="New course", slug="migration-new", about=""
             )

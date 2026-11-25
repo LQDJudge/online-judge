@@ -21370,34 +21370,12 @@ msgstr "Chọn người dùng hoặc dán tên đăng nhập cần thêm."
 msgid "Teachers and assistants can always review all course grades."
 msgstr "Giáo viên và trợ giảng luôn có thể xem toàn bộ điểm của khóa học."
 
-#: judge/models/course.py:460
-msgid "prerequisite lesson"
-msgstr "bài học tiên quyết"
-
-#: judge/models/course.py:468
-msgid "lesson to unlock"
-msgstr "bài học cần mở khóa"
-
-#: judge/models/course.py:510
-msgid "Choose two distinct lessons from this course."
-msgstr "Chọn hai bài học khác nhau trong khóa học này."
-
-#: judge/models/course.py:520 judge/views/course.py:1547
-msgid "Prerequisites cannot form a cycle."
-msgstr "Các điều kiện tiên quyết không được tạo thành chu trình."
-
 #: judge/services/official_school.py:317 judge/views/organization.py:1595
 msgid ""
 "The member list changed or the preview expired. Preview additions again."
 msgstr ""
 "Danh sách thành viên đã thay đổi hoặc bản xem trước đã hết hạn. Vui lòng xem"
 " trước lại."
-
-#: judge/utils/course_prerequisites.py:433
-msgid "Resolve ambiguous or missing prerequisite lessons before reordering."
-msgstr ""
-"Sửa các bài học tiên quyết bị thiếu hoặc không xác định trước khi sắp xếp "
-"lại."
 
 #: judge/utils/course_prerequisites.py:446
 msgid "Invalid item order."
@@ -21431,20 +21409,10 @@ msgstr "Đã đóng đăng ký. Hãy liên hệ giáo viên để được tham 
 msgid "Membership in a course organization is required to enroll."
 msgstr "Bạn cần là thành viên của tổ chức thuộc khóa học để đăng ký."
 
-#: judge/views/course.py:1324 templates/course/edit_lesson.html:74
-#: templates/course/edit_lesson.html:265 templates/course/edit_lesson.html:428
-msgid "Source and target must be different lessons."
-msgstr "Bài học nguồn và bài học đích phải khác nhau."
-
 #: judge/views/course.py:1348 judge/views/course.py:1470
 #: judge/views/course.py:1533
 msgid "Choose two distinct existing lesson orders."
 msgstr "Chọn thứ tự của hai bài học khác nhau đang tồn tại."
-
-#: judge/views/course.py:1484
-#, python-format
-msgid "Source and target must differ in item %(num)s"
-msgstr "Bài học nguồn và bài học đích phải khác nhau ở mục %(num)s"
 
 #: judge/views/course.py:2513
 #, python-format
@@ -21655,3 +21623,7 @@ msgstr "Thoát chế độ xem học viên"
 #: judge/models/course.py:79
 msgid "Students can see classmates' grades"
 msgstr "Học viên có thể xem điểm của các bạn cùng lớp"
+
+#: templates/course/edit_lesson.html:369
+msgid "Prerequisites follow lesson positions. Reordering lessons does not change these rules."
+msgstr "Điều kiện tiên quyết áp dụng theo vị trí bài học. Đổi thứ tự bài học không làm thay đổi các quy tắc này."

@@ -449,7 +449,7 @@ class CourseWorkflowTests(TestCase):
         self.assertNotIn(user.pk, get_course_role_profile_ids(self.course.pk, "ST"))
         self.assertIn(user.pk, get_course_role_profile_ids(self.course.pk, "AS"))
 
-    def test_reorder_keeps_prerequisite_identity_and_rejects_partial_ids(self):
+    def test_reorder_keeps_prerequisite_positions_and_recalculates_access(self):
         self.login("teacher")
         original = list(self.course.lessons.order_by("pk").values_list("pk", "order"))
         response = self.client.post(
@@ -461,22 +461,38 @@ class CourseWorkflowTests(TestCase):
             original,
             list(self.course.lessons.order_by("pk").values_list("pk", "order")),
         )
-        reorder_course_items(
-            self.course,
-            CourseLesson,
-            json.dumps([self.locked.pk, self.lesson.pk, self.draft.pk]),
-        )
-        self.edge.refresh_from_db()
-        self.assertEqual(
-            (self.edge.source_lesson_id, self.edge.target_lesson_id),
-            (self.lesson.pk, self.locked.pk),
-        )
-        self.assertEqual((self.edge.source_order, self.edge.target_order), (2, 1))
-        self.assertTrue(
+        BestQuizAttempt.objects.filter(attempt=self.attempt).update(score=10)
+        self.assertFalse(
             get_lesson_lock_status(self.profiles["student"], self.course)[
                 self.locked.pk
             ]
         )
+        response = self.client.post(
+            self.url("edit_course_lessons"),
+            {
+                "action": "reorder_lessons",
+                "order_data": json.dumps(
+                    [self.locked.pk, self.lesson.pk, self.draft.pk]
+                ),
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+        self.edge.refresh_from_db()
+        self.assertEqual((self.edge.source_order, self.edge.target_order), (1, 2))
+        locks = get_lesson_lock_status(self.profiles["student"], self.course)
+        self.assertFalse(locks[self.locked.pk])
+        self.assertTrue(locks[self.lesson.pk])
+        response = self.client.get(
+            self.url("edit_course_lessons"), {"tab": "prerequisites"}
+        )
+        self.assertEqual(
+            response.context_data["lessons_by_order"][1].pk, self.locked.pk
+        )
+        self.assertEqual(
+            response.context_data["lessons_by_order"][2].pk, self.lesson.pk
+        )
+        self.assertContains(response, "Prerequisites follow lesson positions.")
 
     def test_contest_list_reordering_requires_the_complete_course_set(self):
         now = timezone.now()
@@ -926,7 +942,7 @@ class CourseWorkflowTests(TestCase):
         self.login("teacher")
         original = list(
             self.course.lesson_prerequisites.values_list(
-                "pk", "source_lesson_id", "target_lesson_id", "required_percentage"
+                "pk", "source_order", "target_order", "required_percentage"
             )
         )
         response = self.client.post(
@@ -943,7 +959,7 @@ class CourseWorkflowTests(TestCase):
             original,
             list(
                 self.course.lesson_prerequisites.values_list(
-                    "pk", "source_lesson_id", "target_lesson_id", "required_percentage"
+                    "pk", "source_order", "target_order", "required_percentage"
                 )
             ),
         )
@@ -952,7 +968,7 @@ class CourseWorkflowTests(TestCase):
         self.login("teacher")
         original = list(
             self.course.lesson_prerequisites.values_list(
-                "pk", "source_lesson_id", "target_lesson_id", "required_percentage"
+                "pk", "source_order", "target_order", "required_percentage"
             )
         )
         for source in [1.5, True, float("inf")]:
@@ -971,33 +987,27 @@ class CourseWorkflowTests(TestCase):
                     list(
                         self.course.lesson_prerequisites.values_list(
                             "pk",
-                            "source_lesson_id",
-                            "target_lesson_id",
+                            "source_order",
+                            "target_order",
                             "required_percentage",
                         )
                     ),
                 )
 
-    def test_ambiguous_legacy_prerequisite_blocks_reorder_without_writes(self):
-        CourseLessonPrerequisite.objects.filter(pk=self.edge.pk).update(
-            source_lesson=None, source_order=99
+    def test_missing_order_prerequisite_does_not_block_reordering(self):
+        CourseLessonPrerequisite.objects.filter(pk=self.edge.pk).update(source_order=99)
+        reorder_course_items(
+            self.course,
+            CourseLesson,
+            json.dumps([self.locked.pk, self.lesson.pk, self.draft.pk]),
         )
-        self.login("teacher")
-        response = self.client.post(
-            self.url("edit_course_lessons"),
-            {
-                "action": "reorder_lessons",
-                "order_data": json.dumps(
-                    [self.locked.pk, self.lesson.pk, self.draft.pk]
-                ),
-            },
-        )
-        self.assertEqual(response.status_code, 400)
+        self.edge.refresh_from_db()
+        self.assertEqual((self.edge.source_order, self.edge.target_order), (99, 2))
         self.lesson.refresh_from_db()
-        self.assertEqual(self.lesson.order, 1)
-        self.assertTrue(
+        self.assertEqual(self.lesson.order, 2)
+        self.assertFalse(
             get_lesson_lock_status(self.profiles["student"], self.course)[
-                self.locked.pk
+                self.lesson.pk
             ]
         )
 
@@ -1097,31 +1107,38 @@ class CourseWorkflowTests(TestCase):
         self.assertIn("preview%3D", response.url)
         self.assertIn(self.profiles["student"].username, response.url)
 
-    def test_bulk_prerequisites_accept_reverse_display_order_and_reject_cycles(self):
+    def test_prerequisite_json_uses_orders_and_rejects_backward_edges(self):
         self.login("teacher")
         response = self.client.post(
             self.url("edit_course_lessons"),
             {
                 "action": "bulk_update_prereqs",
-                "prerequisites_json": json.dumps([[2, 1, 80]]),
+                "prerequisites_json": json.dumps([[1, 2, 80]]),
             },
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["success"])
         edge = self.course.lesson_prerequisites.get()
         self.assertEqual(
-            (edge.source_lesson_id, edge.target_lesson_id),
-            (self.locked.pk, self.lesson.pk),
+            (edge.source_order, edge.target_order, edge.required_percentage), (1, 2, 80)
         )
-        response = self.client.post(
-            self.url("edit_course_lessons"),
-            {
-                "action": "bulk_update_prereqs",
-                "prerequisites_json": json.dumps([[1, 2, 80], [2, 1, 90]]),
-            },
-        )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(self.course.lesson_prerequisites.get().pk, edge.pk)
+        for source, target in [(2, 1), (1, 1)]:
+            for action in ["add_prereq", "bulk_update_prereqs"]:
+                with self.subTest(source=source, target=target, action=action):
+                    payload = {
+                        "action": action,
+                        "source_order": source,
+                        "target_order": target,
+                        "required_percentage": 90,
+                        "prerequisites_json": json.dumps([[source, target, 90]]),
+                    }
+                    response = self.client.post(
+                        self.url("edit_course_lessons"), payload
+                    )
+                    self.assertFalse(response.json()["success"])
+                    unchanged = self.course.lesson_prerequisites.get()
+                    self.assertEqual(unchanged.pk, edge.pk)
+                    self.assertEqual(unchanged.required_percentage, 80)
 
     def test_hidden_contest_totals_are_not_exposed_by_course_progress(self):
         now = timezone.now()

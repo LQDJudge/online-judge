@@ -442,8 +442,7 @@ def get_course_role_profile_ids(course_id, role):
 
 class CourseLessonPrerequisite(models.Model):
     """
-    Stable lesson dependency with legacy order fields retained for compatibility.
-    Ambiguous legacy mappings require an explicit audit instead of guessing IDs.
+    Prerequisite edge between lesson positions, independent of lesson identities.
     """
 
     course = models.ForeignKey(
@@ -451,22 +450,6 @@ class CourseLessonPrerequisite(models.Model):
         on_delete=models.CASCADE,
         related_name="lesson_prerequisites",
         verbose_name=_("course"),
-    )
-    source_lesson = models.ForeignKey(
-        CourseLesson,
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name="prerequisite_targets",
-        verbose_name=_("prerequisite lesson"),
-    )
-    target_lesson = models.ForeignKey(
-        CourseLesson,
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name="prerequisite_sources",
-        verbose_name=_("lesson to unlock"),
     )
     source_order = models.IntegerField(
         verbose_name=_("source lesson order"),
@@ -495,44 +478,12 @@ class CourseLessonPrerequisite(models.Model):
             or not 0 <= self.required_percentage <= 100
         ):
             raise ValidationError(_("Percentage must be between 0 and 100."))
-        if not self.source_lesson_id or not self.target_lesson_id:
-            if self.source_order >= self.target_order:
-                raise ValidationError(
-                    _("Source lesson order must be less than target lesson order.")
-                )
-            return
-        if (
-            CourseLesson.objects.filter(
-                course_id=self.course_id,
-                pk__in=[self.source_lesson_id, self.target_lesson_id],
-            ).count()
-            != 2
-        ):
-            raise ValidationError(_("Choose two distinct lessons from this course."))
-        adjacency = {}
-        for source, target in self.course.lesson_prerequisites.exclude(
-            pk=self.pk
-        ).values_list("source_lesson_id", "target_lesson_id"):
-            adjacency.setdefault(source, []).append(target)
-        pending, seen = [self.target_lesson_id], set()
-        while pending:
-            pk = pending.pop()
-            if pk == self.source_lesson_id:
-                raise ValidationError(_("Prerequisites cannot form a cycle."))
-            if pk not in seen:
-                seen.add(pk)
-                pending.extend(adjacency.get(pk, []))
+        if self.source_order >= self.target_order:
+            raise ValidationError(
+                _("Source lesson order must be less than target lesson order.")
+            )
 
     def save(self, *args, **kwargs):
-        if not self.source_lesson_id or not self.target_lesson_id:
-            by_order = {}
-            for lesson in self.course.lessons.all():
-                by_order.setdefault(lesson.order, []).append(lesson.pk)
-            for side in ("source", "target"):
-                if not getattr(self, side + "_lesson_id"):
-                    matches = by_order.get(getattr(self, side + "_order"), [])
-                    if len(matches) == 1:
-                        setattr(self, side + "_lesson_id", matches[0])
         super().save(*args, **kwargs)
         # Mark all users for recalculation when prerequisites change
         from judge.utils.course_prerequisites import mark_course_for_recalculation

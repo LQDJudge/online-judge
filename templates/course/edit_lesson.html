@@ -70,8 +70,8 @@
               if (isNaN(source) || isNaN(target) || isNaN(pct)) {
                 throw new Error('{{ _("Invalid numbers in item") }} ' + (i + 1));
               }
-              if (source === target) {
-                throw new Error({{ _("Source and target must be different lessons.")|tojson }});
+              if (source >= target) {
+                throw new Error({{ _("Source lesson order must be less than target lesson order.")|tojson }});
               }
               if (pct < 0 || pct > 100) {
                 throw new Error('{{ _("Percentage must be 0-100 in item") }} ' + (i + 1));
@@ -227,7 +227,7 @@
           $('.new-prereq-row').each(function() {
             var source = parseInt($(this).find('.new-source-order').val());
             var target = parseInt($(this).find('.new-target-order').val());
-            if (source === target) {
+            if (source >= target) {
               hasError = true;
             }
           });
@@ -254,7 +254,7 @@
             var target = parseInt($(this).find('.new-target-order').val());
             var pct = parseFloat($(this).find('.new-percentage').val());
 
-            if (source === target) {
+            if (source >= target) {
               hasError = true;
               return;
             }
@@ -262,7 +262,7 @@
           });
 
           if (hasError) {
-            alert('{{ _("Source and target must be different lessons.") }}');
+            alert('{{ _("Source lesson order must be less than target lesson order.") }}');
             return;
           }
 
@@ -366,6 +366,7 @@
       {% csrf_token %}
       <p class="prereq-description">
         {{ _("Define prerequisites for lessons. A student must achieve the required percentage in the source lesson before they can access the target lesson.") }}
+        {{ _("Prerequisites follow lesson positions. Reordering lessons does not change these rules.") }}
       </p>
 
       {% if lessons %}
@@ -425,7 +426,7 @@
 
         <div id="order-error" class="prereq-error" style="display: none;">
           <i class="fa fa-exclamation-triangle"></i>
-          {{ _("Source and target must be different lessons.") }}
+          {{ _("Source lesson order must be less than target lesson order.") }}
         </div>
 
         {# Template for new row - hidden, used by JavaScript #}

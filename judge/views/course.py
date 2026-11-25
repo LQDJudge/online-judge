@@ -84,7 +84,6 @@ from judge.utils.course_grades import (
     calculate_total_progress,
 )
 from judge.utils.course_prerequisites import (
-    get_lesson_prerequisites_graph,
     get_lesson_lock_status,
     get_lesson_prerequisites_info,
     require_lesson_access,
@@ -1203,39 +1202,11 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         )
 
 
-def prerequisite_edges_are_acyclic(edges):
-    adjacency = {}
-    incoming = Counter()
-    for source, target, _percentage in edges:
-        adjacency.setdefault(source, []).append(target)
-        incoming.setdefault(source, 0)
-        incoming[target] += 1
-    pending = [node for node, count in incoming.items() if count == 0]
-    visited = 0
-    while pending:
-        node = pending.pop()
-        visited += 1
-        for target in adjacency.get(node, []):
-            incoming[target] -= 1
-            if incoming[target] == 0:
-                pending.append(target)
-    return visited == len(incoming)
-
-
 def valid_prerequisite_orders(course, source, target):
     orders = list(course.lessons.values_list("order", flat=True))
     if source == target or orders.count(source) != 1 or orders.count(target) != 1:
         return False
-    adjacency, _ = get_lesson_prerequisites_graph(course)
-    pending, seen = [target], set()
-    while pending:
-        node = pending.pop()
-        if node == source:
-            return False
-        if node not in seen:
-            seen.add(node)
-            pending.extend(next_node for next_node, _ in adjacency.get(node, []))
-    return True
+    return source < target
 
 
 class EditCourseLessonsView(CourseEditableMixin, FormView):
@@ -1320,12 +1291,14 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                 target_order = int(target_order)
                 required_percentage = float(required_percentage)
 
-                if source_order == target_order:
+                if source_order >= target_order:
                     return JsonResponse(
                         {
                             "success": False,
                             "error": str(
-                                _("Source and target must be different lessons.")
+                                _(
+                                    "Source lesson order must be less than target lesson order."
+                                )
                             ),
                         }
                     )
@@ -1446,7 +1419,6 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                 # Validate all entries first
                 lesson_rows = list(self.course.lessons.values_list("order", "pk"))
                 counts = Counter(order for order, _ in lesson_rows)
-                lesson_ids = dict(lesson_rows)
                 validated_prereqs = []
                 for i, item in enumerate(prereqs_data):
                     if not isinstance(item, list) or len(item) != 3:
@@ -1480,12 +1452,12 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                     target_order = int(item[1])
                     required_percentage = float(item[2])
 
-                    if source_order == target_order:
+                    if source_order >= target_order:
                         return JsonResponse(
                             {
                                 "success": False,
                                 "error": str(
-                                    _("Source and target must differ in item %(num)s")
+                                    _("Source must be less than target in item %(num)s")
                                     % {"num": i + 1}
                                 ),
                             }
@@ -1544,14 +1516,6 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                         (source_order, target_order, required_percentage)
                     )
 
-                if not prerequisite_edges_are_acyclic(validated_prereqs):
-                    return JsonResponse(
-                        {
-                            "success": False,
-                            "error": str(_("Prerequisites cannot form a cycle.")),
-                        },
-                        status=400,
-                    )
                 # Delete all existing prerequisites for this course
                 CourseLessonPrerequisite.objects.filter(course=self.course).delete()
 
@@ -1561,8 +1525,6 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
                             course=self.course,
                             source_order=source,
                             target_order=target,
-                            source_lesson_id=lesson_ids[source],
-                            target_lesson_id=lesson_ids[target],
                             required_percentage=percentage,
                         )
                         for source, target, percentage in validated_prereqs
