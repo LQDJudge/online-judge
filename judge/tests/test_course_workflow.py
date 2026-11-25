@@ -14,6 +14,7 @@ from judge.models import (
     ContestParticipation,
     CourseContest,
     CourseLesson,
+    CourseLessonProgress,
     CourseLessonPrerequisite,
     CourseLessonQuiz,
     CourseRole,
@@ -1009,6 +1010,26 @@ class CourseWorkflowTests(TestCase):
             get_lesson_lock_status(self.profiles["student"], self.course)[
                 self.lesson.pk
             ]
+        )
+
+    def test_missing_order_edges_do_not_reuse_stale_locked_progress(self):
+        CourseLessonPrerequisite.objects.filter(pk=self.edge.pk).update(source_order=99)
+        student = self.profiles["student"]
+        CourseLessonProgress.objects.filter(
+            user=student, lesson__course=self.course
+        ).delete()
+        CourseLessonProgress.objects.bulk_create(
+            [
+                CourseLessonProgress(user=student, lesson=lesson, is_unlocked=False)
+                for lesson in self.course.lessons.all()
+            ]
+        )
+        CourseRole.objects.filter(course=self.course, user=student).update(
+            needs_progress_recalculation=False
+        )
+        locks = get_lesson_lock_status(student, self.course)
+        self.assertEqual(
+            locks, {lesson.pk: False for lesson in self.course.lessons.all()}
         )
 
     def test_clone_copies_quiz_configuration_without_attempts(self):

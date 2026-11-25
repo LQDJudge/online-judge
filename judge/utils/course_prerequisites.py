@@ -260,6 +260,7 @@ def get_lesson_lock_status(user_profile, course):
     """
 
     lessons = list(course.lessons.all())
+    valid_orders = {lesson.order for lesson in lessons}
 
     needs_recalculation = CourseRole.objects.filter(
         course=course,
@@ -271,7 +272,10 @@ def get_lesson_lock_status(user_profile, course):
         update_lesson_unlock_states(user_profile, course)
 
     # Check if there are any valid prerequisites (both source and target exist)
-    if not course.lesson_prerequisites.exists():
+    if not course.lesson_prerequisites.filter(
+        source_order__in=valid_orders,
+        target_order__in=valid_orders,
+    ).exists():
         return {lesson.id: False for lesson in lessons}
 
     # Get existing progress records
