@@ -1,173 +1,31 @@
 {% extends "three-column-content.html" %}
 
-{% block js_media %}
-  <script>
-    $(function () {
-      var $form = $('form#filter-form');
-      var $search = $('#search');
+{% block page_container_class %}{{ super() }} soft-listing-page{% endblock %}
+{% set middle_right_class = "course-list-layout" %}
 
-      function prep_form() {
-        $search.prop('disabled', !$search.val());
-      }
 
-      function clean_submit() {
-        prep_form();
-        $form.submit();
-      }
-
-      $search.keypress(function (e) {
-        if (e.keyCode == 13)
-          $('#go').click();
-      });
-
-      $('#go').click(clean_submit);
-
-      $('#role_filter').select2();
-
-    // Tab navigation
-      $('#my-courses-url').attr('href', changeTabParameter('my'));
-      $('#joinable-courses-url').attr('href', changeTabParameter('joinable'));
-      registerNavigation();
-    });
-
-    function changeTabParameter(tab) {
-      var url = new URL(window.location);
-      url.searchParams.set('tab', tab);
-      return url.toString();
-    }
-
-    function registerNavigation() {
-    // Add any navigation registration logic here if needed
-    }
-  </script>
-{% endblock %}
 
 {% block left_sidebar %}
   {% include "organization/org-left-sidebar.html" %}
 {% endblock %}
 
-{% block right_sidebar %}
-  <div class="right-sidebar">
-    {% include "course/search-form.html" %}
-
-    {% if can_create_course %}
-      <div class="sidebox">
-        <h3><i class="fa fa-plus"></i> {{ _('Course Management') }}</h3>
-        <div class="sidebox-content">
-          <a href="{{ url('course_add') }}?organization={{ organization.id }}" class="action-btn">
-            <i class="fa fa-plus"></i> {{ _('Create Course') }}
-          </a>
-        </div>
-      </div>
-    {% endif %}
-  </div>
-{% endblock %}
+{% block right_sidebar %}{% endblock %}
 
 {% block middle_content %}
-  <div class="tabs tabs-no-flex" style="width: 100%;margin-left: auto;margin-right: auto;">
-    <ul>
-      {% if request.user.is_authenticated %}
-        <li class="{{'active' if current_tab=='my'}}">
-          <a id='my-courses-url'>{{ _('My Courses') }}</a>
-        </li>
-        <li class="{{'active' if current_tab=='joinable'}}">
-          <a id='joinable-courses-url'>{{ _('Join Courses') }}</a>
-        </li>
-      {% else %}
-        <li class="{{'active' if current_tab=='joinable'}}">
-          <a id='joinable-courses-url'>{{ _('Available Courses') }}</a>
-        </li>
-      {% endif %}
-    </ul>
-  </div>
-
   <div class="course-list-page">
-    {% if courses %}
-      <div class="course-list">
-        {% for course in courses %}
-          <div class="course-item">
-            <div class="course-image">
-              <span class="course-image-initial">{{ course.name|first|upper }}</span>
-              {% if course.course_image %}
-                <img src="{{ course.course_image.url }}" alt="{{ course.name }}" loading="lazy"
-                     onerror="this.remove();">
-              {% endif %}
-            </div>
-
-            <div class="course-content">
-              <div class="course-header">
-                <div class="course-title">
-                  <a href="{{ url('course_detail', course.slug) }}" class="course-name">
-                    {{ course.name }}
-                  </a>
-                </div>
-
-                <div class="course-badges">
-                  {% if current_tab == 'joinable' and request.user.is_authenticated %}
-                    <div class="course-join-form">
-                      <form method="post" action="{{ url('course_join', course.slug) }}">
-                        {% csrf_token %}
-                        <button type="submit" class="action-btn small background-green">
-                          {{ _('Join') }}
-                        </button>
-                      </form>
-                    </div>
-                  {% else %}
-                    {% if course.is_open %}
-                      <span class="badge badge-open">{{ _('Open') }}</span>
-                    {% else %}
-                      <span class="badge badge-closed">{{ _('Closed') }}</span>
-                    {% endif %}
-                  {% endif %}
-                </div>
-              </div>
-
-              {% if course.about %}
-                <div class="course-description">
-                  {{ course.about|markdown|striptags|truncatewords(25) }}
-                </div>
-              {% endif %}
-
-              <div class="course-meta">
-                {% set teachers = course.get_teachers() %}
-                {% if teachers %}
-                  <div class="course-meta-item">
-                    <i class="fa fa-user-tie"></i>
-                    <span>
-                      {{ link_users(teachers[:2]) }}
-                      {% if teachers|length > 2 %}
-                        {{ _('and %(count)d more', count=teachers|length - 2) }}
-                      {% endif %}
-                    </span>
-                  </div>
-                {% endif %}
-
-                <div class="course-meta-item">
-                  <i class="fa fa-building"></i>
-                  <span>{{ organization.name }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-
-      {% if page_obj and page_obj.num_pages > 1 %}
-        <div class="pagination-wrapper">
-          {% include "list-pages.html" %}
-        </div>
-      {% endif %}
+    {% include "organization/courses_left_sidebar.html" %}
+    {% if can_create_course %}
+      <p class="course-create-link"><a href="{{ url('course_add') }}?organization={{ organization.id }}"><i class="fa fa-plus" aria-hidden="true"></i> {{ _('Create Course') }}</a></p>
+    {% endif %}
+    {% include "course/search-form.html" %}
+    <div class="course-results-summary" role="status">{% trans count=paginator.count %}{{ count }} course found{% pluralize %}{{ count }} courses found{% endtrans %}</div>
+    {% if courses %}{% include "course/cards.html" %}
     {% else %}
       <div class="no-courses">
-        {% if current_tab == 'my' %}
-          <h3>{{ _('No courses enrolled in %(org)s', org=organization.name) }}</h3>
-          <p>{{ _('You are not enrolled in any courses in this organization yet. Browse available courses and join to start
-            learning!') }}</p>
-        {% else %}
-          <h3>{{ _('No courses available to join in %(org)s', org=organization.name) }}</h3>
-          <p>{{ _('There are no open courses available for you to join in this organization at this time.') }}</p>
-        {% endif %}
+        <h3>{{ _('No courses match your filters') }}</h3>
+        <p>{{ _('Try a different search or clear the filters.') }}</p>
       </div>
     {% endif %}
+    {% if page_obj and page_obj.paginator.num_pages > 1 %}{% include "list-pages.html" %}{% endif %}
   </div>
 {% endblock %}

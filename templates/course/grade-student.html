@@ -1,0 +1,12 @@
+<div class="course-grade-student">
+  <div class="course-grade-student-name">
+    <div>{{ link_user(student) }}</div>
+    <div>{{ student.first_name or "" }}</div>
+  </div>
+  {% if is_editable %}
+    <a class="course-view-as-student" href="{{ course.get_absolute_url() }}?preview={{ student.username|urlencode }}"
+       title="{{ _('View as student') }}" aria-label="{{ _('View as student') }}: {{ student.username }}">
+      <i class="fa fa-eye" aria-hidden="true"></i>
+    </a>
+  {% endif %}
+</div>

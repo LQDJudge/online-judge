@@ -22,17 +22,18 @@
             </div>
           </center>
         {% else %}
-          <p>{{ _('This course is not open for public enrollment. Please contact the course instructor for access.') }}</p>
+          <p>{{ enrollment_reason }}</p>
         {% endif %}
       {% else %}
-        <p>{{ _('Please log in to enroll in this course.') }}</p>
+        {% if not course.is_open %}<p>{{ enrollment_reason }}</p>{% endif %}
+        <p><a class="action-btn" href="{{ url('auth_login') }}?next={{ request.path|urlencode }}">{{ _('Log in to join') if course.is_open else _('Log in') }}</a></p>
       {% endif %}
     </div>
 
     {% if course.about %}
       <div class="course-info">
         <h3>{{ _('About This Course') }}</h3>
-        <div>
+        <div class="course-rich-content">
           {{ course.about|markdown|reference|str|safe }}
         </div>
       </div>

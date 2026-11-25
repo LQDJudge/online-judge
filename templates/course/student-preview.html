@@ -1,0 +1,7 @@
+{% if preview_profile %}
+  <div class="course-empty-state" role="status">
+    <p>{{ _('View as student') }}: {{ link_user(preview_profile) }}</p>
+    <p>{{ _('Read-only student view. Quiz actions are unavailable.') }}</p>
+    <a class="action-btn" href="{{ request.path }}">{{ _('Exit student view') }}</a>
+  </div>
+{% endif %}

@@ -1,0 +1,47 @@
+<form class="grades-filter-form course-filter-panel" method="get" action="" role="search">
+  <div class="course-filter-primary">
+    <div class="grades-filter-fields course-filter-fields">
+      <div class="grades-search-field course-filter-field course-filter-query">
+        <label for="grade-search">{{ _('Search') }}</label>
+        <div class="grades-search-input course-filter-input">
+          <i class="fa fa-search" aria-hidden="true"></i>
+          <input id="grade-search" type="search" name="search" placeholder="{{ _('Username or name') }}" value="{{ search_query or '' }}">
+        </div>
+      </div>
+      {% if organizations is defined and organizations %}
+        <div class="grades-group-field course-filter-field">
+          <label for="search-org">{{ _('Group') }}</label>
+          <select id="search-org" name="orgs" multiple>
+            {% for org in organizations %}
+              <option value="{{ org.id }}"{% if org.id in (org_query or []) %} selected{% endif %}>{{ org.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+    </div>
+    <div class="grades-filter-actions course-filter-actions">
+      <button type="submit" class="action-btn">{{ _('Apply') }}</button>
+      {% if search_query or friend_only or org_query %}
+        <a href="{{ request.path }}">{{ _('Reset') }}</a>
+      {% endif %}
+    </div>
+    <div class="grades-page-actions course-filter-actions">
+      {% if my_page %}
+        <a class="action-btn grades-secondary-action course-filter-secondary" id="my-rank-btn" href="#"
+           data-page="{{ my_page }}" data-username="{{ request.profile.username }}">
+          <i class="fa fa-user" aria-hidden="true"></i>
+          {{ _('My progress') if own_grades_only else _('My rank') }}
+        </a>
+      {% endif %}
+      <a class="action-btn grades-secondary-action course-filter-secondary" href="?{{ request.GET.urlencode() }}&amp;export=csv" title="{{ _('Export this page (CSV)') }}" aria-label="{{ _('Export this page (CSV)') }}">
+        <i class="fa fa-download" aria-hidden="true"></i> {{ _('CSV') }}
+      </a>
+    </div>
+  </div>
+  <div class="grades-filter-footer course-filter-options">
+    <label class="grades-friends course-filter-option">
+      <input type="checkbox" name="friend" value="1"{% if friend_only %} checked{% endif %}>
+      {{ _('Friends') }}
+    </label>
+  </div>
+</form>

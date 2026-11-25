@@ -47,7 +47,6 @@ from judge.models import (
     BlogPost,
     ContestProblem,
     ProfileInfo,
-    Block,
     Course,
 )
 from judge import contest_format
@@ -713,12 +712,22 @@ CONTEST_EDIT_FIELD_SECTIONS = [
 
 
 class AddOrganizationMemberForm(ModelForm):
-    new_users = CharField(
-        max_length=65536,
-        widget=forms.Textarea,
-        help_text=_("Enter usernames separating by space"),
-        label=_("New users"),
+    users = forms.ModelMultipleChoiceField(
+        queryset=Profile.objects.select_related("user"),
+        widget=HeavySelect2MultipleWidget(data_view="profile_select2"),
+        required=False,
+        label=_("Select users"),
     )
+    new_users = CharField(
+        max_length=32000,
+        widget=forms.Textarea(attrs={"rows": 3}),
+        required=False,
+        help_text=_(
+            "Separate usernames with spaces, commas, or new lines. Maximum 200 users per batch."
+        ),
+        label=_("Paste usernames"),
+    )
+    confirmation = CharField(required=False, widget=forms.HiddenInput)
 
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
@@ -726,44 +735,20 @@ class AddOrganizationMemberForm(ModelForm):
             raise ValueError("An organization instance must be provided.")
         super().__init__(*args, **kwargs)
 
-    def clean_new_users(self):
-        new_users = self.cleaned_data.get("new_users") or ""
-        usernames = new_users.split()
-        if self.organization.has_school():
-            if len(set(usernames)) > 500:
-                raise ValidationError(_("Add at most 500 students at a time."))
-            return usernames
-        non_existent_usernames = []
-        blocked_usernames = []
-        valid_profiles = []
-
-        for username in usernames:
-            profile = Profile.objects.filter(user__username=username).first()
-
-            if not profile:
-                non_existent_usernames.append(username)
-            elif Block.is_blocked(blocker=profile, blocked=self.organization):
-                blocked_usernames.append(username)
-            else:
-                valid_profiles.append(profile)
-
-        if non_existent_usernames or blocked_usernames:
-            error_messages = []
-            if non_existent_usernames:
-                error_messages.append(
-                    _("These usernames don't exist: {usernames}").format(
-                        usernames=", ".join(non_existent_usernames)
-                    )
-                )
-            if blocked_usernames:
-                error_messages.append(
-                    _("These users have blocked this group: {usernames}").format(
-                        usernames=", ".join(blocked_usernames)
-                    )
-                )
-            raise ValidationError(error_messages)
-
-        return valid_profiles
+    def clean(self):
+        cleaned = super().clean()
+        names = [p.user.username for p in cleaned.get("users", [])]
+        names.extend(re.split(r"[\s,]+", cleaned.get("new_users", "").strip()))
+        unique = {}
+        for name in names:
+            if name:
+                unique.setdefault(name.casefold(), name)
+        if len(unique) > 200:
+            raise ValidationError(_("Add at most 200 users at a time."))
+        if not unique:
+            raise ValidationError(_("Select users or paste usernames to add."))
+        cleaned["member_usernames"] = list(unique.values())
+        return cleaned
 
     class Meta:
         model = Organization
@@ -1220,11 +1205,14 @@ class AddCourseForm(ModelForm):
         self.request = kwargs.pop("request", None)
         self.organization = kwargs.pop("organization", None)
         super(AddCourseForm, self).__init__(*args, **kwargs)
+        self.fields["about"].required = False
 
         # Set organizations queryset based on user permissions
         if self.request:
             admin_org_ids = self.request.profile.get_admin_organization_ids()
-            if admin_org_ids:
+            if self.request.user.is_superuser:
+                self.fields["organizations"].queryset = Organization.objects.all()
+            elif admin_org_ids:
                 self.fields["organizations"].queryset = Organization.objects.filter(
                     id__in=admin_org_ids
                 )
@@ -1274,6 +1262,7 @@ class AddCourseForm(ModelForm):
             "about",
             "is_public",
             "is_open",
+            "show_classmates_grades",
             "organizations",
         ]
         widgets = {}

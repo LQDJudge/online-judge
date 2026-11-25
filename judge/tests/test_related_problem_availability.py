@@ -18,7 +18,8 @@ class RelatedProblemAvailabilityTests(SimpleTestCase):
         self.profile = SimpleNamespace(id=71, user=SimpleNamespace(id=72))
         self.problem = SimpleNamespace(id=73)
         self.visible = patch("judge.utils.problems.Problem.get_visible_problems")
-        self.visible.start().return_value = MagicMock()
+        self.visible_query = self.visible.start()
+        self.visible_query.return_value = MagicMock()
         self.addCleanup(self.visible.stop)
         self.completed = patch(
             "judge.utils.problems.user_completed_ids", return_value=[]
@@ -61,3 +62,6 @@ class RelatedProblemAvailabilityTests(SimpleTestCase):
                 get_related_problems(self.profile, self.problem), [self.problem]
             )
             loader.assert_called_once_with(73)
+            self.visible_query.assert_called_once_with(
+                self.profile.user, for_listing=True
+            )

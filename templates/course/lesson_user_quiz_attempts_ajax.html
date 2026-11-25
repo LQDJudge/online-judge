@@ -2,6 +2,7 @@
 <hr>
 {% set _is_result_hidden = is_result_hidden is defined and is_result_hidden %}
 {% if attempts %}
+  {% if _is_result_hidden %}<p>{{ _('Results hidden') }}</p>{% endif %}
   <table class="lightbox-submissions">
     <tbody>
       {% for attempt in attempts %}

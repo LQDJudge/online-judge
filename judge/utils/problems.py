@@ -236,11 +236,13 @@ def hot_problems(duration, limit):
     return qs
 
 
-@cache_wrapper(prefix="grp", timeout=14400)
+@cache_wrapper(prefix="grp_discovery", timeout=14400)
 def get_related_problems(profile, problem, limit=8):
     if not profile or not getattr(settings, "USE_ML", False):
         return None
-    problemset = Problem.get_visible_problems(profile.user).values_list("id", flat=True)
+    problemset = Problem.get_visible_problems(
+        profile.user, for_listing=True
+    ).values_list("id", flat=True)
     problemset = problemset.exclude(id__in=user_completed_ids(profile))
     problemset = problemset.exclude(id=problem.id)
 

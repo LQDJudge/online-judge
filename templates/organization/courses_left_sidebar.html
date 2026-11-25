@@ -1,17 +1,8 @@
-{% set query_string = request.GET.urlencode() %}
-{% set my_courses_url = url('organization_courses', organization.id, organization.slug) + '?tab=my' %}
-{% set joinable_courses_url = url('organization_courses', organization.id, organization.slug) + '?tab=joinable' %}
-<div class="left-sidebar">
+<nav class="course-directory-tabs" aria-label="{{ _('Courses') }}">
   {% if request.user.is_authenticated %}
-    {{ make_tab_item('my', 'fa fa-user', my_courses_url, _('My Courses')) }}
-    {{ make_tab_item('joinable', 'fa fa-plus-circle', joinable_courses_url, _('Join Courses')) }}
+    <a href="{{ url('organization_courses', organization.id, organization.slug) }}?tab=my"{% if current_tab == 'my' %} class="active" aria-current="page"{% endif %}>{{ _('My Courses') }}</a>
+    <a href="{{ url('organization_courses', organization.id, organization.slug) }}?tab=joinable"{% if current_tab == 'joinable' %} class="active" aria-current="page"{% endif %}>{{ _('Join Courses') }}</a>
   {% else %}
-    {{ make_tab_item('joinable', 'fa fa-list', joinable_courses_url, _('Available Courses')) }}
+    <a href="{{ url('organization_courses', organization.id, organization.slug) }}?tab=joinable" class="active" aria-current="page">{{ _('Available Courses') }}</a>
   {% endif %}
-  {% if can_create_course %}
-    {{ make_tab_item('add', 'fa fa-plus', url('course_add'), _('Add')) }}
-  {% endif %}
-  {% if request.user.is_superuser %}
-    {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_course_changelist'), _('Admin'), force_new_page=True) }}
-  {% endif %}
-</div>
+</nav>

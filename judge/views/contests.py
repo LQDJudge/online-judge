@@ -182,7 +182,7 @@ class ContestListMixin(object):
     include_official_live = False
 
     def get_queryset(self):
-        q = Contest.get_visible_contests(self.request.user)
+        q = Contest.get_visible_contests(self.request.user, show_own_contests_only=True)
         if self.official:
             q = q.filter(official__isnull=False).select_related(
                 "official", "official__category", "official__location"
@@ -2676,7 +2676,7 @@ class OfficialContestList(ContestList):
         context["page_type"] = "official"
         context["is_official"] = True
         visible_official_contests = Contest.get_visible_contests(
-            self.request.user
+            self.request.user, show_own_contests_only=True
         ).filter(official__isnull=False)
         visible_categories = OfficialContestCategory.objects.filter(
             officialcontest__contest__in=visible_official_contests

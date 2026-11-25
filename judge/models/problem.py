@@ -398,13 +398,13 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         return self.can_manage_activity_by(user)
 
     @classmethod
-    def get_visible_problems(cls, user, profile=None):
+    def get_visible_problems(cls, user, profile=None, *, for_listing=False):
         # Do unauthenticated check here so we can skip authentication checks later on.
         if not user.is_authenticated or not user:
             return cls.get_public_problems()
 
         # Conditions for visible problem:
-        #   - `judge.edit_all_problem` or `judge.see_private_problem`
+        #   - outside listings: `judge.edit_all_problem` or `judge.see_private_problem`
         #   - otherwise
         #       - not is_public problems
         #           - author or curator or tester
@@ -413,12 +413,14 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         #           - author or curator or tester
         queryset = cls.objects.defer("description")
         profile = profile or user.profile
-        if not (
+        # Discovery follows ordinary visibility; selectors and access tools may
+        # still use global permissions to work with hidden problems.
+        if for_listing or not (
             user.has_perm("judge.see_private_problem")
             or user.has_perm("judge.edit_all_problem")
         ):
             q = Q(is_public=True)
-            if not user.has_perm("judge.see_organization_problem"):
+            if for_listing or not user.has_perm("judge.see_organization_problem"):
                 # Either not organization private or in the organization.
                 q &= Q(is_organization_private=False) | Q(
                     is_organization_private=True,

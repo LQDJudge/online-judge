@@ -107,10 +107,9 @@ class LessonGradesPopupTest(TestCase):
             ],
         )
 
-    def test_anonymous_redirects_to_login(self):
+    def test_anonymous_ajax_returns_unauthorized(self):
         resp = self.client.get(self._url())
-        self.assertEqual(resp.status_code, 302)
-        self.assertIn("/accounts/login/", resp.url)
+        self.assertEqual(resp.status_code, 401)
 
     def test_enrolled_member_sees_submissions(self):
         self.client.force_login(self.viewer.user)
@@ -254,8 +253,16 @@ class LessonGradesPopupTest(TestCase):
             + lesson_grade_url
             + r"\?focus="
             + self.student.username
-            + r'">\s*0(?:[,.]00)?\s*</a>',
+            + r'">\s*\?\s*</a>',
         )
+
+        student = next(
+            profile
+            for profile in course_resp.context["grade_total"]
+            if profile.pk == self.student.pk
+        )
+        self.assertTrue(course_resp.context["grade_total"][student]["is_result_hidden"])
+        self.assertEqual(course_resp.context["global_rank"], {})
 
         lesson_resp = self.client.get(
             reverse("course_lesson_detail", args=[self.course.slug, self.lesson.id])

@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 from django.test import SimpleTestCase
 
@@ -104,9 +105,13 @@ class FeedGeneratorDedupTests(SimpleTestCase):
 
 class FeedCacheKeyTests(SimpleTestCase):
     def test_feed_cache_key_is_scoped_by_organization(self):
+        organizations = MagicMock()
+        organizations.order_by.return_value.values_list.return_value = [3152]
         request = SimpleNamespace(
             user=SimpleNamespace(is_authenticated=True),
-            profile=SimpleNamespace(id=7),
+            profile=SimpleNamespace(
+                id=7, get_content_organizations=lambda: organizations
+            ),
             GET={"ft": "token"},
         )
         first_org = SimpleNamespace(id=3152)

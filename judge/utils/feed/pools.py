@@ -43,7 +43,9 @@ def _feed_cache_key(request, pool_name, organization=None):
         user_key = "anon"
     feed_token = request.GET.get("ft", "")
     org_key = f"o{organization.id}" if organization else "global"
-    return f"feed:{pool_name}:{org_key}:{user_key}:{feed_token}"
+    # Retire cached problem recommendations built with global admin visibility.
+    pool_key = "problem-discovery" if pool_name == "problem" else pool_name
+    return f"feed:{pool_key}:{org_key}:{user_key}:{feed_token}"
 
 
 class CachedPool:
@@ -283,9 +285,9 @@ class ProblemPool(CachedPool):
             )
 
             visible_ids = list(
-                Problem.get_visible_problems(self.request.user).values_list(
-                    "id", flat=True
-                )
+                Problem.get_visible_problems(
+                    self.request.user, for_listing=True
+                ).values_list("id", flat=True)
             )
             if not visible_ids:
                 return []

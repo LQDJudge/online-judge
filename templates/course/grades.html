@@ -1,5 +1,7 @@
 {% extends "course/base.html" %}
 
+{% block page_container_class %}{{ super() }} soft-listing-page{% endblock %}
+
 {% block two_col_media %}
 {% endblock %}
 
@@ -9,7 +11,7 @@
       $('#search-org').select2({
         placeholder: '{{ _("Group") }}',
         allowClear: true,
-        width: '15em',
+        width: '100%',
       }).on('change', function() {
         $(this).closest('form').submit();
       });
@@ -39,49 +41,28 @@
     <center>
       <h2>{{content_title}}</h2>
     </center>
-    <form class="grades-filter-form" method="get" action="">
-      {% if organizations is defined and organizations %}
-        <select id="search-org" name="orgs" multiple>
-          {% for org in organizations %}
-            <option value="{{ org.id }}"{% if org.id in (org_query or []) %} selected{% endif %}>
-              {{ org.name }}
-            </option>
-          {% endfor %}
-        </select>
-      {% endif %}
-      <label>
-        <input type="checkbox" name="friend" value="1"
-               {% if friend_only %} checked{% endif %}
-               onchange="this.form.submit()">
-        {{ _("Friends") }}
-      </label>
-      <input type="text" name="search" placeholder="{{_('Search')}}" value="{{ search_query or '' }}">
-      <button type="submit" hidden></button>
-      {% if my_page %}
-        <a class="action-btn" id="my-rank-btn" href="#" style="margin-left: auto;"
-           data-page="{{ my_page }}" data-username="{{ request.profile.username }}">
-          <i class="fa fa-user"></i> {{ _('My rank') }}</a>
-      {% endif %}
-    </form>
-    <div class="table-container">
+    {% include "course/grades-filter.html" %}
+    {% if not grade_total %}<p class="course-empty-state">{{ _('No students match these filters.') }}</p>{% endif %}
+    <div class="table-container" tabindex="0" role="region" aria-label="{{ _('Grades') }}">
       <table class="table striped" id="users-table">
         <thead>
           <tr>
-            <th>#</th>
-            <th>{{_('Student')}}</th>
+            <th class="rank">{{ '#' if not own_grades_only else '' }}</th>
+            <th class="static">{{_('Student')}}</th>
             <th>{{_('Total')}}</th>
             {% for lesson in lessons %}
               <th class="points" title="{{lesson.title}}">
-                <a href="{{url('course_grades_lesson', course.slug, lesson.id)}}">
-                  L{{ loop.index0 + 1 }}
+                <a {% if lesson.id not in locked_lesson_ids %}href="{{ lesson_grade_urls[lesson.id] }}"{% else %}aria-disabled="true" title="{{ _('Locked') }}"{% endif %}>
+                  {% if lesson.id in locked_lesson_ids %}<i class="fa fa-lock" aria-label="{{ _('Locked') }}"></i>{% endif %}
+                  L{{ loop.index }}
                   <div class="point-denominator">{{lesson.points}}</div>
                 </a>
               </th>
             {% endfor %}
             {% for course_contest in course_contests %}
               <th class="points" title="{{course_contest.contest.name}}">
-                <a href="{{url('contest_ranking', course_contest.contest.key)}}" target="_blank">
-                  C{{ loop.index0 + 1 }}
+                <a href="{{ contest_ranking_urls[course_contest.id] }}" target="_blank">
+                  C{{ loop.index }}
                   <div class="point-denominator">{{course_contest.points}}</div>
                 </a>
               </th>
@@ -97,16 +78,12 @@
             {% set is_me = request.profile and student.id == request.profile.id %}
             <tr{% if is_focus %} class="highlight"{% endif %}{% if is_me %} id="my-grades-row"{% endif %}>
               <td class="rank">{{ global_rank.get(student.id, '') }}</td>
-              <td class="user-name">
-                <div>
-                  {{link_user(student)}}
-                </div>
-                <div>
-                  {{student.first_name or ""}}
-                </div>
+              <td class="user-name static">
+                {% include "course/grade-student.html" %}
               </td>
               <td class="total-score">
-                {% if grade_total_student %}
+                {% if grade_total_student and grade_total_student.get('is_result_hidden') %}{{ _('Results hidden') }}
+                {% elif grade_total_student %}
                   {{ grade_total_student['percentage'] | floatformat(2) }}%
                 {% else %}
                   0
@@ -115,8 +92,9 @@
               {% for lesson in lessons %}
                 {% set val = grade_lessons_student.get(lesson.id) %}
                 <td class="partial-score">
-                  <a href="{{ url('course_grades_lesson', course.slug, lesson.id) }}?focus={{ student.username }}">
-                    {% if val and val['total_points'] %}
+                  <a {% if lesson.id not in locked_lesson_ids %}href="{{ lesson_grade_urls[lesson.id] }}?focus={{ student.username }}"{% else %}aria-disabled="true" title="{{ _('Locked') }}"{% endif %}>
+                    {% if val and val.get('is_result_hidden') %}?
+                    {% elif val and val['total_points'] %}
                       {{ (val['achieved_points'] / val['total_points'] * lesson.points) | floatformat(2) }}
                     {% else %}0{% endif %}
                   </a>
@@ -125,8 +103,9 @@
               {% for course_contest in course_contests %}
                 {% set val = grade_contests_student.get(course_contest.id) %}
                 <td class="partial-score">
-                  <a href="{{ url('contest_ranking', course_contest.contest.key) }}?user={{ student.username|urlencode }}">
-                    {% if val and val['total_points'] %}
+                  <a href="{{ contest_ranking_urls[course_contest.id] }}?user={{ student.username|urlencode }}">
+                    {% if val and val.get('is_result_hidden') %}?
+                    {% elif val and val['total_points'] %}
                       {{ (val['achieved_points'] / val['total_points'] * course_contest.points) | floatformat(2) }}
                     {% else %}
                       0
@@ -139,7 +118,7 @@
         </tbody>
       </table>
     </div>
-    {% if page_obj and page_obj.num_pages > 1 %}
+    {% if page_obj and page_obj.paginator.num_pages > 1 %}
       <div class="grades-pagination">
         {% include "list-pages.html" %}
       </div>

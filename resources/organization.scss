@@ -1,6 +1,80 @@
 @use "vars" as *;
 @use "sass:color";
 
+.organization-add-members {
+    min-width: 0;
+    overflow-wrap: anywhere;
+
+    .member-batch-field {
+        margin-bottom: $space-lg;
+
+        label {
+            display: block;
+            margin-bottom: $space-sm;
+            font-weight: 600;
+        }
+    }
+
+    textarea, .select2-container {
+        width: 100% !important;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    textarea {
+        resize: vertical;
+    }
+
+    .select2-container .select2-selection__choice {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        box-sizing: border-box;
+    }
+
+    .help {
+        color: $text-secondary;
+        margin: $space-sm 0;
+    }
+
+    .member-batch-preview {
+        padding: $space-md;
+        margin-bottom: $space-lg;
+        background: $background_light_gray;
+        border: 1px solid $border-light;
+        border-radius: $radius-lg;
+
+        h3 { margin-top: 0; }
+
+        ul {
+            display: flex;
+            flex-wrap: wrap;
+            gap: $space-sm $space-lg;
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            padding: 4px 10px;
+            border: 1px solid $border-light;
+            border-radius: $radius-sm;
+        }
+    }
+
+    .member-batch-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-sm;
+
+        button {
+            margin: 0;
+            white-space: normal;
+            max-width: 100%;
+        }
+    }
+}
+
 .school-departure-form .school-departure-trigger {
     border: 0;
     padding: 0;

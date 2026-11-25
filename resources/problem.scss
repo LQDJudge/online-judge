@@ -2261,13 +2261,12 @@ body:not(.problem-raw) {
 
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
         }
 
         th,
         td {
             padding: 6px 10px;
-            border: 1px solid $border_gray;
             text-align: left;
         }
     }

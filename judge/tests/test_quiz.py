@@ -330,7 +330,7 @@ class QuizQuestionBankDiscoverabilityTestCase(TestCase):
         self.client.force_login(self.user)
 
     def _create_question(self, title, question_type="MC", is_public=False):
-        return QuizQuestion.objects.create(
+        question = QuizQuestion.objects.create(
             question_type=question_type,
             title=title,
             content="Question content without numeric identifiers",
@@ -338,9 +338,12 @@ class QuizQuestionBankDiscoverabilityTestCase(TestCase):
             correct_answers={"answers": "a"},
             is_public=is_public,
         )
+        question.authors.add(self.user.profile)
+        return question
 
     def test_select2_question_search_matches_exact_id(self):
         question = self._create_question("Findable only by primary key")
+        question.authors.clear()  # Admin authoring selectors can still find unrelated private objects.
 
         response = self.client.get(
             reverse("quiz_question_select2"), {"term": f"Q{question.pk}"}
@@ -360,6 +363,7 @@ class QuizQuestionBankDiscoverabilityTestCase(TestCase):
             choices=[{"id": "A", "text": "UniqueStatementKeyword"}],
             correct_answers={"answers": {"A": False}},
         )
+        question.authors.add(self.user.profile)
         response = self.client.get(
             reverse("question_bank_list"), {"search": "UniqueStatementKeyword"}
         )
@@ -400,6 +404,7 @@ class QuizQuestionBankDiscoverabilityTestCase(TestCase):
             ],
             correct_answers={"answers": {"OnlyAnIdentifier": True}},
         )
+        question.authors.add(self.user.profile)
         for term in ("phức", "PHỨC", "ĐỘ", "100%", "a_b", "hi!", '"quoted"'):
             with self.subTest(term=term):
                 response = self.client.get(

@@ -20,6 +20,7 @@ from chat_box.models import Room
 from judge.models import Block, OfficialSchool, Organization, Profile
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.official_school import school_write
+from judge.services.member_batches import resolve_member_usernames
 
 
 @contextmanager
@@ -252,17 +253,16 @@ def remove_school_member(actor, organization_id, profile_id):
 
 
 @transaction.atomic
-def bulk_enroll_school(actor, organization_id, usernames):
+def bulk_enroll_school(
+    actor, organization_id, usernames, *, preview=False, expected=None
+):
+    """Plan or apply enrollment; an expected plan guards preview confirmation."""
     usernames = list(dict.fromkeys(usernames))
     if len(usernames) > 500:
         raise ValidationError(_("Add at most 500 students at a time."))
     if not can_manage_school(actor, organization_id):
         raise PermissionDenied
-    found_profiles = list(
-        Profile.objects.filter(user__username__in=usernames).select_related("user")
-    )
-    by_name = {profile.user.username: profile for profile in found_profiles}
-    profiles = [by_name[name] for name in usernames if name in by_name]
+    profiles, unknown = resolve_member_usernames(usernames)
     org = lock_school_scope([p.pk for p in profiles], [organization_id])[
         organization_id
     ]
@@ -278,7 +278,7 @@ def bulk_enroll_school(actor, organization_id, usernames):
         "conflict": [],
         "full": [],
     }
-    result["unknown"] = [name for name in usernames if name not in by_name]
+    result["unknown"] = unknown
     affiliations = school_map([p.pk for p in profiles])
     blocked = set(
         Block.objects.filter(
@@ -306,6 +306,17 @@ def bulk_enroll_school(actor, organization_id, usernames):
         else:
             added.append(profile)
             result["added"].append(profile.user.username)
+    if preview:
+        return result
+    if expected is not None and expected != {
+        "plan": result,
+        "profiles": sorted(profile.pk for profile in profiles),
+    }:
+        raise ValidationError(
+            _(
+                "The member list changed or the preview expired. Preview additions again."
+            )
+        )
     if added:
         with school_mutation():
             org.members.add(*added)

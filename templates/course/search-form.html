@@ -1,29 +1,41 @@
-<div class="sidebox course-search-box">
-  <h3 class="colored-text"><i class="fa fa-search" aria-hidden="true"></i>{{ _('Search') }}</h3>
-  <div class="sidebox-content">
-    <form id="filter-form" name="form" action="" method="get">
-      {% if current_tab %}
-        <input type="hidden" name="tab" value="{{ current_tab }}">
-      {% endif %}
-      <div>
-        <label class="sr-only" for="search">{{ _('Search') }}</label>
-        <input id="search" type="text" name="search" value="{{ search_query or '' }}"
-               placeholder="{{ _('Search') }}">
+<form id="course-filter-form" class="course-search-box course-filter-panel" name="form" action="" method="get" role="search">
+  {% if current_tab %}
+    <input type="hidden" name="tab" value="{{ current_tab }}">
+  {% endif %}
+  <div class="course-filter-primary">
+    <div class="course-filter-fields">
+      <div class="course-search-field course-search-query course-filter-field course-filter-query">
+        <label for="course-search">{{ _('Search') }}</label>
+        <div class="course-search-input course-filter-input">
+          <i class="fa fa-search" aria-hidden="true"></i>
+          <input id="course-search" type="search" name="search" value="{{ search_query or '' }}"
+                 placeholder="{{ _('Course, instructor, or organization') }}">
+        </div>
       </div>
       {% if current_tab == 'my' and request.user.is_authenticated %}
-        <p>
-          <label for="role_filter">{{ _('Filter by role:') }}</label>
+        <div class="course-search-field course-filter-field">
+          <label for="role_filter">{{ _('Role') }}</label>
           <select id="role_filter" name="role_filter">
             <option value="">{{ _('All roles') }}</option>
-            <option value="teaching" {% if role_filter=='teaching' %}selected{% endif %}>{{ _('Teaching + Assistant') }}
-            </option>
-            <option value="student" {% if role_filter=='student' %}selected{% endif %}>{{ _('Student') }}</option>
+            <option value="teaching"{% if role_filter == 'teaching' %} selected{% endif %}>{{ _('Teaching + Assistant') }}</option>
+            <option value="student"{% if role_filter == 'student' %} selected{% endif %}>{{ _('Student') }}</option>
           </select>
-        </p>
+        </div>
       {% endif %}
-      <div class="form-submit-group">
-        <button id="go" type="submit" class="action-btn">{{ _('Search') }}</button>
+      <div class="course-search-field course-filter-field">
+        <label for="course-sort">{{ _('Sort by') }}</label>
+        <select id="course-sort" name="sort">
+          {% for value, label in [('newest', _('Newest first')), ('name', _('Name')), ('students', _('Most students'))] %}
+            <option value="{{ value }}"{% if sort_order == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
       </div>
-    </form>
+    </div>
+    <div class="course-search-actions course-filter-actions">
+      <button id="go" type="submit" class="action-btn">{{ _('Search') }}</button>
+      {% if search_query or role_filter or sort_order != 'newest' %}
+        <a href="?tab={{ current_tab }}">{{ _('Reset') }}</a>
+      {% endif %}
+    </div>
   </div>
-</div>
+</form>

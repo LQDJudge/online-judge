@@ -128,6 +128,20 @@ class SchoolFixtures:
 
 class SchoolTestCase(SchoolFixtures, TestCase):
 
+    def post_member_batch(self, url, data, **extra):
+        preview = self.client.post(url, {**data, "action": "preview"}, **extra)
+        self.assertEqual(preview.status_code, 200)
+        self.assertIn("batch_confirmation", preview.context)
+        return self.client.post(
+            url,
+            {
+                **data,
+                "action": "confirm",
+                "confirmation": preview.context["batch_confirmation"],
+            },
+            **extra
+        )
+
     def test_mine_badges_only_official_schools_for_teachers_and_students(self):
         ordinary = Organization.objects.create(
             name="Ordinary group",
@@ -389,7 +403,7 @@ class SchoolTestCase(SchoolFixtures, TestCase):
             {"new_users": self.student.username},
             HTTP_ACCEPT_LANGUAGE="en",
         )
-        self.assertContains(response, "school has reached its member limit")
+        self.assertContains(response, "Member limit reached; skipped")
         self.assertNotContains(response, "they belong to another official school")
         self.assertNotContains(
             response, "They remain in their current school until then."
@@ -612,7 +626,7 @@ class SchoolTestCase(SchoolFixtures, TestCase):
 
     def test_teacher_bulk_add_route_and_hidden_identity_fields(self):
         self.client.force_login(self.teacher)
-        response = self.client.post(
+        response = self.post_member_batch(
             reverse("add_organization_member", args=[self.a.pk, self.a.slug]),
             {"new_users": self.student.username},
         )
@@ -628,7 +642,7 @@ class SchoolTestCase(SchoolFixtures, TestCase):
     def test_bulk_add_feedback_is_inline_and_preserves_only_skipped_users(self):
         self.enroll(self.b)
         self.client.force_login(self.teacher)
-        response = self.client.post(
+        response = self.post_member_batch(
             reverse("add_organization_member", args=[self.a.pk, self.a.slug]),
             {"new_users": self.student.username + " " + self.other.username},
             HTTP_ACCEPT_LANGUAGE="en",
@@ -642,7 +656,7 @@ class SchoolTestCase(SchoolFixtures, TestCase):
         )
         self.assertContains(response, "They remain in their current school until then.")
         self.assertContains(response, 'class="school-add-feedback"')
-        self.assertContains(response, ">Add members </button>")
+        self.assertContains(response, "Preview additions")
         self.assertNotContains(response, "Usernames not found:")
         self.assertEqual(
             response.context["form"]["new_users"].value(), self.student.username
@@ -658,7 +672,7 @@ class SchoolTestCase(SchoolFixtures, TestCase):
 
     def test_bulk_add_success_clears_input_without_queued_notifications(self):
         self.client.force_login(self.teacher)
-        response = self.client.post(
+        response = self.post_member_batch(
             reverse("add_organization_member", args=[self.a.pk, self.a.slug]),
             {"new_users": self.student.username},
             HTTP_ACCEPT_LANGUAGE="en",

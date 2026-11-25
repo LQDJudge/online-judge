@@ -1,85 +1,12 @@
 {% extends "organization/home-base.html" %}
 
+{% block media %}
+  {{ super() }}
+  {{ form.media.css }}
+{% endblock %}
+
 {% block org_js %}
   {{ form.media.js }}
-  <script>
-    $(function() {
-      // Create user search select box
-      var $searchContainer = $('<div class="user-search-container" style="margin-top: 1em;">');
-      var $label = $('<label><b>{{ _("Search user") }}:</b></label>');
-      var $select = $('<select id="user-search-select" style="width: 100%;"></select>');
-
-      $searchContainer.append($label);
-      $searchContainer.append($select);
-
-      // Insert after the new_users field (below textarea and help text)
-      var $fieldWrapper = $('#org-field-wrapper-new_users').parent();
-      var $helpText = $fieldWrapper.find('.org-help-text');
-      if ($helpText.length) {
-        $helpText.after($searchContainer);
-      } else {
-        $fieldWrapper.append($searchContainer);
-      }
-
-      // Initialize Select2
-      $select.select2({
-        placeholder: '{{ _("Search by handle...") }}',
-        allowClear: true,
-        ajax: {
-          url: '{{ url("user_search_select2_ajax") }}',
-          delay: 250,
-          cache: true,
-        },
-        minimumInputLength: 1,
-        escapeMarkup: function(markup) {
-          return markup;
-        },
-        templateResult: function(data, container) {
-          if (!data.id) return data.text;
-          return $('<span>')
-            .append($('<img>', {
-              'class': 'user-search-image',
-              src: data.gravatar_url
-            }))
-            .append($('<span>', {'class': data.display_rank + ' user-search-name'}).text(data.text));
-        },
-        templateSelection: function(data) {
-          return data.text || data.id;
-        }
-      }).on('select2:select', function(e) {
-        var selectedData = e.params.data;
-        var username = selectedData.text;
-
-        // Get the textarea
-        var $textarea = $('#id_new_users');
-        var currentValue = $textarea.val().trim();
-
-        // Check if username already exists
-        var existingUsernames = currentValue.split(/\s+/).filter(function(u) { return u.length > 0; });
-        if (existingUsernames.indexOf(username) === -1) {
-          // Append username
-          if (currentValue.length > 0) {
-            $textarea.val(currentValue + ' ' + username);
-          } else {
-            $textarea.val(username);
-          }
-        }
-
-        // Clear the select2 selection
-        $(this).val(null).trigger('change');
-        $(this).select2('close');
-      });
-    });
-  </script>
-  <style>
-    .user-search-container {
-      margin-bottom: 1.5em;
-    }
-    .user-search-container label {
-      display: block;
-      margin-bottom: 0.5em;
-    }
-  </style>
 {% endblock %}
 
 {% block middle_title %}{% endblock %}
@@ -98,7 +25,48 @@
       {% endif %}
     </section>
   {% endif %}
-  {% with organization_form_title = content_title if content_title else title, organization_submit_label = _('Add members') %}
-    {% include "organization/form.html" %}
-  {% endwith %}
+  <form method="post" class="edit-form-surface organization-edit-form organization-add-members">
+    <h2 class="organization-form-title">{{ _('Add members') }}</h2>
+    <p class="help"><a href="{{ url('organization_home', organization.id, organization.slug) }}">{{ organization.name }}</a></p>
+    {% csrf_token %}
+    {{ form.non_field_errors() }}
+    {% for field in form %}
+      {% if not field.is_hidden %}
+        <div class="member-batch-field">
+          {{ field.label_tag() }}
+          {{ field }}
+          {{ field.errors }}
+          {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+    {% if member_plan %}
+      <section class="member-batch-preview" aria-labelledby="member-batch-preview-title">
+        <h3 id="member-batch-preview-title">{{ _('Review additions') }}</h3>
+        <p class="help">{{ _('Only users listed as ready will be added. Other accounts will be skipped.') }}</p>
+        {% for key, label in member_plan_labels %}
+          {% if member_plan[key] %}
+            <div class="member-batch-group">
+              <h4>{{ label }} ({{ member_plan[key]|length }})</h4>
+              <ul>
+                {% for username in member_plan[key] %}
+                  <li>{% if key == 'unknown' %}{{ username }}{% else %}<a href="{{ url('user_page', username) }}">{{ username }}</a>{% endif %}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        {% endfor %}
+        {% if member_plan.conflict %}
+          <p>{{ _("Send these students this school's invitation link so they can confirm their transfer. They remain in their current school until then.") }}</p>
+        {% endif %}
+      </section>
+    {% endif %}
+    <div class="member-batch-actions">
+      {% if member_plan and member_plan.added %}
+        <input type="hidden" name="confirmation" value="{{ batch_confirmation }}">
+        <button type="submit" name="action" value="confirm" class="action-btn">{{ _('Confirm additions') }}</button>
+      {% endif %}
+      <button type="submit" name="action" value="preview" class="action-btn">{{ _('Preview additions') }}</button>
+    </div>
+  </form>
 {% endblock %}

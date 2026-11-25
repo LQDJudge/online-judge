@@ -30,6 +30,7 @@
           <div class="alert alert-danger alert-dismissable">
             <a href="#" class="close">x</a>
             {{ _("Please fix below errors") }}
+            {{ form.non_field_errors() }}
           </div>
         {% endif %}
 

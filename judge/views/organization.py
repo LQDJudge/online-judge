@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import redirect_to_login
+from django.core import signing
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils.text import slugify
@@ -66,7 +67,6 @@ from judge.models import (
     PageVote,
     PageVoteVoter,
 )
-from judge.models.course import RoleInCourse
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.block import get_all_blocked_pairs
 from judge.utils.views import (
@@ -85,6 +85,7 @@ from judge.views.submission import SubmissionsListBase
 from judge.utils.feed import build_home_feed
 from judge.views.feed import FeedView
 from judge.models.profile import get_top_rating_profile, get_top_score_profile
+from judge.services.member_batches import organization_member_plan
 from judge.services.official_school import (
     bulk_enroll_school,
     can_manage_school,
@@ -700,7 +701,7 @@ class OrganizationHome(OrganizationHomeView, FeedView):
 
         now = timezone.now()
         visible_contests = (
-            Contest.get_visible_contests(self.request.user)
+            Contest.get_visible_contests(self.request.user, show_own_contests_only=True)
             .filter(
                 is_visible=True,
                 is_organization_private=True,
@@ -1526,15 +1527,87 @@ class AddOrganizationMember(
         kwargs["organization"] = self.object
         return kwargs
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["member_plan_labels"] = (
+            ("added", _("Ready to add")),
+            ("existing", _("Already a member; skipped")),
+            ("unknown", _("Username not found; skipped")),
+            ("blocked", _("Blocked this organization; skipped")),
+            ("conflict", _("In another official school; skipped")),
+            ("full", _("Member limit reached; skipped")),
+        )
+        return context
+
+    @transaction.atomic
     def form_valid(self, form):
-        new_users = form.cleaned_data["new_users"]
-        if self.object.has_school():
+        usernames = form.cleaned_data["member_usernames"]
+        is_school = self.object.has_school()
+        try:
+            if is_school:
+                plan = bulk_enroll_school(
+                    self.request.user, self.object.pk, usernames, preview=True
+                )
+            else:
+                # Serialize capacity checks and this batch's membership write.
+                self.object = Organization.objects.select_for_update().get(
+                    pk=self.object.pk
+                )
+                plan, new_users = organization_member_plan(self.object, usernames)
+        except ValidationError as error:
+            form.add_error(None, error)
+            return self.form_invalid(form)
+        payload = {
+            "organization": self.object.pk,
+            "actor": self.request.user.pk,
+            "school": is_school,
+            "usernames": usernames,
+            "profiles": list(
+                Profile.objects.filter(user__username__in=usernames)
+                .order_by("pk")
+                .values("user__username", "pk")
+            ),
+            "plan": plan,
+        }
+        if self.request.POST.get("action") != "confirm":
+            return self.render_to_response(
+                self.get_context_data(
+                    form=form,
+                    member_plan=plan,
+                    batch_confirmation=signing.dumps(
+                        payload, salt="organization-members", compress=True
+                    ),
+                )
+            )
+        try:
+            confirmed = signing.loads(
+                form.cleaned_data["confirmation"],
+                salt="organization-members",
+                max_age=900,
+            )
+            if confirmed != payload:
+                raise signing.BadSignature
+        except signing.BadSignature:
+            form.add_error(
+                None,
+                _(
+                    "The member list changed or the preview expired. Preview additions again."
+                ),
+            )
+            return self.form_invalid(form)
+        if is_school:
             try:
                 result = bulk_enroll_school(
-                    self.request.user, self.object.pk, new_users
+                    self.request.user,
+                    self.object.pk,
+                    usernames,
+                    expected={
+                        "plan": plan,
+                        "profiles": [profile["pk"] for profile in payload["profiles"]],
+                    },
                 )
             except ValidationError as error:
-                form.add_error("new_users", error)
+                form.add_error(None, error)
                 return self.form_invalid(form)
             feedback = [
                 (key, label % {"users": ", ".join(result[key])})
@@ -1579,20 +1652,33 @@ class AddOrganizationMember(
                     school_add_conflicts=bool(result["conflict"]),
                 )
             )
-        self.object.members.add(*new_users)
+        if new_users:
+            self.object.members.add(*new_users)
+        messages.success(
+            self.request,
+            _("Added %(added)d members; skipped %(skipped)d.")
+            % {
+                "added": len(new_users),
+                "skipped": sum(len(rows) for rows in plan.values()) - len(new_users),
+            },
+        )
+        if not new_users:
+            return HttpResponseRedirect(self.get_success_url())
         link = reverse("organization_home", args=[self.object.id, self.object.slug])
-        html = f'<a href="{link}">{self.object.name}</a>'
+        html = format_html('<a href="{}">{}</a>', link, self.object.name)
         Notification.objects.bulk_create_notifications(
             user_ids=[u.id for u in new_users],
             category=NotificationCategory.ORGANIZATION,
             html_link=html,
             author=self.request.profile,
+            deduplicate=False,
         )
         with revisions.create_revision():
-            usernames = ", ".join([u.username for u in new_users])
+            usernames = ", ".join(u.user.username for u in new_users)
             revisions.set_comment(_("Added members from site") + ": " + usernames)
             revisions.set_user(self.request.user)
-            return super(AddOrganizationMember, self).form_valid(form)
+            revisions.add_to_revision(self.object)
+            return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("organization_users", args=[self.object.id, self.object.slug])
@@ -2165,60 +2251,10 @@ class OrganizationCourses(OrganizationCourseMixin, MemberOrganizationMixin, Cour
     template_name = "organization/course_list.html"
 
     def get(self, request, *args, **kwargs):
-        # Initialize kwargs if not present
-        self.kwargs = kwargs
-        default_tab = "my" if request.user.is_authenticated else "joinable"
-        self.current_tab = request.GET.get("tab", default_tab)
-        self.search_query = request.GET.get("search", "")
-        self.role_filter = request.GET.get("role_filter", "")
-        return super(CourseList, self).get(request, *args, **kwargs)
+        return CourseList.get(self, request, *args, **kwargs)
 
     def get_queryset(self):
-        profile = self.request.profile if self.request.user.is_authenticated else None
-
-        # Start with courses in this organization
-        queryset = Course.objects.filter(organizations=self.organization)
-
-        if self.current_tab == "my":
-            if not profile:
-                return Course.objects.none()
-            # Filter to user's courses within this organization
-            queryset = queryset.filter(courserole__user=profile)
-
-            # Apply role filter only for "my" courses tab
-            if self.role_filter:
-                if self.role_filter == "teaching":
-                    # Filter for Teaching + Assistant roles
-                    queryset = queryset.filter(
-                        courserole__user=profile,
-                        courserole__role__in=[
-                            RoleInCourse.TEACHER,
-                            RoleInCourse.ASSISTANT,
-                        ],
-                    )
-                elif self.role_filter == "student":
-                    # Filter for Student role
-                    queryset = queryset.filter(
-                        courserole__user=profile, courserole__role=RoleInCourse.STUDENT
-                    )
-        else:  # Default to "joinable" tab
-            # Show joinable courses within this organization
-            if profile:
-                # Exclude courses user is already in
-                user_course_ids = Course.objects.filter(
-                    courserole__user=profile
-                ).values_list("id", flat=True)
-                queryset = queryset.exclude(id__in=user_course_ids)
-            # Only show public and open courses for joinable tab
-            queryset = queryset.filter(is_public=True, is_open=True)
-
-        if self.search_query:
-            queryset = queryset.filter(
-                Q(name__icontains=self.search_query)
-                | Q(slug__icontains=self.search_query)
-            )
-
-        return queryset.order_by("-id").prefetch_related("organizations").distinct()
+        return CourseList.get_queryset(self)
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationCourses, self).get_context_data(**kwargs)

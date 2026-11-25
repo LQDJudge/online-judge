@@ -810,6 +810,19 @@ class QuizAttempt(models.Model):
         if profile and self.user_id == profile.id:
             return True
 
+        if (
+            profile
+            and self.lesson_quiz_id
+            and Course.is_editable_by(self.lesson_quiz.lesson.course, profile)
+        ):
+            return True
+
+        if (
+            self.lesson_quiz_id
+            and not self.lesson_quiz.lesson.course.show_classmates_grades
+        ):
+            return False
+
         if profile and self.quiz.is_editor(profile):
             return True
 

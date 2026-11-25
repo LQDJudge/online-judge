@@ -1,5 +1,7 @@
 {% extends "course/base.html" %}
 
+{% block page_container_class %}{{ super() }} soft-listing-page{% endblock %}
+
 {% block two_col_media %}
   {{ form.media.css }}
 {% endblock %}
@@ -14,7 +16,7 @@
       });
 
       // Confirm deletion - use event delegation to ensure it works
-      $(document).on('click', '.action-btn.background-red', function(e) {
+      $(document).on('click', '.course-remove-member', function(e) {
         if (!confirm('{{ _("Are you sure you want to remove this member?") }}')) {
           e.preventDefault(); // Prevent form submission
           return false;
@@ -35,7 +37,11 @@
           return;
         }
 
-        if (confirm('{{ _("Are you sure you want to change role of this user?") }}')) {
+        var message = {{ _('Are you sure you want to change role of this user?')|tojson }};
+        if ({{ current_user_role|tojson }} === newValue && ['AS', 'TE'].indexOf(newValue) !== -1) {
+          message += '\n' + {{ _('After promotion to your role, you can no longer edit or remove this member.')|tojson }};
+        }
+        if (confirm(message)) {
           // Update stored value and submit form
           $select.data('original-value', newValue);
           form.submit();
@@ -50,9 +56,59 @@
 
 {% block middle_content %}
   <center><h2>{{content_title}}</h2></center>
-  <div class="container">
+  <div class="container course-members-page">
+    <p>{{ _("Members: %(count)d", count=member_count) }}</p>
+    <form method="get" class="course-filter-panel" role="search">
+      <div class="course-filter-primary">
+        <div class="course-filter-fields">
+          <div class="course-filter-field course-filter-query">
+            <label for="member-search">{{ _('Search members') }}</label>
+            <div class="course-filter-input">
+              <i class="fa fa-search" aria-hidden="true"></i>
+              <input id="member-search" type="search" name="search" value="{{ search_query }}" placeholder="{{ _('Username or name') }}">
+            </div>
+          </div>
+          <div class="course-filter-field">
+            <label for="member-role">{{ _('Role') }}</label>
+            <select id="member-role" name="role">
+              <option value="">{{ _('All roles') }}</option>
+              {% for value, label in role_choices %}<option value="{{ value }}"{% if member_role_filter == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="course-filter-actions">
+          <button class="action-btn" type="submit">{{ _('Search') }}</button>
+          {% if search_query or member_role_filter %}<a href="{{ url('course_members', course.slug) }}">{{ _('Reset') }}</a>{% endif %}
+        </div>
+      </div>
+    </form>
+    <details id="add-members" class="add-member-form"{% if form.errors or batch_preview %} open{% endif %}>
+      <summary>{{ _('Add members') }}</summary>
+      <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors() }}
+        {% for field in form %}
+          {% if field.name != 'confirmation' %}
+            <div class="form-field">{{ field.label_tag() }} {{ field }} {{ field.errors }}
+              {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+        {% if current_user_role == 'AS' %}<p class="help">{{ _('After adding or promoting an assistant, you cannot edit or remove that assistant. A teacher can manage them.') }}</p>{% endif %}
+        {% if batch_preview %}
+          <div class="course-batch-preview">
+            <h3>{{ _('Review additions') }}</h3>
+            <ul>{% for row in batch_preview %}<li>{{ link_user(row.profile) }} — {% if row.existing %}{{ _('Already enrolled; skipped') }}{% else %}{{ _('Will be added') }}{% endif %}</li>{% endfor %}</ul>
+          </div>
+          {% if current_user_role in ['AS', 'TE'] and form.role.value() == current_user_role %}<p>{{ _('After promotion to your role, you can no longer edit or remove this member.') }}</p>{% endif %}
+          <input type="hidden" name="confirmation" value="{{ batch_confirmation }}">
+          <button type="submit" name="action" value="confirm" class="action-btn">{{ _('Confirm additions') }}</button>
+        {% endif %}
+        <button type="submit" name="action" value="preview" class="action-btn">{{ _('Preview additions') }}</button>
+      </form>
+    </details>
     {% if members %}
-      <table class="members-table">
+      <table class="table striped members-table">
         <thead>
           <tr>
             <th>{{ _('User') }}</th>
@@ -68,7 +124,7 @@
                   {{link_user(member.user)}}
                 </div>
                 <div>
-                  {{member.user.first_name}}
+                  {{ member.user.first_name or "" }}
                 </div>
               </td>
               <td>
@@ -82,7 +138,7 @@
                 {% endif %}
 
                 {% if can_change_role %}
-                  <form method="post" action="{{ url('course_update_member_role', course.slug) }}" class="inline-role-form">
+                  <form method="post" action="{{ url('course_update_member_role', course.slug) }}?{{ request.GET.urlencode() }}" class="inline-role-form">
                     {% csrf_token %}
                     <input type="hidden" name="member_id" value="{{ member.id }}">
                     <select name="role" class="role-select">
@@ -120,14 +176,25 @@
                   {% set can_remove_member = true %}
                 {% endif %}
 
-                {% if can_remove_member %}
-                  <form method="post" action="{{ url('course_remove_member', course.slug) }}" class="inline-delete-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="member_id" value="{{ member.id }}">
-                    <button type="submit" class="action-btn background-red">{{ _('Delete') }}</button>
-                  </form>
+                {% if member.role == 'ST' or can_remove_member %}
+                  <div class="course-member-actions">
+                    {% if member.role == 'ST' %}
+                      <a class="action-btn course-member-action" href="{{ course.get_absolute_url() }}?preview={{ member.user.username|urlencode }}" title="{{ _('View as student') }}">
+                        <i class="fa fa-eye" aria-hidden="true"></i> {{ _('View as student') }}
+                      </a>
+                    {% endif %}
+                    {% if can_remove_member %}
+                      <form method="post" action="{{ url('course_remove_member', course.slug) }}?{{ request.GET.urlencode() }}" class="inline-delete-form course-remove-member-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="member_id" value="{{ member.id }}">
+                        <button type="submit" class="action-btn course-member-action course-remove-member" title="{{ _('Remove from course') }}">
+                          <i class="fa fa-user-times" aria-hidden="true"></i> {{ _('Remove') }}
+                        </button>
+                      </form>
+                    {% endif %}
+                  </div>
                 {% else %}
-                  <span class="no-permission-text">{{ _('No permission') }}</span>
+                  <span aria-hidden="true">—</span>
                 {% endif %}
               </td>
             </tr>
@@ -140,36 +207,7 @@
       </p>
     {% endif %}
 
-    <div class="add-member-form">
-      <h4>{{ _('Add New Member') }}</h4>
-      <form method="post">
-        {% csrf_token %}
-        <div class="form-row">
-          <div class="form-field">
-            <label for="{{ form.user.id_for_label }}">{{ form.user.label }}</label>
-            {{ form.user }}
-            {% if form.user.errors %}
-              <div class="form-error">
-                {{ form.user.errors }}
-              </div>
-            {% endif %}
-          </div>
 
-          <div class="form-field">
-            <label for="{{ form.role.id_for_label }}">{{ form.role.label }}</label>
-            {{ form.role }}
-            {% if form.role.errors %}
-              <div class="form-error">
-                {{ form.role.errors }}
-              </div>
-            {% endif %}
-          </div>
-
-          <div>
-            <button type="submit" class="action-btn background-green">{{ _('Save') }}</button>
-          </div>
-        </div>
-      </form>
-    </div>
+    {% if page_obj and page_obj.paginator.num_pages > 1 %}{% include "list-pages.html" %}{% endif %}
   </div>
 {% endblock %}

@@ -33,9 +33,13 @@
 
   <form method="post">
     {% csrf_token %}
+    {{ lesson_field.non_field_errors() }}
     <div class="" style="margin-top:1em; margin-bottom: 1em">
       {% for field in lesson_field %}
-        {% if field %}
+        {% if field.is_hidden %}
+          {{ field.errors }}
+          {{ field }}
+        {% else %}
           <div style="margin-bottom: 1em;">
             {{ field.errors }}
             <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>

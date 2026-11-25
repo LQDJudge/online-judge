@@ -6,7 +6,24 @@ It includes the unlock algorithm that uses BFS to propagate unlock states based 
 user grades and prerequisite requirements.
 """
 
+import json
 from collections import defaultdict, deque
+
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
+from django.http import Http404
+from django.utils.translation import gettext as _
+
+from judge.models import (
+    Course,
+    CourseLessonProgress,
+    CourseLessonPrerequisite,
+    CourseRole,
+)
+from judge.utils.course_grades import (
+    bulk_max_case_points_per_problem,
+    bulk_calculate_lessons_progress,
+)
 
 
 def get_lesson_prerequisites_graph(course, valid_orders=None):
@@ -23,8 +40,6 @@ def get_lesson_prerequisites_graph(course, valid_orders=None):
             - adj_list: {source_order: [(target_order, required_percentage), ...]}
             - in_degree: {target_order: number_of_prerequisites}
     """
-    from judge.models import CourseLessonPrerequisite
-
     prerequisites = CourseLessonPrerequisite.objects.filter(course=course)
 
     adj_list = defaultdict(list)
@@ -68,10 +83,6 @@ def calculate_user_lesson_grades(user_profile, lessons):
     Returns:
         dict: {lesson_order: percentage}
     """
-    from judge.views.course import (
-        bulk_max_case_points_per_problem,
-        bulk_calculate_lessons_progress,
-    )
 
     if not lessons:
         return {}
@@ -119,7 +130,6 @@ def update_lesson_unlock_states(user_profile, course):
     Returns:
         list: List of newly unlocked lesson IDs
     """
-    from judge.models import CourseLessonProgress, CourseRole
 
     lessons = list(course.lessons.all())
     if not lessons:
@@ -171,26 +181,37 @@ def update_lesson_unlock_states(user_profile, course):
     # Update database - track newly unlocked lessons
     newly_unlocked = []
 
-    for lesson in lessons:
-        is_unlocked = lesson.order in unlocked_orders
-        grade = grades.get(lesson.order, 0)
-
-        progress, created = CourseLessonProgress.objects.get_or_create(
-            user=user_profile,
-            lesson=lesson,
-            defaults={"is_unlocked": is_unlocked, "percentage": grade},
+    existing = {
+        row.lesson_id: row
+        for row in CourseLessonProgress.objects.filter(
+            user=user_profile, lesson__in=lessons
         )
-
-        if not created:
-            was_locked = not progress.is_unlocked
-            # Update without triggering save() recursion
-            CourseLessonProgress.objects.filter(pk=progress.pk).update(
-                is_unlocked=is_unlocked, percentage=grade
+    }
+    created_rows, updated_rows = [], []
+    for lesson in lessons:
+        unlocked = lesson.order in unlocked_orders
+        grade = grades.get(lesson.order, 0)
+        row = existing.get(lesson.id)
+        if row is None:
+            created_rows.append(
+                CourseLessonProgress(
+                    user=user_profile,
+                    lesson=lesson,
+                    is_unlocked=unlocked,
+                    percentage=grade,
+                )
             )
-            if was_locked and is_unlocked:
+            if unlocked:
                 newly_unlocked.append(lesson.id)
-        elif is_unlocked:
-            newly_unlocked.append(lesson.id)
+        else:
+            if unlocked and not row.is_unlocked:
+                newly_unlocked.append(lesson.id)
+            row.is_unlocked, row.percentage = unlocked, grade
+            updated_rows.append(row)
+    CourseLessonProgress.objects.bulk_create(created_rows, ignore_conflicts=True)
+    CourseLessonProgress.objects.bulk_update(
+        updated_rows, ["is_unlocked", "percentage"]
+    )
 
     CourseRole.objects.filter(course=course, user=user_profile).update(
         needs_progress_recalculation=False
@@ -237,7 +258,6 @@ def get_lesson_lock_status(user_profile, course):
     Returns:
         dict: {lesson_id: is_locked} - True if locked, False if unlocked
     """
-    from judge.models import CourseLessonProgress, CourseLessonPrerequisite, CourseRole
 
     lessons = list(course.lessons.all())
     valid_orders = {lesson.order for lesson in lessons}
@@ -252,14 +272,10 @@ def get_lesson_lock_status(user_profile, course):
         update_lesson_unlock_states(user_profile, course)
 
     # Check if there are any valid prerequisites (both source and target exist)
-    has_valid_prerequisites = CourseLessonPrerequisite.objects.filter(
-        course=course,
+    if not course.lesson_prerequisites.filter(
         source_order__in=valid_orders,
         target_order__in=valid_orders,
-    ).exists()
-
-    if not has_valid_prerequisites:
-        # No valid prerequisites means all lessons are unlocked
+    ).exists():
         return {lesson.id: False for lesson in lessons}
 
     # Get existing progress records
@@ -303,8 +319,6 @@ def get_lesson_prerequisites_info(course):
     Returns:
         dict: {target_order: [(source_order, source_lesson_title, required_percentage), ...]}
     """
-    from judge.models import CourseLessonPrerequisite
-
     prerequisites = CourseLessonPrerequisite.objects.filter(course=course)
     lessons_by_order = get_lessons_by_order(course)
     valid_orders = set(lessons_by_order.keys())
@@ -338,7 +352,6 @@ def update_lesson_grade(user_profile, lesson):
         user_profile: Profile object
         lesson: CourseLesson object
     """
-    from judge.models import CourseLessonProgress, CourseRole
 
     course = lesson.course
 
@@ -378,6 +391,37 @@ def mark_course_for_recalculation(course):
     Args:
         course: Course object
     """
-    from judge.models import CourseRole
 
     CourseRole.objects.filter(course=course).update(needs_progress_recalculation=True)
+
+
+def require_lesson_access(lesson, user):
+    """One gate for lesson pages, grades, and every lesson quiz operation."""
+    profile = getattr(user, "profile", None) if user.is_authenticated else None
+    if not Course.is_accessible_by(lesson.course, profile):
+        raise PermissionDenied(_("You are not enrolled in this course."))
+    if Course.is_editable_by(lesson.course, profile):
+        return
+    if not lesson.is_visible:
+        raise Http404()
+    if get_lesson_lock_status(profile, lesson.course).get(lesson.pk, True):
+        raise PermissionDenied(
+            _("This lesson is locked. Complete prerequisites first.")
+        )
+
+
+def reorder_course_items(course, model, raw_ids):
+    ids = json.loads(raw_ids)
+    if not isinstance(ids, list) or any(type(pk) is not int for pk in ids):
+        raise ValidationError(_("Invalid item order."))
+    with transaction.atomic():
+        Course.objects.select_for_update().get(pk=course.pk)
+        items = list(model.objects.select_for_update().filter(course=course))
+        if len(ids) != len(items) or set(ids) != {item.pk for item in items}:
+            raise ValidationError(_("Include every course item exactly once."))
+        positions = {pk: order for order, pk in enumerate(ids, 1)}
+        for item in items:
+            item.order = positions[item.pk]
+        model.objects.bulk_update(items, ["order"])
+        # Prerequisites belong to positions, so their order pairs stay unchanged.
+        mark_course_for_recalculation(course)
