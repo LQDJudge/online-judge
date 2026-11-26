@@ -150,5 +150,6 @@ def _update_contribution_for_pagevote(pagevote, delta):
         Profile.objects.filter(id__in=author_ids).update(
             contribution_points=F("contribution_points") + delta
         )
+        Profile.dirty_cache(*author_ids)
         for author_id in author_ids:
             get_contribution_rank.dirty(Profile(id=author_id))

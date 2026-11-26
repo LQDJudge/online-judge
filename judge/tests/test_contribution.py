@@ -343,10 +343,12 @@ class DeltaUpdateTest(ContributionTestCase):
     def test_pagevote_delta_updates_contribution(self):
         blog = self._create_public_blog()
         Profile.objects.filter(id=self.author_profile.id).update(contribution_points=0)
+        self.assertEqual(Profile(id=self.author_profile.id).contribution_points, 0)
 
         VoteService.vote(blog, self.voter_user, 1)
         self.author_profile.refresh_from_db()
         self.assertEqual(self.author_profile.contribution_points, 1)
+        self.assertEqual(Profile(id=self.author_profile.id).contribution_points, 1)
 
     def test_pagevote_remove_updates_contribution(self):
         blog = self._create_public_blog()
@@ -436,6 +438,7 @@ class ContributionRankDirtyTest(ContributionTestCase):
         Profile.objects.filter(id=self.author_profile.id).update(contribution_points=0)
         self.author_profile.refresh_from_db()
         self.assertIsNone(get_contribution_rank(self.author_profile))
+        self.assertEqual(Profile(id=self.author_profile.id).contribution_points, 0)
 
         # Simulate a +1 comment vote via the helper used by the view
         Comment.objects.filter(id=comment.id).update(score=1)
@@ -444,6 +447,7 @@ class ContributionRankDirtyTest(ContributionTestCase):
         self.author_profile.refresh_from_db()
         self.assertEqual(self.author_profile.contribution_points, 1)
         self.assertEqual(get_contribution_rank(self.author_profile), 1)
+        self.assertEqual(Profile(id=self.author_profile.id).contribution_points, 1)
 
 
 class DetectAbusiveDownvotersTest(ContributionTestCase):
@@ -727,6 +731,20 @@ class PurgeDownvotesTest(ContributionTestCase):
 class RecomputeCommandPurgeIntegrationTest(ContributionTestCase):
     """End-to-end: management command purges downvotes and recomputes."""
 
+    def test_bulk_reset_invalidates_cached_score_and_rank_without_content(self):
+        Profile.objects.filter(pk=self.author_profile.pk).update(
+            contribution_points=100
+        )
+        profile = Profile(id=self.author_profile.pk)
+        self.assertEqual(profile.contribution_points, 100)
+        self.assertEqual(get_contribution_rank(profile), 1)
+
+        call_command("recompute_contributions", "--skip-purge", stdout=StringIO())
+
+        profile = Profile(id=self.author_profile.pk)
+        self.assertEqual(profile.contribution_points, 0)
+        self.assertIsNone(get_contribution_rank(profile))
+
     def _make_voter(self, username):
         u = User.objects.create_user(username=username, password="x")
         p, _ = Profile.objects.get_or_create(
@@ -755,12 +773,14 @@ class RecomputeCommandPurgeIntegrationTest(ContributionTestCase):
         Profile.objects.filter(id=self.author_profile.id).update(
             contribution_points=-20,
         )
+        self.assertEqual(Profile(id=self.author_profile.id).contribution_points, -20)
 
         out = StringIO()
         call_command("recompute_contributions", stdout=out)
 
         self.author_profile.refresh_from_db()
         self.assertEqual(self.author_profile.contribution_points, 0)
+        self.assertEqual(Profile(id=self.author_profile.id).contribution_points, 0)
         self.assertEqual(
             CommentVote.objects.filter(voter=heavy, score=-1).count(),
             0,
@@ -802,6 +822,11 @@ class RecomputeCommandPurgeIntegrationTest(ContributionTestCase):
     def test_user_mode_does_not_run_detection(self):
 
         heavy = self._setup_heavy_downvoter()
+        self.author_profile.contribution_points = 100
+        self.author_profile.save(update_fields=["contribution_points"])
+        expected = compute_contribution(self.author_profile)
+        self.assertNotEqual(expected, 100)
+        self.assertEqual(Profile(id=self.author_profile.id).contribution_points, 100)
 
         out = StringIO()
         call_command(
@@ -809,6 +834,9 @@ class RecomputeCommandPurgeIntegrationTest(ContributionTestCase):
             "--user",
             "author",
             stdout=out,
+        )
+        self.assertEqual(
+            Profile(id=self.author_profile.id).contribution_points, expected
         )
 
         # Downvotes intact — detection only runs in bulk mode

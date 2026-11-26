@@ -13,7 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q
 from django.db.utils import ProgrammingError
 from django.http import (
@@ -2029,7 +2029,16 @@ class ProblemAdd(PermissionRequiredMixin, CreateView):
             problem.is_organization_private = bool(
                 form.cleaned_data.get("organizations")
             )
-        problem.save()
+        try:
+            # Validation can race with another request creating the same code.
+            # Roll back the failed INSERT before querying inside this transaction.
+            with transaction.atomic():
+                problem.save()
+        except IntegrityError:
+            if not Problem.objects.filter(code=problem.code).exists():
+                raise
+            form.add_error("code", _("A problem with this code already exists."))
+            return self.form_invalid(form)
         form.save_m2m()
 
         # Set default values for new problem
