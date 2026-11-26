@@ -92,7 +92,8 @@
       <style>
         @media(min-width: 800px) {
           #page-container {
-            background: url("{{request.profile.background_image.url}}");
+            {# Keep signed query strings intact and encode CSS/HTML delimiters. #}
+            background: url("{{ request.profile.background_image.url|urlquote(':/?&=%#@+;,!$()*[]')|safe }}");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;

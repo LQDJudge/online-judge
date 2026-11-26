@@ -481,4 +481,5 @@ def _update_contribution_for_comment_vote(comment_id, delta):
     Profile.objects.filter(id=comment.author_id).update(
         contribution_points=F("contribution_points") + delta
     )
+    Profile.dirty_cache(comment.author_id)
     get_contribution_rank.dirty(Profile(id=comment.author_id))

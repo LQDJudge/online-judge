@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.urls import reverse
 
 from judge.models import Language, Profile
 from judge.utils.profile_ranks import build_profile_rank_map
@@ -16,6 +17,34 @@ class BuildProfileRankMapTest(TestCase):
         defaults = {"language": self.language}
         defaults.update(kwargs)
         return Profile.objects.create(user=user, **defaults)
+
+    def test_leaderboard_ranks_and_scores_ignore_stale_profile_cache(self):
+        fields = (
+            "contribution_points",
+            "points",
+            "performance_points",
+            "rating",
+            "problem_count",
+        )
+        first = self.make_profile("rank_stale_first", **dict.fromkeys(fields, 100))
+        second = self.make_profile("rank_stale_second", **dict.fromkeys(fields, 50))
+        Profile.get_cached_instances(first.pk, second.pk)
+        # Simulate a bulk update that has not invalidated the shared cache.
+        Profile.objects.filter(pk=first.pk).update(**dict.fromkeys(fields, 110))
+        self.assertEqual(Profile(id=first.pk).contribution_points, 100)
+
+        for field in fields:
+            with self.subTest(field=field):
+                response = self.client.get(reverse("user_list"), {"order": "-" + field})
+                self.assertEqual(response.status_code, 200)
+                rows = response.context["users"]
+                self.assertEqual(
+                    [
+                        (rank, profile.pk, getattr(profile, field))
+                        for rank, profile in rows
+                    ],
+                    [(1, first.pk, 110), (2, second.pk, 50)],
+                )
 
     def test_rank_uses_selected_sort_field_and_ties(self):
         first = self.make_profile("rank_perf_first", performance_points=100, points=0)

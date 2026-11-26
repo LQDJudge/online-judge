@@ -70,6 +70,7 @@ class Command(BaseCommand):
             Profile.objects.filter(id=profile.id).update(
                 contribution_points=new_points,
             )
+            Profile.dirty_cache(profile.id)
             get_contribution_rank.dirty(Profile(id=profile.id))
             self.stdout.write(
                 self.style.SUCCESS(
@@ -149,9 +150,15 @@ class Command(BaseCommand):
         scores = bulk_compute_contributions()
         self.stdout.write(f"  Found {len(scores)} profiles with contributions")
 
+        previous_profile_ids = list(
+            Profile.objects.exclude(contribution_points=0).values_list("id", flat=True)
+        )
         updated = Profile.objects.exclude(contribution_points=0).update(
             contribution_points=0
         )
+        Profile.dirty_cache(*previous_profile_ids)
+        # cache_wrapper keys Profile arguments by ID; no model instances needed.
+        get_contribution_rank.dirty_multi([(pid,) for pid in previous_profile_ids])
         self.stdout.write(f"  Reset {updated} profiles to 0")
 
         batch_size = 500
@@ -165,6 +172,7 @@ class Command(BaseCommand):
                 )
                 get_contribution_rank.dirty(Profile(id=pid))
                 updated += 1
+            Profile.dirty_cache(*batch)
             self.stdout.write(
                 f"  Updated {min(i + batch_size, len(profile_ids))}"
                 f"/{len(profile_ids)} profiles..."

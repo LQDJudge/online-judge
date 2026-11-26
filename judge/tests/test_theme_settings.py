@@ -6,6 +6,8 @@ from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from bs4 import BeautifulSoup
+
 from judge.models import Language, Profile
 from judge.widgets.direct_upload import generate_upload_token
 
@@ -38,6 +40,36 @@ class ThemeSettingsSampleBackgroundTest(TestCase):
 
     def tearDown(self):
         cache.clear()
+
+    def render_background_css(self, url):
+        self.profile.background_image = "sample_backgrounds/test.jpg"
+        self.profile.save(update_fields=["background_image"])
+        with patch("judge.views.theme.default_storage.url", return_value=url):
+            response = self.client.get(reverse("user_list"))
+        self.assertEqual(response.status_code, 200)
+        styles = BeautifulSoup(response.content, "html.parser").find_all("style")
+        return response, next(
+            style.get_text()
+            for style in styles
+            if "background: url(" in style.get_text()
+        )
+
+    def test_background_css_preserves_signed_url_query_and_percent_encoding(self):
+        url = (
+            "https://media.example.com/Hoa_%C4%91ao.jpg"
+            "?X-Amz-Expires=3600&X-Amz-Signature=abc123&other=value%2Fpart"
+        )
+        _, css = self.render_background_css(url)
+        self.assertIn('background: url("' + url + '");', css)
+        self.assertNotIn("&amp;", css)
+
+    def test_background_url_cannot_escape_css_or_style_element(self):
+        url = 'https://media.example.com/x");}</style><script>alert(1)</script>\\\n.jpg'
+        response, css = self.render_background_css(url)
+        self.assertNotContains(response, "<script>alert(1)</script>")
+        self.assertNotIn("</style>", css)
+        for encoded_character in ("%22", "%3C", "%5C", "%0A"):
+            self.assertIn(encoded_character, css)
 
     @patch("judge.views.theme.Profile.dirty_cache")
     @patch("judge.views.theme.default_storage.open")

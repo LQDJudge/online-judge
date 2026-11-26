@@ -536,6 +536,9 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
             .order_by(self.order, "id")
             .only(
                 "id",
+                # Ranks and displayed scores must use the same database values
+                # as the ordering, even when a profile cache is stale.
+                *self.all_sorts,
             )
         )
         if self.request.organization:

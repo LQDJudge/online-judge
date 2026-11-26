@@ -2014,7 +2014,9 @@ body:has(.soft-listing-page) {
     min-height: 100vh;
 
     > #page-container.soft-listing-page {
-        background: inherit;
+        min-height: 100vh;
+        // Preserve account background images while matching the page color.
+        background-color: inherit;
     }
 
     #dynamic-effects-container, #lantern-effects-container,
