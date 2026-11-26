@@ -3,87 +3,64 @@ Shared prompt guidelines for LLM services.
 Contains common formatting rules for markdown, LaTeX, etc.
 """
 
-MARKDOWN_FORMATTING_RULES = """
-MARKDOWN INDENTATION AND LATEX RULES:
-1. Sublist items MUST have 4 spaces indentation more than their parent item (NOT 2 spaces)
-   Example:
-   - Parent item
-       - Child item (4 spaces before -)
-           - Grandchild item (8 spaces before -)
-
-2. Display LaTeX (block equations) - TWO OPTIONS:
-   Option A: Use $$...$$ as a SEPARATE PARAGRAPH with blank lines above and below:
-   Some text here.
-
-   $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
-
-   More text here.
-
-   Option B (PREFERRED for equations inside lists): Use ```math fence block:
-   - List item with equation:
-
-       ```math
-       x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}
-       ```
-
-   - Next list item continues...
-
-   NOTE: Option B keeps the equation inside the list structure. Use 4-space indent for the fence block.
-
-3. For string literals, do NOT use LaTeX. Use `code` backticks or "raw" quotes instead:
-   - WRONG: $"hello"$ or $\\text{"hello"}$
-   - CORRECT: `hello` or "hello"
-
-4. Inline LaTeX MUST NOT have spaces after opening $ or before closing $:
-   - WRONG: $ f_i = $ or $f_i = $ (spaces cause rendering failure)
-   - CORRECT: $f_i =$ or $f_i$ =
+MARKDOWN_FORMATTING_RULES = r"""
+MARKDOWN RENDERING GUIDANCE:
+1. Preserve intended nesting. In this renderer nested lists need four additional
+   spaces; indent fenced blocks and admonition contents within their parent.
+2. Display LaTeX may use $$...$$ on its own line, multiline $$ delimiters, or a
+   fenced math block. The renderer pads standalone display blocks automatically:
+   adjacent display blocks do not require blank lines or an aligned environment.
+   Inside lists a correctly indented math fence can help retain nesting.
+3. Prefer code spans for literal input/output strings. Valid \text{...} and
+   \texttt{...} inside mathematics are also allowed. Preserve clear equivalent
+   notation; neither \cdot nor scientific notation is compulsory.
+4. Use balanced math delimiters and code fences. Inline $...$ must not have
+   whitespace immediately inside the delimiters because it prevents math parsing.
+   Preserve code/sample content exactly and keep the matching fence indentation.
 """.strip()
 
-LATEX_BASIC_RULES = """
-1. Use LaTeX math notation with $ for inline math (e.g., $n$, $a_i$, $10^9$)
-2. Use \\cdot for multiplication in math mode
-3. Format large numbers with scientific notation where appropriate (e.g., $10^9$)
+LATEX_BASIC_RULES = r"""
+Use supported LaTeX for mathematics, with $...$ for inline expressions.
+Preserve mathematical meaning and clear equivalent notation; multiplication signs
+and scientific notation are presentation choices rather than requirements.
 """.strip()
 
 PROBLEM_STATEMENT_FORMAT_RULES = """
-LQDOJ problem statement template (proposal guide section 5):
-- Begin with the problem description; summarize the task when the story is long.
-- Use level-four Input, Output and Example section headings (#### Input,
-  #### Output, #### Example). Whitespace after #### is acceptable.
-- Describe the input/output clearly; present constraints as readable bullet points.
-- Give each example its own !!! question "Test X" block. Inside it use
-  ???+ "Input" and ???+ success "Output", each containing a fenced sample
-  code block (```sample). Indent each nested block by four additional spaces.
-- Put an optional sample explanation in ??? warning "Note" inside that example.
-  Do not require explanations when none are needed.
-- Use #### Scoring for declared subtasks/point allocations when applicable.
-  Do not invent subtasks or require a Scoring section for an unscored problem.
-- Preserve the statement's language and mathematical meaning. Use inline LaTeX
-  for mathematics, and follow the shared Markdown indentation/LaTeX rules.
+Preferred LQDOJ problem statement template for formatting tools:
+- Begin with the task description. Prefer #### Input, #### Output and #### Example
+  headings (or equivalent headings in the original language).
+- Explain input/output and constraints clearly; bullet lists are useful but optional.
+- Prefer one !!! question "Test X" block per example, containing ???+ "Input"
+  and ???+ success "Output", each with a fenced sample code block (```sample).
+  Indent each nested block by four additional spaces.
+- Keep supplied explanations, optionally in ??? warning "Note". Do not invent one.
+- Include scoring/subtasks only when supplied. Never invent point allocations.
+- Preserve the original language, mathematical meaning and exact sample data.
+These are formatting preferences, not review acceptance requirements. Equivalent
+readable headings, paragraphs, tables and labelled sample blocks are valid.
+""".strip()
+
+STATEMENT_REVIEW_RULES = """
+Assess task correctness, completeness, clarity and concrete rendering defects.
+Require a clear task/interface, relevant constraints, input/output or submission
+format and scoring where applicable; adapt to function, interactive and output-only
+problems instead of demanding classical batch sections for every problem type.
+Accept equivalent readable headings (including translated headings), paragraphs,
+tables and labelled sample code blocks. Do not require exact heading levels,
+constraint bullets, example admonitions, scientific notation or a multiplication
+symbol. Adjacent display-math blocks are supported without blank lines; aligned
+is optional. Use the shared rendering guidance to identify actual broken formulas,
+fences or nesting, not cosmetic departures from a preferred template.
+Missing optional editorial or unnecessary sample explanations are not defects.
+Preserve sample data and distinguish objective contradictions from stylistic advice.
 """.strip()
 
 
 def get_markdown_rules_for_prompt(start_number: int = 1) -> str:
-    """
-    Get markdown formatting rules with customizable starting number.
-
-    Args:
-        start_number: The starting rule number (default 1)
-
-    Returns:
-        Formatted markdown rules string with adjusted numbering
-    """
-    # Replace rule numbers dynamically
+    """Return shared renderer guidance with caller-specific rule numbering."""
     rules = MARKDOWN_FORMATTING_RULES
-    rules = rules.replace(
-        "MARKDOWN INDENTATION AND LATEX RULES:\n1.",
-        f"MARKDOWN INDENTATION AND LATEX RULES:\n{start_number}.",
-    )
-    rules = rules.replace("\n2. Display LaTeX", f"\n{start_number + 1}. Display LaTeX")
-    rules = rules.replace(
-        "\n3. For string literals", f"\n{start_number + 2}. For string literals"
-    )
-    rules = rules.replace("\n4. Inline LaTeX", f"\n{start_number + 3}. Inline LaTeX")
+    for number in range(4, 0, -1):
+        rules = rules.replace(f"\n{number}.", f"\n{start_number + number - 1}.")
     return rules
 
 

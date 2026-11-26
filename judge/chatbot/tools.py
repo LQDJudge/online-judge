@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
     // quitf(_ok, "message");     // Accepted
     // quitf(_wa, "message");     // Wrong Answer
     // quitf(_pe, "message");     // Presentation Error
-    // quitf(_pc(score), "msg");  // Partial (score 0-100)
+    // quitp(0.5, "msg");         // 50% with LQDOJ Testlib fraction scoring
 
     // Example checker:
     int n = inf.readInt();
@@ -254,7 +254,9 @@ Run with: ./checker input.txt output.txt answer.txt
 ```
 
 Notes:
-- C++ checkers with testlib are faster and recommended for large tests
+- Select Testlib for this template; use quitp with a fraction in [0,1].
+- Custom checker (CPP) uses a different exit-code/stderr protocol; do not mix them.
+- Use a built-in checker when it already matches the task.
 - For interactive problems, use interactive judge instead"""
 
 
