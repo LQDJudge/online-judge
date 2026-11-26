@@ -7,7 +7,6 @@ import zipfile
 from collections import defaultdict
 from threading import local
 
-from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db.models import F, Window
 from django.db.models.functions import RowNumber
@@ -617,17 +616,6 @@ def _capture_problem(
             "limitations": ["Inventory parsing omitted in content-only manifest."],
         }
     )
-    instruction_path = os.path.join(
-        settings.BASE_DIR, "templates", "docs", "test-data-instructions.en.md"
-    )
-    with open(instruction_path, "r", encoding="utf-8") as instruction_file:
-        instruction_text = instruction_file.read()
-    snapshot["test_data_instructions"] = {
-        "ref": "instructions:test-data",
-        "language": "en",
-        "text": instruction_text,
-        "sha256": hashlib.sha256(instruction_text.encode("utf-8")).hexdigest(),
-    }
     snapshot["translations"] = (
         batch["translations"][fresh.pk]
         if batch is not None

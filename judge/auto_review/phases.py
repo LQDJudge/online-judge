@@ -20,12 +20,13 @@ from judge.auto_review.review_context import run_context
 from judge.auto_review.json_output import decode_review_json
 from judge.auto_review.pdf_statement import review_statement_text
 from judge.auto_review.profile_prompts import profile_system_rules
+from judge.auto_review.review_guidelines import SECTION_GUIDANCE, TECHNICAL_REVIEW_RULES
 from llm_service.config import get_config
 from llm_service.llm_api import LLMRequestError, LLMService
 from llm_service.prompt_guidelines import (
     DIFFICULTY_RATING_RULES,
     MARKDOWN_FORMATTING_RULES,
-    PROBLEM_STATEMENT_FORMAT_RULES,
+    STATEMENT_REVIEW_RULES,
 )
 
 MAX_CONTEXT_CHARS = 360000
@@ -280,7 +281,7 @@ def build_stage_input(run, stage_id):
             editorial=context.get("editorial"),
             translations=context.get("translations", []),
             media_limitations=context.get("media_limitations", []),
-            statement_format=PROBLEM_STATEMENT_FORMAT_RULES,
+            statement_format=STATEMENT_REVIEW_RULES,
         )
     if stage_id in (
         "solutions_review",
@@ -336,7 +337,6 @@ def build_stage_input(run, stage_id):
         base.update(
             data_config=problem_review_content(context)["data_config"],
             validation=context.get("validation"),
-            test_data_instructions=context.get("test_data_instructions", {}),
         )
     return base
 
@@ -467,6 +467,8 @@ def _call(run, stage_id, input_json):
     prompt = canonical_json(
         {
             "scope": SCOPES[stage_id],
+            "review_rules": TECHNICAL_REVIEW_RULES,
+            "section_guidance": SECTION_GUIDANCE.get(stage_id),
             "required_output_schema": output_schema(stage_id),
             "finding_schema": {
                 "severity": "info|warning|error|critical",

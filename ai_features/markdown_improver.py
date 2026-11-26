@@ -6,6 +6,7 @@ Uses LLM to format problem statements according to LQDOJ's markdown format
 import time
 from typing import Dict, Any
 import logging
+from ai_features.markdown_output import clean_markdown_response
 from llm_service.llm_api import LLMService
 from llm_service.policies import streaming_options
 from llm_service.prompt_guidelines import (
@@ -78,25 +79,7 @@ class MarkdownImprover:
         ```
     ??? warning "Note"
         Với hai hình chữ nhật kích thước là $4\\cdot 5$ và $4\\cdot 5$ thì hình vuông nhỏ nhất chứa đủ phải có kích thước $8\\cdot 8$. Vậy cần đưa ra đáp số là $64$.
-
-#### Scoring
- + Subtask $1$ ($20\\%$ số điểm): $n, k, x, |A_i|$ $\\le 10^3$ , $mod = 10^9 + 7.$
- + Subtask $2$ ($20\\%$ số điểm): $n$ và $k \\le 2.10^5 , |A_i|$ và $x \\le 10^9, mod = 10^9 + 7.$
- + Subtask $3$ ($60\\%$ số điểm): không có ràng buộc gì thêm."""
-
-    def _fix_unclosed_code_blocks(self, markdown: str) -> str:
-        """
-        Fix unclosed code blocks in markdown.
-        Counts ``` occurrences and adds closing ``` if odd.
-        """
-        # Count code block markers
-        code_block_count = markdown.count("```")
-
-        # If odd number, add closing ```
-        if code_block_count % 2 == 1:
-            markdown = markdown.rstrip() + "\n        ```"
-
-        return markdown
+"""
 
     def improve_markdown(
         self,
@@ -118,30 +101,19 @@ class MarkdownImprover:
             Dict with 'success', 'improved_markdown', and optional 'error' fields
         """
         template = self.get_format_template()
-        markdown_rules = get_markdown_rules_for_prompt(start_number=9)
+        markdown_rules = get_markdown_rules_for_prompt()
 
         system_prompt = f"""You are an expert at formatting competitive programming problem statements.
 Your task is to convert problem statements to a specific LQDOJ markdown format.
 
-IMPORTANT FORMATTING RULES:
-1. Use LaTeX math notation with $ for inline math (e.g., $n$, $a_i$, $10^9$)
-2. Use #### for section headers (####Input, ####Output, ####Example)
-3. Format constraints in bullet points with - prefix
-4. Use the special admonition syntax for test cases:
-   - !!! question "Test X" for each test case
-   - ???+ "Input" with ```sample code block for input
-   - ???+ success "Output" with ```sample code block for output
-   - ??? warning "Note" for optional explanations (note: ??? without + means collapsed by default)
-5. For images: analyze whether it is purely text (tables, sample tests, notes, constraints, explanations) or a visual diagram/illustration
-   - If the image contains only text content: extract and convert it to proper markdown — do NOT keep the image link
-   - If the image is a visual diagram, graph, or illustration: keep it as ![description](url)
-6. Preserve the original language (Vietnamese or English)
-7. Use \\cdot for multiplication in math mode
-8. Format large numbers with scientific notation where appropriate (e.g., $10^9$)
+{PROBLEM_STATEMENT_FORMAT_RULES}
 
 {markdown_rules}
 
-{PROBLEM_STATEMENT_FORMAT_RULES}
+IMAGE AND PDF HANDLING:
+- Extract textual content only when it can be read reliably; preserve diagrams and
+  illustrations as images. Do not discard an unreadable image or guess its text.
+- Preserve the original language, mathematical notation and all sample values.
 
 HERE IS THE TARGET FORMAT TEMPLATE:
 {template}
@@ -149,7 +121,7 @@ HERE IS THE TARGET FORMAT TEMPLATE:
 CRITICAL INSTRUCTIONS:
 - Analyze any PDF attachments and images carefully - they often contain the complete problem statement
 - Extract ALL information: problem description, constraints, input/output format, examples, and notes
-- For text-only images (sample test tables, notes, constraints): extract the text content into proper markdown, remove the image link
+- For text-only images, replace the image only when every relevant detail can be transcribed reliably
 - Maintain the EXACT same content/meaning, just reformat to match the template style
 - If there are multiple test cases, create separate !!! question blocks for each — carefully count ALL test cases regardless of layout (stacked, side-by-side columns, grids, etc.)
 - Do NOT add or remove any information, only reformat
@@ -179,22 +151,7 @@ OUTPUT: Provide ONLY the reformatted markdown, nothing else."""
             )
 
             if response:
-                # Clean up the response - remove any markdown code block wrappers
-                improved = response.strip()
-
-                # Remove ```markdown or ``` wrappers if present
-                if improved.startswith("```markdown"):
-                    improved = improved[11:]
-                elif improved.startswith("```"):
-                    improved = improved[3:]
-
-                if improved.endswith("```"):
-                    improved = improved[:-3]
-
-                improved = improved.strip()
-
-                # Fix unclosed code blocks
-                improved = self._fix_unclosed_code_blocks(improved)
+                improved = clean_markdown_response(response)
 
                 if improved:
                     logger.info(f"Successfully improved markdown for problem")

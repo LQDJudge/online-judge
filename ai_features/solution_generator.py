@@ -6,6 +6,7 @@ Uses LLM to generate solution explanations based on problem statement and AC cod
 import time
 from typing import Optional, Dict, Any
 import logging
+from ai_features.markdown_output import clean_markdown_response
 from llm_service.llm_api import LLMService
 from llm_service.policies import streaming_options
 from llm_service.prompt_guidelines import get_markdown_rules_for_prompt
@@ -80,16 +81,6 @@ class SolutionGenerator:
             return f'??? note "{lang_label}"\n{_indent(code_block)}'
 
         return re.sub(pattern, replacer, markdown, flags=re.DOTALL)
-
-    def _fix_unclosed_code_blocks(self, markdown: str) -> str:
-        """
-        Fix unclosed code blocks in markdown.
-        Counts ``` occurrences and adds closing ``` if odd.
-        """
-        code_block_count = markdown.count("```")
-        if code_block_count % 2 == 1:
-            markdown = markdown.rstrip() + "\n```"
-        return markdown
 
     def get_solution_template(self) -> str:
         """Return the target format template for solutions"""
@@ -405,22 +396,7 @@ OUTPUT: Provide ONLY the solution markdown in the format shown in the template. 
             )
 
             if response:
-                # Clean up the response
-                solution = response.strip()
-
-                # Remove ```markdown or ``` wrappers if present
-                if solution.startswith("```markdown"):
-                    solution = solution[11:]
-                elif solution.startswith("```"):
-                    solution = solution[3:]
-
-                if solution.endswith("```"):
-                    solution = solution[:-3]
-
-                solution = solution.strip()
-
-                # Fix unclosed code blocks
-                solution = self._fix_unclosed_code_blocks(solution)
+                solution = clean_markdown_response(response)
 
                 # Fix LaTeX notation issues
                 solution = self._fix_latex(solution)

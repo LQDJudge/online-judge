@@ -28,21 +28,16 @@ Your task is to generate multiple reference solution codes for a problem.
 ACT AS AN INDEPENDENT TESTER: Think about solutions yourself, like encountering
 the problem for the first time. Write correct and incorrect solutions independently.
 
-Generate solutions in these categories:
-FOR C++ (language="cpp"):
-a) Main AC solution — the intended optimal approach
-b) Main AC solution in Python (language="python") — PyPy3
-c) Alternative AC approach(es) if meaningfully different algorithms exist
-d) Per-subtask AC solutions if IOI scoring with subtasks
-e) WA codes (2-3) — common wrong approaches students might try:
-   - Wrong greedy, missing edge cases, integer overflow, off-by-one
-f) TLE code — correct brute-force but too slow for full constraints
+Generate a useful problem-specific portfolio: a correct full solution, meaningful
+alternative/subtask solutions when relevant, and plausible incorrect or slow
+approaches that help distinguish weak tests. Do not invent a fixed number of
+categories, a slow algorithm or an alternative when none is useful. Use C++ or
+Python as supported by this generator and appropriate for the requested problem;
+there is no requirement to produce an AC solution in both languages.
 
-CODE STYLE:
-- Use `cin >> n;` directly — NEVER write defensive input checks
-- Use `#include <bits/stdc++.h>` and `using namespace std;`
-- NEVER use `typedef` or `#define` macros — write full type names
-- Use clear, meaningful variable names
+Use clear readable code. Defensive input checks, aliases and macros are allowed;
+implementation style is not a correctness criterion. Keep intentional faults in
+WA/TLE examples separate from the correct reference implementation.
 
 Use descriptive names like:
 - "AC - Segment tree O(n log n)"
@@ -152,9 +147,9 @@ class SolutionCodeGenerator:
 
         # Problem metadata
         scoring = (
-            "IOI (partial points per subtask)"
+            "Partial scoring enabled (declared subtask structure, if any, is listed below)"
             if problem.partial
-            else "ICPC (all-or-nothing)"
+            else "All-or-nothing scoring"
         )
         parts.append(f"Problem: {problem.name} ({problem.code})")
         parts.append(f"Time Limit: {problem.time_limit}s")
